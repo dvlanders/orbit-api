@@ -1,5 +1,5 @@
 const express = require("express");
-const bodyParser = require("body-parser")
+const bodyParser = require("body-parser");
 
 /* This is creating an instance of the Express framework. */
 const app = express();
@@ -36,6 +36,8 @@ app.use(bodyParser.json())
 default value of `5000` will be used. */
 let port = process.env.PORT || 5000;
 
+
+
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 const cors = require("cors");
 app.use(cors());
@@ -57,3 +59,6 @@ app.listen(port, () => {
   console.log(`Environment : ${env}`);
   console.log(`Listening on PORT ${port}`);
 });
+
+// Export your Express configuration so that it can be consumed by the Lambda handler
+module.exports = app

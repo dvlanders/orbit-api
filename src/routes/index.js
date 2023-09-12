@@ -1,8 +1,9 @@
 module.exports = (app, express) => {
     const router = express.Router();
-    const user = require("./user");
+    const registration = require("./registration");
+    
 
-    user(router);
+    registration(router);
 
     app.use("/", router);
   };

@@ -1,1 +1,4 @@
-exports.userApi = require("./User");
+exports.user = require("./user")
+exports.registration = require("./registration")
+
+
