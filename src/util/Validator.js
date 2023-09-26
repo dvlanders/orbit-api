@@ -22,3 +22,11 @@
 //     return re.test(phone);
 //   }
 // };
+const Ajv = require("ajv");
+const ajv = new Ajv({ allErrors: true });
+
+exports.validateObject = (object, schema) => {
+  const validate = ajv.compile(schema);
+  const valid = validate(object);
+  return [valid, validate];
+};

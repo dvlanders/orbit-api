@@ -59,44 +59,92 @@ exports.requestOTP = async(req,res) => {
   let userId = req.params.userId;
   let apiPath = `https://api.staging.sfox.com/v1/enterprise/users/send-verification/${userId}`;
   // let data = {
-  //   "type" : "email"
-  // }
+  //   type: "email",
+  // };
   await axios({
     method: 'post',
     url: apiPath,
     headers: {
       'Authorization': 'Bearer ' + token
     },
-    data: req.body
-      
-  }).then(response => {
-    res.status(response.status).send(response.data)
-  }).catch(err => {
-    res.status(err.response.status).send(err.response.data)
-    
-  });
-}
+    data: req.body,
+  })
+    .then((response) => {
+      console.log("res",response)
+      return res.status(response.status).send(response.data);
+    })
+    .catch((err) => {
+      return res.status(err.response.status).send(err.response.data);
+    });
+};
 
 exports.verify = async(req,res) => {
   let userId = req.params.userId;
   let apiPath = `https://api.staging.sfox.com/v1/enterprise/users/verify/${userId}`;
   // let data = {
-  //   "type" : "email",
-  //   "otp" : "192953"
-  // } 
+  //   type: "email",
+  //   otp: "192953",
+  // };
   await axios({
     method: 'post',
     url: apiPath,
     headers: {
       'Authorization': 'Bearer ' + token
     },
-    data: req.body
-      
-  }).then(response => {
-    res.status(response.status).send(response.data)
-  }).catch(err => {
-    res.status(err.response.status).send(err.response.data)
-    
-  });
+    data: req.body,
+  })
+    .then((response) => {
+      return res.status(response.status).send(response.data);
+    })
+    .catch((err) => {
+      return res.status(err.response.status).send(err.response.data);
+    });
+};
 
-}
+// let data ={
+//   "account_type": "business",
+//         "first_name": "Sean",
+//         "last_name": "Fox",
+//         "email": "kaushit049@abesit.edu.in",
+//         "phone_country_code": "US",
+//         "phone_number": "+12223334444",
+//         "account_role": "advisor",
+//         "user_id": uuid,
+//         "advisor_user_id": "advisor_account_1",
+//         "account_purpose": "Investing",
+//         "individual":
+//             {
+//                 "dob": "1990-10-15",
+//                 "residential_country_code": "US",
+//                 "residential_address": "123 sFOX Lane",
+//                 "residential_city": "Los Angeles",
+//                 "residential_state": "CA",
+//                 "residential_postal_code": "90403",
+//                 "id_type": "passport",
+//                 "id_number": "123456789",
+//                 "id_country_code": "US"
+//             }
+//   }
+
+exports.userToken = async (req, res) => {
+  let patnerUserId = req.params.patnerUserId;
+  let apiPath = `https://api.staging.sfox.com/v1/enterprise/user-tokens/${patnerUserId}`;
+  await axios({
+    method: "post",
+    url: apiPath,
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  })
+    .then((response) => {
+      return res.status(response.status).send(response.data);
+    })
+    .catch((err) => {
+      return res.status(err.response.status).send(err.response.data);
+    });
+};
+
+
+
+
+
