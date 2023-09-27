@@ -8,12 +8,16 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
-  "author": "",
+  "author": "HIFI",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.420.0",
+    "@aws-sdk/lib-dynamodb": "^3.420.0",
     "ajv": "^8.12.0",
+    "aws-sdk": "^2.1463.0",
     "aws-serverless-express": "^3.4.0",
     "axios": "^1.5.0",
     "body-parser": "^1.20.1",
@@ -22,10 +26,12 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
-    "mysql2": "^2.3.3",
+    "nodemailer": "^6.9.5",
     "nodemon": "^2.0.20",
     "path": "^0.12.7",
-    "sequelize": "^6.28.0",
+    "pg": "^8.11.3",
+    "sequelize": "^6.33.0",
+    "sequelize-cli": "^6.6.1",
     "uuid": "^9.0.0",
     "winston": "^3.8.2"
   }

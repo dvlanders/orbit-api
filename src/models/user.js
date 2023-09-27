@@ -1,29 +1,38 @@
-module.exports = (sequelize, Sequelize) =>{
-const User  = sequelize.define( 'User', {
-    email:{
-        primaryKey: true,
-        type: Sequelize.STRING(50),
-        allowNull: false // allowNull Defaults to true
-    },
-    firstName:{
-        type: Sequelize.STRING(45),
-    },
-    lastName:{
-        type: Sequelize.STRING(45),
-    },
-    password:{
-        type: Sequelize.STRING
-    },
-    credit:{
-        type: Sequelize.BIGINT
-    },
-    pin:{
-        type: Sequelize.STRING(10)
-    }
-},{
-    tableName: 'user',
-    timestamps: true
+const { Sequelize, DataTypes } = require('sequelize');
+const sequelizeInstance = require('../config/db.conf').sequelizeInstance;
+
+const User = sequelizeInstance.define('users', {
+  // Model attributes are defined here
+  id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    primaryKey: true
+  },
+  fullName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+
+  password : {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  businessName: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  phoneNumber: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
+
+}, {
+    freezeTableName: true,
 });
 
-return User
-}
+module.exports = User;

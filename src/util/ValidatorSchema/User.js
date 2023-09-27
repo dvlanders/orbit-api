@@ -1,13 +1,13 @@
 exports.signup = {
     title: 'Signup request payload',
     type: "object",
-    required: ['email', 'password'],
+    required: ['email', 'phoneNumber'],
     additionalProperties: false,
     properties: {
     email: {
           type: "string"
         },
-    password: {
+    phoneNumber: {
             minLength: 3,
             type: "string"
         },
