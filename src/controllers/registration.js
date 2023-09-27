@@ -1,40 +1,17 @@
 const axios = require('axios')
 const { v4: uuidv4 } = require('uuid');
+const dynamodb = require("./../config/dynamodb")
 
-let uuid = uuidv4()
+
 let token = process.env.SFOX_ENTERPRISE_API_KEY
+let baseUrl = process.env.SFOX_BASE_URL
 
 exports.register = async(req,res) => {
- 
-  // let data ={
-  //   "account_type": "business",
-  //         "first_name": "Sean",
-  //         "last_name": "Fox",
-  //         "email": "kaushit049@abesit.edu.in",
-  //         "phone_country_code": "US",
-  //         "phone_number": "+12223334444",
-  //         "account_role": "advisor",
-  //         "user_id": uuid,
-  //         "advisor_user_id": "advisor_account_1",
-  //         "account_purpose": "Investing",
-  //         "individual": 
-  //             {
-  //                 "dob": "1990-10-15",
-  //                 "residential_country_code": "US",
-  //                 "residential_address": "123 sFOX Lane",
-  //                 "residential_city": "Los Angeles",
-  //                 "residential_state": "CA",
-  //                 "residential_postal_code": "90403",
-  //                 "id_type": "passport",
-  //                 "id_number": "123456789",
-  //                 "id_country_code": "US"
-  //             }
-  //   }
-
+  try{
     let data = req.body
-    data.user_id = uuid
-    const apiPath = "https://api.staging.sfox.com/v1/enterprise/register-account"
-    await axios({
+    data.user_id = uuidv4()
+    const apiPath = `${baseUrl}/v1/enterprise/register-account`;
+    let response = await axios({
         method: 'post',
         url: apiPath,
         headers: {
@@ -42,12 +19,26 @@ exports.register = async(req,res) => {
         },
         data: data
           
-      }).then(response => {
-        res.status(response.status).send(response.data)
-      }).catch(err => {
-        res.status(err.response.status).send(err.response.data)
+      })
+    // let  input = {
+    //     "user_id" : register.data.data.user_id,
+    //     "created_by": "clientUser", 
+    //     "created_on": new Date().toString(),
+    //     "updated_by": "clientUser", 
+    //     "updated_on": new Date().toString(), "is_deleted": false,
+    //     "auth_token"  : "",
+    // };
+    // var params = {
+    //     TableName: "user_auth",
+    //     Item:  input
+    // };
+    // let save = dynamodb.put(params)
+
+    return res.status(response.status).json({message: response.data.data})
+  }catch(error){
+        return res.status(400).send(error.response.data)
         
-      });
+      };
 
 }
 
@@ -56,12 +47,10 @@ exports.register = async(req,res) => {
 
 
 exports.requestOTP = async(req,res) => {
+  try{
   let userId = req.params.userId;
-  let apiPath = `https://api.staging.sfox.com/v1/enterprise/users/send-verification/${userId}`;
-  // let data = {
-  //   type: "email",
-  // };
-  await axios({
+  let apiPath = `${baseUrl}/v1/enterprise/users/send-verification/${userId}`;
+  let response = await axios({
     method: 'post',
     url: apiPath,
     headers: {
@@ -69,23 +58,21 @@ exports.requestOTP = async(req,res) => {
     },
     data: req.body,
   })
-    .then((response) => {
-      console.log("res",response)
-      return res.status(response.status).send(response.data);
-    })
-    .catch((err) => {
+     return res.status(response.status).json({message: response.data.data})
+    }catch(err) {
       return res.status(err.response.status).send(err.response.data);
-    });
-};
+    };
+}
 
 exports.verify = async(req,res) => {
+  try{
   let userId = req.params.userId;
-  let apiPath = `https://api.staging.sfox.com/v1/enterprise/users/verify/${userId}`;
+  let apiPath = `${baseUrl}/v1/enterprise/users/verify/${userId}`;
   // let data = {
   //   type: "email",
   //   otp: "192953",
   // };
-  await axios({
+  let response = await axios({
     method: 'post',
     url: apiPath,
     headers: {
@@ -93,55 +80,28 @@ exports.verify = async(req,res) => {
     },
     data: req.body,
   })
-    .then((response) => {
-      return res.status(response.status).send(response.data);
-    })
-    .catch((err) => {
+      return res.status(response.status).json({message: response.data.data})
+    }catch(err) {
       return res.status(err.response.status).send(err.response.data);
-    });
+    };
 };
 
-// let data ={
-//   "account_type": "business",
-//         "first_name": "Sean",
-//         "last_name": "Fox",
-//         "email": "kaushit049@abesit.edu.in",
-//         "phone_country_code": "US",
-//         "phone_number": "+12223334444",
-//         "account_role": "advisor",
-//         "user_id": uuid,
-//         "advisor_user_id": "advisor_account_1",
-//         "account_purpose": "Investing",
-//         "individual":
-//             {
-//                 "dob": "1990-10-15",
-//                 "residential_country_code": "US",
-//                 "residential_address": "123 sFOX Lane",
-//                 "residential_city": "Los Angeles",
-//                 "residential_state": "CA",
-//                 "residential_postal_code": "90403",
-//                 "id_type": "passport",
-//                 "id_number": "123456789",
-//                 "id_country_code": "US"
-//             }
-//   }
 
 exports.userToken = async (req, res) => {
+  try{
   let patnerUserId = req.params.patnerUserId;
-  let apiPath = `https://api.staging.sfox.com/v1/enterprise/user-tokens/${patnerUserId}`;
-  await axios({
+  let apiPath = `${baseUrl}/v1/enterprise/user-tokens/${patnerUserId}`;
+  let response = await axios({
     method: "post",
     url: apiPath,
     headers: {
       Authorization: "Bearer " + token,
     },
   })
-    .then((response) => {
-      return res.status(response.status).send(response.data);
-    })
-    .catch((err) => {
+    return res.status(response.status).json({message: response.data.data})
+    }catch(err) {
       return res.status(err.response.status).send(err.response.data);
-    });
+    };
 };
 
 

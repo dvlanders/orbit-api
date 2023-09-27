@@ -1,11 +1,12 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
-let userToken 
+let userToken = process.env.USER_AUTH_TOKEN
+let baseUrl = process.env.SFOX_BASE_URL
 exports.withdrawal = async (req, res) => {
-  
-  const apiPath = "https://api.staging.sfox.com/v1/user/withdraw/confirm";
-  await axios({
+  try{
+  const apiPath = `${baseUrl}/v1/user/withdraw/confirm`;
+  let response = await axios({
     method: "post",
     url: apiPath,
     headers: {
@@ -13,18 +14,16 @@ exports.withdrawal = async (req, res) => {
     },
     data: req.body,
   })
-    .then((response) => {
-      return res.status(response.status).send(response.data);
-    })
-    .catch((err) => {
+  return res.status(response.status).json({message: response.data.data})
+}catch(err){
       console.log("error", err);
       return res.status(err.response.status).send(err.response.data);
-    });
+    };
 };
 
 exports.resendWithdrawal = async (req, res) => {
-  
-    const apiPath = "https://api.staging.sfox.com/v1/user/withdraw/resend-confirmation";
+  try{
+    const apiPath = `${baseUrl}/v1/user/withdraw/resend-confirmation`;
     await axios({
       method: "post",
       url: apiPath,
@@ -33,18 +32,16 @@ exports.resendWithdrawal = async (req, res) => {
       },
       data: req.body,
     })
-      .then((response) => {
-        return res.status(response.status).send(response.data);
-      })
-      .catch((err) => {
+    return res.status(response.status).json({message: response.data.data})
+  }catch(err) {
         console.log("error", err);
         return res.status(err.response.status).send(err.response.data);
-      });
+  };
   };
 
   exports.cancelWithdrawal = async (req, res) => {
-  
-    const apiPath = `https://api.staging.sfox.com/v1/transactions/:${atx_id}`;
+    try{
+    const apiPath = `${baseUrl}/v1/transactions/:${atx_id}`;
     await axios({
       method: "delete",
       url: apiPath,
@@ -53,13 +50,11 @@ exports.resendWithdrawal = async (req, res) => {
       },
       
     })
-      .then((response) => {
-        return res.status(response.status).send(response.data);
-      })
-      .catch((err) => {
+    return res.status(response.status).json({message: response.data.data})
+  }catch(err){
         console.log("error", err);
         return res.status(err.response.status).send(err.response.data);
-      });
+  };
   };
   
 

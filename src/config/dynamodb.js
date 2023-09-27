@@ -1,41 +1,35 @@
-let AWS = require('aws-sdk');
-let express = require('express');
-let router = express.Router();
-let config = require('./config.json');
-AWS.config.update({
- "region": "us-east-1",
- "accessKeyId": "AKIAWTCFUVBIEYZJDCWM",
- "secretAccessKey": "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"
-});
+const accessKeyId = "AKIAWTCFUVBIEYZJDCWM";
+const secretAccessKey = "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";
 
-let docClient = new AWS.DynamoDB.DocumentClient();
-let table = "user_auth";
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  QueryCommand,
+} = require("@aws-sdk/lib-dynamodb");
 
-router.get('/fetch', (req, res) => {
+async function test() {
+  const dynamoDBClient = new DynamoDBClient({
+    region: "us-east-1",
+    credentials: {
+      accessKeyId: accessKeyId,
+      secretAccessKey: secretAccessKey,
+    },
+  });
+  const ddbDocClient = DynamoDBDocumentClient.from(dynamoDBClient);
 
-let spid = '101';
-let params = {
-    TableName: table,
-    Key: {
-        spid: spid
-    }
-};
+  const params = {
+    TableName: "auth_user",
+    KeyConditionExpression: "#user_id = :value",
+    ExpressionAttributeNames: {
+      "#user_id": "user_id",
+    },
+    ExpressionAttributeValues: {
+      ":value": "1",
+    },
+  };
+  const data = await ddbDocClient.send(new QueryCommand(params));
 
-docClient.get(params, function (err, data) {
-    if (err) {
-        console.log(err);
-        handleError(err, res);
-    } else {
-        handleSuccess(data.Item, res);
-    }
- });
-});
-function handleError(err, res) {
-    res.json({ 'message': 'server side error', statusCode: 500, error: 
-    err });
+  console.log(data?.Items);
 }
 
-function handleSuccess(data, res) {
-    res.json({ message: 'success', statusCode: 200, data: data })
-}
-
+test();
