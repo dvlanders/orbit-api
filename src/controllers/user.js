@@ -6,6 +6,7 @@ const valid = require("../util/Validator")
 const Ajv = require("ajv");
 const ajv = new Ajv();
 const User = require("../models/user")
+const speakeasy = require("speakeasy");
 const registration = require("./index")
 const { sendEmail, common } = require("../util/helper");
 
@@ -61,23 +62,20 @@ exports.signIn = async (req, res) => {
     if(email && password){
     let validation = valid.validateObject({email, password},validateSchema.userSchema.signin)
     if(!validation[0]) return res.status(400).json({error :  `${ajv.errorsText(validation[1].errors)}`});
-    let generate
     let getUser = await User.findAll({where : {email : email}})
     if(getUser.length > 0){
       let decryptText = common.decryptText(getUser[0].password)
       if (decryptText !== password){
       return res.status(401).json({message: "Please Enter the valid password"});
       }
-      let mailDetails = {
-        from: "kaushiki.mobilefirst@gmail.com",
-        to: email,
-        subject: "Test mail",
-        text: "123456678",
-      };
-      generate = await sendEmail.generateEmail(mailDetails);
-      if(generate.messageId){
-        return res.status(200).json({ message: "User logged in successfully, please check otp",
-      data: { id: getUser[0].id,email: getUser[0].email},})
+      if(!getUser[0].isVerified){
+      let temp_secret = speakeasy.generateSecret();
+      let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
+        if(addKey) {
+        return res.status(200).json({data: {email,secret: temp_secret.base32,qr_code: temp_secret.otpauth_url,}});
+        }
+      }else{
+        return res.status(200).json({data: {email: email,isVerified: true}});
       }
     }else{
       return res.status(400).json({message:"please provide valid email"});
@@ -86,9 +84,32 @@ exports.signIn = async (req, res) => {
     return res.status(400).json({message:"please provide email or password"});
   }
   } catch (error) {
-    return res.json({ error: error.toString() });
+    return res.json({ error: error });
   }
 };
+
+exports.verifyTOTP = async(req,res) => {
+  try{
+    const { token } = req.body;
+    const {userId} = req.params;
+    let key = await User.findOne({where : {id: userId}})
+    let secret = key.secretKey
+      const verified = speakeasy.totp.verify({
+        secret,
+        encoding: "base32",
+        token,
+      });
+      if (verified) {
+        await User.update({isVerified : verified},{ where : {email :email}})
+        res.status(200).json({ verified: true });
+      } else {
+        res.status(400).json({ verified: false });
+      }
+  }catch(err){
+    return res.json({ error: err.toString() });
+  }
+}
+
 
 exports.forgotPassword = async(req,res) =>{
   try{
@@ -143,7 +164,7 @@ exports.resetPassword = async(req,res) =>{
       }
     }
   }catch(error){
-    return res.status(500).json({ error: error.toString() });
+    return res.status(500).json({ error: error });
   }
 
 }

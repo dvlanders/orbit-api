@@ -29,7 +29,18 @@ const User = sequelizeInstance.define('users', {
   email: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  secretKey : {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
   }
+  
+
+
 
 }, {
     freezeTableName: true,

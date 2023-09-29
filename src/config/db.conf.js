@@ -56,7 +56,7 @@ const psqlDbConnect = async function () {
     //   console.log("Migrations have already been applied (PSQL)");
     // }
   } catch (err) {
-    console.error("Error in db connection", err.toString());
+    console.error("Error in db connection", err);
   }
 };
 
