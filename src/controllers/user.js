@@ -72,7 +72,11 @@ exports.signIn = async (req, res) => {
       let temp_secret = speakeasy.generateSecret();
       let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
         if(addKey) {
-        return res.status(200).json({data: {email,secret: temp_secret.base32,qr_code: temp_secret.otpauth_url,}});
+          await User.update({isVerified : true},{ where : {email:email}})
+        return res.status(200).json({data: {
+          email,
+          secret: temp_secret.base32,
+          qr_code: temp_secret.otpauth_url,}});
         }
       }else{
         return res.status(200).json({data: {email: email,isVerified: true}});
@@ -93,7 +97,7 @@ exports.verifyTOTP = async(req,res) => {
     const { token } = req.body;
     const {userId} = req.params;
     let key = await User.findOne({where : {id: userId}})
-    if(!key.isVerified){
+    if(key.isVerified){
       let secret = key.secretKey
       const verified = speakeasy.totp.verify({
         secret,
@@ -101,13 +105,12 @@ exports.verifyTOTP = async(req,res) => {
         token,
       });
       if (verified) {
-        await User.update({isVerified : verified},{ where : {id: userId}})
         res.status(200).json({ verified: true });
       } else {
         res.status(400).json({ verified: false });
       }
     }else{
-      res.status(200).json({ data : "User Already Verified" });
+      res.status(404).json({ data : "User QRCode not generated" });
 
     }
   }catch(err){
