@@ -93,18 +93,23 @@ exports.verifyTOTP = async(req,res) => {
     const { token } = req.body;
     const {userId} = req.params;
     let key = await User.findOne({where : {id: userId}})
-    let secret = key.secretKey
+    if(!key.isVerified){
+      let secret = key.secretKey
       const verified = speakeasy.totp.verify({
         secret,
         encoding: "base32",
         token,
       });
       if (verified) {
-        await User.update({isVerified : verified},{ where : {email :email}})
+        await User.update({isVerified : verified},{ where : {id: userId}})
         res.status(200).json({ verified: true });
       } else {
         res.status(400).json({ verified: false });
       }
+    }else{
+      res.status(200).json({ data : "User Already Verified" });
+
+    }
   }catch(err){
     return res.json({ error: err.toString() });
   }
