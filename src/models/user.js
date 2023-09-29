@@ -29,7 +29,14 @@ const User = sequelizeInstance.define('users', {
   email: {
     type: DataTypes.STRING,
     allowNull: false
-  }
+  },
+  secretKey : {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  
+
+
 
 }, {
     freezeTableName: true,
