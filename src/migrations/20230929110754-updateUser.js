@@ -8,7 +8,16 @@ module.exports = {
           type: Sequelize.STRING,
           allowNull: true,
       },
+    ) 
+      await queryInterface.addColumn(
+      "users",
+      "isVerified",
+      {
+        type: Sequelize.BOOLEAN,
+          allowNull: true,
+      }
     )
+
   },
   async down(queryInterface, Sequelize) {},
 };

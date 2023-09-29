@@ -68,18 +68,15 @@ exports.signIn = async (req, res) => {
       if (decryptText !== password){
       return res.status(401).json({message: "Please Enter the valid password"});
       }
-
+      if(!getUser[0].isVerified){
       let temp_secret = speakeasy.generateSecret();
       let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
-      if(addKey) {
-      return res.status(200).json({
-        data: {
-        email,
-        secret: temp_secret.base32,
-        qr_code: temp_secret.otpauth_url,
+        if(addKey) {
+        return res.status(200).json({data: {email,secret: temp_secret.base32,qr_code: temp_secret.otpauth_url,}});
         }
-      });
-    }
+      }else{
+        return res.status(200).json({data: {email: email,isVerified: true}});
+      }
     }else{
       return res.status(400).json({message:"please provide valid email"});
     }
@@ -97,15 +94,13 @@ exports.verifyTOTP = async(req,res) => {
     const {userId} = req.params;
     let key = await User.findOne({where : {id: userId}})
     let secret = key.secretKey
-    console.log("sddddddddddddddd",secret,token)
       const verified = speakeasy.totp.verify({
         secret,
         encoding: "base32",
         token,
       });
-      console.log("ddddddddddddddddddddd",verified)
       if (verified) {
-        // db.push(path, { id: userId, secret: user.temp_secret });
+        await User.update({isVerified : verified},{ where : {email :email}})
         res.status(200).json({ verified: true });
       } else {
         res.status(400).json({ verified: false });
