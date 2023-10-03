@@ -17,7 +17,7 @@ exports.signUp = async (req, res) => {
     let generate;
     const {fullName, email, businessName, phoneNumber} = req.body
     if(email && phoneNumber){
-      console.log(email)
+      
     let validation = valid.validateObject({email, phoneNumber},validateSchema.userSchema.signup)
     if(!validation[0]) return res.status(400).json({error : `${ajv.errorsText(validation[1].errors)}`});
     
@@ -60,33 +60,52 @@ exports.signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
     if(email && password){
-    let validation = valid.validateObject({email, password},validateSchema.userSchema.signin)
-    if(!validation[0]) return res.status(400).json({error :  `${ajv.errorsText(validation[1].errors)}`});
-    let getUser = await User.findAll({where : {email : email}})
-    if(getUser.length > 0){
-      let decryptText = common.decryptText(getUser[0].password)
-      if (decryptText !== password){
-      return res.status(401).json({message: "Please Enter the valid password"});
-      }
-      if(!getUser[0].isVerified){
-      let temp_secret = speakeasy.generateSecret();
-      let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
-        if(addKey) {
-          await User.update({isVerified : true},{ where : {email:email}})
-        return res.status(200).json({data: {
-          email,
-          secret: temp_secret.base32,
-          qr_code: temp_secret.otpauth_url,}});
+      let validation = valid.validateObject({email, password},validateSchema.userSchema.signin)
+      if(!validation[0]) return res.status(400).json({error :  `${ajv.errorsText(validation[1].errors)}`});
+      let getUser = await User.findAll({where : {email : email}})
+      if(getUser.length > 0){
+        let decryptText = common.decryptText(getUser[0].password)
+        if (decryptText !== password){
+          return res.status(401).json({message: "Please Enter the valid password"});
+        }
+        if(!getUser[0].isVerified){
+        let temp_secret = speakeasy.generateSecret();
+        let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
+          if(addKey) {
+            // await User.update({isVerified : true},{ where : {email:email}})
+            return res.status(200).json({data: {
+            email,
+            secret: temp_secret.base32,
+            qr_code: temp_secret.otpauth_url,}});
+          }
+        }else{
+          return res.status(200).json({data: {email: email,isVerified: true}});
         }
       }else{
-        return res.status(200).json({data: {email: email,isVerified: true}});
+        return res.status(400).json({message:"please provide valid email"});
+      }
+    }else if(email){
+      let getuser = await User.findAll({where : {email : email}})
+      if(getuser.length > 0){
+        if(!getuser[0].isVerified){
+          let temp_secret = speakeasy.generateSecret();
+          let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
+            if(addKey) {
+              return res.status(200).json({data: {
+              email,
+              secret: temp_secret.base32,
+              qr_code: temp_secret.otpauth_url,}});
+            }
+          }
+          else{
+            return res.status(200).json({data: {email: email,isVerified: true}});
+          }
+      }else{
+        return res.status(400).json({message:"please provide email"});
       }
     }else{
-      return res.status(400).json({message:"please provide valid email"});
+      return res.status(401).json({message: "Please Enter the valid email or password"});
     }
-  }else{
-    return res.status(400).json({message:"please provide email or password"});
-  }
   } catch (error) {
     return res.json({ error: error });
   }
@@ -97,13 +116,14 @@ exports.verifyTOTP = async(req,res) => {
     const { token } = req.body;
     const {userId} = req.params;
     let key = await User.findOne({where : {id: userId}})
-    if(key.isVerified){
-      let secret = key.secretKey
+    let secret = key.secretKey
+    if(secret){
       const verified = speakeasy.totp.verify({
         secret,
         encoding: "base32",
         token,
       });
+      if(key.isVerified == false) {await User.update({isVerified : true},{ where : {userId:userId}})}
       if (verified) {
         res.status(200).json({ verified: true });
       } else {
