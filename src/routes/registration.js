@@ -1,16 +1,11 @@
-/* Importing the `apiPath` object  from the `util` folder. */
-
 const { registration } = require("../controllers")
 /* Importing the `authorizeUser` function from the `authmiddleware` folder. */
-// const { authorizeUser } = require("../middleware/authmiddleware");
+const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
   router.post("/register",registration.register);
   router.post("/otp/:userId", registration.requestOTP);
   router.post("/verify/:userId", registration.verify);
-  router.post("/user/token/:patneruserId", registration.userToken)
-  
-
-  
+  router.post("/user/token/:patneruserId", authorizeUser ,  registration.userToken)  
 };
