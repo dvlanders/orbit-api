@@ -19,10 +19,17 @@ exports.signUp = async (req, res) => {
     let generate;
     const {fullName, email, businessName, phoneNumber} = req.body
     if(email && phoneNumber){
-
     let validation = valid.validateObject({email, phoneNumber},validateSchema.userSchema.signup)
     if(!validation[0]) return res.status(400).json({error : `${ajv.errorsText(validation[1].errors)}`});
-    
+    let validatePhoneNumber = /^[0-9]*$/.test(phoneNumber);
+    if(validatePhoneNumber == false){
+      return res.status(400).json({
+        message:"PhoneNumber should be a number"});
+    }
+    let getUser = await User.findAll({where : {email : email}})
+    if(getUser.length > 0){
+        return res.status(400).json({message: "This user already exist"});
+    }
     req.body.id = uuidv4();
     const password = "123456";
       let link = "https://forms.gle/62ebRR5EicyW2iVg6";
@@ -74,7 +81,6 @@ exports.signIn = async (req, res) => {
         let temp_secret = speakeasy.generateSecret();
         let addKey = await User.update({secretKey :temp_secret.base32},{ where : {email :email}})
           if(addKey) {
-            // await User.update({isVerified : true},{ where : {email:email}})
             return res.status(200).json({data: {
             userId : getUser[0].id,
             secret: temp_secret.base32,
@@ -106,17 +112,20 @@ exports.signIn = async (req, res) => {
         return res.status(400).json({message:"please provide email"});
       }
     }else{
-      return res.status(401).json({message: "Please Enter the valid email or password"});
+      return res.status(400).json({message: "Please Enter the valid email or password"});
     }
   } catch (error) {
-    return res.json({ error: error });
+    return res.status(400).json({ error: error });
   }
 };
 
 exports.verifyTOTP = async(req,res) => {
   try{
-    const { token } = req.body;
+    const {token} = req.body
     const {userId} = req.params;
+    if(!token || !userId){
+      res.status(400).json({ message : "Please provide token or userId" });
+    }
     let key = await User.findOne({where : {id: userId}})
     let secret = key.secretKey
     if(secret){
@@ -127,8 +136,7 @@ exports.verifyTOTP = async(req,res) => {
       });
       if(key.isVerified == false) {await User.update({isVerified : true},{ where : {userId:userId}})}
       if (verified) {
-        const token = jwt.sign({}, process.env.APP_TOKEN_KEY);
-        res.status(200).json({ verified: true,  token });
+        res.status(200).json({ verified: true});
       } else {
         res.status(400).json({ verified: false });
       }

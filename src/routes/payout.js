@@ -6,8 +6,13 @@ const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
-  // Bank routes
-  router.post("/withdrawal", authorizeUser ,  payout.withdrawal);
-  router.post("/withdrawal/resend", authorizeUser ,  payout.resendWithdrawal)
-  router.delete("/cancelWithdrawal", authorizeUser ,  payout.cancelWithdrawal)
+  // transfer routes
+  router.post("/transfer",payout.transfer);
+  router.post("/confirmtransfer",payout.confirmTransfer)
+  router.delete("/transfer",payout.deleteTransfer)
+  router.post("/transferStatus/&from_date&to_date&type&purpose&status",payout.transferStatus)
+  // withdrawal routes
+  router.post("/withdrawal", payout.withdrawal);
+  router.post("/withdrawal/resend", payout.resendWithdrawal)
+  router.delete("/cancelWithdrawal", payout.cancelWithdrawal)
 };
