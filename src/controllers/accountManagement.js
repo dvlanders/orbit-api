@@ -9,18 +9,17 @@ let baseUrl = process.env.SFOX_BASE_URL
 
 
 exports.linkBank = async (req, res) => {
+    let data = {
+        accountnumber: req.body.accountnumber,
+        bankAccountType:req.body.bankAccountType,
+        bankCurrency: req.body.bankCurrency,
+        enableWires: req.body.enableWires,
+        isInternational: req.body.isInternational,
+        routingnumber: req.body.routingnumber,
+        type: req.body.type,
+        wireRoutingnumber: req.body.wireRoutingnumber
+      };
   try{
-  let data = {
-    accountnumber: req.body.accountnumber,
-    bankAccountType:req.body.bankAccountType,
-    bankCurrency: req.body.bankCurrency,
-    enableWires: req.body.enableWires,
-    isInternational: req.body.isInternational,
-    routingnumber: req.body.routingnumber,
-    type: req.body.type,
-    wireRoutingnumber: req.body.wireRoutingnumber
-  };
-  data.user_id = uuid;
   const apiPath = `${baseUrl}/v1/user/bank`;
   let response = await axios({
     method: "post",
@@ -33,7 +32,7 @@ exports.linkBank = async (req, res) => {
   return res.status(response.status).json({message: response.data.data})
   }catch(err){
       console.log("error", err);
-      return res.status(err.response.status).send(err.response.data);
+      return res.status(err.response.status).json({error : err.response.data.error, token : userToken, id: user_id });
   };
 };
 

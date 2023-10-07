@@ -7,27 +7,25 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
 let userToken = process.env.USER_AUTH_TOKEN
 let baseUrl = process.env.SFOX_BASE_URL
 
-exports.transactions = async (req, res) => {
+// get transfer
+
+exports.transfer = async (req, res) => {
   try{
-    let query 
-    if(req.query){
-      query = {
-          from: req.query,
-          to: req.query,
-          limit: req.query,
-          offset : req.query,
-          types : req.query
-         }
-    }
-    else{
-      query = ""
-    }
-    let apiPath = `${baseUrl}/v1/account/transactions`;
+    const {from_date,to_date, purpose,status, type} = req.query
+    let query = {
+          from_date : from_date ? from_date :  null,
+          to_date : to_date ? to_date : null,
+          purpose : purpose ? purpose : null,
+          status : status ? status : null,
+          type : type ? type : null
+      }
+    
+    let apiPath = `${baseUrl}/v1/enterprise/transfer/history`;
     let response = await axios({
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + userToken,
+        Authorization: "Bearer " + token,
       },
       params: query
   })
@@ -36,6 +34,9 @@ exports.transactions = async (req, res) => {
       return res.status(err.response.status).send(err.response.data);
     };
 };
+
+// monetization code
+
 exports.monetization = async (req, res) => {
   try{
     const { feature, method, amount, user_id} = req.body

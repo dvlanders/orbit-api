@@ -7,5 +7,5 @@ module.exports = (router) => {
   router.post("/register",registration.register);
   router.post("/otp/:userId", registration.requestOTP);
   router.post("/verify/:userId", registration.verify);
-  router.post("/user/token/:patneruserId", authorizeUser ,  registration.userToken)  
+  router.post("/user/token/:patneruserId", registration.userToken)  
 };
