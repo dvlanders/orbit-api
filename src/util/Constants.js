@@ -44,7 +44,8 @@ exports.messages = {
     userCreated: "USER CREATED",
     user: "USER",
     signin: "SIGNED",
-    incorrectDetails: "PLEASE ENTER THE CORRECT EMAIL AND PASSWORD"
+    incorrectDetails: "PLEASE ENTER THE CORRECT EMAIL AND PASSWORD",
+    incorrectPassword: "PLEASE ENTER THE CORRECT PASSWORD"
   };
 
 

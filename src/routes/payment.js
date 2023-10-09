@@ -7,7 +7,7 @@ const { authorizeUser } = require("../util/middleware");
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
 // Transaction routes
-router.get("/account/transactions",payment.transactions);
+router.get("/transfer",payment.transfer);
   // monitization routes
   router.post("/monetization",payment.monetization);
   router.patch("/monetization/:monetization_id",payment.updateMonetization);

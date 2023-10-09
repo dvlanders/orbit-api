@@ -1,6 +1,7 @@
 const axios = require('axios')
 const { v4: uuidv4 } = require('uuid');
 const dynamodb = require("./../config/dynamodb")
+const db = require("./../models/userAuth")
 
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY
@@ -89,7 +90,7 @@ exports.verify = async(req,res) => {
 
 exports.userToken = async (req, res) => {
   try{
-  let patnerUserId = req.params.patnerUserId;
+  let patnerUserId = req.params.patneruserId;
   let apiPath = `${baseUrl}/v1/enterprise/user-tokens/${patnerUserId}`;
   let response = await axios({
     method: "post",
@@ -98,9 +99,20 @@ exports.userToken = async (req, res) => {
       Authorization: "Bearer " + token,
     },
   })
+//   const myUser = new db({
+//     "id": patnerUserId,
+//     "userToken": response.data.token
+// });
+// try {
+//     await myUser.save();
+//     let see = await myUser.get();
+//     console.log("Save operation was successful.", );
+// } catch (error) {
+//     console.error(error);
+// }
     return res.status(response.status).json({message: response.data.data})
     }catch(err) {
-      return res.status(err.response.status).send(err.response.data);
+      return res.status(err.response.status).json({message : err.response.data});
     };
 };
 

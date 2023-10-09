@@ -2,11 +2,11 @@ const { responseCode, messages } = require("./index");
 
 const {success, update, dataNotAdded, deleted, conflict} = require("./Constants");
 
-exports.response = (status, message, data) => {
+exports.response = (statusCode, message, data) => {
     return {
-      status,
+      statusCode,
       message,
-      response: data || {},
+      data: data || {},
     };
   };
 
@@ -24,7 +24,7 @@ exports.authErr = (err) => {
 };
 //_____________________ INCORRECT ____________________//
 exports.incorrectPassword = () => {
-  return this.response(responseCode.unauthorized, messages.unauthorized);
+  return this.response(responseCode.unauthenticated, messages.incorrectPassword);
 };
 
 //_____________________TOKEN RESPONSE __________________________//
@@ -45,6 +45,6 @@ exports.conflict = (name) =>{
   return this.response(responseCode.conflict, conflict(name))
 };
 
-exports.incorrectDetails = () => {
-  return this.response(responseCode.unauthorized, messages.incorrectDetails);
+exports.incorrectDetails = (message, data) => {
+  return this.response(responseCode.badRequest, message, data );
 };
