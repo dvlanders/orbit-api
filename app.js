@@ -19,27 +19,22 @@ if (result.error) {
 }
 
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // parse application/json
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
 let port = process.env.PORT || 5000;
-
-
 
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 const cors = require("cors");
 app.use(cors());
-
-
 
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 app.use(express.json());
 
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 app.use(express.urlencoded({ extended: false }));
-
 
 const psqlDbConnect = require("./src/config/db.conf");
 psqlDbConnect.psqlDbConnect();
@@ -52,4 +47,4 @@ app.listen(port, () => {
 });
 
 // Export your Express configuration so that it can be consumed by the Lambda handler
-module.exports = app
+module.exports = app;

@@ -22,5 +22,3 @@ exports.decryptText = (cipherText) => {
   );
   return bytes.toString(CryptoTS.enc.Utf8);
 };
-
-

@@ -4,7 +4,6 @@
 exports.userApiPath = require("./Constants").user;
 exports.csvApiPath = require("./Constants").csv;
 
-
 exports.responseCode = require("./Constants").responseCodes;
 
 exports.messages = require("./Constants").messages;
@@ -12,6 +11,6 @@ exports.messages = require("./Constants").messages;
 /* Validate Imports */
 exports.validate = require("./Validator");
 
-// responses 
+// responses
 
-exports.rs  = require("./ResponseTemplate")
+exports.rs = require("./ResponseTemplate");

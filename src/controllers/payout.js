@@ -1,26 +1,25 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
-let userToken = process.env.USER_AUTH_TOKEN
-let baseUrl = process.env.SFOX_BASE_URL
+let userToken = process.env.USER_AUTH_TOKEN;
+let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 let uuid = uuidv4();
-
 
 //Transfer
 
 exports.transfer = async (req, res) => {
-  try{
+  try {
     let data = {
-      "user_id": req.body.user_id,
-      "type": req.body.type,
-      "purpose": req.body.purpose,
-      "description":req.body.description,
-      "currency": req.body.currency,
-      "quantity":req.body.quantity,
-      "rate": req.body.rate
+      user_id: req.body.user_id,
+      type: req.body.type,
+      purpose: req.body.purpose,
+      description: req.body.description,
+      currency: req.body.currency,
+      quantity: req.body.quantity,
+      rate: req.body.rate,
     };
-  data.transfer_id = uuidv4();
+    data.transfer_id = uuidv4();
     let apiPath = `${baseUrl}/v1/enterprise/transfer`;
     let response = await axios({
       method: "post",
@@ -29,16 +28,15 @@ exports.transfer = async (req, res) => {
         Authorization: "Bearer " + token,
       },
       data: data,
-    })
-    return res.status(response.status).json({message: response.data.data})
-    }catch(err){
-        return res.status(err.response.status).send(err.response.data);
-    }
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    return res.status(err.response.status).send(err.response.data);
+  }
 };
 
-
 exports.confirmTransfer = async (req, res) => {
-  try{
+  try {
     let apiPath = `${baseUrl}/v1/enterprise/transfer/confirm`;
     await axios({
       method: "post",
@@ -47,16 +45,16 @@ exports.confirmTransfer = async (req, res) => {
         Authorization: "Bearer " + token,
       },
       data: req.body,
-    })
-    return res.status(response.status).json({message: response.data.data})
-    }catch(err){
-        return res.status(err.response.status).send(err.response.data);
-    };
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    return res.status(err.response.status).send(err.response.data);
+  }
 };
 
 exports.deleteTransfer = async (req, res) => {
-  try{
-    let transferId = req.params.transferId
+  try {
+    let transferId = req.params.transferId;
     let apiPath = `${baseUrl}/v1/enterprise/transfer/${transferId}`;
     await axios({
       method: "delete",
@@ -64,21 +62,20 @@ exports.deleteTransfer = async (req, res) => {
       headers: {
         Authorization: "Bearer " + token,
       },
-    })
-    return res.status(response.status).json({message: response.data.data})
-  }catch(err){
-        return res.status(err.response.status).send(err.response.data);
-  };
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    return res.status(err.response.status).send(err.response.data);
+  }
 };
 
-
 exports.transferStatus = async (req, res) => {
-  try{
-    let from_date = req.query.from_date
-    let to_date = req.query.to_date
-    let type = req.query.type
-    let purpose = req.query.purpose
-    let status = req.query.status
+  try {
+    let from_date = req.query.from_date;
+    let to_date = req.query.to_date;
+    let type = req.query.type;
+    let purpose = req.query.purpose;
+    let status = req.query.status;
     let apiPath = `${baseUrl}/v1/enterprise/transfer/history?${from_date}&${to_date}&${type}&${purpose}&${status}`;
     await axios({
       method: "post",
@@ -86,37 +83,35 @@ exports.transferStatus = async (req, res) => {
       headers: {
         Authorization: "Bearer " + token,
       },
-    })
-    return res.status(response.status).json({message: response.data.data})
-  }catch(err){
-        return res.status(err.response.status).send(err.response.data);
-  };
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    return res.status(err.response.status).send(err.response.data);
+  }
 };
-
-
 
 // Withdrawal
 
 exports.withdrawal = async (req, res) => {
-  try{
-  const apiPath = `${baseUrl}/v1/user/withdraw/confirm`;
-  let response = await axios({
-    method: "post",
-    url: apiPath,
-    headers: {
-      Authorization: "Bearer " + userToken,
-    },
-    data: req.body,
-  })
-  return res.status(response.status).json({message: response.data.data})
-}catch(err){
-      console.log("error", err);
-      return res.status(err.response.status).send(err.response.data);
-    };
+  try {
+    const apiPath = `${baseUrl}/v1/user/withdraw/confirm`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + userToken,
+      },
+      data: req.body,
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    console.log("error", err);
+    return res.status(err.response.status).send(err.response.data);
+  }
 };
 
 exports.resendWithdrawal = async (req, res) => {
-  try{
+  try {
     const apiPath = `${baseUrl}/v1/user/withdraw/resend-confirmation`;
     await axios({
       method: "post",
@@ -125,16 +120,16 @@ exports.resendWithdrawal = async (req, res) => {
         Authorization: "Bearer " + userToken,
       },
       data: req.body,
-    })
-    return res.status(response.status).json({message: response.data.data})
-  }catch(err) {
-        console.log("error", err);
-        return res.status(err.response.status).send(err.response.data);
-  };
-  };
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    console.log("error", err);
+    return res.status(err.response.status).send(err.response.data);
+  }
+};
 
-  exports.cancelWithdrawal = async (req, res) => {
-    try{
+exports.cancelWithdrawal = async (req, res) => {
+  try {
     const apiPath = `${baseUrl}/v1/transactions/:${atx_id}`;
     await axios({
       method: "delete",
@@ -142,14 +137,10 @@ exports.resendWithdrawal = async (req, res) => {
       headers: {
         Authorization: "Bearer " + userToken,
       },
-      
-    })
-    return res.status(response.status).json({message: response.data.data})
-  }catch(err){
-        console.log("error", err);
-        return res.status(err.response.status).send(err.response.data);
-  };
-  };
-  
-
-
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    console.log("error", err);
+    return res.status(err.response.status).send(err.response.data);
+  }
+};

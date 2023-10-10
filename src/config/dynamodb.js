@@ -1,5 +1,3 @@
-
-
 // const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 // const {
 //   DynamoDBDocumentClient,
@@ -34,15 +32,15 @@
 // test();
 const accessKeyId = "AKIAWTCFUVBIEYZJDCWM";
 const secretAccessKey = "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";
-const region =  "us-east-1"
+const region = "us-east-1";
 
-const dynamoose = require('dynamoose');
+const dynamoose = require("dynamoose");
 const ddb = new dynamoose.aws.ddb.DynamoDB({
-  "credentials": {
-      "accessKeyId": accessKeyId,
-      "secretAccessKey": secretAccessKey,
+  credentials: {
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey,
   },
-  "region": region
+  region: region,
 });
 
 // Set DynamoDB instance to the Dynamoose DDB instance

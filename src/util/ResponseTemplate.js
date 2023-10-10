@@ -1,22 +1,24 @@
 const { responseCode, messages } = require("./index");
 
-const {success, update, dataNotAdded, deleted, conflict} = require("./Constants");
+const {
+  success,
+  update,
+  dataNotAdded,
+  deleted,
+  conflict,
+} = require("./Constants");
 
 exports.response = (statusCode, message, data) => {
-    return {
-      statusCode,
-      message,
-      data: data || {},
-    };
+  return {
+    statusCode,
+    message,
+    data: data || {},
   };
+};
 
 //________________ ERROR RESPONSE _____________________________//
 exports.errorResponse = (err) => {
-  return this.response(
-    responseCode.serverError,
-    messages.serverError,
-    err
-  );
+  return this.response(responseCode.serverError, messages.serverError, err);
 };
 // _______________ MIDDLEWARE RESPONSE ________________________//
 exports.authErr = (err) => {
@@ -24,7 +26,10 @@ exports.authErr = (err) => {
 };
 //_____________________ INCORRECT ____________________//
 exports.incorrectPassword = () => {
-  return this.response(responseCode.unauthenticated, messages.incorrectPassword);
+  return this.response(
+    responseCode.unauthenticated,
+    messages.incorrectPassword
+  );
 };
 
 //_____________________TOKEN RESPONSE __________________________//
@@ -41,10 +46,10 @@ exports.dataNotAdded = (name) => {
   return this.response(responseCode.successNoRecords, dataNotAdded(name));
 };
 
-exports.conflict = (name) =>{
-  return this.response(responseCode.conflict, conflict(name))
+exports.conflict = (name) => {
+  return this.response(responseCode.conflict, conflict(name));
 };
 
 exports.incorrectDetails = (message, data) => {
-  return this.response(responseCode.badRequest, message, data );
+  return this.response(responseCode.badRequest, message, data);
 };

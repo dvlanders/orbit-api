@@ -1,15 +1,21 @@
 const { Sequelize } = require("sequelize");
 const path = require("path");
 const Umzug = require("umzug");
-const config = require("../config/config.json")
+const config = require("../config/config.json");
 
-let database = config.development.database
-let username = config.development.username
-let password = config.development.password
-let host = config.development.host
-let dialect = config.development.dialect
+let database = config.development.database;
+let username = config.development.username;
+let password = config.development.password;
+let host = config.development.host;
+let dialect = config.development.dialect;
 
-const sequelizeInstance = new Sequelize({ database, username, password, host, port: 5432, dialect,
+const sequelizeInstance = new Sequelize({
+  database,
+  username,
+  password,
+  host,
+  port: 5432,
+  dialect,
   pool: {
     max: 10,
     min: 0,
@@ -50,7 +56,7 @@ const psqlDbConnect = async function () {
     // const executedMigrations = await migrate.executed();
     // if (executedMigrations.length === 0) {
     //   // No migrations have been applied, so run them
-      await migrate.up();
+    await migrate.up();
     //   console.log("All migrations performed successfully (PSQL)");
     // } else {
     //   console.log("Migrations have already been applied (PSQL)");
@@ -61,4 +67,3 @@ const psqlDbConnect = async function () {
 };
 
 module.exports = { psqlDbConnect, sequelizeInstance };
- 
