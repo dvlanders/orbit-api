@@ -33,7 +33,7 @@ exports.linkBank = async (req, res) => {
     console.log("error", err);
     return res
       .status(err.response.status)
-      .json({ error: err.response.data.error});
+      .json({ error: err.response.data.error });
   }
 };
 

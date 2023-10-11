@@ -123,14 +123,12 @@ exports.signIn = async (req, res) => {
             );
           }
         } else
-          return res
-            .status(responseCode.success)
-            .json(
-              rs.successResponse("USER RETRIEVED", {
-                userId: getUser[0].id,
-                isVerified: true,
-              })
-            );
+          return res.status(responseCode.success).json(
+            rs.successResponse("USER RETRIEVED", {
+              userId: getUser[0].id,
+              isVerified: true,
+            })
+          );
       } else
         return res
           .status(responseCode.badRequest)
@@ -158,13 +156,11 @@ exports.signIn = async (req, res) => {
             );
           }
         } else
-          return res
-            .status(responseCode.success)
-            .json(
-              rs.successResponse("USER SIGNED IN", {
-                data: { userId: getuser[0].id, isVerified: true },
-              })
-            );
+          return res.status(responseCode.success).json(
+            rs.successResponse("USER SIGNED IN", {
+              data: { userId: getuser[0].id, isVerified: true },
+            })
+          );
       } else
         return res
           .status(responseCode.badRequest)
@@ -242,14 +238,12 @@ exports.forgotPassword = async (req, res) => {
     };
     generate = await sendEmail.generateEmail(mailDetails); // Generate Email
     if (generate.messageId) {
-      return res
-        .status(responseCode.success)
-        .json(
-          rs.successResponse("PLEASE CHECK EMAIL TO RESET PASSWORD", {
-            id: getUser[0].id,
-            email: getUser[0].email,
-          })
-        );
+      return res.status(responseCode.success).json(
+        rs.successResponse("PLEASE CHECK EMAIL TO RESET PASSWORD", {
+          id: getUser[0].id,
+          email: getUser[0].email,
+        })
+      );
     } else
       return res
         .status(responseCode.badRequest)
@@ -287,13 +281,11 @@ exports.resetPassword = async (req, res) => {
           { where: { id: userId } }
         );
         if (updatePassword.length > 0) {
-          return res
-            .status(responseCode.success)
-            .json(
-              rs.successResponse("PASSWORD UPDATED SUCCESSFULLY", {
-                id: getUsers[0].id,
-              })
-            );
+          return res.status(responseCode.success).json(
+            rs.successResponse("PASSWORD UPDATED SUCCESSFULLY", {
+              id: getUsers[0].id,
+            })
+          );
         } else {
           return res
             .status(responseCode.badRequest)
@@ -357,13 +349,11 @@ exports.changePassword = async (req, res) => {
           { where: { id: userId } }
         );
         if (updatePassword.length > 0) {
-          return res
-            .status(responseCode.success)
-            .json(
-              rs.successResponse("PASSWORD UPDATED SUCCESSFULLY", {
-                id: getUser[0].id,
-              })
-            );
+          return res.status(responseCode.success).json(
+            rs.successResponse("PASSWORD UPDATED SUCCESSFULLY", {
+              id: getUser[0].id,
+            })
+          );
         } else {
           return res
             .status(responseCode.badRequest)
