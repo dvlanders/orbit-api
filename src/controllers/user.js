@@ -1,5 +1,4 @@
 const { v4: uuidv4 } = require("uuid");
-const client = require("../config/db.conf");
 const validateSchema = require("../util/ValidatorSchema/index");
 const valid = require("../util/Validator");
 const Ajv = require("ajv");
@@ -278,11 +277,14 @@ exports.verifyTOTP = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER VALID TOKEN OR USERID", {}));
     }
-    let count = await User.scan().exec();
-    var key = count.filter(function (item) {
-      return item.user_id == userId;
-    });
-    let secret = key[0].secretKey;
+    let userDetails = await User.scan().where("user_id").eq(userId).exec();
+
+    console.log(userDetails.count);
+
+    if (userDetails?.count == 0)
+      return res.status(responseCode.unauthorized).json(rs.authErr({}));
+
+    let secret = userDetails[0].secretkey;
 
     if (secret) {
       const verified = speakeasy.totp.verify({
@@ -290,13 +292,11 @@ exports.verifyTOTP = async (req, res) => {
         encoding: "base32",
         userToken,
       }); // Verify TOTP
-      if (key.isVerified == false) {
-        if (key[0].isVerified == false) {
-          await User.update(
-            { user_id: getuser[0].user_id },
-            { isVerified: true }
-          );
-        }
+      if (userDetails[0].isVerified == false) {
+        await User.update(
+          { user_id: userDetails[0].user_id },
+          { isVerified: true }
+        );
       }
       if (verified)
         res
@@ -340,8 +340,8 @@ exports.forgotPassword = async (req, res) => {
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
-      subject: "Test mail",
-      text: `Please click on the link to reset the password ${resetPassword}/${getUser[0].user_id}`,
+      subject: "Reset Password",
+      text: `Please click on the link to reset the password ${resetPassword}?userId=${getUser[0].user_id}`,
     };
     generate = await sendEmail.generateEmail(mailDetails); // Generate Email
     if (generate.messageId) {
