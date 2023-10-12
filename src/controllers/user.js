@@ -61,76 +61,73 @@ exports.signUp = async (req, res) => {
   try {
     let generate;
     const { fullName, email, businessName, phoneNumber } = req.body;
-    if (email && phoneNumber) {
-      // Schema Validations
-      let validation = valid.validateObject(
-        { email, phoneNumber },
-        validateSchema.userSchema.signup
-      );
-      if (!validation[0])
-        return res
-          .status(responseCode.badRequest)
-          .json(rs.errorResponse(ajv.errorsText(validation[1].errors)));
 
-      let validatePhoneNumber = /^[0-9]*$/.test(phoneNumber); // Phone Number Validation for Numeric String
-      if (validatePhoneNumber == false) {
-        return res
-          .status(responseCode.badRequest)
-          .json(rs.incorrectDetails("PLEASE PROVIDE VALID PHONE NUMBER"));
-      }
-      const count = await User.scan().exec();
-      for (let i = 0; i < count.length; i++) {
-        if (count[i].email == email) {
-          return res.status(responseCode.conflict).json(rs.conflict("USER"));
-        }
-      }
-
-      req.body.id = uuidv4();
-      const password = "123456";
-      let link = "https://forms.gle/62ebRR5EicyW2iVg6";
-      let mailDetails = {
-        from: "kaushiki.mobilefirst@gmail.com",
-        to: email,
-        subject: "Test mail",
-        text: `Please fill up the google form, \n ${link}`,
-      };
-      generate = await sendEmail.generateEmail(mailDetails); //Generate Email
-
-      if (generate.messageId) {
-        let cipherText = common.encryptText(password);
-        req.body.password = cipherText;
-
-        const myUser = new User({
-          user_id: uuidv4(),
-          email: email,
-          phoneNumber: phoneNumber,
-          fullName: fullName,
-          businessName: businessName,
-          password: cipherText,
-          userToken: "",
-          secretkey: "",
-          isVerified: false,
-        });
-        let user = await myUser.save();
-
-        if (user)
-          return res
-            .status(responseCode.success)
-            .json(
-              rs.successResponse(
-                "Account registered, please check your email for further process",
-                user
-              )
-            );
-      } else
-        return res
-          .status(responseCode.badRequest)
-          .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
-    } else {
+    if (!email && !phoneNumber)
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER THE EMAIL AND PASSWORD", {}));
+
+    // Schema Validations
+    let validation = valid.validateObject(
+      { email, phoneNumber },
+      validateSchema.userSchema.signup
+    );
+    if (!validation[0])
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.errorResponse(ajv.errorsText(validation[1].errors)));
+
+    let validatePhoneNumber = /^[0-9]*$/.test(phoneNumber); // Phone Number Validation for Numeric String
+    if (validatePhoneNumber == false) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE PROVIDE VALID PHONE NUMBER"));
     }
+    const userDetails = await User.scan().where("email").eq(email).exec();
+
+    if (userDetails?.count > 0)
+      return res.status(responseCode.conflict).json(rs.conflict("USER"));
+
+    const password = process.env.REGISTER_PASSWORD;
+    let mailDetails = {
+      from: `${process.env.FROM_EMAIL}`,
+      to: email,
+      subject: "Registration Form",
+      text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+    };
+
+    generate = await sendEmail.generateEmail(mailDetails); //Generate Email
+
+    if (generate.messageId) {
+      let cipherText = common.encryptText(password);
+      req.body.password = cipherText;
+
+      const myUser = new User({
+        user_id: uuidv4(),
+        email: email,
+        phoneNumber: phoneNumber,
+        fullName: fullName,
+        businessName: businessName,
+        password: cipherText,
+        userToken: "",
+        secretkey: "",
+        isVerified: false,
+      });
+      let user = await myUser.save();
+
+      if (user)
+        return res
+          .status(responseCode.success)
+          .json(
+            rs.successResponse(
+              "Account registered, please check your email for further process",
+              user
+            )
+          );
+    } else
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
   } catch (error) {
     return res
       .status(responseCode.serverError)
@@ -187,8 +184,10 @@ exports.signIn = async (req, res) => {
         } else
           return res.status(responseCode.success).json(
             rs.successResponse("USER RETRIEVED", {
-              userId: getUser[0].id,
+              userId: getUser[0].user_id,
               isVerified: true,
+              secret: getUser[0].secretkey,
+              qr_code: `otpauth://totp/SecretKey?secret=${getUser[0].secretkey}`,
             })
           );
       } else
@@ -253,6 +252,8 @@ exports.signInGoogle = async (req, res) => {
         rs.successResponse("USER SIGNED IN", {
           userId: userDetails[0].user_id,
           isVerified: true,
+          secret: userDetails[0].secretkey,
+          qr_code: `otpauth://totp/SecretKey?secret=${userDetails[0].secretkey}`,
         })
       );
   } catch (error) {
@@ -285,13 +286,15 @@ exports.verifyTOTP = async (req, res) => {
       return res.status(responseCode.unauthorized).json(rs.authErr({}));
 
     let secret = userDetails[0].secretkey;
+    console.log(secret);
 
     if (secret) {
       const verified = speakeasy.totp.verify({
         secret,
         encoding: "base32",
-        userToken,
+        token: userToken,
       }); // Verify TOTP
+      console.log(verified);
       if (userDetails[0].isVerified == false) {
         await User.update(
           { user_id: userDetails[0].user_id },
