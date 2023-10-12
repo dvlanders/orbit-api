@@ -4,18 +4,60 @@ const validateSchema = require("../util/ValidatorSchema/index");
 const valid = require("../util/Validator");
 const Ajv = require("ajv");
 const ajv = new Ajv();
-const User = require("../models/user");
+// const User = require("../models/user");
 const speakeasy = require("speakeasy");
 const registration = require("./index");
 const { sendEmail, common } = require("../util/helper");
-
 const { responseCode, rs } = require("../util");
 const { success } = require("../util/Constants");
-
 const resetPassword = process.env.RESET_PASSWORD;
+const dynamoose = require("dynamoose");
+const User = require("./../models/userAuth");
 
-// API is USER SIGNUP in HIFI BRIDEG
+const { EventBridge } = require("@aws-sdk/client-eventbridge");
+let eventBridge = new EventBridge({
+  credentials: {
+    accessKeyId: "AKIAWTCFUVBIDKIM73VF",
+    secretAccessKey: "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",
+  },
+  region: "us-east-1",
+});
 
+exports.eventBridgeTest = async (req, res) => {
+  try {
+    const params = {
+      Entries: [
+        {
+          Source: "aws.partner", // This should match with the source defined in rules
+          Detail: '{ "key1": "value1", "key2": "value2" }',
+          Resources: ["resource1", "resource2"],
+          DetailType: "myDetailType",
+        },
+      ],
+    };
+    const event = await eventBridge.putEvents({
+      Entries: [
+        {
+          Source: "myapp.events",
+          Detail: `{ \"key1\": \"value3\", \"key2\": \"value4\" }`,
+          DetailType: "mydetailtype",
+          EventBusName: "HifiBridgeEventBus",
+        },
+      ],
+    });
+    console.log("In the event group");
+    return res.send({ success: true, event });
+  } catch (error) {
+    return res.send(error.toString());
+  }
+};
+
+/**
+ * @description API is USER SIGNUP in HIFI BRIDGE
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.signUp = async (req, res) => {
   try {
     let generate;
@@ -37,9 +79,12 @@ exports.signUp = async (req, res) => {
           .status(responseCode.badRequest)
           .json(rs.incorrectDetails("PLEASE PROVIDE VALID PHONE NUMBER"));
       }
-      const count = await User.count({ where: { email } });
-      if (count > 0)
-        return res.status(responseCode.conflict).json(rs.conflict("USER"));
+      const count = await User.scan().exec();
+      for (let i = 0; i < count.length; i++) {
+        if (count[i].email == email) {
+          return res.status(responseCode.conflict).json(rs.conflict("USER"));
+        }
+      }
 
       req.body.id = uuidv4();
       const password = "123456";
@@ -56,7 +101,19 @@ exports.signUp = async (req, res) => {
         let cipherText = common.encryptText(password);
         req.body.password = cipherText;
 
-        let user = await User.create(req.body);
+        const myUser = new User({
+          user_id: uuidv4(),
+          email: email,
+          phoneNumber: phoneNumber,
+          fullName: fullName,
+          businessName: businessName,
+          password: cipherText,
+          userToken: "",
+          secretkey: "",
+          isVerified: false,
+        });
+        let user = await myUser.save();
+
         if (user)
           return res
             .status(responseCode.success)
@@ -82,8 +139,12 @@ exports.signUp = async (req, res) => {
   }
 };
 
-// API is for USER SIGN IN for HIFI BRIDGE
-
+/**
+ * @description API is for USER SIGN IN for HIFI BRIDGE
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.signIn = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -96,7 +157,10 @@ exports.signIn = async (req, res) => {
         return res
           .status(400)
           .json({ error: `${ajv.errorsText(validation[1].errors)}` });
-      let getUser = await User.findAll({ where: { email: email } });
+
+      const count = await User.scan().exec();
+      var getUser = count.filter((item) => item.email == email);
+
       if (getUser.length > 0) {
         let decryptText = common.decryptText(getUser[0].password);
         if (decryptText !== password)
@@ -104,21 +168,20 @@ exports.signIn = async (req, res) => {
             .status(responseCode.unauthenticated)
             .json(rs.incorrectPassword());
 
-        if (!getUser[0].isVerified) {
+        if (getUser[0].isVerified == false) {
           let temp_secret = speakeasy.generateSecret(); // Generate Secret Key
 
           let addKey = await User.update(
-            { secretKey: temp_secret.base32 },
-            { where: { email: email } }
+            { user_id: getUser[0].user_id },
+            { secretkey: temp_secret.base32 }
           );
-          if (addKey) {
+
+          if (addKey.secretkey) {
             return res.status(responseCode.success).json(
               rs.successResponse("USER SIGNED IN", {
-                data: {
-                  userId: getUser[0].id,
-                  secret: temp_secret.base32,
-                  qr_code: temp_secret.otpauth_url,
-                },
+                userId: getUser[0].user_id,
+                secret: temp_secret.base32,
+                qr_code: temp_secret.otpauth_url,
               })
             );
           }
@@ -127,38 +190,6 @@ exports.signIn = async (req, res) => {
             rs.successResponse("USER RETRIEVED", {
               userId: getUser[0].id,
               isVerified: true,
-            })
-          );
-      } else
-        return res
-          .status(responseCode.badRequest)
-          .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
-    } else if (email) {
-      let getuser = await User.findAll({ where: { email: email } });
-
-      if (getuser.length > 0) {
-        if (!getuser[0].isVerified) {
-          let temp_secret = speakeasy.generateSecret(); // Generating Secret Key
-
-          let addKey = await User.update(
-            { secretKey: temp_secret.base32 },
-            { where: { email: email } }
-          );
-          if (addKey) {
-            return res.status(responseCode.success).json(
-              rs.successResponse("USER SIGNED IN", {
-                data: {
-                  userId: getuser[0].id,
-                  secret: temp_secret.base32,
-                  qr_code: temp_secret.otpauth_url,
-                },
-              })
-            );
-          }
-        } else
-          return res.status(responseCode.success).json(
-            rs.successResponse("USER SIGNED IN", {
-              data: { userId: getuser[0].id, isVerified: true },
             })
           );
       } else
@@ -177,29 +208,96 @@ exports.signIn = async (req, res) => {
   }
 };
 
-// API is for VERIFY TOTP in HIFI BRIDGE
+/**
+ * @description The sign in with google api which only take email as the input
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
+exports.signInGoogle = async (req, res) => {
+  try {
+    const { email } = req.body;
 
+    if (!email)
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE USE VALID EMAIL", {}));
+
+    console.log(email);
+
+    const userDetails = await User.scan().where("email").eq(email).exec();
+
+    console.log(userDetails[0]);
+
+    if (userDetails?.count == 0)
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE REGISTER YOUR ACCOUNT", {}));
+
+    if (userDetails[0].isVerified == false) {
+      let temp_secret = speakeasy.generateSecret(); // Generating Secret Key
+      let addKey = await User.update(
+        { user_id: userDetails[0].user_id },
+        { secretkey: temp_secret.base32 }
+      );
+      if (addKey.secretkey) {
+        return res.status(responseCode.success).json(
+          rs.successResponse("USER SIGNED IN", {
+            userId: userDetails[0].user_id,
+            secret: temp_secret.base32,
+            qr_code: temp_secret.otpauth_url,
+          })
+        );
+      }
+    } else
+      return res.status(responseCode.success).json(
+        rs.successResponse("USER SIGNED IN", {
+          userId: userDetails[0].user_id,
+          isVerified: true,
+        })
+      );
+  } catch (error) {
+    return res
+      .status(responseCode.notFound)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
+};
+
+/**
+ * @description API is for VERIFY TOTP in HIFI BRIDGE
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.verifyTOTP = async (req, res) => {
   try {
-    const { token } = req.body; // Here token is TOTP from Authenticator APP
+    const { userToken } = req.body; // Here token is TOTP from Authenticator APP
     const { userId } = req.params;
-    if (!token || !userId) {
+    if (!userToken || !userId) {
       res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER VALID TOKEN OR USERID", {}));
     }
-    let key = await User.findOne({ where: { id: userId } });
-    let secret = key?.secretKey;
+    let count = await User.scan().exec();
+    var key = count.filter(function (item) {
+      return item.user_id == userId;
+    });
+    let secret = key[0].secretKey;
+
     if (secret) {
       const verified = speakeasy.totp.verify({
         secret,
         encoding: "base32",
-        token,
+        userToken,
       }); // Verify TOTP
       if (key.isVerified == false) {
-        await User.update({ isVerified: true }, { where: { userId: userId } });
+        if (key[0].isVerified == false) {
+          await User.update(
+            { user_id: getuser[0].user_id },
+            { isVerified: true }
+          );
+        }
       }
-
       if (verified)
         res
           .status(responseCode.success)
@@ -220,12 +318,21 @@ exports.verifyTOTP = async (req, res) => {
   }
 };
 
-// API is for FORGOT PASSWORD in HIFI BRIDGE
-
+/**
+ * @description API is for FORGOT PASSWORD in HIFI BRIDGE
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    let getUser = await User.findAll({ where: { email: email } });
+
+    const count = await User.scan().exec();
+    var getUser = count.filter(function (item) {
+      return item.email == email;
+    });
+
     if (getUser.length == 0)
       return res
         .status(responseCode.badRequest)
@@ -240,7 +347,7 @@ exports.forgotPassword = async (req, res) => {
     if (generate.messageId) {
       return res.status(responseCode.success).json(
         rs.successResponse("PLEASE CHECK EMAIL TO RESET PASSWORD", {
-          id: getUser[0].id,
+          id: getUser[0].user_id,
           email: getUser[0].email,
         })
       );
@@ -255,13 +362,22 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-// API is for RESET PASSWORD for HIFI BRIDGE
-
+/**
+ * @description API is for RESET PASSWORD for HIFI BRIDGE
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.resetPassword = async (req, res) => {
   try {
     const { newPassword, confirmPassword } = req.body;
     const { userId } = req.params;
-    let getUsers = await User.findAll({ where: { id: userId } });
+
+    const count = await User.scan().exec();
+    var getUsers = count.filter(function (item) {
+      return item.user_id == userId;
+    });
+
     if (getUsers.length > 0) {
       if (newPassword && confirmPassword) {
         if (newPassword !== confirmPassword) {
@@ -275,17 +391,15 @@ exports.resetPassword = async (req, res) => {
             );
         }
         let cipherText = common.encryptText(confirmPassword);
-        req.body.confirmPassword = cipherText;
         let updatePassword = await User.update(
-          { password: req.body.confirmPassword },
-          { where: { id: userId } }
+          { user_id: getUsers[0].user_id },
+          { password: cipherText }
         );
-        if (updatePassword.length > 0) {
-          return res.status(responseCode.success).json(
-            rs.successResponse("PASSWORD UPDATED SUCCESSFULLY", {
-              id: getUsers[0].id,
-            })
-          );
+        if (updatePassword) {
+          return res.status(responseCode.success).json({
+            message: "Password Updated successfully",
+            data: { userId: getUsers[0].user_id },
+          });
         } else {
           return res
             .status(responseCode.badRequest)
@@ -314,13 +428,21 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// API is for CHANGE PASSWORD for HIFI BRIDGE
-
+/**
+ * @description API is for CHANGE PASSWORD for HIFI BRIDGE
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const { userId } = req.params;
-    let getUser = await User.findAll({ where: { id: userId } });
+    const count = await User.scan().exec();
+    var getUser = count.filter(function (item) {
+      return item.user_id == userId;
+    });
+
     if (getUser.length > 0 && currentPassword) {
       if (newPassword && confirmPassword) {
         let decryptText = common.decryptText(getUser[0].password);
@@ -343,17 +465,15 @@ exports.changePassword = async (req, res) => {
               )
             );
         let cipherText = common.encryptText(confirmPassword);
-        req.body.confirmPassword = cipherText;
         let updatePassword = await User.update(
-          { password: req.body.confirmPassword },
-          { where: { id: userId } }
+          { user_id: getUser[0].user_id },
+          { password: cipherText }
         );
-        if (updatePassword.length > 0) {
-          return res.status(responseCode.success).json(
-            rs.successResponse("PASSWORD UPDATED SUCCESSFULLY", {
-              id: getUser[0].id,
-            })
-          );
+        if (updatePassword) {
+          return res.status(200).json({
+            message: "Password Updated successfully",
+            data: { id: getUser[0].user_id },
+          });
         } else {
           return res
             .status(responseCode.badRequest)

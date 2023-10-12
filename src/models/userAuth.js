@@ -1,9 +1,18 @@
 const dynamoose = require("dynamoose");
-
 const personSchema = new dynamoose.Schema(
   {
-    id: String, // Primary Key
+    user_id: String, // Primary Key
     userToken: String,
+    email: String,
+    password: String,
+    phoneNumber: String,
+    fullName: String,
+    businessName: String,
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    secretkey: String,
   },
   {
     timestamps: {
@@ -12,5 +21,6 @@ const personSchema = new dynamoose.Schema(
     },
   }
 );
-let db = dynamoose.model("auth_user", personSchema);
-module.exports = db;
+
+let User = dynamoose.model("users", personSchema);
+module.exports = User;

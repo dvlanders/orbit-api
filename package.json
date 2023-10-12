@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.420.0",
+    "@aws-sdk/client-eventbridge": "^3.427.0",
     "@aws-sdk/lib-dynamodb": "^3.420.0",
     "ajv": "^8.12.0",
     "aws-sdk": "^2.1463.0",

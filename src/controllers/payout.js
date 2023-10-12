@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
+const Transfer = require("./../models/transfer");
 
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
@@ -29,7 +30,29 @@ exports.transfer = async (req, res) => {
       },
       data: data,
     });
-    return res.status(response.status).json({ message: response.data.data });
+    if (response.data) {
+      const transfers = new Transfer({
+        user_id: response.data.data.user_id,
+        type: response.data.data.type,
+        purpose: response.data.data.purpose,
+        description: response.data.data.description,
+        currency: response.data.data.currency,
+        quantity: response.data.data.quantity,
+        rate: response.data.data.rate,
+        transfer_id: response.data.data.transfer_id,
+        transfer_status_code: response.data.data.transfer_status_code,
+        atx_id_charged: response.data.data.atx_id_charged,
+        atx_id_credited: response.data.data.atx_id_credited,
+        atx_status_charged: response.data.data.atx_status_charged,
+        atx_status_credited: response.data.data.atx_status_credited,
+        transfer_date: response.data.data.transfer_date,
+      });
+      let transferAdded = await transfers.save();
+      if (transferAdded)
+        return res
+          .status(response.status)
+          .json({ message: response.data.data });
+    }
   } catch (err) {
     return res.status(err.response.status).send(err.response.data);
   }

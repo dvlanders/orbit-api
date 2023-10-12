@@ -36,8 +36,9 @@ app.use(express.json());
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 app.use(express.urlencoded({ extended: false }));
 
-const psqlDbConnect = require("./src/config/db.conf");
-psqlDbConnect.psqlDbConnect();
+// const db = require("../hifi_backend/src/config/dynamodb")
+// // const psqlDbConnect = require("./src/config/db.conf");
+// // psqlDbConnect.psqlDbConnect();
 
 require("./src/routes")(app, express);
 

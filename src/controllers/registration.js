@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const dynamodb = require("./../config/dynamodb");
-const db = require("./../models/userAuth");
+const User = require("./../models/userAuth");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 let baseUrl = process.env.SFOX_BASE_URL;
