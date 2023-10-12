@@ -338,16 +338,16 @@ exports.forgotPassword = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE PROVIDE VALID EMAIL", {}));
     let mailDetails = {
-      from: "kaushiki.mobilefirst@gmail.com",
+      from: `${process.env.FROM_EMAIL}`,
       to: email,
       subject: "Test mail",
-      text: `Please click on the link to reset the password ${resetPassword}`,
+      text: `Please click on the link to reset the password ${resetPassword}/${getUser[0].user_id}`,
     };
     generate = await sendEmail.generateEmail(mailDetails); // Generate Email
     if (generate.messageId) {
       return res.status(responseCode.success).json(
         rs.successResponse("PLEASE CHECK EMAIL TO RESET PASSWORD", {
-          id: getUser[0].user_id,
+          userId: getUser[0].user_id,
           email: getUser[0].email,
         })
       );
@@ -396,10 +396,11 @@ exports.resetPassword = async (req, res) => {
           { password: cipherText }
         );
         if (updatePassword) {
-          return res.status(responseCode.success).json({
-            message: "Password Updated successfully",
-            data: { userId: getUsers[0].user_id },
-          });
+          return res.status(responseCode.success).json(
+            rs.successResponse("PASSWORD UPDATED", {
+              userId: getUsers[0].user_id,
+            })
+          );
         } else {
           return res
             .status(responseCode.badRequest)
@@ -470,10 +471,11 @@ exports.changePassword = async (req, res) => {
           { password: cipherText }
         );
         if (updatePassword) {
-          return res.status(200).json({
-            message: "Password Updated successfully",
-            data: { id: getUser[0].user_id },
-          });
+          return res
+            .status(responseCode.success)
+            .json(
+              rs.successResponse("PASSWORD UPDATED", { id: getUser[0].user_id })
+            );
         } else {
           return res
             .status(responseCode.badRequest)

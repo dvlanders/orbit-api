@@ -6,8 +6,8 @@ const dotenv = require("dotenv");
 let env =
   process.env.NODE_ENV === "production"
     ? "production"
-    : process.env.NODE_ENV === "preproduction"
-    ? "preproduction"
+    : process.env.NODE_ENV === "staging"
+    ? "staging"
     : process.env.NODE_ENV === undefined
     ? "development"
     : "false";
