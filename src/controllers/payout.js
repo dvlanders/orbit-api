@@ -53,8 +53,9 @@ exports.transfer = async (req, res) => {
           .status(response.status)
           .json({ message: response.data.data });
     }
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -70,8 +71,9 @@ exports.confirmTransfer = async (req, res) => {
       data: req.body,
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -87,8 +89,9 @@ exports.deleteTransfer = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -108,8 +111,9 @@ exports.transferStatus = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -127,9 +131,10 @@ exports.withdrawal = async (req, res) => {
       data: req.body,
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    console.log("error", err);
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    console.log("erroror", error);
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -145,9 +150,10 @@ exports.resendWithdrawal = async (req, res) => {
       data: req.body,
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    console.log("error", err);
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    console.log("erroror", error);
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -162,8 +168,9 @@ exports.cancelWithdrawal = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    console.log("error", err);
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    console.log("erroror", error);
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };

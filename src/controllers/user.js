@@ -7,7 +7,7 @@ const ajv = new Ajv();
 const speakeasy = require("speakeasy");
 const registration = require("./index");
 const { sendEmail, common } = require("../util/helper");
-const { responseCode, rs } = require("../util");
+const { responseCode, rs, messages } = require("../util");
 const { success } = require("../util/Constants");
 const resetPassword = process.env.RESET_PASSWORD;
 const dynamoose = require("dynamoose");
@@ -24,23 +24,15 @@ let eventBridge = new EventBridge({
 
 exports.eventBridgeTest = async (req, res) => {
   try {
-    const params = {
-      Entries: [
-        {
-          Source: "aws.partner", // This should match with the source defined in rules
-          Detail: '{ "key1": "value1", "key2": "value2" }',
-          Resources: ["resource1", "resource2"],
-          DetailType: "myDetailType",
-        },
-      ],
-    };
+    let message = "transactiono";
+    let statusCode = 200;
     const event = await eventBridge.putEvents({
       Entries: [
         {
           Source: "myapp.events",
-          Detail: `{ \"key1\": \"value3\", \"key2\": \"value4\" }`,
-          DetailType: "mydetailtype",
-          EventBusName: "HifiBridgeEventBus",
+          Detail: `{ \"message\": \"${message}\", \"statusCode\": \"${statusCode}\" }`,
+          DetailType: "transaction",
+          EventBusName: process.env.EVENT_BRIDGE_BUS_NAME,
         },
       ],
     });
@@ -62,31 +54,47 @@ exports.signUp = async (req, res) => {
     let generate;
     const { fullName, email, businessName, phoneNumber } = req.body;
 
-    if (!email && !phoneNumber)
+    if (!email && !phoneNumber) {
+      common.eventBridge(
+        "PLEASE ENTER THE EMAIL AND PASSWORD",
+        responseCode.badRequest
+      );
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER THE EMAIL AND PASSWORD", {}));
+    }
 
     // Schema Validations
     let validation = valid.validateObject(
       { email, phoneNumber },
       validateSchema.userSchema.signup
     );
-    if (!validation[0])
+    if (!validation[0]) {
+      common.eventBridge(
+        ajv.errorsText(validation[1].errors),
+        responseCode.badRequest
+      );
       return res
         .status(responseCode.badRequest)
         .json(rs.errorResponse(ajv.errorsText(validation[1].errors)));
+    }
 
     let validatePhoneNumber = /^[0-9]*$/.test(phoneNumber); // Phone Number Validation for Numeric String
     if (validatePhoneNumber == false) {
+      common.eventBridge(
+        "PLEASE PROVIDE VALID PHONE NUMBER",
+        responseCode.badRequest
+      );
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE PROVIDE VALID PHONE NUMBER"));
     }
     const userDetails = await User.scan().where("email").eq(email).exec();
 
-    if (userDetails?.count > 0)
+    if (userDetails?.count > 0) {
+      common.eventBridge("USER ALREADY EXIST", responseCode.conflict);
       return res.status(responseCode.conflict).json(rs.conflict("USER"));
+    }
 
     const password = process.env.REGISTER_PASSWORD;
     let mailDetails = {
@@ -115,7 +123,11 @@ exports.signUp = async (req, res) => {
       });
       let user = await myUser.save();
 
-      if (user)
+      if (user) {
+        common.eventBridge(
+          "Account registered, please check your email for further process",
+          responseCode.success
+        );
         return res
           .status(responseCode.success)
           .json(
@@ -124,11 +136,15 @@ exports.signUp = async (req, res) => {
               user
             )
           );
-    } else
+      }
+    } else {
+      common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
+    }
   } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
@@ -149,20 +165,30 @@ exports.signIn = async (req, res) => {
         { email, password },
         validateSchema.userSchema.signin
       );
-      if (!validation[0])
+      if (!validation[0]) {
+        common.eventBridge(
+          ajv.errorsText(validation[1].errors),
+          responseCode.badRequest
+        );
         return res
-          .status(400)
+          .status(responseCode.badRequest)
           .json({ error: `${ajv.errorsText(validation[1].errors)}` });
+      }
 
       const count = await User.scan().exec();
       var getUser = count.filter((item) => item.email == email);
 
       if (getUser.length > 0) {
         let decryptText = common.decryptText(getUser[0].password);
-        if (decryptText !== password)
+        if (decryptText !== password) {
+          common.eventBridge(
+            messages.incorrectPassword,
+            responseCode.unauthenticated
+          );
           return res
             .status(responseCode.unauthenticated)
             .json(rs.incorrectPassword());
+        }
 
         if (getUser[0].isVerified == false) {
           let temp_secret = speakeasy.generateSecret(); // Generate Secret Key
@@ -173,6 +199,10 @@ exports.signIn = async (req, res) => {
           );
 
           if (addKey.secretkey) {
+            common.eventBridge(
+              "USER SIGNED IN SUCCESSFULLY",
+              responseCode.success
+            );
             return res.status(responseCode.success).json(
               rs.successResponse("USER SIGNED IN", {
                 userId: getUser[0].user_id,
@@ -181,7 +211,11 @@ exports.signIn = async (req, res) => {
               })
             );
           }
-        } else
+        } else {
+          common.eventBridge(
+            "USER RETRIEVED SUCCESSFULLY",
+            responseCode.success
+          );
           return res.status(responseCode.success).json(
             rs.successResponse("USER RETRIEVED", {
               userId: getUser[0].user_id,
@@ -190,18 +224,26 @@ exports.signIn = async (req, res) => {
               qr_code: `otpauth://totp/SecretKey?secret=${getUser[0].secretkey}`,
             })
           );
-      } else
+        }
+      } else {
+        common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);
         return res
           .status(responseCode.badRequest)
           .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
+      }
     } else {
+      common.eventBridge(
+        "PLEASE ENTER VALID EMAIL AND PASSWORD",
+        responseCode.badRequest
+      );
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL AND PASSWORD", {}));
     }
   } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
-      .status(responseCode.notFound)
+      .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
@@ -216,10 +258,12 @@ exports.signInGoogle = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email)
+    if (!email) {
+      common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE USE VALID EMAIL", {}));
+    }
 
     console.log(email);
 
@@ -227,10 +271,12 @@ exports.signInGoogle = async (req, res) => {
 
     console.log(userDetails[0]);
 
-    if (userDetails?.count == 0)
+    if (userDetails?.count == 0) {
+      common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE REGISTER YOUR ACCOUNT", {}));
+    }
 
     if (userDetails[0].isVerified == false) {
       let temp_secret = speakeasy.generateSecret(); // Generating Secret Key
@@ -257,8 +303,9 @@ exports.signInGoogle = async (req, res) => {
         })
       );
   } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
-      .status(responseCode.notFound)
+      .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
@@ -274,7 +321,11 @@ exports.verifyTOTP = async (req, res) => {
     const { userToken } = req.body; // Here token is TOTP from Authenticator APP
     const { userId } = req.params;
     if (!userToken || !userId) {
-      res
+      common.eventBridge(
+        "PLEASE ENTER VALID TOKEN OR USERID",
+        responseCode.badRequest
+      );
+      return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER VALID TOKEN OR USERID", {}));
     }
@@ -302,22 +353,26 @@ exports.verifyTOTP = async (req, res) => {
         );
       }
       if (verified)
-        res
+        return res
           .status(responseCode.success)
           .json(rs.successResponse("USER VERIFIED", { verified: true }));
-      else
-        res
+      else {
+        common.eventBridge("USER NOT VERIFIED", responseCode.badRequest);
+        return res
           .status(responseCode.badRequest)
           .json(rs.incorrectDetails("USER NOT VERIFIED", { verified: false }));
+      }
     } else {
-      res
+      common.eventBridge("USER NOT VERIFIED", responseCode.badRequest);
+      return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("User QRCODE NOT GENERATED", {}));
     }
-  } catch (err) {
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
-      .json(rs.errorResponse(err?.message.toString()));
+      .json(rs.errorResponse(error?.message.toString()));
   }
 };
 
@@ -336,10 +391,12 @@ exports.forgotPassword = async (req, res) => {
       return item.email == email;
     });
 
-    if (getUser.length == 0)
+    if (getUser.length == 0) {
+      common.eventBridge("PLEASE PROVIDE VALID EMAIL", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE PROVIDE VALID EMAIL", {}));
+    }
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
@@ -348,17 +405,24 @@ exports.forgotPassword = async (req, res) => {
     };
     generate = await sendEmail.generateEmail(mailDetails); // Generate Email
     if (generate.messageId) {
+      common.eventBridge(
+        "PLEASE CHECK EMAIL TO RESET PASSWORD",
+        responseCode.badRequest
+      );
       return res.status(responseCode.success).json(
         rs.successResponse("PLEASE CHECK EMAIL TO RESET PASSWORD", {
           userId: getUser[0].user_id,
           email: getUser[0].email,
         })
       );
-    } else
+    } else {
+      common.eventBridge("MESSAGE NOT SENT", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("MESSAGE NOT SENT", {}));
+    }
   } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
@@ -384,6 +448,10 @@ exports.resetPassword = async (req, res) => {
     if (getUsers.length > 0) {
       if (newPassword && confirmPassword) {
         if (newPassword !== confirmPassword) {
+          common.eventBridge(
+            "CONFIRM PASSWORD AND NEWPASSWORD ARE DIFFERENT",
+            responseCode.badRequest
+          );
           return res
             .status(responseCode.badRequest)
             .json(
@@ -426,6 +494,7 @@ exports.resetPassword = async (req, res) => {
       }
     }
   } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
@@ -500,6 +569,7 @@ exports.changePassword = async (req, res) => {
         .json(rs.incorrectPassword("PLEASE PROVIDE CURRENT PASSWORD", {}));
     }
   } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));

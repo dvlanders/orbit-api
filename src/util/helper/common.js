@@ -22,3 +22,32 @@ exports.decryptText = (cipherText) => {
   );
   return bytes.toString(CryptoTS.enc.Utf8);
 };
+
+const { EventBridge } = require("@aws-sdk/client-eventbridge");
+let eventBridge = new EventBridge({
+  credentials: {
+    accessKeyId: "AKIAWTCFUVBIDKIM73VF",
+    secretAccessKey: "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",
+  },
+  region: "us-east-1",
+});
+
+exports.eventBridge = async (message, statusCode) => {
+  try {
+    const event = await eventBridge.putEvents({
+      Entries: [
+        {
+          Source: "myapp.events",
+          Detail: `{ \"message\": \"${message}\", \"statusCode\": \"${statusCode}\" }`,
+          DetailType: "transaction",
+          EventBusName: process.env.EVENT_BRIDGE_BUS_NAME,
+        },
+      ],
+    });
+    console.log(`In the event group ${message}`);
+    return event?.FailedEntryCount == 0 ? true : false;
+  } catch (error) {
+    console.log(error.toString());
+    return false;
+  }
+};

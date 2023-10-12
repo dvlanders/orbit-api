@@ -1,11 +1,14 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
+const { responseCode } = require("../util");
 
 let uuid = uuidv4();
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
+
+const { sendEmail, common } = require("../util/helper");
 
 // get transfer
 
@@ -29,9 +32,17 @@ exports.transfer = async (req, res) => {
       },
       params: query,
     });
-    return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+
+    common.eventBridge(
+      "Transfer History Retrived Successfully",
+      responseCode.badRequest
+    );
+    return res
+      .status(responseCode.success)
+      .json({ message: response.data.data });
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -55,8 +66,9 @@ exports.monetization = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -74,8 +86,12 @@ exports.updateMonetization = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(
+      error.response.data.toString(),
+      responseCode.serverError
+    );
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -90,8 +106,9 @@ exports.deleteMonetization = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
 
@@ -106,7 +123,8 @@ exports.monetizationHistory = async (req, res) => {
       },
     });
     return res.status(response.status).json({ message: response.data.data });
-  } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
   }
 };
