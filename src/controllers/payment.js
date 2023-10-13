@@ -167,7 +167,10 @@ exports.balances = async (req, res) => {
         Authorization: "Bearer " + userToken,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    console.log(response.data);
+    return res
+      .status(response.status)
+      .json(rs.successResponse("RETRIVED BALANCE", response.data));
   } catch (err) {
     return res.status(err.response.status).send(err.response.data);
   }
