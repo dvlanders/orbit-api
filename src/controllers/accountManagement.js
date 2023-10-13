@@ -1,20 +1,22 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
-let uuid = uuidv4();
-let token = process.env.SFOX_ENTERPRISE_API_KEY;
-
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
 
+let token = process.env.SFOX_ENTERPRISE_API_KEY;
 exports.linkBank = async (req, res) => {
   let data = {
     accountnumber: req.body.accountnumber,
     bankAccountType: req.body.bankAccountType,
     bankCurrency: req.body.bankCurrency,
+    bankname : req.body.bankname,
     enableWires: req.body.enableWires,
     isInternational: req.body.isInternational,
     routingnumber: req.body.routingnumber,
+    firstname : req.body.firstname,
+    lastname: req.body.lastname,
+    name: req.body.name,
     type: req.body.type,
     wireRoutingnumber: req.body.wireRoutingnumber,
   };
@@ -24,7 +26,7 @@ exports.linkBank = async (req, res) => {
       method: "post",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + userToken,
+        Authorization: "Bearer " + token,
       },
       data: data,
     });
@@ -97,7 +99,7 @@ exports.wireInstructions = async (req, res) => {
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + userToken,
+        Authorization: "Bearer " + token,
       },
     });
     return res.status(response.status).json({ message: response.data.data });

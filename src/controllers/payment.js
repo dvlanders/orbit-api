@@ -11,7 +11,6 @@ let baseUrl = process.env.SFOX_BASE_URL;
 const { sendEmail, common } = require("../util/helper");
 
 // get transfer
-
 exports.transfer = async (req, res) => {
   try {
     const { from_date, to_date, purpose, status, type } = req.query;
@@ -126,5 +125,23 @@ exports.monetizationHistory = async (req, res) => {
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error.response.status).send(error.response.data);
+  }
+};
+
+// balances
+
+exports.balances = async (req, res) => {
+  try {
+    let apiPath = `${baseUrl}/v1/user/balance`;
+    let response = await axios({
+      method: "get",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + userToken,
+      },
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (err) {
+    return res.status(err.response.status).send(err.response.data);
   }
 };
