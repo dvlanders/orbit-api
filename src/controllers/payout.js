@@ -13,6 +13,17 @@ const { responseCode, rs } = require("../util");
 
 exports.transfer = async (req, res) => {
   try {
+    // const userDetails = await User.scan()
+    //   .where("user_id")
+    //   .eq(req.body.user_id)
+    //   .exec();
+    // console.log(userDetails);
+
+    // if (userDetails?.count === 0)
+    //   return res
+    //     .status(responseCode.notFound)
+    //     .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
+
     let data = {
       user_id: req.body.user_id,
       type: req.body.type,

@@ -13,6 +13,10 @@ const personSchema = new dynamoose.Schema(
       default: false,
     },
     secretkey: String,
+    sfox_id: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: {

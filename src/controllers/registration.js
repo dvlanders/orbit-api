@@ -32,6 +32,14 @@ exports.register = async (req, res) => {
       },
       data: data,
     });
+    console.log(data.user_id);
+
+    let update_client_userid = await User.update(
+      { user_id: userDetails[0].user_id },
+      { sfox_id: data.user_id }
+    );
+
+    // console.log(update_client_userid);
 
     return res
       .status(responseCode.success)
@@ -46,7 +54,26 @@ exports.register = async (req, res) => {
 exports.requestOTP = async (req, res) => {
   try {
     let userId = req.params.userId;
-    const apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/users/send-verification/${userId}`;
+    const userDetails = await User.scan().where("user_id").eq(userId).exec();
+    console.log(userDetails);
+
+    if (userDetails?.count === 0)
+      return res
+        .status(responseCode.notFound)
+        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
+
+    if (userDetails[0].sfox_id.length === 0)
+      return res
+        .status(responseCode.notFound)
+        .json(
+          rs.response(
+            responseCode.notFound,
+            "PLEASE REGISTER WITH MERCHANT FIRST",
+            {}
+          )
+        );
+
+    const apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/users/send-verification/${userDetails[0].sfox_id}`;
     let response = await axios({
       method: "post",
       url: apiPath,
@@ -60,16 +87,26 @@ exports.requestOTP = async (req, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("OTP REQUESTED", response.data.data));
   } catch (error) {
+    console.log(error);
     return res
       .status(responseCode.serverError)
-      .json(rs.errorResponse(error.response.data));
+      .json(rs.errorResponse({ message: error }));
   }
 };
 
 exports.verify = async (req, res) => {
   try {
     let userId = req.params.userId;
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/users/verify/${userId}`;
+
+    const userDetails = await User.scan().where("user_id").eq(userId).exec();
+    console.log(userDetails);
+
+    if (userDetails?.count === 0)
+      return res
+        .status(responseCode.notFound)
+        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/users/verify/${userDetails[0].sfox_id}`;
     let response = await axios({
       method: "post",
       url: apiPath,
@@ -84,14 +121,23 @@ exports.verify = async (req, res) => {
   } catch (error) {
     return res
       .status(responseCode.serverError)
-      .json(rs.errorResponse(error.response.data));
+      .json(rs.errorResponse({ message: error }));
   }
 };
 
 exports.userToken = async (req, res) => {
   try {
-    let patnerUserId = req.params.patneruserId;
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/user-tokens/${patnerUserId}`;
+    let userId = req.params.userId;
+
+    const userDetails = await User.scan().where("user_id").eq(userId).exec();
+    console.log(userDetails);
+
+    if (userDetails?.count === 0)
+      return res
+        .status(responseCode.notFound)
+        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/user-tokens/${userDetails[0].sfox_id}`;
     let response = await axios({
       method: "post",
       url: apiPath,
@@ -99,12 +145,19 @@ exports.userToken = async (req, res) => {
         Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
       },
     });
+
+    // console.log(response?.data?.data);
+    let update_user_authtoken = await User.update(
+      { user_id: userDetails[0].user_id },
+      { userToken: response?.data?.data?.token }
+    );
+
     return res
       .status(responseCode.success)
       .json(rs.successResponse("TOKEN RETRIEVED", response.data.data));
   } catch (error) {
     return res
       .status(responseCode.serverError)
-      .json(rs.errorResponse(error.response.data));
+      .json(rs.errorResponse({ message: error }));
   }
 };

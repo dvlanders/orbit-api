@@ -1,16 +1,19 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
-const { responseCode } = require("../util");
+const { responseCode, rs } = require("../util");
 
-let uuid = uuidv4();
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 let userToken = process.env.USER_AUTH_TOKEN;
-let baseUrl = process.env.SFOX_BASE_URL;
 
 const { sendEmail, common } = require("../util/helper");
 
-// get transfer
+/**
+ * @description
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.transfer = async (req, res) => {
   try {
     const { from_date, to_date, purpose, status, type } = req.query;
@@ -22,7 +25,7 @@ exports.transfer = async (req, res) => {
       type: type ? type : null,
     };
 
-    let apiPath = `${baseUrl}/v1/enterprise/transfer/history`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer/history`;
     let response = await axios({
       method: "get",
       url: apiPath,
@@ -32,13 +35,37 @@ exports.transfer = async (req, res) => {
       params: query,
     });
 
+    let apiPathuser = `${process.env.SFOX_BASE_URL}/v1/enterprise/users`;
+    let responseuser = await axios({
+      method: "get",
+      url: apiPathuser,
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+
+    // console.log(JSON.stringify(responseuser?.data?.data));
+
+    data = response.data.data.map((item) => {
+      const matchingUser = responseuser?.data?.data.find(
+        (user) => user.user_id === item.user_id
+      );
+      if (matchingUser) {
+        item.email = matchingUser.email;
+      }
+      return item;
+    });
+
     common.eventBridge(
       "Transfer History Retrived Successfully",
-      responseCode.badRequest
+      responseCode.success
     );
-    return res
-      .status(responseCode.success)
-      .json({ message: response.data.data });
+    return res.status(responseCode.success).json(
+      rs.successResponse("TRANFER HISTORY RETRIVED", {
+        data: response.data.data,
+        count: response.data.data.length,
+      })
+    );
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error.response.status).send(error.response.data);
@@ -50,7 +77,7 @@ exports.transfer = async (req, res) => {
 exports.monetization = async (req, res) => {
   try {
     const { feature, method, amount, user_id } = req.body;
-    let apiPath = `${baseUrl}/v1/enterprise/monetization/settings`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings`;
     let response = await axios({
       method: "post",
       url: apiPath,
@@ -73,7 +100,7 @@ exports.monetization = async (req, res) => {
 
 exports.updateMonetization = async (req, res) => {
   try {
-    let apiPath = `${baseUrl}/v1/enterprise/monetization/settings/:${monetization_id}`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings/:${monetization_id}`;
     let response = await axios({
       method: "patch",
       url: apiPath,
@@ -96,7 +123,7 @@ exports.updateMonetization = async (req, res) => {
 
 exports.deleteMonetization = async (req, res) => {
   try {
-    let apiPath = `${baseUrl}/v1/enterprise/monetization/settings/:${monetization_id}`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings/:${monetization_id}`;
     let response = await axios({
       method: "delete",
       url: apiPath,
@@ -113,7 +140,7 @@ exports.deleteMonetization = async (req, res) => {
 
 exports.monetizationHistory = async (req, res) => {
   try {
-    let apiPath = `${baseUrl}/v1/enterprise/monetization/history?${feature}`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/history?${feature}`;
     let response = await axios({
       method: "get",
       url: apiPath,
@@ -132,7 +159,7 @@ exports.monetizationHistory = async (req, res) => {
 
 exports.balances = async (req, res) => {
   try {
-    let apiPath = `${baseUrl}/v1/user/balance`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
     let response = await axios({
       method: "get",
       url: apiPath,
