@@ -26,7 +26,7 @@ exports.linkBank = async (req, res) => {
       method: "post",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: "Bearer " + userToken,
       },
       data: data,
     });
@@ -99,7 +99,7 @@ exports.wireInstructions = async (req, res) => {
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: "Bearer " + userToken,
       },
     });
     return res.status(response.status).json({ message: response.data.data });

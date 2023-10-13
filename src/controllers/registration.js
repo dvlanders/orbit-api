@@ -20,7 +20,7 @@ exports.register = async (req, res) => {
     if (userDetails?.count === 0)
       return res
         .status(responseCode.notFound)
-        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
+        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST ", {}));
 
     data.user_id = uuidv4();
     const apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/register-account`;
