@@ -208,6 +208,7 @@ exports.signIn = async (req, res) => {
                 userId: getUser[0].user_id,
                 secret: temp_secret.base32,
                 qr_code: temp_secret.otpauth_url,
+                bussinessName : getUser[0].businessName
               })
             );
           }
@@ -222,6 +223,7 @@ exports.signIn = async (req, res) => {
               isVerified: true,
               secret: getUser[0].secretkey,
               qr_code: `otpauth://totp/SecretKey?secret=${getUser[0].secretkey}`,
+              bussinessName : getUser[0].businessName,
             })
           );
         }

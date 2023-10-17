@@ -38,9 +38,13 @@ app.use(express.urlencoded({ extended: false }));
 
 require("./src/routes")(app, express);
 
+let { logger } = require("./src/util/logger/logger");
+
+
 app.listen(port, () => {
+  logger.info(`Server Listening On Port ${port}`);
   console.log(`Environment : ${env}`);
-  console.log(`Listening on PORT ${port}`);
+
 });
 
 // Export your Express configuration so that it can be consumed by the Lambda handler

@@ -14,6 +14,7 @@ module.exports = (router) => {
     "/transferStatus/&from_date&to_date&type&purpose&status",
     payout.transferStatus
   );
+
   // withdrawal routes
   router.post("/withdrawal", payout.withdrawal);
   router.post("/withdrawal/resend", payout.resendWithdrawal);

@@ -14,9 +14,6 @@ exports.linkBank = async (req, res) => {
     enableWires: req.body.enableWires,
     isInternational: req.body.isInternational,
     routingnumber: req.body.routingnumber,
-    firstname : req.body.firstname,
-    lastname: req.body.lastname,
-    name: req.body.name,
     type: req.body.type,
     wireRoutingnumber: req.body.wireRoutingnumber,
   };
