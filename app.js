@@ -36,15 +36,31 @@ app.use(express.json());
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 app.use(express.urlencoded({ extended: false }));
 
+// Middleware example that logs the current date for every request
+// app.use((req, res, next) => {
+//   console.log(res.json);
+//   console.log(`Request received at: ${new Date().toISOString()}`);
+//   next();
+// });
+
+// app.use((req, res, next) => {
+//   const originalResJson = res.json;
+
+//   res.json = function (data) {
+//     console.log(`Response data: ${JSON.stringify(data)}`);
+//     originalResJson.call(this, data);
+//   };
+
+//   next();
+// });
+
 require("./src/routes")(app, express);
 
 let { logger } = require("./src/util/logger/logger");
 
-
 app.listen(port, () => {
-  logger.info(`Server Listening On Port ${port}`);
+  // logger.info(`Server Listening On Port ${port}`);
   console.log(`Environment : ${env}`);
-
 });
 
 // Export your Express configuration so that it can be consumed by the Lambda handler

@@ -26,21 +26,26 @@ exports.eventBridgeTest = async (req, res) => {
   try {
     let message = "transactiono";
     let statusCode = 200;
-    const event = await eventBridge.putEvents({
-      Entries: [
-        {
-          Source: "myapp.events",
-          Detail: `{ \"message\": \"${message}\", \"statusCode\": \"${statusCode}\" }`,
-          DetailType: "transaction",
-          EventBusName: process.env.EVENT_BRIDGE_BUS_NAME,
-        },
-      ],
-    });
+    // const event = await eventBridge.putEvents({
+    //   Entries: [
+    //     {
+    //       Source: "myapp.events",
+    //       Detail: `{ \"message\": \"${message}\", \"statusCode\": \"${statusCode}\" }`,
+    //       DetailType: "transaction",
+    //       EventBusName: process.env.EVENT_BRIDGE_BUS_NAME,
+    //     },
+    //   ],
+    // });
     console.log("In the event group");
-    return res.send({ success: true, event });
+    return res.send({ success: true });
   } catch (error) {
     return res.send(error.toString());
   }
+};
+
+exports.test1 = async (req, res) => {
+  console.log(res);
+  console.log("in the etst 1");
 };
 
 /**
@@ -179,6 +184,7 @@ exports.signIn = async (req, res) => {
       var getUser = count.filter((item) => item.email == email);
 
       if (getUser.length > 0) {
+        console.log(getUser);
         let decryptText = common.decryptText(getUser[0].password);
         if (decryptText !== password) {
           common.eventBridge(
@@ -208,7 +214,7 @@ exports.signIn = async (req, res) => {
                 userId: getUser[0].user_id,
                 secret: temp_secret.base32,
                 qr_code: temp_secret.otpauth_url,
-                bussinessName: getUser[0].businessName,
+                businessName: getUser[0].businessName,
               })
             );
           }
@@ -223,7 +229,7 @@ exports.signIn = async (req, res) => {
               isVerified: true,
               secret: getUser[0].secretkey,
               qr_code: `otpauth://totp/SecretKey?secret=${getUser[0].secretkey}`,
-              bussinessName: getUser[0].businessName,
+              businessName: getUser[0].businessName,
             })
           );
         }
@@ -292,7 +298,7 @@ exports.signInGoogle = async (req, res) => {
             userId: userDetails[0].user_id,
             secret: temp_secret.base32,
             qr_code: temp_secret.otpauth_url,
-            bussinessName: userDetails[0].businessName,
+            businessName: userDetails[0].businessName,
           })
         );
       }

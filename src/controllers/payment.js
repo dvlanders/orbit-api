@@ -2,14 +2,13 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const { responseCode, rs } = require("../util");
 const transactions = require("./../models/transactions");
-const {logger} = require("../util/logger/logger")
+const { logger } = require("../util/logger/logger");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 let userToken = process.env.USER_AUTH_TOKEN;
 
 const { sendEmail, common } = require("../util/helper");
-const { off } = require("../../app");
 
 /**
  * @description
@@ -75,7 +74,7 @@ exports.transfer = async (req, res) => {
   }
 };
 
-// transactio history 
+// transactio history
 // transaction
 
 exports.transaction = async (req, res) => {
@@ -97,18 +96,20 @@ exports.transaction = async (req, res) => {
       },
       params: query,
     });
-    common.eventBridge("Transaction History Retrived Successfully",responseCode.success);
-    logger.info(`Retrived transactions`, response.data[0])
+    common.eventBridge(
+      "Transaction History Retrived Successfully",
+      responseCode.success
+    );
+    logger.info(`Retrived transactions`, response.data[0]);
     return res
       .status(response.status)
       .json(rs.successResponse("RETRIVED TRANSACTIONS", response.data));
     // }
   } catch (err) {
-    console.log("error",err)
+    console.log("error", err);
     return res.status(err.response.status).send(err.response.data);
   }
 };
-
 
 // monetization code
 
