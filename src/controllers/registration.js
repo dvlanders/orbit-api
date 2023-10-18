@@ -3,7 +3,13 @@ const { v4: uuidv4 } = require("uuid");
 const dynamodb = require("./../config/dynamodb");
 const User = require("./../models/userAuth");
 const { responseCode, rs } = require("../util");
+const {common } = require("../util/helper");
+const cron = require('cron');
 
+
+
+
+let token = process.env.SFOX_ENTERPRISE_API_KEY;
 /**
  *
  * @description This is the sFox Registration API
@@ -145,6 +151,7 @@ exports.userToken = async (req, res) => {
         Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
       },
     });
+    
 
     // console.log(response?.data?.data);
     let update_user_authtoken = await User.update(
@@ -161,3 +168,34 @@ exports.userToken = async (req, res) => {
       .json(rs.errorResponse({ message: error }));
   }
 };
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const {user_id} = req.params;
+    const count = await User.scan().exec()
+    var getUser = count.filter((item) => item.user_id == user_id);
+    if(getUser.length == 0 || getUser[0].userToken == ""){
+      common.eventBridge(
+        "USER NOT FOUND",
+        responseCode.badRequest
+      );
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/account/${getUser[0].sfox_id}`;
+    let response = await axios({
+      method: "delete",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+    });
+    return res.status(response.status).json({ message: `USER IS DELETED SUCCESSFULLLY ` });
+  } catch (err) {
+    return res.status(err.response?.status).send(err.response?.data);
+  }
+};
+
+
+

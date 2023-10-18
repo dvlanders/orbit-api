@@ -3,7 +3,7 @@ const { STRING } = require("sequelize");
 
 const transactionSchema = new dynamoose.Schema(
   {
-    id: Number,
+    id: String,
     atxid: Number,
     order_id: String ,
     client_order_id: String,
@@ -27,7 +27,7 @@ const transactionSchema = new dynamoose.Schema(
     added_by_user_email: String,
     symbol: String,
     IdempotencyId: String,
-    timestamp: String
+    timestamp: Number
   },
   {
     timestamps: {

@@ -9,15 +9,15 @@ module.exports = (router) => {
   // Transaction routes
   router.get("/transfer", payment.transfer);
 
-    // transaction 
-    router.get("/transactions",payment.transaction)
+  // transaction
+  router.get("/user/:user_id/transactions",payment.transaction)
 
   // monitization routes
   router.post("/monetization",payment.monetization);
   router.patch("/monetization/:monetization_id",payment.updateMonetization);
   router.delete("/monetization/:monetization_id",payment.deleteMonetization);
   router.delete("/monetization/history/?feature",payment.monetizationHistory);
-  router.get("/balance",payment.balances)
+  router.get("/balance",payment.balances);
 
 
   

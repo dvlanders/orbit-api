@@ -1,14 +1,16 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
-const { responseCode, rs } = require("../util");
 const transactions = require("./../models/transactions");
-const { logger } = require("../util/logger/logger");
+const {logger} = require("../util/logger/logger");
+const User = require("./../models/userAuth");
+const {common } = require("../util/helper");
+const { responseCode, rs, messages } = require("../util");
+const { off } = require("../../app");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 let userToken = process.env.USER_AUTH_TOKEN;
 
-const { sendEmail, common } = require("../util/helper");
 
 /**
  * @description
@@ -79,6 +81,7 @@ exports.transfer = async (req, res) => {
 
 exports.transaction = async (req, res) => {
   try {
+    const {user_id} = req.params;
     const { from, to, limit, offset, type } = req.query;
     let query = {
       from: from ? from : null,
@@ -87,27 +90,75 @@ exports.transaction = async (req, res) => {
       offset: offset ? offset : null,
       type: type ? type : null,
     };
+    const count = await User.scan().exec()
+    var getUser = count.filter((item) => item.user_id == user_id);
+
+    if(getUser.length == 0 || getUser[0].userToken == ""){
+      common.eventBridge(
+        "USER NOT FOUND",
+        responseCode.badRequest
+      );
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
     let response = await axios({
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + userToken,
+        Authorization: "Bearer " + getUser[0].userToken,
       },
       params: query,
     });
-    common.eventBridge(
-      "Transaction History Retrived Successfully",
-      responseCode.success
-    );
-    logger.info(`Retrived transactions`, response.data[0]);
+    if (response.data[0]) {
+      const transaction = new transactions({
+        id: response.data[0].id.toString(),
+        atxid: response.data[0].atxid,
+        order_id: response.data[0].order_id,
+        client_order_id: response.data[0].client_order_id,
+        day: response.data[0].day,
+        action: response.data[0].action,
+        currency: response.data[0].currency,
+        memo: response.data[0].memo,
+        amount: response.data[0].amount,
+        net_proceeds: response.data[0].net_proceeds,
+        price: response.data[0].price,
+        fees: response.data[0].fees,
+        status: response.data[0].status,
+        hold_expires: response.data[0].hold_expires,
+        tx_hash: response.data[0].tx_hash,
+        algo_name: response.data[0].algo_name,
+        algo_id: response.data[0].algo_id,
+        account_balance: response.data[0].account_balance,
+        AccountTransferFee: response.data[0].AccountTransferFee,
+        description: response.data[0].description,
+        wallet_display_id: response.data[0].wallet_display_id,
+        added_by_user_email: response.data[0].added_by_user_email,
+        symbol: response.data[0].symbol ?response.data[0].symbol : "null" ,
+        IdempotencyId: response.data[0].IdempotencyId,
+        timestamp: response.data[0].timestamp
+      });
+      let transferAdded = await transaction.save();
+      logger.info(`Retrived transactions`, transferAdded)
+
+      let responses = {
+        "amount": response.data[0].amount,
+        "AccountTransferFee" : response.data[0].AccountTransferFee,
+        "order_id" : response.data[0].order_id,
+        "client_order_id" : response.data[0].client_order_id,
+        "fees": response.data[0].fees,
+        "status": response.data[0].status,
+        "description"  : response.data[0].description,
+        "net" : response.data[0].net_proceeds
+      }
     return res
       .status(response.status)
-      .json(rs.successResponse("RETRIVED TRANSACTIONS", response.data));
-    // }
+      .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
+    }
   } catch (err) {
-    console.log("error", err);
-    return res.status(err.response.status).send(err.response.data);
+    console.log("error",err)
+    return res.status(err.response?.status).send(err.response?.data);
   }
 };
 

@@ -1,22 +1,29 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
+const { responseCode, rs } = require("../util");
+
 
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
 
-let token = process.env.SFOX_ENTERPRISE_API_KEY;
+
 exports.linkBank = async (req, res) => {
-  let data = {
-    accountnumber: req.body.accountnumber,
-    bankAccountType: req.body.bankAccountType,
-    bankCurrency: req.body.bankCurrency,
-    bankname : req.body.bankname,
-    enableWires: req.body.enableWires,
-    isInternational: req.body.isInternational,
-    routingnumber: req.body.routingnumber,
-    type: req.body.type,
-    wireRoutingnumber: req.body.wireRoutingnumber,
-  };
+  
+    let data = {
+      accountnumber: req.body.accountnumber,
+      bankAccountType: req.body.bankAccountType,
+      bankCurrency: req.body.bankCurrency,
+      bankname: req.body.bankname,
+      enableWires: req.body.enableWires,
+      firstname: req.body.firstname,
+      isInternational: req.body.isInternational,
+      lastname: req.body.lastname,
+      name: req.body.name,
+      swiftnumber: req.body.swiftnumber,
+      type: req.body.type,
+      wireInstructions: req.body.wireInstructions,
+    };
+
   try {
     const apiPath = `${baseUrl}/v1/user/bank`;
     let response = await axios({
@@ -27,11 +34,13 @@ exports.linkBank = async (req, res) => {
       },
       data: data,
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res
+    .status(responseCode.success)
+    .json(rs.successResponse("Bank Linked", response?.data));
   } catch (err) {
     console.log("error", err);
     return res
-      .status(err.response.status)
+      .status(err.response?.status)
       .json({ error: err.response.data.error });
   }
 };
@@ -39,8 +48,8 @@ exports.linkBank = async (req, res) => {
 exports.verifyBank = async (req, res) => {
   try {
     let data = {
-      verifyAmount1: req.body.verifyAmount1,
-      verifyAmount2: req.body.verifyAmount2,
+      amount1: req.body.verifyAmount1,
+      amount2: req.body.verifyAmount2,
     };
     let apiPath = `${baseUrl}/v1/user/bank/verify`;
     let response = await axios({
@@ -53,7 +62,7 @@ exports.verifyBank = async (req, res) => {
     });
     return res.status(response.status).json({ message: response.data.data });
   } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+    return res.status(err.response?.status).send(err.response.data);
   }
 };
 
@@ -67,9 +76,9 @@ exports.getBank = async (req, res) => {
         Authorization: "Bearer " + userToken,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res.status(response.status).json({ message: response.data });
   } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+    return res.status(err.response?.status).send(err.response.data);
   }
 };
 
@@ -83,9 +92,9 @@ exports.deleteBank = async (req, res) => {
         Authorization: "Bearer " + userToken,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res.status(response.status).json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY"});
   } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+    return res.status(err.response?.status).send(err.response.data);
   }
 };
 
@@ -101,6 +110,9 @@ exports.wireInstructions = async (req, res) => {
     });
     return res.status(response.status).json({ message: response.data.data });
   } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+    return res.status(err.response?.status).send(err.response.data);
   }
 };
+
+
+
