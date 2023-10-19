@@ -14,7 +14,7 @@ module.exports = (router) => {
   );
 
   // withdrawal routes
-  router.post("/withdrawal", payout.withdrawal);
-  router.post("/withdrawal/resend", payout.resendWithdrawal);
-  router.delete("/cancelWithdrawal", payout.cancelWithdrawal);
+  router.post("/user/:user_id/withdrawal", payout.withdrawal);
+  router.post("/user/:user_id/withdrawal/resend", payout.resendWithdrawal);
+  router.delete("/user/:user_id/cancelWithdrawal", payout.cancelWithdrawal);
 };

@@ -1,8 +1,7 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const Transfer = require("./../models/transfer");
-
-let userToken = process.env.USER_AUTH_TOKEN;
+const User = require("./../models/userAuth");
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 let uuid = uuidv4();
@@ -13,17 +12,7 @@ const { responseCode, rs } = require("../util");
 
 exports.transfer = async (req, res) => {
   try {
-    // const userDetails = await User.scan()
-    //   .where("user_id")
-    //   .eq(req.body.user_id)
-    //   .exec();
-    // console.log(userDetails);
-
-    // if (userDetails?.count === 0)
-    //   return res
-    //     .status(responseCode.notFound)
-    //     .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
-
+  
     let data = {
       user_id: req.body.user_id,
       type: req.body.type,
@@ -126,7 +115,7 @@ exports.transferStatus = async (req, res) => {
     return res.status(response.status).json({ message: response.data.data });
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
+    return res.status(error.response?.status).send(error.response.data);
   }
 };
 
@@ -147,7 +136,7 @@ exports.withdrawal = async (req, res) => {
   } catch (error) {
     console.log("erroror", error);
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
+    return res.status(error.response?.status).send(error.response.data);
   }
 };
 
@@ -166,7 +155,7 @@ exports.resendWithdrawal = async (req, res) => {
   } catch (error) {
     console.log("erroror", error);
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
+    return res.status(error.response?.status).send(error.response.data);
   }
 };
 
@@ -184,7 +173,7 @@ exports.cancelWithdrawal = async (req, res) => {
   } catch (error) {
     console.log("erroror", error);
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
+    return res.status(error.response?.status).send(error.response.data);
   }
 };
 

@@ -9,8 +9,6 @@ const { responseCode, rs, messages } = require("../util");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
-let userToken = process.env.USER_AUTH_TOKEN;
-
 
 /**
  * @description
@@ -48,7 +46,6 @@ exports.transfer = async (req, res) => {
       },
     });
 
-    // console.log(JSON.stringify(responseuser?.data?.data));
 
     data = response.data.data.map((item) => {
       const matchingUser = responseuser?.data?.data.find(
@@ -77,7 +74,6 @@ exports.transfer = async (req, res) => {
 };
 
 // transactio history
-// transaction
 
 exports.transaction = async (req, res) => {
   try {
@@ -143,6 +139,8 @@ exports.transaction = async (req, res) => {
       logger.info(`Retrived transactions`, transferAdded)
 
       let responses = {
+        // "email" : ""
+        //  "payment method" : ""
         "amount": response.data[0].amount,
         "AccountTransferFee" : response.data[0].AccountTransferFee,
         "order_id" : response.data[0].order_id,
@@ -249,12 +247,25 @@ exports.monetizationHistory = async (req, res) => {
 
 exports.balances = async (req, res) => {
   try {
+    const {user_id} = req.params;
+    const count = await User.scan().exec()
+    var getUser = count.filter((item) => item.user_id == user_id);
+
+    if(getUser.length == 0 || getUser[0].userToken == ""){
+      common.eventBridge(
+        "USER NOT FOUND",
+        responseCode.badRequest
+      );
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
     let response = await axios({
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + userToken,
+        Authorization: "Bearer " + getUser[0].userToken,
       },
     });
     console.log(response.data);

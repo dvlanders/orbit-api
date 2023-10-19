@@ -6,10 +6,10 @@ const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
-  // Transaction routes
+  // transfer routes
   router.get("/transfer", payment.transfer);
 
-  // transaction
+  // transaction routes
   router.get("/user/:user_id/transactions",payment.transaction)
 
   // monitization routes
@@ -17,7 +17,9 @@ module.exports = (router) => {
   router.patch("/monetization/:monetization_id",payment.updateMonetization);
   router.delete("/monetization/:monetization_id",payment.deleteMonetization);
   router.delete("/monetization/history/?feature",payment.monetizationHistory);
-  router.get("/balance",payment.balances);
+
+  // balance routes
+  router.get("/user/:user_id/balance",payment.balances);
 
 
   

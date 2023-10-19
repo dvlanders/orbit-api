@@ -4,7 +4,7 @@ const dynamodb = require("./../config/dynamodb");
 const User = require("./../models/userAuth");
 const { responseCode, rs } = require("../util");
 const {common } = require("../util/helper");
-const cron = require('cron');
+
 
 
 
@@ -89,11 +89,8 @@ exports.requestOTP = async (req, res) => {
       data: req.body,
     });
 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("OTP REQUESTED", response.data.data));
+    return res.status(responseCode.success).json(rs.successResponse("OTP REQUESTED", response.data.data));
   } catch (error) {
-    console.log(error);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse({ message: error }));
@@ -103,7 +100,6 @@ exports.requestOTP = async (req, res) => {
 exports.verify = async (req, res) => {
   try {
     let userId = req.params.userId;
-
     const userDetails = await User.scan().where("user_id").eq(userId).exec();
     console.log(userDetails);
 
@@ -158,14 +154,9 @@ exports.userToken = async (req, res) => {
       { user_id: userDetails[0].user_id },
       { userToken: response?.data?.data?.token }
     );
-
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("TOKEN RETRIEVED", response.data.data));
+    return res.status(response.status).json({message : "TOKEN RETRIEVED", Data : response.data.data});
   } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse({ message: error }));
+    return res.status(error?.response?.status).json({error : error.response?.data});
   }
 };
 
@@ -178,7 +169,7 @@ exports.deleteUser = async (req, res) => {
       common.eventBridge(
         "USER NOT FOUND",
         responseCode.badRequest
-      );
+      )
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
@@ -196,6 +187,5 @@ exports.deleteUser = async (req, res) => {
     return res.status(err.response?.status).send(err.response?.data);
   }
 };
-
 
 
