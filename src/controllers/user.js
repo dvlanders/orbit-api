@@ -26,16 +26,24 @@ exports.eventBridgeTest = async (req, res) => {
   try {
     let message = "transactiono";
     let statusCode = 200;
-    // const event = await eventBridge.putEvents({
-    //   Entries: [
-    //     {
-    //       Source: "myapp.events",
-    //       Detail: `{ \"message\": \"${message}\", \"statusCode\": \"${statusCode}\" }`,
-    //       DetailType: "transaction",
-    //       EventBusName: process.env.EVENT_BRIDGE_BUS_NAME,
-    //     },
-    //   ],
-    // });
+    console.log(data);
+    let b = await cloudwatch
+      .putMetricData({
+        MetricName: "SuccessfulPayout",
+        Namespace: "PayoutMetrics",
+        Value: 1,
+        Unit: "Count",
+      })
+      .promise();
+
+    let a = await sns
+      .publish({
+        Message: `Payout successful for transfer ID: ${response.data.data.transfer_id}`,
+        TopicArn: "YOUR_SNS_TOPIC_ARN",
+      })
+      .promise();
+
+    common.eventBridge(message, statusCode);
     console.log("In the event group");
     return res.send({ success: true });
   } catch (error) {

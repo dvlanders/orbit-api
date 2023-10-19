@@ -38,16 +38,17 @@ app.use(express.urlencoded({ extended: false }));
 
 const { common } = require("./src/util/helper");
 
-app.use((req, res, next) => {
-  const originalResJson = res.json;
+const cloudwatch = new AWS.CloudWatch();
+const sns = new AWS.SNS();
 
-  res.json = function (data) {
-    console.log(data);
-    common.eventBridge(data?.message, data?.statusCode);
-    originalResJson.call(this, data);
-  };
-  next();
-});
+// app.use((req, res, next) => {
+//   const originalResJson = res.json;
+
+//   res.json = function (data) {
+//     originalResJson.call(this, data);
+//   };
+//   next();
+// });
 
 require("./src/routes")(app, express);
 
