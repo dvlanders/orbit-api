@@ -36,23 +36,18 @@ app.use(express.json());
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 app.use(express.urlencoded({ extended: false }));
 
-// Middleware example that logs the current date for every request
-// app.use((req, res, next) => {
-//   console.log(res.json);
-//   console.log(`Request received at: ${new Date().toISOString()}`);
-//   next();
-// });
+const { common } = require("./src/util/helper");
 
-// app.use((req, res, next) => {
-//   const originalResJson = res.json;
+app.use((req, res, next) => {
+  const originalResJson = res.json;
 
-//   res.json = function (data) {
-//     console.log(`Response data: ${JSON.stringify(data)}`);
-//     originalResJson.call(this, data);
-//   };
-
-//   next();
-// });
+  res.json = function (data) {
+    console.log(data);
+    common.eventBridge(data?.message, data?.statusCode);
+    originalResJson.call(this, data);
+  };
+  next();
+});
 
 require("./src/routes")(app, express);
 

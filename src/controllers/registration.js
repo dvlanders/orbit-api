@@ -3,11 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const dynamodb = require("./../config/dynamodb");
 const User = require("./../models/userAuth");
 const { responseCode, rs } = require("../util");
-const {common } = require("../util/helper");
-
-
-
-
+const { common } = require("../util/helper");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 /**
@@ -89,7 +85,9 @@ exports.requestOTP = async (req, res) => {
       data: req.body,
     });
 
-    return res.status(responseCode.success).json(rs.successResponse("OTP REQUESTED", response.data.data));
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("OTP REQUESTED", response.data.data));
   } catch (error) {
     return res
       .status(responseCode.serverError)
@@ -147,34 +145,34 @@ exports.userToken = async (req, res) => {
         Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
       },
     });
-    
 
     // console.log(response?.data?.data);
     let update_user_authtoken = await User.update(
       { user_id: userDetails[0].user_id },
       { userToken: response?.data?.data?.token }
     );
-    return res.status(response.status).json({message : "TOKEN RETRIEVED", Data : response.data.data});
+    return res
+      .status(response.status)
+      .json({ message: "TOKEN RETRIEVED", Data: response.data.data });
   } catch (error) {
-    return res.status(error?.response?.status).json({error : error.response?.data});
+    return res
+      .status(error?.response?.status)
+      .json({ error: error.response?.data });
   }
 };
 
 exports.deleteUser = async (req, res) => {
   try {
-    const {user_id} = req.params;
-    const count = await User.scan().exec()
-    var getUser = count.filter((item) => item.user_id == user_id);
-    if(getUser.length == 0 || getUser[0].userToken == ""){
-      common.eventBridge(
-        "USER NOT FOUND",
-        responseCode.badRequest
-      )
+    let userId = req.params.userId;
+
+    const userDetails = await User.get(userId);
+
+    if (userDetails === undefined)
       return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/account/${getUser[0].sfox_id}`;
+        .status(responseCode.notFound)
+        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/account/${userDetails.sfox_id}`;
     let response = await axios({
       method: "delete",
       url: apiPath,
@@ -182,10 +180,15 @@ exports.deleteUser = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
-    return res.status(response.status).json({ message: `USER IS DELETED SUCCESSFULLLY ` });
+
+    await userDetails.delete();
+
+    return res
+      .status(response?.status || responseCode.success)
+      .json(rs.successResponse("USER DELETED "));
   } catch (err) {
-    return res.status(err.response?.status).send(err.response?.data);
+    return res
+      .status(err?.response?.status || responseCode?.serverError)
+      .json(rs.errorResponse(err?.response?.data, err?.response?.status));
   }
 };
-
-

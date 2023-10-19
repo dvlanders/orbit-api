@@ -17,8 +17,12 @@ exports.response = (statusCode, message, data) => {
 };
 
 //________________ ERROR RESPONSE _____________________________//
-exports.errorResponse = (err) => {
-  return this.response(responseCode.serverError, messages.serverError, err);
+exports.errorResponse = (err, resCode) => {
+  return this.response(
+    resCode || responseCode.serverError,
+    messages.serverError,
+    err
+  );
 };
 // _______________ MIDDLEWARE RESPONSE ________________________//
 exports.authErr = (err) => {
