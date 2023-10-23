@@ -50,6 +50,8 @@ const { common } = require("./src/util/helper");
 //   next();
 // });
 
+require("./src/util/helper/tokenRegeneration")
+
 require("./src/routes")(app, express);
 
 let { logger } = require("./src/util/logger/logger");

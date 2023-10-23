@@ -37,14 +37,19 @@ exports.transfer = async (req, res) => {
       params: query,
     });
 
-    let apiPathuser = `${process.env.SFOX_BASE_URL}/v1/enterprise/users`;
-    let responseuser = await axios({
+    
+    console.log("dddddddddddddddddddddddddd",responseuser.data)
+
+    let apiBankPath = `${baseUrl}/v1/user/bank`;
+    let responses = await axios({
       method: "get",
-      url: apiPathuser,
+      url: apiBankPath,
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: "Bearer " + getUser[0].userToken,
       },
     });
+
+
 
 
     data = response.data.data.map((item) => {
@@ -69,7 +74,7 @@ exports.transfer = async (req, res) => {
     );
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
+    return res.status(error?.response?.status).send(error?.response?.data);
   }
 };
 
@@ -78,10 +83,10 @@ exports.transfer = async (req, res) => {
 exports.transaction = async (req, res) => {
   try {
     const {user_id} = req.params;
-    const { from, to, limit, offset, type } = req.query;
+    const { from_date, to_date, limit, offset, type } = req.query;
     let query = {
-      from: from ? from : null,
-      to: to ? to : null,
+      from_date: from_date ? from_date : null,
+      to_date : to_date ? to_date : null,
       limit: limit ? limit : null,
       offset: offset ? offset : null,
       type: type ? type : null,

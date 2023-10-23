@@ -8,5 +8,5 @@ module.exports = (router) => {
   router.post("/otp/:userId", registration.requestOTP);
   router.post("/verify/:userId", registration.verify);
   router.post("/user/token/:userId", registration.userToken);
-  router.delete("/user/:userId", registration.deleteUser);
+  router.delete("/user/:userId",registration.deleteUser);
 };
