@@ -38,8 +38,8 @@ app.use(express.urlencoded({ extended: false }));
 
 const { common } = require("./src/util/helper");
 
-const cloudwatch = new AWS.CloudWatch();
-const sns = new AWS.SNS();
+// const cloudwatch = new AWS.CloudWatch();
+// const sns = new AWS.SNS();
 
 // app.use((req, res, next) => {
 //   const originalResJson = res.json;
