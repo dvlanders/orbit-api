@@ -38,9 +38,6 @@ app.use(express.urlencoded({ extended: false }));
 
 const { common } = require("./src/util/helper");
 
-// const cloudwatch = new AWS.CloudWatch();
-// const sns = new AWS.SNS();
-
 // app.use((req, res, next) => {
 //   const originalResJson = res.json;
 
@@ -50,9 +47,9 @@ const { common } = require("./src/util/helper");
 //   next();
 // });
 
-require("./src/util/helper/tokenRegeneration")
-
 require("./src/routes")(app, express);
+
+require("./src/util/helper/tokenRegeneration");
 
 let { logger } = require("./src/util/logger/logger");
 
