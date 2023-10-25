@@ -7,7 +7,6 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
 let uuid = uuidv4();
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
-
 //Transfer
 
 exports.transfer = async (req, res) => {
@@ -22,6 +21,10 @@ exports.transfer = async (req, res) => {
       quantity: req.body.quantity,
       rate: req.body.rate,
     };
+    if(req.body.quantity < 11) 
+    return res
+    .status(responseCode.serverError)
+    .json(rs.errorResponse("QUANTITY MUST BE GREATER THAN 11",{}));
     data.transfer_id = uuidv4();
     let apiPath = `${baseUrl}/v1/enterprise/transfer`;
     let response = await axios({

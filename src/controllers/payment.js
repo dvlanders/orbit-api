@@ -1,10 +1,22 @@
 const axios = require("axios");
-const { v4: uuidv4 } = require("uuid");
+const {
+  v4: uuidv4
+} = require("uuid");
 const transactions = require("./../models/transactions");
-const {logger} = require("../util/logger/logger");
+const {
+  logger
+} = require("../util/logger/logger");
 const User = require("./../models/userAuth");
-const {common } = require("../util/helper");
-const { responseCode, rs, messages } = require("../util");
+const {
+  common
+} = require("../util/helper");
+const {
+  responseCode,
+  rs,
+  messages,
+  userApiPath
+} = require("../util");
+
 
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
@@ -18,7 +30,13 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
  */
 exports.transfer = async (req, res) => {
   try {
-    const { from_date, to_date, purpose, status, type } = req.query;
+    const {
+      from_date,
+      to_date,
+      purpose,
+      status,
+      type
+    } = req.query;
     let query = {
       from_date: from_date ? from_date : null,
       to_date: to_date ? to_date : null,
@@ -36,43 +54,45 @@ exports.transfer = async (req, res) => {
       },
       params: query,
     });
+    let finalData
 
-    
-    console.log("dddddddddddddddddddddddddd",responseuser.data)
-
-    let apiBankPath = `${baseUrl}/v1/user/bank`;
-    let responses = await axios({
-      method: "get",
-      url: apiBankPath,
-      headers: {
-        Authorization: "Bearer " + getUser[0].userToken,
+if(type == "PAYOUT"){
+finalData = response.data.data
+    for(let i=0; i<finalData.length; i++){
+      const userDetails = await User.scan().where("sfox_id").eq(finalData[i].user_id).exec();
+      let responses, bank
+      if (userDetails[0]?.userToken) {
+        let apiBankPath = `${process.env.SFOX_BASE_URL}/v1/user/bank`;
+        responses = await axios({
+          method: "get",
+          url: apiBankPath,
+          headers: {
+        Authorization: "Bearer " + userDetails[0]?.userToken,
       },
-    });
+    })
+    finalData[i].bankAccount = responses?.data.usd[0].account_number;
+    }
+    else{
+      finalData[i].bankAccount = "";
 
-
-
-
-    data = response.data.data.map((item) => {
-      const matchingUser = responseuser?.data?.data.find(
-        (user) => user.user_id === item.user_id
-      );
-      if (matchingUser) {
-        item.email = matchingUser.email;
-      }
-      return item;
-    });
-
+    }
+    finalData[i].email = userDetails[0]?.email; 
+  }
+}
+  
+    
     common.eventBridge(
       "Transfer History Retrived Successfully",
       responseCode.success
     );
     return res.status(responseCode.success).json(
       rs.successResponse("TRANFER HISTORY RETRIVED", {
-        data: response.data.data,
+        data: finalData,
         count: response.data.data.length,
       })
     );
   } catch (error) {
+    console.log("ddddddddddddddddddd", error)
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error?.response?.status).send(error?.response?.data);
   }
@@ -82,11 +102,19 @@ exports.transfer = async (req, res) => {
 
 exports.transaction = async (req, res) => {
   try {
-    const {user_id} = req.params;
-    const { from_date, to_date, limit, offset, type } = req.query;
+    const {
+      user_id
+    } = req.params;
+    const {
+      from_date,
+      to_date,
+      limit,
+      offset,
+      type
+    } = req.query;
     let query = {
       from_date: from_date ? from_date : null,
-      to_date : to_date ? to_date : null,
+      to_date: to_date ? to_date : null,
       limit: limit ? limit : null,
       offset: offset ? offset : null,
       type: type ? type : null,
@@ -94,7 +122,7 @@ exports.transaction = async (req, res) => {
     const count = await User.scan().exec()
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
+    if (getUser.length == 0 || getUser[0].userToken == "") {
       common.eventBridge(
         "USER NOT FOUND",
         responseCode.badRequest
@@ -136,7 +164,7 @@ exports.transaction = async (req, res) => {
         description: response.data[0].description,
         wallet_display_id: response.data[0].wallet_display_id,
         added_by_user_email: response.data[0].added_by_user_email,
-        symbol: response.data[0].symbol ?response.data[0].symbol : "null" ,
+        symbol: response.data[0].symbol ? response.data[0].symbol : "null",
         IdempotencyId: response.data[0].IdempotencyId,
         timestamp: response.data[0].timestamp
       });
@@ -147,20 +175,20 @@ exports.transaction = async (req, res) => {
         // "email" : ""
         //  "payment method" : ""
         "amount": response.data[0].amount,
-        "AccountTransferFee" : response.data[0].AccountTransferFee,
-        "order_id" : response.data[0].order_id,
-        "client_order_id" : response.data[0].client_order_id,
+        "AccountTransferFee": response.data[0].AccountTransferFee,
+        "order_id": response.data[0].order_id,
+        "client_order_id": response.data[0].client_order_id,
         "fees": response.data[0].fees,
         "status": response.data[0].status,
-        "description"  : response.data[0].description,
-        "net" : response.data[0].net_proceeds
+        "description": response.data[0].description,
+        "net": response.data[0].net_proceeds
       }
-    return res
-      .status(response.status)
-      .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
+      return res
+        .status(response.status)
+        .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
     }
   } catch (err) {
-    console.log("error",err)
+    console.log("error", err)
     return res.status(err.response?.status).send(err.response?.data);
   }
 };
@@ -169,7 +197,12 @@ exports.transaction = async (req, res) => {
 
 exports.monetization = async (req, res) => {
   try {
-    const { feature, method, amount, user_id } = req.body;
+    const {
+      feature,
+      method,
+      amount,
+      user_id
+    } = req.body;
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings`;
     let response = await axios({
       method: "post",
@@ -184,7 +217,9 @@ exports.monetization = async (req, res) => {
         user_id: user_id,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res.status(response.status).json({
+      message: response.data.data
+    });
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error.response.status).send(error.response.data);
@@ -204,7 +239,9 @@ exports.updateMonetization = async (req, res) => {
         new_monetization_amount: req.body.new_monetization_amount,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res.status(response.status).json({
+      message: response.data.data
+    });
   } catch (error) {
     common.eventBridge(
       error.response.data.toString(),
@@ -224,7 +261,9 @@ exports.deleteMonetization = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res.status(response.status).json({
+      message: response.data.data
+    });
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error.response.status).send(error.response.data);
@@ -241,7 +280,9 @@ exports.monetizationHistory = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
-    return res.status(response.status).json({ message: response.data.data });
+    return res.status(response.status).json({
+      message: response.data.data
+    });
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error.response.status).send(error.response.data);
@@ -252,11 +293,13 @@ exports.monetizationHistory = async (req, res) => {
 
 exports.balances = async (req, res) => {
   try {
-    const {user_id} = req.params;
+    const {
+      user_id
+    } = req.params;
     const count = await User.scan().exec()
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
+    if (getUser.length == 0 || getUser[0].userToken == "") {
       common.eventBridge(
         "USER NOT FOUND",
         responseCode.badRequest
