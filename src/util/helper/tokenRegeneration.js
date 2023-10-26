@@ -47,7 +47,7 @@ async function regeneration() {
   }
 }
 // const job = new cron.CronJob('48 18 * * *', () => {
-regeneration();
+// regeneration();
 
 // })
 
