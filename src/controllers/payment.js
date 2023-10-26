@@ -82,7 +82,12 @@ exports.transfer = async (req, res) => {
 
 exports.transaction = async (req, res) => {
   try {
-    const { user_id } = req.params;
+    let responses
+    const { transfer_id, user_id } = req.params;
+    if(!transfer_id || !user_id) 
+    return res
+    .status(responseCode.badRequest)
+    .json(rs.dataNotAdded("PROVIDE TRANSFER ID OR USERID", {}));
     const { from_date, to_date, limit, offset, type } = req.query;
     let query = {
       from_date: from_date ? from_date : null,
@@ -109,72 +114,93 @@ exports.transaction = async (req, res) => {
       },
       params: query,
     });
-
-    if (response.data[0]) {
-      const transaction = new Transactions({
-        id: response.data[0].id.toString(),
-        atxid: response.data[0].atxid,
-        order_id: response.data[0].order_id,
-        client_order_id: response.data[0].client_order_id,
-        day: response.data[0].day,
-        action: response.data[0].action,
-        currency: response.data[0].currency,
-        memo: response.data[0].memo,
-        amount: response.data[0].amount,
-        net_proceeds: response.data[0].net_proceeds,
-        price: response.data[0].price,
-        fees: response.data[0].fees,
-        status: response.data[0].status,
-        hold_expires: response.data[0].hold_expires,
-        tx_hash: response.data[0].tx_hash,
-        algo_name: response.data[0].algo_name,
-        algo_id: response.data[0].algo_id,
-        account_balance: response.data[0].account_balance,
-        TransactionFee: response.data[0].AccountTransferFee,
-        description: response.data[0].description,
-        wallet_display_id: response.data[0].wallet_display_id,
-        added_by_user_email: response.data[0].added_by_user_email,
-        symbol: response.data[0].symbol ? response.data[0].symbol : "null",
-        IdempotencyId: response.data[0].IdempotencyId,
-        timestamp: response.data[0].timestamp,
-        statementDescriptor: getUser[0].email,
-        user_id: getUser[0].user_id,
-        total_amount_received: null,
-        amountPaid: null,
-        ordertotal: null,
-      });
-      let transferAdded = await transaction.save();
-      logger.info(`Retrived transactions`, transferAdded);
-
-      let responses = [
-        {
-          id: response.data[0].id,
-          amount: response.data[0].amount ? response.data[0].amount : null,
-          transactionFee: response.data[0].AccountTransferFee
-            ? response.data[0].AccountTransferFee
-            : null,
-          orderId: response.data[0].order_id ? response.data[0].order_id : null,
-          customerId: response.data[0].client_order_id
-            ? response.data[0].client_order_id
-            : null,
-          fees: response.data[0].fees ? response.data[0].fees : null,
-          status: response.data[0].status ? response.data[0].status : null,
-          description: response.data[0].description
-            ? response.data[0].description
-            : null,
-          net: response.data[0].net_proceeds
-            ? response.data[0].net_proceeds
-            : null,
-          statementDescriptor: getUser[0].email ? getUser[0].email : null,
-          totalAmountReceived: null,
-          amountPaid: null,
-          ordertotal: null,
-        },
-      ];
+    if(response.data.length>0)
+    for(let i=0;i<response.data.length;i++){
+      if(response.data[i].IdempotencyId == transfer_id){
+          let transx = await Transactions.scan().where("IdempotencyId").eq(transfer_id).exec();
+          if(transx.length>0){
+          responses = [
+            {
+              id: transx[0].id,
+              amount: transx[0].amount ? transx[0].amount : null,
+              transactionFee:  transx[0].AccountTransferFee ? transx[0].AccountTransferFee : null,
+              orderId: transx[0].order_id ?  transx[0].order_id : null,
+              customerId:  transx[0].client_order_id ?  transx[0].client_order_id: null,
+              fees:  transx[0].fees ?  transx[0].fees : null,
+              status: transx[0].status ? transx[0].status : null,
+              description:  transx[0].description? transx[0].description : null,
+              net: transx[0].net_proceeds? transx[0].net_proceeds: null,
+              statementDescriptor: getUser[0].email ? getUser[0].email : null,
+              totalAmountReceived: null,
+              amountPaid: null,
+              ordertotal: null,
+            },
+          ];
+        }else{
+          const transaction = new Transactions({
+            id: response.data[i].id.toString(),
+            atxid: response.data[i].atxid,
+            order_id: response.data[i].order_id,
+            client_order_id: response.data[i].client_order_id,
+            day: response.data[i].day,
+            action: response.data[i].action,
+            currency: response.data[i].currency,
+            memo: response.data[i].memo,
+            amount: response.data[i].amount,
+            net_proceeds: response.data[i].net_proceeds,
+            price: response.data[i].price,
+            fees: response.data[i].fees,
+            status: response.data[i].status,
+            hold_expires: response.data[i].hold_expires,
+            tx_hash: response.data[i].tx_hash,
+            algo_name: response.data[i].algo_name,
+            algo_id: response.data[i].algo_id,
+            account_balance: response.data[i].account_balance,
+            TransactionFee: response.data[i].AccountTransferFee,
+            description: response.data[i].description,
+            wallet_display_id: response.data[i].wallet_display_id,
+            added_by_user_email: response.data[i].added_by_user_email,
+            symbol: response.data[i].symbol ? response.data[i].symbol : "null",
+            IdempotencyId: response.data[i].IdempotencyId,
+            timestamp: response.data[i].timestamp,
+            statementDescriptor: getUser[0].email,
+            user_id: getUser[0].user_id,
+            total_amount_received: null,
+            amountPaid: null,
+            ordertotal: null,
+          });
+          let transferAdded = await transaction.save();
+          logger.info(`Retrived transactions`, transferAdded);
+          transx = await Transactions.scan().where("IdempotencyId").eq(transfer_id).exec();
+          responses = [
+            {
+              id: transx[0].id,
+              amount: transx[0].amount ? transx[0].amount : null,
+              transactionFee:  transx[0].AccountTransferFee ? transx[0].AccountTransferFee : null,
+              orderId: transx[0].order_id ?  transx[0].order_id : null,
+              customerId:  transx[0].client_order_id ?  transx[0].client_order_id: null,
+              fees:  transx[0].fees ?  transx[0].fees : null,
+              status: transx[0].status ? transx[0].status : null,
+              description:  transx[0].description? transx[0].description : null,
+              net: transx[0].net_proceeds? transx[0].net_proceeds: null,
+              statementDescriptor: getUser[0].email ? getUser[0].email : null,
+              totalAmountReceived: null,
+              amountPaid: null,
+              ordertotal: null,
+            },
+          ];
+        }
+      }else{
+        return res
+        .status(responseCode.badRequest)
+        .json(rs.dataNotAdded("PROVIDE CORRECT TRANSFERID", {}));
+    }
+  }
+    
       return res
         .status(response.status)
         .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
-    }
+   
   } catch (err) {
     console.log("error", err);
     return res.status(err?.response?.status || 500).send(err?.response?.data);

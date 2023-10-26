@@ -10,11 +10,8 @@ module.exports = (router) => {
   router.get("/transfer", payment.transfer);
 
   // transaction routes
-  router.get("/user/:user_id/transactions", payment.transaction);
-  router.put(
-    "/user/:user_id/:trx_id/transaction/update",
-    payment.transactionUpdate
-  );
+  router.get("/user/:user_id/transaction/:transfer_id", payment.transaction);
+  router.put("/user/:user_id/:trx_id/transaction/update",payment.transactionUpdate);
 
   // monitization routes
   router.post("/monetization", payment.monetization);
