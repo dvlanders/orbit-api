@@ -5,7 +5,7 @@ const transactionSchema = new dynamoose.Schema(
   {
     id: String,
     atxid: Number,
-    order_id: String ,
+    order_id: String,
     client_order_id: String,
     day: String,
     action: String,
@@ -17,9 +17,9 @@ const transactionSchema = new dynamoose.Schema(
     fees: Number,
     status: String,
     hold_expires: String,
-    tx_hash: String ,
+    tx_hash: String,
     algo_name: String,
-    algo_id: String ,
+    algo_id: String,
     account_balance: Number,
     AccountTransferFee: Number,
     description: String,
@@ -27,8 +27,8 @@ const transactionSchema = new dynamoose.Schema(
     added_by_user_email: String,
     symbol: String,
     IdempotencyId: String,
-    user_id : String,
-    timestamp: Number
+    user_id: String,
+    timestamp: Number,
   },
   {
     timestamps: {
@@ -37,5 +37,5 @@ const transactionSchema = new dynamoose.Schema(
     },
   }
 );
-let transactions = dynamoose.model("transaction", transactionSchema);
-module.exports = transactions;
+let Transactions = dynamoose.model("transaction", transactionSchema);
+module.exports = Transactions;
