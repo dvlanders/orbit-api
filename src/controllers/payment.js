@@ -134,7 +134,7 @@ exports.transaction = async (req, res) => {
         description: response.data[0].description,
         wallet_display_id: response.data[0].wallet_display_id,
         added_by_user_email: response.data[0].added_by_user_email,
-        symbol: response.data[0].symbol ? response.data[0].symbol : null,
+        symbol: response.data[0].symbol ? response.data[0].symbol : "null",
         IdempotencyId: response.data[0].IdempotencyId,
         timestamp: response.data[0].timestamp,
         statementDescriptor: getUser[0].email,
@@ -146,28 +146,31 @@ exports.transaction = async (req, res) => {
       let transferAdded = await transaction.save();
       logger.info(`Retrived transactions`, transferAdded);
 
-      let responses = {
-        amount: response.data[0].amount ? response.data[0].amount : null,
-        transactionFee: response.data[0].AccountTransferFee
-          ? response.data[0].AccountTransferFee
-          : null,
-        orderId: response.data[0].order_id ? response.data[0].order_id : null,
-        customerId: response.data[0].client_order_id
-          ? response.data[0].client_order_id
-          : null,
-        fees: response.data[0].fees ? response.data[0].fees : null,
-        status: response.data[0].status ? response.data[0].status : null,
-        description: response.data[0].description
-          ? response.data[0].description
-          : null,
-        net: response.data[0].net_proceeds
-          ? response.data[0].net_proceeds
-          : null,
-        statementDescriptor: getUser[0].email ? getUser[0].email : null,
-        totalAmountReceived: null,
-        amountPaid: null,
-        ordertotal: null,
-      };
+      let responses = [
+        {
+          id: response.data[0].id,
+          amount: response.data[0].amount ? response.data[0].amount : null,
+          transactionFee: response.data[0].AccountTransferFee
+            ? response.data[0].AccountTransferFee
+            : null,
+          orderId: response.data[0].order_id ? response.data[0].order_id : null,
+          customerId: response.data[0].client_order_id
+            ? response.data[0].client_order_id
+            : null,
+          fees: response.data[0].fees ? response.data[0].fees : null,
+          status: response.data[0].status ? response.data[0].status : null,
+          description: response.data[0].description
+            ? response.data[0].description
+            : null,
+          net: response.data[0].net_proceeds
+            ? response.data[0].net_proceeds
+            : null,
+          statementDescriptor: getUser[0].email ? getUser[0].email : null,
+          totalAmountReceived: null,
+          amountPaid: null,
+          ordertotal: null,
+        },
+      ];
       return res
         .status(response.status)
         .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
@@ -181,7 +184,7 @@ exports.transaction = async (req, res) => {
 exports.transactionUpdate = async (req, res) => {
   try {
     const { description } = req.body;
-    const { user_id } = req.params;
+    const { user_id, trx_id } = req.params;
 
     if (!description)
       res.json(rs.incorrectDetails("PLEASE ENTER THE DESCRIPTION", {}));
@@ -189,6 +192,8 @@ exports.transactionUpdate = async (req, res) => {
     const transx = await Transactions.scan()
       .where("user_id")
       .eq(user_id)
+      .where("id")
+      .eq(trx_id)
       .exec();
 
     if (transx?.count === 0)
