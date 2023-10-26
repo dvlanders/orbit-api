@@ -5,7 +5,6 @@ let time = new Date();
 
 async function regeneration() {
   const userDetails = await User.scan().where("isVerified").eq(true).exec();
-  console.log(userDetails);
 
   const sfoxIds = userDetails
     .map((obj) => {
@@ -17,9 +16,9 @@ async function regeneration() {
     })
     .filter((value) => value !== null); // Filter out null values if needed
 
-  console.log(sfoxIds);
+  // console.log(sfoxIds);
 
-  console.log(process.env.SFOX_BASE_URL);
+  // console.log(process.env.SFOX_BASE_URL);
 
   if (sfoxIds.length > 0) {
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/user-tokens`;
@@ -38,7 +37,7 @@ async function regeneration() {
       },
     });
 
-    console.log(response?.data);
+    // console.log(response?.data);
     // let update_user_authtoken = User.update(
     //   { user_id: data.user_id },
     //   { userToken: response?.data?.data?.token }

@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
 const {common } = require("../util/helper");
+const registration = require("./registration")
 
 let baseUrl = process.env.SFOX_BASE_URL;
 
@@ -181,3 +182,32 @@ exports.wireInstructions = async (req, res) => {
 
 
 
+exports.customer = async(req,res) => {
+  try{
+    // let user = registration.getUser;
+    const count = await User.scan().exec();
+
+    let responseArr =[]
+    for(let i=0; i<count.length; i++){
+      let response = {
+        "name" : count[i].fullName,
+        "email": count[i].email,
+        "walletAddress" : null,
+        "created" : count[i].createDate
+      }
+      responseArr.push(response)
+    }
+    return res
+    .status(responseCode.success)
+    .json(
+      rs.successResponse("CUSTOMERS RETRIVED", { data : responseArr})
+    );
+  }
+  catch(error){
+    return res
+    .status(responseCode.serverError)
+    .json(rs.errorResponse(error?.message.toString()));
+  }
+
+
+}
