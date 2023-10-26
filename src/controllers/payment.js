@@ -1,21 +1,11 @@
 const axios = require("axios");
-const {
-  v4: uuidv4
-} = require("uuid");
+const { v4: uuidv4} = require("uuid");
 const transactions = require("./../models/transactions");
-const {
-  logger
-} = require("../util/logger/logger");
+const {logger} = require("../util/logger/logger");
 const User = require("./../models/userAuth");
-const {
-  common
-} = require("../util/helper");
-const {
-  responseCode,
-  rs,
-  messages,
-  userApiPath
-} = require("../util");
+const Transactions = require("./../models/transactions")
+const { common} = require("../util/helper");
+const {responseCode,rs,messages,userApiPath} = require("../util");
 
 
 
@@ -92,7 +82,6 @@ finalData = response.data.data
       })
     );
   } catch (error) {
-    console.log("ddddddddddddddddddd", error)
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error?.response?.status).send(error?.response?.data);
   }
@@ -105,6 +94,7 @@ exports.transaction = async (req, res) => {
     const {
       user_id
     } = req.params;
+    const {description} = req.body;
     const {
       from_date,
       to_date,
@@ -140,6 +130,16 @@ exports.transaction = async (req, res) => {
       },
       params: query,
     });
+
+    const transx = await Transactions.scan().exec();
+    var getTransx = transx.filter((item) => item.user_id == user_id);
+
+    if(getTransx.length >0 && description != getTransx[0].description){
+      await Transactions.update({"user_id": user_id},{"description": description})
+    }
+
+    
+
     if (response.data[0]) {
       const transaction = new transactions({
         id: response.data[0].id.toString(),
@@ -160,28 +160,40 @@ exports.transaction = async (req, res) => {
         algo_name: response.data[0].algo_name,
         algo_id: response.data[0].algo_id,
         account_balance: response.data[0].account_balance,
-        AccountTransferFee: response.data[0].AccountTransferFee,
+        TransactionFee: response.data[0].AccountTransferFee,
         description: response.data[0].description,
         wallet_display_id: response.data[0].wallet_display_id,
         added_by_user_email: response.data[0].added_by_user_email,
         symbol: response.data[0].symbol ? response.data[0].symbol : "null",
         IdempotencyId: response.data[0].IdempotencyId,
-        timestamp: response.data[0].timestamp
+        timestamp: response.data[0].timestamp,
+        statementDescriptor : getUser[0].email ,
+        user_id : getUser[0].user_id,
+        total_amount_received : null,
+        amountPaid: null,
+        ordertotal : null,
+        
+
+
       });
       let transferAdded = await transaction.save();
       logger.info(`Retrived transactions`, transferAdded)
 
       let responses = {
-        // "email" : ""
-        //  "payment method" : ""
-        "amount": response.data[0].amount,
-        "AccountTransferFee": response.data[0].AccountTransferFee,
-        "order_id": response.data[0].order_id,
-        "client_order_id": response.data[0].client_order_id,
-        "fees": response.data[0].fees,
-        "status": response.data[0].status,
-        "description": response.data[0].description,
-        "net": response.data[0].net_proceeds
+        "amount": response.data[0].amount ? response.data[0].amount : null ,
+        "transactionFee": response.data[0].AccountTransferFee ? response.data[0].AccountTransferFee : null,
+        "orderId": response.data[0].order_id ? response.data[0].order_id : null,
+        "customerId": response.data[0].client_order_id ? response.data[0].client_order_id : null,
+        "fees": response.data[0].fees ? response.data[0].fees : null,
+        "status": response.data[0].status ? response.data[0].status : null,
+        "description": response.data[0].description ? response.data[0].description : null,
+        "net": response.data[0].net_proceeds ?  response.data[0].net_proceeds  : null,
+        "statementDescriptor" : getUser[0].email ?getUser[0].email : null ,
+        "totalAmountReceived" : null,
+        "amountPaid" : null,
+        "ordertotal" : null,
+
+        
       }
       return res
         .status(response.status)
@@ -189,7 +201,7 @@ exports.transaction = async (req, res) => {
     }
   } catch (err) {
     console.log("error", err)
-    return res.status(err.response?.status).send(err.response?.data);
+    return res.status(err?.response?.status || 500).send(err?.response?.data);
   }
 };
 
