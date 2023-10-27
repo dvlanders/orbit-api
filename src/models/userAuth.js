@@ -17,6 +17,10 @@ const personSchema = new dynamoose.Schema(
       type: String,
       default: "",
     },
+    timeZone : {
+      type : String,
+      default : "America - New York"
+    }
   },
   {
     timestamps: {

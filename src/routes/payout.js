@@ -7,7 +7,7 @@ const { authorizeUser } = require("../util/middleware");
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
   // transfer routes
-  router.post("/transfer", payout.transfer);
+  router.post("/transfer", payout.createTransfer);
   router.post("/confirmtransfer", payout.confirmTransfer);
   router.delete("/transfer", payout.deleteTransfer);
   router.post(

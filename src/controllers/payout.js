@@ -9,7 +9,7 @@ const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 //Transfer
 
-exports.transfer = async (req, res) => {
+exports.createTransfer = async (req, res) => {
   try {
     let data = {
       user_id: req.body.user_id,

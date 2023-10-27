@@ -7,6 +7,7 @@ const Transactions = require("./../models/transactions");
 const { common } = require("../util/helper");
 const { responseCode, rs, messages, userApiPath } = require("../util");
 
+
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 /**
@@ -36,8 +37,6 @@ exports.transfer = async (req, res) => {
       params: query,
     });
     let finalData;
-
-   
       finalData = response.data.data;
       for (let i = 0; i < finalData.length; i++) {
         const userDetails = await User.scan()
@@ -56,8 +55,11 @@ exports.transfer = async (req, res) => {
             },
           });
           finalData[i].bankAccount = responses?.data.usd[0].account_number;
+          finalData[i].bankName = responses?.data.usd[0].bank_name;
         } else {
-          finalData[i].bankAccount = "";
+          finalData[i].bankAccount = null;
+          finalData[i].bankName = null;
+
         }
         finalData[i].email = userDetails[0]?.email;
       
@@ -71,18 +73,27 @@ exports.transfer = async (req, res) => {
       "Transfer History Retrived Successfully",
       responseCode.success
     );
+    if(res){
     return res.status(responseCode.success).json(
       rs.successResponse("TRANFER HISTORY RETRIVED", {
         data: finalData,
         count: response.data.data.length,
       })
-    );
+    ); }
+    else{
+      return {data: finalData, count : response.data.data.length}
+    } 
   } catch (error) {
-    console.log("dddddddddddddddddddddddd",error)
+    console.log("error",error)
     common.eventBridge(error?.message.toString(), responseCode.serverError);
+    if(res){
     return res.status(error?.response?.status || 500).send(error?.response?.data || error);
+    }else
+    return error
   }
 };
+
+
 
 // transactio history
 
@@ -361,9 +372,13 @@ exports.monetizationHistory = async (req, res) => {
 
 exports.balances = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
+    const { user_id} = req.params;
+    const { currency} = req.query;
+    if(!currency)   return res
+    .status(responseCode.badRequest)
+    .json(rs.incorrectDetails("PLEASE PROVIDE CURRENCY", {}));
 
+    const userDetails = await User.get(user_id);
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
@@ -378,11 +393,33 @@ exports.balances = async (req, res) => {
         Authorization: "Bearer " + userDetails.userToken,
       },
     });
-    console.log(response.data);
+    let  responses = {
+      "currently_way_to_bank_account": null,
+      "estimate_future_payouts" : null,
+      "payment_count" : null,
+      "payment" : null,
+      "refund_count" : null,
+      "refund" : null,
+      "adjustments_count" : null,
+      "adjustments" : null,
+      "total_incoming" : null,
+      "total_outgoing" : null,
+      "recently_deposite" : null,
+    }
+    for(let i=0; i<response.data.length; i++){
+      if(response.data[i].currency == currency){
+        responses.currency = response.data[i].currency;
+        responses.total = response.data[i].balance;
+      }
+    }
+    let request = {query : {type : "PAYMENT"}}
+    
+    let transferData = await this.transfer(request)
     return res
       .status(response.status)
-      .json(rs.successResponse("RETRIVED BALANCE", response.data));
+      .json(rs.successResponse("RETRIVED BALANCE", responses));
   } catch (err) {
-    return res.status(err.response.status).send(err.response.data);
+    console.log("err",err)
+    return res.status(err?.response?.status || 500).send(err);
   }
 };

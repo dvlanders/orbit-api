@@ -4,6 +4,7 @@ const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
 const { common } = require("../util/helper");
 const registration = require("./registration");
+const speakeasy = require('speakeasy'); 
 
 let baseUrl = process.env.SFOX_BASE_URL;
 
@@ -189,3 +190,45 @@ exports.customer = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
+exports.myAccount = async(req,res) =>{
+  try{
+    const {user_id} = req.params
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    
+    let response = {
+      "email" : userDetails.email,
+      "name" : userDetails.fullName,
+      "password" : userDetails.password,
+      "twoStepAuthentication": "Authenticator app",
+      "accountName" : userDetails.fullName,
+      "bussinessName": userDetails.businessName,
+      "timezone" : userDetails.timezone ? userDetails.timezone : "America - New York"  ,
+    }
+    return res
+    .status(responseCode.success)
+    .json(rs.successResponse("DATA RETRIVED", response ));
+  }catch(error){
+    return res
+    .status(responseCode.serverError)
+    .json(rs.errorResponse(error?.message.toString()));
+  }
+};
+
+// exports.phoneVerify = async(req,res) =>{
+//   try{
+//     const {phoneNumber} = req.body
+
+//   }
+//   catch(error){
+
+//   }
+
+
+// }
