@@ -2,39 +2,34 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
-const {common } = require("../util/helper");
-const registration = require("./registration")
+const { common } = require("../util/helper");
+const registration = require("./registration");
 
 let baseUrl = process.env.SFOX_BASE_URL;
 
-
 exports.linkBank = async (req, res) => {
-  
-    let data = {
-      accountnumber: req.body.accountnumber,
-      bankAccountType: req.body.bankAccountType,
-      bankCurrency: req.body.bankCurrency,
-      bankname: req.body.bankname,
-      enableWires: req.body.enableWires,
-      firstname: req.body.firstname,
-      isInternational: req.body.isInternational,
-      lastname: req.body.lastname,
-      name: req.body.name,
-      swiftnumber: req.body.swiftnumber,
-      type: req.body.type,
-      wireInstructions: req.body.wireInstructions,
-    };
+  let data = {
+    accountnumber: req.body.accountnumber,
+    bankAccountType: req.body.bankAccountType,
+    bankCurrency: req.body.bankCurrency,
+    bankname: req.body.bankname,
+    enableWires: req.body.enableWires,
+    firstname: req.body.firstname,
+    isInternational: req.body.isInternational,
+    lastname: req.body.lastname,
+    name: req.body.name,
+    swiftnumber: req.body.swiftnumber,
+    type: req.body.type,
+    wireInstructions: req.body.wireInstructions,
+  };
 
   try {
-    const {user_id} = req.params;
-    const count = await User.scan().exec()
+    const { user_id } = req.params;
+    const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
-      common.eventBridge(
-        "USER NOT FOUND",
-        responseCode.badRequest
-      );
+    if (getUser.length == 0 || getUser[0].userToken == "") {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
@@ -49,8 +44,8 @@ exports.linkBank = async (req, res) => {
       data: data,
     });
     return res
-    .status(responseCode.success)
-    .json(rs.successResponse("Bank Linked", response?.data));
+      .status(responseCode.success)
+      .json(rs.successResponse("Bank Linked", response?.data));
   } catch (err) {
     console.log("error", err);
     return res
@@ -61,15 +56,12 @@ exports.linkBank = async (req, res) => {
 
 exports.verifyBank = async (req, res) => {
   try {
-    const {user_id} = req.params;
-    const count = await User.scan().exec()
+    const { user_id } = req.params;
+    const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
-      common.eventBridge(
-        "USER NOT FOUND",
-        responseCode.badRequest
-      );
+    if (getUser.length == 0 || getUser[0].userToken == "") {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
@@ -95,15 +87,12 @@ exports.verifyBank = async (req, res) => {
 
 exports.getBank = async (req, res) => {
   try {
-    const {user_id} = req.params;
-    const count = await User.scan().exec()
+    const { user_id } = req.params;
+    const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
-      common.eventBridge(
-        "USER NOT FOUND",
-        responseCode.badRequest
-      );
+    if (getUser.length == 0 || getUser[0].userToken == "") {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
@@ -124,15 +113,12 @@ exports.getBank = async (req, res) => {
 
 exports.deleteBank = async (req, res) => {
   try {
-    const {user_id} = req.params;
-    const count = await User.scan().exec()
+    const { user_id } = req.params;
+    const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
-      common.eventBridge(
-        "USER NOT FOUND",
-        responseCode.badRequest
-      );
+    if (getUser.length == 0 || getUser[0].userToken == "") {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
@@ -145,7 +131,9 @@ exports.deleteBank = async (req, res) => {
         Authorization: "Bearer " + getUser[0].userToken,
       },
     });
-    return res.status(response.status).json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY"});
+    return res
+      .status(response.status)
+      .json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);
   }
@@ -153,15 +141,12 @@ exports.deleteBank = async (req, res) => {
 
 exports.wireInstructions = async (req, res) => {
   try {
-    const {user_id} = req.params;
-    const count = await User.scan().exec()
+    const { user_id } = req.params;
+    const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
 
-    if(getUser.length == 0 || getUser[0].userToken == ""){
-      common.eventBridge(
-        "USER NOT FOUND",
-        responseCode.badRequest
-      );
+    if (getUser.length == 0 || getUser[0].userToken == "") {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
@@ -180,34 +165,27 @@ exports.wireInstructions = async (req, res) => {
   }
 };
 
-
-
-exports.customer = async(req,res) => {
-  try{
+exports.customer = async (req, res) => {
+  try {
     // let user = registration.getUser;
     const count = await User.scan().exec();
 
-    let responseArr =[]
-    for(let i=0; i<count.length; i++){
+    let responseArr = [];
+    for (let i = 0; i < count.length; i++) {
       let response = {
-        "name" : count[i].fullName,
-        "email": count[i].email,
-        "walletAddress" : null,
-        "created" : count[i].createDate
-      }
-      responseArr.push(response)
+        name: count[i].fullName,
+        email: count[i].email,
+        walletAddress: null,
+        created: count[i].createDate,
+      };
+      responseArr.push(response);
     }
     return res
-    .status(responseCode.success)
-    .json(
-      rs.successResponse("CUSTOMERS RETRIVED", { data : responseArr})
-    );
-  }
-  catch(error){
+      .status(responseCode.success)
+      .json(rs.successResponse("CUSTOMERS RETRIVED", { data: responseArr }));
+  } catch (error) {
     return res
-    .status(responseCode.serverError)
-    .json(rs.errorResponse(error?.message.toString()));
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
   }
-
-
-}
+};

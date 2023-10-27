@@ -10,7 +10,9 @@ module.exports = (router) => {
   router.post("/transfer", payout.transfer);
   router.post("/confirmtransfer", payout.confirmTransfer);
   router.delete("/transfer", payout.deleteTransfer);
-  router.post("/transferStatus/&from_date&to_date&type&purpose&status",payout.transferStatus
+  router.post(
+    "/transferStatus/&from_date&to_date&type&purpose&status",
+    payout.transferStatus
   );
 
   // withdrawal routes
