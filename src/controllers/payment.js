@@ -37,14 +37,15 @@ exports.transfer = async (req, res) => {
     });
     let finalData;
 
-    if (type == "PAYOUT") {
+   
       finalData = response.data.data;
       for (let i = 0; i < finalData.length; i++) {
         const userDetails = await User.scan()
-          .where("sfox_id")
-          .eq(finalData[i].user_id)
-          .exec();
-        let responses, bank;
+        .where("sfox_id")
+        .eq(finalData[i].user_id)
+        .exec();
+        if (type == "PAYOUT") {
+        let responses;
         if (userDetails[0]?.userToken) {
           let apiBankPath = `${process.env.SFOX_BASE_URL}/v1/user/bank`;
           responses = await axios({
@@ -59,8 +60,12 @@ exports.transfer = async (req, res) => {
           finalData[i].bankAccount = "";
         }
         finalData[i].email = userDetails[0]?.email;
-      }
+      
     }
+    else if(type == "PAYMENT"){
+      finalData[i].email = userDetails[0]?.email;
+    }
+  }
 
     common.eventBridge(
       "Transfer History Retrived Successfully",
@@ -73,8 +78,9 @@ exports.transfer = async (req, res) => {
       })
     );
   } catch (error) {
+    console.log("dddddddddddddddddddddddd",error)
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error?.response?.status).send(error?.response?.data);
+    return res.status(error?.response?.status || 500).send(error?.response?.data || error);
   }
 };
 
