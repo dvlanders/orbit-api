@@ -7,6 +7,7 @@ const registration = require("./registration");
 const speakeasy = require('speakeasy'); 
 
 let baseUrl = process.env.SFOX_BASE_URL;
+let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 exports.linkBank = async (req, res) => {
   let data = {
@@ -232,3 +233,38 @@ exports.myAccount = async(req,res) =>{
 
 
 // }
+
+exports.dashboard = async(req,res)=>{
+  try{
+    const {user_id} = req.params
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    const customers = await User.scan().exec();
+    let count = customers.length
+    let apiPath = `${baseUrl}/v1/quote`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + userDetails.userToken ,
+      },
+      data : { pair: "btcusd",
+            side: "buy",
+            quantity: 5 }
+    });
+
+    let responses = {"totalPurchase":null,"totalCustomers":count,"totalVolume":null,"totalRevenue":null,"totalSales":null}
+    return res
+    .status(responseCode.success)
+    .json(rs.successResponse("DATA RETRIVED", responses ));
+  }catch(error){
+    return res
+    .status(responseCode.serverError)
+    .json(rs.errorResponse(error?.message.toString()));
+  }
+}
