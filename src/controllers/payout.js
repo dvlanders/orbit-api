@@ -11,7 +11,6 @@ const { responseCode, rs } = require("../util");
 
 exports.transfer = async (req, res) => {
   try {
-  
     let data = {
       user_id: req.body.user_id,
       type: req.body.type,
@@ -21,10 +20,10 @@ exports.transfer = async (req, res) => {
       quantity: req.body.quantity,
       rate: req.body.rate,
     };
-    if(req.body.quantity < 11) 
-    return res
-    .status(responseCode.serverError)
-    .json(rs.errorResponse("QUANTITY MUST BE GREATER THAN 11",{}));
+    if (req.body.quantity < 11)
+      return res
+        .status(responseCode.serverError)
+        .json(rs.errorResponse("QUANTITY MUST BE GREATER THAN 11", {}));
     data.transfer_id = uuidv4();
     let apiPath = `${baseUrl}/v1/enterprise/transfer`;
     let response = await axios({
@@ -179,5 +178,3 @@ exports.cancelWithdrawal = async (req, res) => {
     return res.status(error.response?.status).send(error.response.data);
   }
 };
-
-

@@ -161,8 +161,8 @@ exports.userToken = async (req, res) => {
   }
 };
 
-exports.getUser =async(req,res) => {
-  try{
+exports.getUser = async (req, res) => {
+  try {
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/users`;
     let response = await axios({
       method: "get",
@@ -172,15 +172,12 @@ exports.getUser =async(req,res) => {
       },
     });
     return res
-    .status(response.status)
-    .json({ message: "USER RETRIVED", Data: response.data.data });
-  }catch(error){
-    res
-    .status(error?.response?.status)
-    .json({ error: error?.response?.data });
-   
+      .status(response.status)
+      .json({ message: "USER RETRIVED", Data: response.data.data });
+  } catch (error) {
+    res.status(error?.response?.status).json({ error: error?.response?.data });
   }
-}
+};
 
 exports.deleteUser = async (req, res) => {
   try {

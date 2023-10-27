@@ -13,11 +13,7 @@ const resetPassword = process.env.RESET_PASSWORD;
 const dynamoose = require("dynamoose");
 const User = require("./../models/userAuth");
 
-
 const AWS = require("aws-sdk");
-
-
-
 
 const { EventBridge } = require("@aws-sdk/client-eventbridge");
 let eventBridge = new EventBridge({
@@ -37,46 +33,49 @@ AWS.config.update({
 const cloudwatch = new AWS.CloudWatch();
 const sns = new AWS.SNS();
 
-exports.eventBridgeTest = async (req,MetricName, Namespace, res) => {
+exports.eventBridgeTest = async (req, MetricName, Namespace, res) => {
   try {
     let message = "transactiono";
     let statusCode = 200;
-  var params = {
-    MetricData: [ /* required */
-    {
-      MetricName: "SuccessfulPayout", /* required */
-      // Counts: [
-      //   1,
-      //   /* more items */
-      // ],
-      // Dimensions: [
-      //   {
-      //     Name: 'STRING_VALUE', /* required */
-      //     Value: 'STRING_VALUE' /* required */
-      //   },
-      //   /* more items */
-      // ],
-      // StatisticValues: {
-      //   Maximum: 'NUMBER_VALUE', /* required */
-      //   Minimum: 'NUMBER_VALUE', /* required */
-      //   SampleCount: 'NUMBER_VALUE', /* required */
-      //   Sum: 'NUMBER_VALUE' /* required */
-      // },
-      // StorageResolution: 'NUMBER_VALUE',
-      Timestamp: new Date || 'Wed Dec 31 1969 16:00:00 GMT-0800 (PST)' || 123456789,
-      Unit: "Count" ,
-      Value: 1,
-      // Values: [
-      //   1,
-      //   /* more items */
-      // ]
-    },
-    /* more items */
-  ],
-  Namespace: "transaction" /* required */
-}
+    var params = {
+      MetricData: [
+        /* required */
+        {
+          MetricName: "SuccessfulPayout" /* required */,
+          // Counts: [
+          //   1,
+          //   /* more items */
+          // ],
+          // Dimensions: [
+          //   {
+          //     Name: 'STRING_VALUE', /* required */
+          //     Value: 'STRING_VALUE' /* required */
+          //   },
+          //   /* more items */
+          // ],
+          // StatisticValues: {
+          //   Maximum: 'NUMBER_VALUE', /* required */
+          //   Minimum: 'NUMBER_VALUE', /* required */
+          //   SampleCount: 'NUMBER_VALUE', /* required */
+          //   Sum: 'NUMBER_VALUE' /* required */
+          // },
+          // StorageResolution: 'NUMBER_VALUE',
+          Timestamp:
+            new Date() ||
+            "Wed Dec 31 1969 16:00:00 GMT-0800 (PST)" ||
+            123456789,
+          Unit: "Count",
+          Value: 1,
+          // Values: [
+          //   1,
+          //   /* more items */
+          // ]
+        },
+        /* more items */
+      ],
+      Namespace: "transaction" /* required */,
+    };
 
-    
     // console.log(data);
     let b = await cloudwatch.putMetricData(params).promise();
     let a = await sns
