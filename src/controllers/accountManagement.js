@@ -5,6 +5,7 @@ const User = require("./../models/userAuth");
 const { common } = require("../util/helper");
 const registration = require("./registration");
 const speakeasy = require('speakeasy'); 
+const payment = require("./payment")
 
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
@@ -237,6 +238,7 @@ exports.myAccount = async(req,res) =>{
 exports.dashboard = async(req,res)=>{
   try{
     const {user_id} = req.params
+    const {sales} = req.query
     const userDetails = await User.get(user_id);
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
@@ -258,7 +260,32 @@ exports.dashboard = async(req,res)=>{
             quantity: 5 }
     });
 
-    let responses = {"totalPurchase":null,"totalCustomers":count,"totalVolume":null,"totalRevenue":null,"totalSales":null}
+    let paymentReq = {query: {type :  "PAYMENT"}}
+    let paymentData = await payment.transfer(paymentReq);
+
+    let payoutReq = {query: {type :  "PAYOUT"}}
+    let payoutData = await payment.transfer(payoutReq);
+
+
+
+    
+    
+
+
+    let responses = {
+      "totalPurchase":null,
+      "purchasePercentage": null,
+      "totalCustomers":count,
+      "customersPercentage" : null,
+      "totalVolume":null,
+      "volumnePercentage" : null,
+      "totalRevenue":null,
+      "revenuePercentage" : null,
+      "totalSales":sales,
+      "paymentData" : paymentData.data ? paymentData.data : null,
+      "payoutData" : payoutData.data ? payoutData.data : null,
+    }
+
     return res
     .status(responseCode.success)
     .json(rs.successResponse("DATA RETRIVED", responses ));
