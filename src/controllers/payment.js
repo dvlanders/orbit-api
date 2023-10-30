@@ -227,14 +227,17 @@ exports.transaction = async (req, res) => {
               },
             ];
           }
-        } else {
-          return res
-            .status(responseCode.badRequest)
-            .json(rs.dataNotAdded("PROVIDE CORRECT TRANSFERID", {}));
         }
       }
+      if(responses == undefined){
+        return res
+        .status(responseCode.badRequest)
+        .json(
+          rs.response(responseCode.badRequest, "PLEASE PROVIDE CORRECT TRANSFER ID", {})
+        );
+      }
 
-    return res
+      return res
       .status(response.status)
       .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
   } catch (err) {

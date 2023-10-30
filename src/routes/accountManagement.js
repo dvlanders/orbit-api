@@ -14,5 +14,5 @@ module.exports = (router) => {
   router.get("/user/:user_id/wireInstructions",accountManagement.wireInstructions);
   router.get("/customers", accountManagement.customer);
   router.get("/user/:user_id/myaccount",accountManagement.myAccount);
-  router.post("/user/:user_id/dashboard",accountManagement.dashboard)
+  router.get("/user/:user_id/dashboard",accountManagement.dashboard)
 };
