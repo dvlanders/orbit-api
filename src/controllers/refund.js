@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const Transfer = require("./../models/transfer");
 const AWS = require("aws-sdk");
 AWS.config.update({ region: "us-east-1" });
+const User = require("./../models/userAuth");
 
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
@@ -13,14 +14,24 @@ const { responseCode, rs } = require("../util");
 
 exports.achTransfer = async (req, res) => {
   try {
+    const {user_id} = req.params
+
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
     const response = await axios.post(
-      `${baseUrl}/v1/user/bank/`,
+      `${baseUrl}/v1/user/bank/deposit`,
       {
         amount: req.body.amount,
       },
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${userDetails.userToken}`,
         },
       }
     );
@@ -59,8 +70,17 @@ exports.achTransfer = async (req, res) => {
 
 exports.MarketOrder = async (req, res) => {
   try {
+    const {user_id} = req.params
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    let {side} = req.params
     const response = await axios.post(
-      `${baseUrl}/v1/orders/${req.body.side}`,
+      `${baseUrl}/v1/orders/${side}`,
       {
         currency_pair: req.body.currency_pair,
         price: req.body.price,
@@ -70,10 +90,11 @@ exports.MarketOrder = async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${userDetails.userToken}`,
         },
       }
     );
+    console.log("dddxxxdxxxxxxxxxxxxxxxxxxxxx",response)
 
     if (response.data && response.data.id) {
       const eventbridge = new AWS.EventBridge();

@@ -169,29 +169,97 @@ exports.wireInstructions = async (req, res) => {
 };
 
 exports.customer = async (req, res) => {
-  try {
-    // let user = registration.getUser;
-    const count = await User.scan().exec();
-
+  try {   
+  const {user_id} = req.params;
+  const userDetails = await User.get(user_id);
+  if (userDetails == undefined) {
+    common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+    return res
+      .status(responseCode.badRequest)
+      .json(rs.incorrectDetails("USER NOT FOUND", {}));
+  }
     let responseArr = [];
-    for (let i = 0; i < count.length; i++) {
-      let response = {
-        name: count[i].fullName,
-        email: count[i].email,
-        walletAddress: null,
-        created: count[i].createDate,
-      };
-      responseArr.push(response);
-    }
+      let user = await registration.getUser();
+      // userDetails.sfox_id == users.advisor_user_id
+      let clientAccount = user.filter(users => users.account_type == "individual")
+      const count = await User.scan().exec();
+      for (let i=0; i<clientAccount.length;i++){
+        for(j=0; j<count.length;j++){
+          if(clientAccount[i].user_id == count[j].sfox_id){
+           let response = {
+            customer_id : count[j].user_id,
+            name: count[j].fullName,
+            email: count[j].email,
+            walletAddress: null,
+            created: count[j].createDate,
+          };
+            responseArr.push(response);
+          }
+        }
+        
+
+      }
     return res
       .status(responseCode.success)
-      .json(rs.successResponse("CUSTOMERS RETRIVED", { data: responseArr }));
+      .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr ));
   } catch (error) {
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
+exports.customerDetails = async(req,res) => {
+  try{
+
+    const {user_id, customer_id} = req.params;
+    const userDetails = await User.get(customer_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    let paymentReq = {query: {type :  "PAYMENT"}}
+    let payments = await payment.transfer(paymentReq);
+    let paymentData = []
+    for(let i=0; i<payments.data.length;i++){
+      if(payments.data[i].user_id == userDetails.sfox_id){
+        paymentData.push(payments.data[i])
+      }
+
+    }
+    //'02d8a2bf-5d00-449c-8058-d0aba5147e57',
+
+        let responseArr = [];
+          let response = {
+            "name": userDetails.fullName,
+            "email": userDetails.email,
+            "spent": null,
+            "since": userDetails.createDate,
+            "MMR" : null,
+            "paymentData" : paymentData ? paymentData : null,
+            "currencyPaid" : null,
+            "currencyReceived" : null,
+            "exchangeRate" : null,
+            "blockchainRecord" : null,
+            "walletAddress" : null,
+            "type" : null,
+            "issuer" : "Hifi Bridge",
+            "signatureCheck" : null,
+          };
+          responseArr.push(response);
+          return res
+          .status(responseCode.success)
+          .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr )); 
+
+  }catch(error){
+    return res
+    .status(responseCode.serverError)
+    .json(rs.errorResponse(error?.message.toString()));
+  }
+
+},
 
 exports.myAccount = async(req,res) =>{
   try{

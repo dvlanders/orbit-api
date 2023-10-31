@@ -171,11 +171,17 @@ exports.getUser = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
+    let responses = response.data.data
+    if(res){
     return res
-      .status(response.status)
-      .json({ message: "USER RETRIVED", Data: response.data.data });
+      .status(response?.status)
+      .json({ message: "USER RETRIVED", responses });
+    }else{
+      return responses
+    }
   } catch (error) {
-    res.status(error?.response?.status).json({ error: error?.response?.data });
+    console.log("error",error)
+    res.status(error?.response?.status || 500).json({ error: error?.response?.data });
   }
 };
 
