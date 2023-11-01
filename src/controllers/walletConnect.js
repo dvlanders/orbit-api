@@ -9,7 +9,38 @@ const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 //Transfer
 
-(exports.deposit = async (req, res) => {
+
+exports.deposite = async (req,res) => {
+    try{
+    
+    const {currency,user_id} = req.params;
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+        let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
+        let response = await axios({
+          method: "post",
+          url: apiPath,
+          headers: {
+            Authorization: "Bearer " + userDetails.userToken,
+          },
+        });
+        return res
+        .status(response.status)
+        .json({ message: response.data.data });
+
+    }catch(error){
+        return res.status(error.response.status).send(error.response.data);
+    }
+
+},
+
+
+exports.walletTransfer = async (req, res) => {
   try {
     const { currency } = req.query;
     const { user_id } = req.params;
@@ -33,8 +64,9 @@ const { responseCode, rs } = require("../util");
   } catch (error) {
     return res.status(error.response.status).send(error.response.data);
   }
-}),
-  (exports.walletTransfer = async (req, res) => {
+}
+
+  exports.walletTransfer = async (req, res) => {
     try {
       let data = {
         currency: req.body.currency,
@@ -91,4 +123,4 @@ const { responseCode, rs } = require("../util");
       common.eventBridge(error?.message.toString(), responseCode.serverError);
       return res.status(error.response.status).send(error.response.data);
     }
-  });
+  };

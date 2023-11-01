@@ -54,8 +54,13 @@ exports.transfer = async (req, res) => {
               Authorization: "Bearer " + userDetails[0]?.userToken,
             },
           });
+          if(responses.data>0){
           finalData[i].bankAccount = responses?.data?.usd[0].account_number;
           finalData[i].bankName = responses?.data?.usd[0].bank_name;
+          }
+          finalData[i].bankAccount = null;
+          finalData[i].bankName = null;
+
         } else {
           finalData[i].bankAccount = null;
           finalData[i].bankName = null;

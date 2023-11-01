@@ -4,7 +4,7 @@ const Transfer = require("./../models/transfer");
 const AWS = require("aws-sdk");
 AWS.config.update({ region: "us-east-1" });
 const User = require("./../models/userAuth");
-
+const accountManagement = require("./accountManagement")
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
@@ -12,61 +12,26 @@ let uuid = uuidv4();
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 
-exports.achTransfer = async (req, res) => {
+exports.wireTransfer = async (req, res) => {
   try {
-    const {user_id} = req.params
-
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    const response = await axios.post(
-      `${baseUrl}/v1/user/bank/deposit`,
-      {
-        amount: req.body.amount,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${userDetails.userToken}`,
-        },
-      }
-    );
-
-    if (response.data && response.data.id) {
-      const eventbridge = new AWS.EventBridge();
-      const params = {
-        Entries: [
-          {
-            Source: "myApp", // change this to our application name
-            DetailType: "ACH Transfer",
-            Detail: JSON.stringify(response.data),
-            EventBusName: "default",
-          },
-        ],
-      };
-      await eventbridge.putEvents(params).promise();
-
+    const { user_id } = req.params;
+    let Req = {params: {user_id :  user_id}}
+    let transfer = await accountManagement.wireInstructions(Req)
+    if(transfer){
       return res.status(200).send({
-        message: "ACH transfer created successfully",
-        data: response.data,
-      });
-    } else {
-      return res.status(500).send({
-        message: "Failed to create ACH transfer",
-        data: response.data,
+        message: "DATA RETRIVED",
+        data: transfer,
       });
     }
-  } catch (error) {
-    console.error("Error creating ACH transfer:", error);
     return res.status(500).send({
-      message: "An error occurred while creating the ACH transfer",
+      error: "CANNOT RETRIVED THE DATA",
+      data: {},
     });
+
+  }catch(error){
+    return res.status(500).send(error);
   }
-};
+}
 
 exports.MarketOrder = async (req, res) => {
   try {
@@ -94,7 +59,6 @@ exports.MarketOrder = async (req, res) => {
         },
       }
     );
-    console.log("dddxxxdxxxxxxxxxxxxxxxxxxxxx",response)
 
     if (response.data && response.data.id) {
       const eventbridge = new AWS.EventBridge();
