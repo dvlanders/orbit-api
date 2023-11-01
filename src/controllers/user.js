@@ -3,14 +3,12 @@ const validateSchema = require("../util/ValidatorSchema/index");
 const valid = require("../util/Validator");
 const Ajv = require("ajv");
 const ajv = new Ajv();
-// const User = require("../models/user");
 const speakeasy = require("speakeasy");
 const registration = require("./index");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs, messages } = require("../util");
 const { success } = require("../util/Constants");
 const resetPassword = process.env.RESET_PASSWORD;
-const dynamoose = require("dynamoose");
 const User = require("./../models/userAuth");
 
 const AWS = require("aws-sdk");
@@ -91,11 +89,6 @@ exports.eventBridgeTest = async (req, MetricName, Namespace, res) => {
   } catch (error) {
     return res.send(error.toString());
   }
-};
-
-exports.test1 = async (req, res) => {
-  console.log(res);
-  console.log("in the etst 1");
 };
 
 /**

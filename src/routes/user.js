@@ -1,9 +1,4 @@
-/* Importing the `apiPath` object  from the `util` folder. */
-const { userApiPath } = require("../util");
-
 const { user } = require("../controllers");
-/* Importing the `authorizeUser` function from the `authmiddleware` folder. */
-const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   router.post("/signup", user.signUp);

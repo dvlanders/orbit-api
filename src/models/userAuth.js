@@ -12,15 +12,16 @@ const personSchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    logoUrl: String,
     secretkey: String,
     sfox_id: {
       type: String,
       default: "",
     },
-    timeZone : {
-      type : String,
-      default : "America - New York"
-    }
+    timeZone: {
+      type: String,
+      default: "America/New_York",
+    },
   },
   {
     timestamps: {
