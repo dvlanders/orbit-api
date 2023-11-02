@@ -38,38 +38,38 @@ exports.transfer = async (req, res) => {
     });
     let finalData;
       finalData = response.data.data;
-      for (let i = 0; i < finalData.length; i++) {
-        const userDetails = await User.scan()
-        .where("sfox_id")
-        .eq(finalData[i].user_id)
-        .exec();
+      const userDetails = await User.scan()
+        .where("sfox_id").exec();
+        // .eq(finalData[i].user_id)
+      for (let i = 0; i < userDetails.count; i++) {
         if (type == "PAYOUT") {
         let responses;
-        if (userDetails[0]?.userToken) {
+        if (userDetails[i]?.userToken) {
           let apiBankPath = `${process.env.SFOX_BASE_URL}/v1/user/bank`;
           responses = await axios({
             method: "get",
             url: apiBankPath,
             headers: {
-              Authorization: "Bearer " + userDetails[0]?.userToken,
+              Authorization: "Bearer " + userDetails[i]?.userToken,
             },
           });
-          if(responses.data>0){
-          finalData[i].bankAccount = responses?.data?.usd[0].account_number;
-          finalData[i].bankName = responses?.data?.usd[0].bank_name;
+          console.log("dataaaaaaaaaaaaaaaaaa", userDetails[i])
+          if(responses?.data?.usd?.length>0){
+          userDetails[i].bankAccount = responses?.data?.usd[0].account_number;
+          userDetails[i].bankName = responses?.data?.usd[0].bank_name;
           }
-          finalData[i].bankAccount = null;
-          finalData[i].bankName = null;
+          userDetails[i].bankAccount = null;
+          userDetails[i].bankName = null;
         } else {
-          finalData[i].bankAccount = null;
-          finalData[i].bankName = null;
+          userDetails[i].bankAccount = null;
+          userDetails[i].bankName = null;
 
         }
-        finalData[i].email = userDetails[0]?.email;
+        userDetails[i].email = userDetails[i]?.email;
       
     }
     else if(type == "PAYMENT"){
-      finalData[i].email = userDetails[0]?.email;
+      userDetails[i].email = userDetails[i]?.email;
     }
   }
 
