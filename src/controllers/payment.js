@@ -60,7 +60,6 @@ exports.transfer = async (req, res) => {
           }
           finalData[i].bankAccount = null;
           finalData[i].bankName = null;
-
         } else {
           finalData[i].bankAccount = null;
           finalData[i].bankName = null;

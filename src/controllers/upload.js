@@ -84,11 +84,36 @@ exports.uploadImage = async (req, res) => {
 
       return res
         .status(responseCode.success)
-        .json(rs.successResponse("IMAGE UPLOADED", { url }));
+        .json(rs.successResponse("IMAGE UPLOADED"));
     } catch (error) {
       return res
         .status(responseCode.serverError)
         .json(rs.errorResponse(error?.message?.toString()));
     }
   });
+
+
 };
+
+exports.getLogo= async(req,res) => {
+  try{
+    const { user_id } = req.params;
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    let logo = userDetails?.logoUrl;
+    return res
+    .status(responseCode.success)
+    .json(rs.successResponse("LOGO RETRIVED", {url: logo}));
+
+  }catch(error){
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error));
+  }
+}

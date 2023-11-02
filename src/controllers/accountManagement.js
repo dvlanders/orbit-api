@@ -102,25 +102,25 @@ exports.verifyBank = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-    let apiPath = `${baseUrl}/v1/user/bank/verify`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + getUser[0].userToken,
-      },
-      data: {
-        verifyAmount1 : 0.02,
-        verifyAmount2 : 0.03
-      },
-    });
+    // let apiPath = `${baseUrl}/v1/user/bank/verify`;
+    // let response = await axios({
+    //   method: "post",
+    //   url: apiPath,
+    //   headers: {
+    //     Authorization: "Bearer " + getUser[0].userToken,
+    //   },
+    //   data: {
+    //     verifyAmount1 : 0.02,
+    //     verifyAmount2 : 0.03
+    //   },
+    // });
     let verifyBank
-    if(response.data) {
+    // if(response.data) {
        verifyBank = await bankAccountSchema.update(
-        { user_id: getUser[0].user_id },
+        {user_id: getUser[0].user_id },
         {isVerified: true, verifiedStatus : "verified"}
       );
-    }
+    // }
     return res.status(response.status).json({ message: verifyBank });
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);
@@ -383,37 +383,23 @@ exports.dashboard = async (req, res) => {
     let paymentReq = {query: {type :  "PAYMENT"}}
     let paymentData = await payment.transfer(paymentReq);
     let totalRev = 0
-    let montlyRev = []
     for(let i=0;i<paymentData.data.length;i++){
-      totalRev = totalRev +  paymentData.data[i].quantity * paymentData.data[i].rate;
+      totalRev = totalRev +  paymentData.data[i].quantity * paymentData.data[i].rate ;
       const dateString = paymentData.data[i].transfer_date;
       const date = new Date(dateString);
       let  getMonth = date.getUTCMonth() + 1
-      if(getMonth == 1){
-
-      }else if(getMonth == 2){
-
-      }else if(getMonth == 3){
-
-      }else if(getMonth == 4){
-
-      }else if(getMonth == 5){
-
-      }else if(getMonth == 6){
-
-      }else if(getMonth == 7){
-
-      }else if(getMonth == 8){
-
-      }else if(getMonth == 9){
-
-      }else if(getMonth == 10){
-
-      }else if(getMonth == 11){
-
-      }else{
-
-      }
+      monthData = []
+let month = 1
+while(month<13){
+    let total = 0
+    for (let i=0;i<data.length;i++){
+        if(data[i].month == month){
+            total = total + data[i].profit
+        }
+    }
+    monthData.push({1:total})
+    month = month +1
+}
 
     }
     

@@ -1,5 +1,6 @@
 const { upload } = require("../controllers");
 
 module.exports = (router) => {
-  router.post("/upload/:user_id/logo", upload.uploadImage);
+  router.post("/user/:user_id/upload/logo", upload.uploadImage);
+  router.get("/user/:user_id/logo",upload.getLogo)
 };
