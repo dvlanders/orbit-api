@@ -59,3 +59,7 @@ async function regeneration() {
 // })
 
 // job.start();
+
+/**
+ * https://api.sfox.com/v1/currency
+ */

@@ -6,11 +6,12 @@ const User = require("./../models/userAuth");
 const Transactions = require("./../models/transactions");
 const payment = require("./payment");
 const { common } = require("../util/helper");
-const { responseCode, rs, messages, userApiPath } = require("../util");
+const { responseCode, rs } = require("../util");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 /**
+ * For the PAyment and the Payout page
  * @description
  * @param {*} req
  * @param {*} res
@@ -52,7 +53,6 @@ exports.transfer = async (req, res) => {
               Authorization: "Bearer " + userDetails[i]?.userToken,
             },
           });
-          console.log("dataaaaaaaaaaaaaaaaaa", userDetails[i]);
           if (responses?.data?.usd?.length > 0) {
             userDetails[i].bankAccount = responses?.data?.usd[0].account_number;
             userDetails[i].bankName = responses?.data?.usd[0].bank_name;

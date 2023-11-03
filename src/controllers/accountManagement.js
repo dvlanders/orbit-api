@@ -9,41 +9,48 @@ const { response } = require("../util/ResponseTemplate");
 const bankAccountSchema = require("./../models/bankAccounts");
 
 let baseUrl = process.env.SFOX_BASE_URL;
-let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 exports.linkBank = async (req, res) => {
-  let data = {
-    accountnumber: req.body.accountnumber,
-    bankAccountType: req.body.bankAccountType,
-    bankCurrency: req.body.bankCurrency,
-    bankname: req.body.bankname,
-    enableWires: req.body.enableWires,
-    firstname: req.body.firstname,
-    isInternational: req.body.isInternational,
-    lastname: req.body.lastname,
-    name: req.body.name,
-    swiftnumber: req.body.swiftnumber,
-    type: req.body.type,
-    wireInstructions: req.body.wireInstructions,
-  };
-
   try {
-    const { user_id } = req.params;
-    const count = await User.scan().exec();
-    var getUser = count.filter((item) => item.user_id == user_id);
+    let data = {
+      accountnumber: req.body.accountnumber,
+      bankAccountType: req.body.bankAccountType,
+      bankCurrency: req.body.bankCurrency,
+      bankname: req.body.bankname,
+      enableWires: req.body.enableWires,
+      firstname: req.body.firstname,
+      isInternational: req.body.isInternational,
+      lastname: req.body.lastname,
+      name: req.body.name,
+      swiftnumber: req.body.swiftnumber,
+      type: req.body.type,
+      wireInstructions: req.body.wireInstructions,
+    };
 
-    if (getUser.length == 0 || getUser[0].userToken == "") {
+    const { user_id } = req.params;
+
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    console.log(userDetails);
+
+    if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
+
     const apiPath = `${baseUrl}/v1/user/bank`;
     let response = await axios({
       method: "post",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + getUser[0].userToken,
+        Authorization: "Bearer " + userDetails.userToken,
       },
       data: data,
     });
@@ -91,15 +98,26 @@ exports.linkBank = async (req, res) => {
 exports.verifyBank = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const { verifyAmount1, verifyAmount2 } = req.body;
-    const count = await User.scan().exec();
-    var getUser = count.filter((item) => item.user_id == user_id);
-    if (getUser.length == 0 || getUser[0].userToken == "") {
+    // const { verifyAmount1, verifyAmount2 } = req.body;
+
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    console.log(userDetails);
+
+    if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
+
+    // await bankAccountSchema
+
     // let apiPath = `${baseUrl}/v1/user/bank/verify`;
     // let response = await axios({
     //   method: "post",
@@ -115,7 +133,7 @@ exports.verifyBank = async (req, res) => {
     let verifyBank;
     // if(response.data) {
     verifyBank = await bankAccountSchema.update(
-      { user_id: getUser[0].user_id },
+      { user_id: userDetails.user_id },
       { isVerified: true, verifiedStatus: "verified" }
     );
     // }
@@ -128,21 +146,29 @@ exports.verifyBank = async (req, res) => {
 exports.getBank = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const count = await User.scan().exec();
-    var getUser = count.filter((item) => item.user_id == user_id);
 
-    if (getUser.length == 0 || getUser[0].userToken == "") {
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    console.log(userDetails);
+
+    if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
+
     let apiPath = `${baseUrl}/v1/user/bank`;
     let response = await axios({
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + getUser[0].userToken,
+        Authorization: "Bearer " + userDetails.userToken,
       },
     });
     return res.status(response.status).json({ message: response.data });
@@ -154,27 +180,35 @@ exports.getBank = async (req, res) => {
 exports.deleteBank = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const count = await User.scan().exec();
-    var getUser = count.filter((item) => item.user_id == user_id);
 
-    if (getUser.length == 0 || getUser[0].userToken == "") {
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    console.log(userDetails);
+
+    if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
+
     let apiPath = `${baseUrl}/v1/user/bank`;
     let response = await axios({
       method: "delete",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + getUser[0].userToken,
+        Authorization: "Bearer " + userDetails.userToken,
       },
     });
     let deleteAccount;
     if (response.status == 200) {
       deleteAccount = await bankAccountSchema.update(
-        { user_id: getUser[0].user_id },
+        { user_id: userDetails.user_id },
         { status: "Inactive" }
       );
     }
@@ -183,7 +217,7 @@ exports.deleteBank = async (req, res) => {
         .status(response.status)
         .json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });
     } else {
-      return res.status(500).json({ error: "ERROR IN DELETEIG BANK ACCOUNT" });
+      return res.status(500).json({ error: "ERROR IN DELETING BANK ACCOUNT" });
     }
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);
@@ -261,7 +295,7 @@ exports.customer = async (req, res) => {
   }
 };
 
-(exports.customerDetails = async (req, res) => {
+exports.customerDetails = async (req, res) => {
   try {
     const { user_id, customer_id } = req.params;
     const userDetails = await User.get(customer_id);
@@ -307,38 +341,39 @@ exports.customer = async (req, res) => {
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
-}),
-  (exports.myAccount = async (req, res) => {
-    try {
-      const { user_id } = req.params;
-      const userDetails = await User.get(user_id);
-      if (userDetails == undefined) {
-        common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-        return res
-          .status(responseCode.badRequest)
-          .json(rs.incorrectDetails("USER NOT FOUND", {}));
-      }
+};
 
-      let response = {
-        email: userDetails.email,
-        name: userDetails.fullName,
-        password: userDetails.password,
-        twoStepAuthentication: "Authenticator app",
-        accountName: userDetails.fullName,
-        bussinessName: userDetails.businessName,
-        timezone: userDetails.timezone
-          ? userDetails.timezone
-          : "America - New York",
-      };
+exports.myAccount = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
-        .status(responseCode.success)
-        .json(rs.successResponse("DATA RETRIVED", response));
-    } catch (error) {
-      return res
-        .status(responseCode.serverError)
-        .json(rs.errorResponse(error?.message.toString()));
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-  });
+
+    let response = {
+      email: userDetails.email,
+      name: userDetails.fullName,
+      password: userDetails.password,
+      twoStepAuthentication: "Authenticator app",
+      accountName: userDetails.fullName,
+      bussinessName: userDetails.businessName,
+      timezone: userDetails.timezone
+        ? userDetails.timezone
+        : "America - New York",
+    };
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("DATA RETRIVED", response));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
+};
 
 exports.dashboard = async (req, res) => {
   try {

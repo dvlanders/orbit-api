@@ -18,6 +18,10 @@ const personSchema = new dynamoose.Schema(
       type: String,
       default: "",
     },
+    isSfoxVerified: {
+      type: Boolean,
+      default: false,
+    },
     timeZone: {
       type: String,
       default: "America/New_York",

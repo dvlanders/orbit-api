@@ -115,9 +115,17 @@ exports.verify = async (req, res) => {
       },
       data: req.body,
     });
+
+    let update_user_authtoken = await User.update(
+      { user_id: userDetails[0].user_id },
+      { isSfoxVerified: true }
+    );
+
+    // console.log(update_user_authtoken);
+
     return res
       .status(responseCode.success)
-      .json(rs.successResponse("OTP VERIFIED", response.data.data));
+      .json(rs.successResponse("OTP VERIFIED", response?.data?.data));
   } catch (error) {
     return res
       .status(responseCode.serverError)
@@ -168,7 +176,7 @@ exports.getUser = async (req, res) => {
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + process.env.SFOX_ENTERPRISE_API_KEY,
+        Authorization: "Bearer " + token,
       },
     });
     let responses = response.data.data;
