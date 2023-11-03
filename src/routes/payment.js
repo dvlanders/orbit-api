@@ -7,8 +7,8 @@ module.exports = (router) => {
   // transaction routes
   router.get("/user/:user_id/transaction/:transfer_id", payment.transaction);
   router.put(
-    "/user/:user_id/:trx_id/transaction/update",
-    payment.transactionUpdate
+    "/user/:user_id/:trx_id/transfer/update",
+    payment.tranferUpdate
   );
 
   // monitization routes

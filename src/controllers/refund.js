@@ -4,7 +4,7 @@ const Transfer = require("./../models/transfer");
 const AWS = require("aws-sdk");
 AWS.config.update({ region: "us-east-1" });
 const User = require("./../models/userAuth");
-const accountManagement = require("./accountManagement")
+const accountManagement = require("./accountManagement");
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
@@ -15,9 +15,9 @@ const { responseCode, rs } = require("../util");
 exports.wireTransfer = async (req, res) => {
   try {
     const { user_id } = req.params;
-    let Req = {params: {user_id :  user_id}}
-    let transfer = await accountManagement.wireInstructions(Req)
-    if(transfer){
+    let Req = { params: { user_id: user_id } };
+    let transfer = await accountManagement.wireInstructions(Req);
+    if (transfer) {
       return res.status(200).send({
         message: "DATA RETRIVED",
         data: transfer,
@@ -27,15 +27,14 @@ exports.wireTransfer = async (req, res) => {
       error: "CANNOT RETRIVED THE DATA",
       data: {},
     });
-
-  }catch(error){
+  } catch (error) {
     return res.status(500).send(error);
   }
-}
+};
 
 exports.MarketOrder = async (req, res) => {
   try {
-    const {user_id} = req.params
+    const { user_id } = req.params;
     const userDetails = await User.get(user_id);
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
@@ -43,7 +42,7 @@ exports.MarketOrder = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-    let {side} = req.params
+    let { side } = req.params;
     const response = await axios.post(
       `${baseUrl}/v1/orders/${side}`,
       {
@@ -221,5 +220,45 @@ exports.transferStatus = async (req, res) => {
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(error.response.status).send(error.response.data);
+  }
+};
+
+exports.withdrawalBank = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const { currency, address, amount, isWire } = req.body;
+    const userDetails = await User.get(user_id);
+    if (amount < 31 && currency == "usd") {
+      return res
+        .status(responseCode.badRequest)
+        .json(
+          rs.incorrectDetails(
+            "AMOUNT CANNOT BE LESS THAN 30 USD AS FEE RATE OF USD IS 30",
+            {}
+          )
+        );
+    }
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    const apiPath = `${baseUrl}/v1/user/withdraw`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + userDetails.userToken,
+      },
+      data: {
+        currency: currency,
+        amount: amount,
+        isWire: isWire ? isWire : false,
+      },
+    });
+    return res.status(response.status).json({ message: response.data.data });
+  } catch (error) {
+    return res.status(error.response?.status).send(error.response.data);
   }
 };

@@ -4,10 +4,9 @@ const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
 const { common } = require("../util/helper");
 const registration = require("./registration");
-const speakeasy = require('speakeasy'); 
 const payment = require("./payment");
 const { response } = require("../util/ResponseTemplate");
-const bankAccountSchema = require("./../models/bankAccounts")
+const bankAccountSchema = require("./../models/bankAccounts");
 
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
@@ -48,39 +47,38 @@ exports.linkBank = async (req, res) => {
       },
       data: data,
     });
-    let saveBank
-    if(response.data.usd.length >0 ){
+    let saveBank;
+    if (response.data.usd.length > 0) {
       const myBank = new bankAccountSchema({
-      user_id : user_id,
-      id: response.data.usd[0].id,
-      status: response.data.usd[0].status,
-      requires_verification:  response.data.usd[0].requires_verification,
-      requires_support:  response.data.usd[0].requires_support,
-      routing_number:  response.data.usd[0].routing_number,
-      account_number:  response.data.usd[0].account_number,
-      name1:  response.data.usd[0].name1,
-      currency:  response.data.usd[0].currency,
-      type:  response.data.usd[0].type,
-      bank_name:  response.data.usd[0].bank_name,
-      ach_enabled:  response.data.usd[0].ach_enabled,
-      international_bank:  response.data.usd[0].isInternational,
-      ref_id:  response.data.usd[0].ref_id,
-      wire_withdrawal_fee:  response.data.usd[0].wire_withdrawal_fee,
-      isVerified : false,
-      verifiedStatus :  "pending"
-      })
+        user_id: user_id,
+        id: response.data.usd[0].id,
+        status: response.data.usd[0].status,
+        requires_verification: response.data.usd[0].requires_verification,
+        requires_support: response.data.usd[0].requires_support,
+        routing_number: response.data.usd[0].routing_number,
+        account_number: response.data.usd[0].account_number,
+        name1: response.data.usd[0].name1,
+        currency: response.data.usd[0].currency,
+        type: response.data.usd[0].type,
+        bank_name: response.data.usd[0].bank_name,
+        ach_enabled: response.data.usd[0].ach_enabled,
+        international_bank: response.data.usd[0].isInternational,
+        ref_id: response.data.usd[0].ref_id,
+        wire_withdrawal_fee: response.data.usd[0].wire_withdrawal_fee,
+        isVerified: false,
+        verifiedStatus: "pending",
+      });
       saveBank = await myBank.save();
     }
-    if(saveBank){
-    let responses = saveBank 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("Bank Linked", responses));
-    }else{
+    if (saveBank) {
+      let responses = saveBank;
       return res
-      .status(responseCode.badRequest)
-      .json(rs.incorrectDetails("BANK ACCOUNT NOT SAVED", {}));
-
+        .status(responseCode.success)
+        .json(rs.successResponse("Bank Linked", responses));
+    } else {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("BANK ACCOUNT NOT SAVED", {}));
     }
   } catch (err) {
     console.log("error", err);
@@ -93,7 +91,7 @@ exports.linkBank = async (req, res) => {
 exports.verifyBank = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const{verifyAmount1, verifyAmount2} = req.body;
+    const { verifyAmount1, verifyAmount2 } = req.body;
     const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
     if (getUser.length == 0 || getUser[0].userToken == "") {
@@ -114,12 +112,12 @@ exports.verifyBank = async (req, res) => {
     //     verifyAmount2 : 0.03
     //   },
     // });
-    let verifyBank
+    let verifyBank;
     // if(response.data) {
-       verifyBank = await bankAccountSchema.update(
-        {user_id: getUser[0].user_id },
-        {isVerified: true, verifiedStatus : "verified"}
-      );
+    verifyBank = await bankAccountSchema.update(
+      { user_id: getUser[0].user_id },
+      { isVerified: true, verifiedStatus: "verified" }
+    );
     // }
     return res.status(response.status).json({ message: verifyBank });
   } catch (err) {
@@ -173,21 +171,19 @@ exports.deleteBank = async (req, res) => {
         Authorization: "Bearer " + getUser[0].userToken,
       },
     });
-    let deleteAccount
-    if(response.status == 200){
+    let deleteAccount;
+    if (response.status == 200) {
       deleteAccount = await bankAccountSchema.update(
         { user_id: getUser[0].user_id },
-        {status: "Inactive" }
+        { status: "Inactive" }
       );
     }
-    if(deleteAccount){
-    return res
-      .status(response.status)
-      .json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });
-    }else{
+    if (deleteAccount) {
       return res
-      .status(500)
-      .json({ error: "ERROR IN DELETEIG BANK ACCOUNT" });
+        .status(response.status)
+        .json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });
+    } else {
+      return res.status(500).json({ error: "ERROR IN DELETEIG BANK ACCOUNT" });
     }
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);
@@ -214,10 +210,10 @@ exports.wireInstructions = async (req, res) => {
         Authorization: "Bearer " + getUser[0].userToken,
       },
     });
-    if(res){
-    return res.status(response.status).json({ message: response.data.data });
-    }else{
-      return response.data.data
+    if (res) {
+      return res.status(response.status).json({ message: response.data.data });
+    } else {
+      return response.data.data;
     }
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);
@@ -344,17 +340,6 @@ exports.customer = async (req, res) => {
     }
   });
 
-// exports.phoneVerify = async(req,res) =>{
-//   try{
-//     const {phoneNumber} = req.body
-
-//   }
-//   catch(error){
-
-//   }
-
-// }
-
 exports.dashboard = async (req, res) => {
   try {
     const { user_id } = req.params;
@@ -367,7 +352,7 @@ exports.dashboard = async (req, res) => {
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
     const customers = await User.scan().exec();
-    let count = customers.length;
+    let count = customers.count;
     let apiPath = `${baseUrl}/v1/quote`;
     let response = await axios({
       method: "post",
@@ -377,50 +362,62 @@ exports.dashboard = async (req, res) => {
       },
       data: { pair: "btcusd", side: "buy", quantity: 5 },
     });
+    let refund = 0;
+    let monetization = 0;
+    let adjustments = 0;
 
-
-
-    let paymentReq = {query: {type :  "PAYMENT"}}
+    let paymentReq = { query: { type: "PAYMENT" } };
     let paymentData = await payment.transfer(paymentReq);
-    let totalRev = 0
-    for(let i=0;i<paymentData.data.length;i++){
-      totalRev = totalRev +  paymentData.data[i].quantity * paymentData.data[i].rate ;
-      const dateString = paymentData.data[i].transfer_date;
-      const date = new Date(dateString);
-      let  getMonth = date.getUTCMonth() + 1
-      monthData = []
-let month = 1
-while(month<13){
-    let total = 0
-    for (let i=0;i<data.length;i++){
-        if(data[i].month == month){
-            total = total + data[i].profit
+    let totalRev = 0;
+    // for(let i=0;i<paymentData.data.length;i++){
+    // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+    // const dateString = paymentData.data[i].transfer_date;
+    // const date = new Date(dateString);
+    // let  getMonth = date.getUTCMonth() + 1
+
+    monthData = [];
+    let month = 1;
+    for (let i = 0; i < paymentData.data.length; i++) {
+      totalRev =
+        totalRev +
+        paymentData.data[i].quantity * paymentData.data[i].rate -
+        refund -
+        monetization -
+        adjustments;
+    }
+    while (month < 13) {
+      let total = 0;
+      for (let i = 0; i < paymentData.data.length; i++) {
+        const dateString = paymentData.data[i].transfer_date;
+        const date = new Date(dateString);
+        let getMonth = date.getUTCMonth() + 1;
+        if (getMonth == month) {
+          total =
+            total +
+            paymentData.data[i].quantity * paymentData.data[i].rate -
+            refund -
+            monetization -
+            adjustments;
         }
+      }
+      monthData.push({ month: month, totalAmount: total });
+      month = month + 1;
     }
-    monthData.push({1:total})
-    month = month +1
-}
-
-    }
-    
-
     let payoutReq = { query: { type: "PAYOUT" } };
     let payoutData = await payment.transfer(payoutReq);
 
     let responses = {
-      "totalPurchase":paymentData.count ? paymentData.count : null,
-      "purchasePercentage": null,
-      "totalCustomers":count,
-      "customersPercentage" : null,
-      "totalVolume":null,
-      "volumnePercentage" : null,
-      "totalRevenue":totalRev ? totalRev : 0,
-      "montlyRevenue" :null ,
-      "revenuePercentage" : null,
-      "totalSales":sales,
-      "paymentData" : paymentData.data ? paymentData.data : null,
-      "payoutData" : payoutData.data ? payoutData.data : null,
-    }
+      totalPurchase: paymentData.count ? paymentData.count : null,
+      purchasePercentage: null,
+      totalCustomers: count,
+      customersPercentage: null,
+      totalRevenue: totalRev ? totalRev : 0,
+      montlyRevenue: monthData,
+      revenuePercentage: null,
+      totalSales: sales,
+      paymentData: paymentData.data ? paymentData.data : null,
+      payoutData: payoutData.data ? payoutData.data : null,
+    };
 
     return res
       .status(responseCode.success)

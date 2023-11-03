@@ -1,108 +1,15 @@
-const {
-  v4: uuidv4
-} = require("uuid");
+const { v4: uuidv4 } = require("uuid");
 const validateSchema = require("../util/ValidatorSchema/index");
 const valid = require("../util/Validator");
 const Ajv = require("ajv");
 const ajv = new Ajv();
 const speakeasy = require("speakeasy");
 const registration = require("./index");
-const {
-  sendEmail,
-  common
-} = require("../util/helper");
-const {
-  responseCode,
-  rs,
-  messages
-} = require("../util");
-const {
-  success
-} = require("../util/Constants");
+const { sendEmail, common } = require("../util/helper");
+const { responseCode, rs, messages } = require("../util");
+const { success } = require("../util/Constants");
 const resetPassword = process.env.RESET_PASSWORD;
 const User = require("./../models/userAuth");
-const AWS = require("aws-sdk");
-
-const {
-  EventBridge
-} = require("@aws-sdk/client-eventbridge");
-let eventBridge = new EventBridge({
-  credentials: {
-    accessKeyId: "AKIAWTCFUVBIDKIM73VF",
-    secretAccessKey: "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",
-  },
-  region: "us-east-1",
-});
-AWS.config.update({
-  credentials: {
-    accessKeyId: "AKIAWTCFUVBIDKIM73VF",
-    secretAccessKey: "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",
-  },
-  region: "us-east-1",
-});
-const cloudwatch = new AWS.CloudWatch();
-const sns = new AWS.SNS();
-
-exports.eventBridgeTest = async (req, MetricName, Namespace, res) => {
-  try {
-    let message = "transactiono";
-    let statusCode = 200;
-    var params = {
-      MetricData: [
-        /* required */
-        {
-          MetricName: "SuccessfulPayout" /* required */ ,
-          // Counts: [
-          //   1,
-          //   /* more items */
-          // ],
-          // Dimensions: [
-          //   {
-          //     Name: 'STRING_VALUE', /* required */
-          //     Value: 'STRING_VALUE' /* required */
-          //   },
-          //   /* more items */
-          // ],
-          // StatisticValues: {
-          //   Maximum: 'NUMBER_VALUE', /* required */
-          //   Minimum: 'NUMBER_VALUE', /* required */
-          //   SampleCount: 'NUMBER_VALUE', /* required */
-          //   Sum: 'NUMBER_VALUE' /* required */
-          // },
-          // StorageResolution: 'NUMBER_VALUE',
-          Timestamp: new Date() ||
-            "Wed Dec 31 1969 16:00:00 GMT-0800 (PST)" ||
-            123456789,
-          Unit: "Count",
-          Value: 1,
-          // Values: [
-          //   1,
-          //   /* more items */
-          // ]
-        },
-        /* more items */
-      ],
-      Namespace: "transaction" /* required */ ,
-    };
-
-    // console.log(data);
-    let b = await cloudwatch.putMetricData(params).promise();
-    let a = await sns
-      .publish({
-        Message: `Payout successful for transfer ID: hello`,
-        TopicArn: "arn:aws:sns:us-east-1:453265107024:signup",
-      })
-      .promise();
-
-    common.eventBridge(message, statusCode);
-    console.log("In the event group");
-    return res.send({
-      success: true
-    });
-  } catch (error) {
-    return res.send(error.toString());
-  }
-};
 
 /**
  * @description API is USER SIGNUP in HIFI BRIDGE
@@ -113,12 +20,7 @@ exports.eventBridgeTest = async (req, MetricName, Namespace, res) => {
 exports.signUp = async (req, res) => {
   try {
     let generate;
-    const {
-      fullName,
-      email,
-      businessName,
-      phoneNumber
-    } = req.body;
+    const { fullName, email, businessName, phoneNumber } = req.body;
 
     if (!email && !phoneNumber) {
       common.eventBridge(
@@ -131,9 +33,10 @@ exports.signUp = async (req, res) => {
     }
 
     // Schema Validations
-    let validation = valid.validateObject({
+    let validation = valid.validateObject(
+      {
         email,
-        phoneNumber
+        phoneNumber,
       },
       validateSchema.userSchema.signup
     );
@@ -219,10 +122,10 @@ exports.signUp = async (req, res) => {
         .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
     }
   } catch (error) {
-    common.eventBridge(error ?.message.toString(), responseCode.serverError);
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
-      .json(rs.errorResponse(error ?.message.toString()));
+      .json(rs.errorResponse(error?.message.toString()));
   }
 };
 
@@ -234,14 +137,12 @@ exports.signUp = async (req, res) => {
  */
 exports.signIn = async (req, res) => {
   try {
-    const {
-      email,
-      password
-    } = req.body;
+    const { email, password } = req.body;
     if (email && password) {
-      let validation = valid.validateObject({
+      let validation = valid.validateObject(
+        {
           email,
-          password
+          password,
         },
         validateSchema.userSchema.signin
       );
@@ -250,11 +151,9 @@ exports.signIn = async (req, res) => {
           ajv.errorsText(validation[1].errors),
           responseCode.badRequest
         );
-        return res
-          .status(responseCode.badRequest)
-          .json({
-            error: `${ajv.errorsText(validation[1].errors)}`
-          });
+        return res.status(responseCode.badRequest).json({
+          error: `${ajv.errorsText(validation[1].errors)}`,
+        });
       }
 
       const count = await User.scan().exec();
@@ -276,11 +175,14 @@ exports.signIn = async (req, res) => {
         if (getUser[0].isVerified == false) {
           let temp_secret = speakeasy.generateSecret(); // Generate Secret Key
 
-          let addKey = await User.update({
-            user_id: getUser[0].user_id
-          }, {
-            secretkey: temp_secret.base32
-          });
+          let addKey = await User.update(
+            {
+              user_id: getUser[0].user_id,
+            },
+            {
+              secretkey: temp_secret.base32,
+            }
+          );
 
           if (addKey.secretkey) {
             common.eventBridge(
@@ -327,10 +229,10 @@ exports.signIn = async (req, res) => {
         .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL AND PASSWORD", {}));
     }
   } catch (error) {
-    common.eventBridge(error ?.message.toString(), responseCode.serverError);
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res
       .status(responseCode.serverError)
-      .json(rs.errorResponse(error ?.message.toString()));
+      .json(rs.errorResponse(error?.message.toString()));
   }
 };
 
@@ -342,9 +244,7 @@ exports.signIn = async (req, res) => {
  */
 exports.signInGoogle = async (req, res) => {
   try {
-    const {
-      email
-    } = req.body;
+    const { email } = req.body;
 
     if (!email) {
       common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);
@@ -368,11 +268,14 @@ exports.signInGoogle = async (req, res) => {
 
     if (userDetails[0].isVerified == false) {
       let temp_secret = speakeasy.generateSecret(); // Generating Secret Key
-      let addKey = await User.update({
-        user_id: userDetails[0].user_id
-      }, {
-        secretkey: temp_secret.base32
-      });
+      let addKey = await User.update(
+        {
+          user_id: userDetails[0].user_id,
+        },
+        {
+          secretkey: temp_secret.base32,
+        }
+      );
       if (addKey.secretkey) {
         return res.status(responseCode.success).json(
           rs.successResponse("USER SIGNED IN", {
@@ -408,12 +311,8 @@ exports.signInGoogle = async (req, res) => {
  */
 exports.verifyTOTP = async (req, res) => {
   try {
-    const {
-      userToken
-    } = req.body; // Here token is TOTP from Authenticator APP
-    const {
-      userId
-    } = req.params;
+    const { userToken } = req.body; // Here token is TOTP from Authenticator APP
+    const { userId } = req.params;
     if (!userToken || !userId) {
       common.eventBridge(
         "PLEASE ENTER VALID TOKEN OR USERID",
@@ -441,25 +340,28 @@ exports.verifyTOTP = async (req, res) => {
       }); // Verify TOTP
       console.log(verified);
       if (userDetails[0].isVerified == false) {
-        await User.update({
-          user_id: userDetails[0].user_id
-        }, {
-          isVerified: true
-        });
+        await User.update(
+          {
+            user_id: userDetails[0].user_id,
+          },
+          {
+            isVerified: true,
+          }
+        );
       }
       if (verified)
-        return res
-          .status(responseCode.success)
-          .json(rs.successResponse("USER VERIFIED", {
-            verified: true
-          }));
+        return res.status(responseCode.success).json(
+          rs.successResponse("USER VERIFIED", {
+            verified: true,
+          })
+        );
       else {
         common.eventBridge("USER NOT VERIFIED", responseCode.badRequest);
-        return res
-          .status(responseCode.badRequest)
-          .json(rs.incorrectDetails("USER NOT VERIFIED", {
-            verified: false
-          }));
+        return res.status(responseCode.badRequest).json(
+          rs.incorrectDetails("USER NOT VERIFIED", {
+            verified: false,
+          })
+        );
       }
     } else {
       common.eventBridge("USER NOT VERIFIED", responseCode.badRequest);
@@ -483,9 +385,7 @@ exports.verifyTOTP = async (req, res) => {
  */
 exports.forgotPassword = async (req, res) => {
   try {
-    const {
-      email
-    } = req.body;
+    const { email } = req.body;
 
     const count = await User.scan().exec();
     var getUser = count.filter(function (item) {
@@ -538,13 +438,8 @@ exports.forgotPassword = async (req, res) => {
  */
 exports.resetPassword = async (req, res) => {
   try {
-    const {
-      newPassword,
-      confirmPassword
-    } = req.body;
-    const {
-      userId
-    } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+    const { userId } = req.params;
 
     const count = await User.scan().exec();
     var getUsers = count.filter(function (item) {
@@ -562,16 +457,20 @@ exports.resetPassword = async (req, res) => {
             .status(responseCode.badRequest)
             .json(
               rs.incorrectDetails(
-                "CONFIRM PASSWORD AND NEWPASSWORD ARE DIFFERENT", {}
+                "CONFIRM PASSWORD AND NEWPASSWORD ARE DIFFERENT",
+                {}
               )
             );
         }
         let cipherText = common.encryptText(confirmPassword);
-        let updatePassword = await User.update({
-          user_id: getUsers[0].user_id
-        }, {
-          password: cipherText
-        });
+        let updatePassword = await User.update(
+          {
+            user_id: getUsers[0].user_id,
+          },
+          {
+            password: cipherText,
+          }
+        );
         if (updatePassword) {
           return res.status(responseCode.success).json(
             rs.successResponse("PASSWORD UPDATED", {
@@ -583,7 +482,8 @@ exports.resetPassword = async (req, res) => {
             .status(responseCode.badRequest)
             .json(
               rs.dataNotAdded(
-                "PASSWORD NOT UPDATED SUCCESSFULLY, PLEASE TRY AGAIN", {}
+                "PASSWORD NOT UPDATED SUCCESSFULLY, PLEASE TRY AGAIN",
+                {}
               )
             );
         }
@@ -592,7 +492,8 @@ exports.resetPassword = async (req, res) => {
           .status(responseCode.badRequest)
           .json(
             rs.incorrectDetails(
-              "PLEASE PROVIDE NEW PASSWORD AND CONFIRM PASSWORD", {}
+              "PLEASE PROVIDE NEW PASSWORD AND CONFIRM PASSWORD",
+              {}
             )
           );
       }
@@ -613,14 +514,8 @@ exports.resetPassword = async (req, res) => {
  */
 exports.changePassword = async (req, res) => {
   try {
-    const {
-      currentPassword,
-      newPassword,
-      confirmPassword
-    } = req.body;
-    const {
-      userId
-    } = req.params;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const { userId } = req.params;
     const count = await User.scan().exec();
     var getUser = count.filter(function (item) {
       return item.user_id == userId;
@@ -634,7 +529,8 @@ exports.changePassword = async (req, res) => {
             .status(responseCode.badRequest)
             .json(
               rs.incorrectDetails(
-                "PLEASE ENTER YOUR VALID CURRENT PASSWORD", {}
+                "PLEASE ENTER YOUR VALID CURRENT PASSWORD",
+                {}
               )
             );
         if (newPassword !== confirmPassword)
@@ -642,23 +538,25 @@ exports.changePassword = async (req, res) => {
             .status(responseCode.badRequest)
             .json(
               rs.incorrectDetails(
-                "NEW PASSWORD DOES NOT MATCH WITH CONFIRM PASSWORD", {}
+                "NEW PASSWORD DOES NOT MATCH WITH CONFIRM PASSWORD",
+                {}
               )
             );
         let cipherText = common.encryptText(confirmPassword);
-        let updatePassword = await User.update({
-          user_id: getUser[0].user_id
-        }, {
-          password: cipherText
-        });
+        let updatePassword = await User.update(
+          {
+            user_id: getUser[0].user_id,
+          },
+          {
+            password: cipherText,
+          }
+        );
         if (updatePassword) {
-          return res
-            .status(responseCode.success)
-            .json(
-              rs.successResponse("PASSWORD UPDATED", {
-                id: getUser[0].user_id
-              })
-            );
+          return res.status(responseCode.success).json(
+            rs.successResponse("PASSWORD UPDATED", {
+              id: getUser[0].user_id,
+            })
+          );
         } else {
           return res
             .status(responseCode.badRequest)
@@ -669,7 +567,8 @@ exports.changePassword = async (req, res) => {
           .status(responseCode.badRequest)
           .json(
             rs.incorrectDetails(
-              "PLEASE PROVIDE NEW PASSWORD AND CONFIRM PASSWORD", {}
+              "PLEASE PROVIDE NEW PASSWORD AND CONFIRM PASSWORD",
+              {}
             )
           );
       }

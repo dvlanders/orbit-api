@@ -3,8 +3,11 @@ const { payout } = require("../controllers");
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
   // transfer routes
-  router.post("/transfer", payout.createTransfer);
-  router.post("/confirmtransfer", payout.confirmTransfer);
+  router.post("/transfer/:cuser_id", payout.createTransfer);
+  router.post(
+    "/user/:user_id/:transfer_id/confirmtransfer",
+    payout.confirmTransferPayment
+  );
   router.delete("/transfer", payout.deleteTransfer);
   router.post(
     "/transferStatus/&from_date&to_date&type&purpose&status",

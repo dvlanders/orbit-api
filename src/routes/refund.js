@@ -5,4 +5,5 @@ module.exports = (router) => {
   // transfer routes
   router.get("/user/:user_id/wiretransfer", refund.wireTransfer);
   router.post("/user/:user_id/marketorder/:side", refund.MarketOrder);
+  router.post("/user/:user_id/withdrawalBank", refund.withdrawalBank);
 };
