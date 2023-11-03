@@ -1,20 +1,26 @@
-const cron = require("cron");
 const User = require("../../models/userAuth");
 const axios = require("axios");
-let time = new Date();
 const dynamoose = require("dynamoose");
+const cron = require("node-cron");
 
+/**
+ * @description -- The function is set to trigger everyday 5 PM UTC
+ * Question But from the sfox response we get it as it will expire from 24 hrs from when it is created
+ */
 async function regeneration() {
+  console.log("test");
   const userDetails = await User.scan()
     .where("isVerified")
+    .eq(true)
+    .where("isSfoxVerified")
     .eq(true)
     .where("sfox_id")
     .not()
     .eq("")
-    .attributes(["sfox_id"])
+    .attributes(["sfox_id", "user_id"])
     .exec();
 
-  User.batchPut();
+  console.log(userDetails);
 
   let sfoxIds = [];
   for (const user of userDetails) {
@@ -39,23 +45,36 @@ async function regeneration() {
       },
     });
 
-    console.log(response?.data?.data);
+    let usertokens = response?.data?.data;
+    // console.log(usertokens);
 
-    // if (response?.data?.data?.length > 0) {
-    //   const transactionOperations = response?.data?.data.map((user) => {
-    //     return User.transaction.update(
-    //       { user_id: user.id },
-    //       { userToken: "token" }
-    //     );
-    //   });
+    if (usertokens.length > 0) {
+      for (let i = 0; i < usertokens.length; i++) {
+        const partnerUserId = usertokens[i].partner_user_id;
 
-    //   await dynamoose.transaction(transactionOperations);
-    // }
+        for (let j = 0; j < userDetails.count; j++) {
+          if (partnerUserId === userDetails[j].sfox_id) {
+            usertokens[i].user_id = userDetails[j].user_id;
+            break; // Break the inner loop once a match is found
+          }
+        }
+      }
+
+      console.log(usertokens);
+
+      const transactionOperations = usertokens.map((user) => {
+        return User.transaction.update(
+          { user_id: user.user_id },
+          { userToken: user.token }
+        );
+      });
+
+      await dynamoose.transaction(transactionOperations);
+    }
   }
 }
-// const job = new cron.CronJob('48 18 * * *', () => {
-// regeneration();
-
-// })
-
-// job.start();
+cron.schedule("0 17 * * *", () => {
+  regeneration();
+});
+("2023-11-04T18:19:29.506Z");
+("2023-11-04T18:33:40.999Z");
