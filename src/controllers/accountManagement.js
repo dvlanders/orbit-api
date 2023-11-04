@@ -57,8 +57,8 @@ exports.linkBank = async (req, res) => {
     let saveBank;
     if (response.data.usd.length > 0) {
       const myBank = new bankAccountSchema({
-        user_id: user_id,
         id: response.data.usd[0].id,
+        user_id: user_id,
         status: response.data.usd[0].status,
         requires_verification: response.data.usd[0].requires_verification,
         requires_support: response.data.usd[0].requires_support,
@@ -79,7 +79,8 @@ exports.linkBank = async (req, res) => {
       saveBank = await myBank.save();
     }
     if (saveBank) {
-      let responses =  await bankAccountSchema.get(user_id);
+      let responses =  saveBank
+
       return res
         .status(responseCode.success)
         .json(rs.successResponse("Bank Linked", responses));
@@ -91,14 +92,14 @@ exports.linkBank = async (req, res) => {
   } catch (err) {
     console.log("error", err);
     return res
-      .status(err.response?.status)
-      .json({ error: err.response?.data?.error });
+      .status(err?.response?.status || 500 )
+      .json({ error: err?.response?.data?.error });
   }
 };
 
 exports.verifyBank = async (req, res) => {
   try {
-    const { user_id } = req.params;
+    const { user_id, bank_id } = req.params;
     // const { verifyAmount1, verifyAmount2 } = req.body;
 
     if (!user_id) {
@@ -134,19 +135,19 @@ exports.verifyBank = async (req, res) => {
     let verifyBank;
     // if(response.data) {
     verifyBank = await bankAccountSchema.update(
-      { user_id: userDetails.user_id },
+      { user_id: user_id , id : bank_id},
       {verificationSent : true, verifiedStatus : "Success"}
     );
     // }
-    return res.status(response.status).json({ message: verifyBank });
+    return res.status(response.status || 200).json({ message: verifyBank });
   } catch (err) {
-    return res.status(err.response?.status).send(err.response?.data);
+    return res.status(err?.response?.status || 500).send(err.response?.data);
   }
 };
 
 exports.getBank = async (req, res) => {
   try {
-    const { user_id } = req.params;
+    const { user_id, bank_id } = req.params;
 
     if (!user_id) {
       return res
@@ -164,21 +165,41 @@ exports.getBank = async (req, res) => {
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
 
-    let apiPath = `${baseUrl}/v1/user/bank`;
-    let response = await axios({
-      method: "get",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-    });
-    let verifyBank =  await bankAccountSchema.get(user_id);
-  console.log("veriiiiiiiiiiiiiiiiii",verifyBank)
-    return res.status(response.status).json({ verifyBank });
+    let getABank =  await bankAccountSchema.scan().where("user_id").eq(user_id).where("id").eq(bank_id).exec();
+    return res.status(responseCode.success).json(rs.successResponse("BANK DATA RETRIVED", getABank ));
   } catch (err) {
-    return res.status(err.response?.status).send(err.response?.data);
+    return res.status(responseCode.serverError).send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
   }
 };
+
+exports.getAllBank = async (req, res) => {
+  try {
+    const { user_id} = req.params;
+
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    // console.log(userDetails);
+
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    let getAllBank =  await bankAccountSchema.scan().where("user_id").eq(user_id).exec();
+    return res.status(responseCode.success).json(rs.successResponse("ALL BANK DATA RETRIVED",getAllBank));
+  } catch (err) {
+    return res.status(responseCode.serverError).send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
+  }
+};
+
+
 
 exports.deleteBank = async (req, res) => {
   try {

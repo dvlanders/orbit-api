@@ -2,8 +2,8 @@ const dynamoose = require("dynamoose");
 
 const bankSchema = new dynamoose.Schema(
   {
-    user_id : String,
     id: String,
+    user_id : String,
     status: String,
     requires_verification: Number,
     requires_support: Number,
@@ -27,5 +27,5 @@ const bankSchema = new dynamoose.Schema(
     },
   }
 );
-let bankAccountSchema = dynamoose.model("bankAccouunt", bankSchema);
+let bankAccountSchema = dynamoose.model("bankAccount", bankSchema);
 module.exports = bankAccountSchema;
