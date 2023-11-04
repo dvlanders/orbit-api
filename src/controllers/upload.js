@@ -91,12 +91,10 @@ exports.uploadImage = async (req, res) => {
         .json(rs.errorResponse(error?.message?.toString()));
     }
   });
-
-
 };
 
-exports.getLogo= async(req,res) => {
-  try{
+exports.getLogo = async (req, res) => {
+  try {
     const { user_id } = req.params;
     const userDetails = await User.get(user_id);
     if (userDetails == undefined) {
@@ -108,12 +106,9 @@ exports.getLogo= async(req,res) => {
 
     let logo = userDetails?.logoUrl;
     return res
-    .status(responseCode.success)
-    .json(rs.successResponse("LOGO RETRIVED", {url: logo}));
-
-  }catch(error){
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error));
+      .status(responseCode.success)
+      .json(rs.successResponse("LOGO RETRIVED", { url: logo }));
+  } catch (error) {
+    return res.status(responseCode.serverError).json(rs.errorResponse(error));
   }
-}
+};

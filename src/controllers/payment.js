@@ -456,7 +456,7 @@ exports.balances = async (req, res) => {
       adjustments: 0,
       total_incoming: totalTransactions,
       total_outgoing: 0,
-      recently_deposite: 0,
+      recently_deposit: 0,
     };
     for (let i = 0; i < response.data.length; i++) {
       if (response.data[i].currency == currency) {
