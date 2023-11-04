@@ -72,13 +72,14 @@ exports.linkBank = async (req, res) => {
         international_bank: response.data.usd[0].isInternational,
         ref_id: response.data.usd[0].ref_id,
         wire_withdrawal_fee: response.data.usd[0].wire_withdrawal_fee,
-        isVerified: false,
-        verifiedStatus: "pending",
+        verifiedStatus: "Pending",
+        verificationSent : false,
+        
       });
       saveBank = await myBank.save();
     }
     if (saveBank) {
-      let responses = saveBank;
+      let responses =  await bankAccountSchema.get(user_id);
       return res
         .status(responseCode.success)
         .json(rs.successResponse("Bank Linked", responses));
@@ -134,7 +135,7 @@ exports.verifyBank = async (req, res) => {
     // if(response.data) {
     verifyBank = await bankAccountSchema.update(
       { user_id: userDetails.user_id },
-      { isVerified: true, verifiedStatus: "verified" }
+      {verificationSent : true, verifiedStatus : "Success"}
     );
     // }
     return res.status(response.status).json({ message: verifyBank });
@@ -154,7 +155,7 @@ exports.getBank = async (req, res) => {
     }
 
     const userDetails = await User.get(user_id);
-    console.log(userDetails);
+    // console.log(userDetails);
 
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
@@ -171,7 +172,9 @@ exports.getBank = async (req, res) => {
         Authorization: "Bearer " + userDetails.userToken,
       },
     });
-    return res.status(response.status).json({ message: response.data });
+    let verifyBank =  await bankAccountSchema.get(user_id);
+  console.log("veriiiiiiiiiiiiiiiiii",verifyBank)
+    return res.status(response.status).json({ verifyBank });
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);
   }
@@ -401,38 +404,28 @@ exports.dashboard = async (req, res) => {
     let monetization = 0;
     let adjustments = 0;
 
-    let paymentReq = { query: { type: "PAYMENT" } };
+    let paymentReq = {query: {type :  "PAYMENT"}}
     let paymentData = await payment.transfer(paymentReq);
-    let totalRev = 0;
+    let totalRev = 0
     // for(let i=0;i<paymentData.data.length;i++){
-    // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
-    // const dateString = paymentData.data[i].transfer_date;
-    // const date = new Date(dateString);
-    // let  getMonth = date.getUTCMonth() + 1
-
-    monthData = [];
-    let month = 1;
-    for (let i = 0; i < paymentData.data.length; i++) {
-      totalRev =
-        totalRev +
-        paymentData.data[i].quantity * paymentData.data[i].rate -
-        refund -
-        monetization -
-        adjustments;
-    }
-    while (month < 13) {
-      let total = 0;
-      for (let i = 0; i < paymentData.data.length; i++) {
-        const dateString = paymentData.data[i].transfer_date;
-        const date = new Date(dateString);
-        let getMonth = date.getUTCMonth() + 1;
-        if (getMonth == month) {
-          total =
-            total +
-            paymentData.data[i].quantity * paymentData.data[i].rate -
-            refund -
-            monetization -
-            adjustments;
+      // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+      // const dateString = paymentData.data[i].transfer_date;
+      // const date = new Date(dateString);
+      // let  getMonth = date.getUTCMonth() + 1
+      
+      monthData = []
+      let month = 1
+      for (let i=0;i<paymentData.data.length;i++){
+        totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+      }  
+      while(month<13){
+    let total = 0
+    for (let i=0;i<paymentData.data.length;i++){
+      const dateString = paymentData.data[i].transfer_date;
+      const date = new Date(dateString);
+      let  getMonth = date.getUTCMonth() + 1
+        if(getMonth == month){
+            total = total + (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments
         }
       }
       monthData.push({ month: month, totalAmount: total });
@@ -442,17 +435,17 @@ exports.dashboard = async (req, res) => {
     let payoutData = await payment.transfer(payoutReq);
 
     let responses = {
-      totalPurchase: paymentData.count ? paymentData.count : null,
-      purchasePercentage: null,
-      totalCustomers: count,
-      customersPercentage: null,
-      totalRevenue: totalRev ? totalRev : 0,
-      montlyRevenue: monthData,
-      revenuePercentage: null,
-      totalSales: sales,
-      paymentData: paymentData.data ? paymentData.data : null,
-      payoutData: payoutData.data ? payoutData.data : null,
-    };
+      "totalPurchase":paymentData.count ? paymentData.count : null,
+      "purchasePercentage": null,
+      "totalCustomers":count,
+      "customersPercentage" : null,
+      "totalRevenue":totalRev ? totalRev : 0,
+      "montlyRevenue" :monthData,
+      "revenuePercentage" : null,
+      "totalSales":sales,
+      "paymentData" : paymentData.data ? paymentData.data : null,
+      "payoutData" : payoutData.data ? payoutData.data : null,
+    }
 
     return res
       .status(responseCode.success)

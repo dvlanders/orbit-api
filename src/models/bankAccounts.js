@@ -17,7 +17,7 @@ const bankSchema = new dynamoose.Schema(
     international_bank: Boolean,
     ref_id: String,
     wire_withdrawal_fee: Number,
-    isVerified : Boolean,
+    verificationSent : Boolean,
     verifiedStatus : String
   },
   {
