@@ -20,7 +20,7 @@ const User = require("./../models/userAuth");
 exports.signUp = async (req, res) => {
   try {
     let generate;
-    const { fullName, email, businessName, phoneNumber } = req.body;
+    const { fullName, email, businessName, phoneNumber, timeZone } = req.body;
 
     if (!email && !phoneNumber) {
       common.eventBridge(
@@ -98,6 +98,7 @@ exports.signUp = async (req, res) => {
         userToken: "",
         secretkey: "",
         isVerified: false,
+        timeZone: timeZone,
       });
       let user = await myUser.save();
 
@@ -156,10 +157,9 @@ exports.signIn = async (req, res) => {
         });
       }
 
-      const count = await User.scan().exec();
-      var getUser = count.filter((item) => item.email == email);
+      const getUser = await User.scan().where("email").eq(email).exec();
 
-      if (getUser.length > 0) {
+      if (getUser.count > 0) {
         console.log(getUser);
         let decryptText = common.decryptText(getUser[0].password);
         if (decryptText !== password) {
@@ -195,6 +195,7 @@ exports.signIn = async (req, res) => {
                 secret: temp_secret.base32,
                 qr_code: temp_secret.otpauth_url,
                 businessName: getUser[0].businessName,
+                timeZone: getUser[0].timeZone,
               })
             );
           }
@@ -210,6 +211,7 @@ exports.signIn = async (req, res) => {
               secret: getUser[0].secretkey,
               qr_code: `otpauth://totp/SecretKey?secret=${getUser[0].secretkey}`,
               businessName: getUser[0].businessName,
+              timeZone: getUser[0].timeZone,
             })
           );
         }
@@ -283,6 +285,7 @@ exports.signInGoogle = async (req, res) => {
             secret: temp_secret.base32,
             qr_code: temp_secret.otpauth_url,
             businessName: userDetails[0].businessName,
+            timeZone: userDetails[0].timeZone,
           })
         );
       }
@@ -293,6 +296,7 @@ exports.signInGoogle = async (req, res) => {
           isVerified: true,
           secret: userDetails[0].secretkey,
           qr_code: `otpauth://totp/SecretKey?secret=${userDetails[0].secretkey}`,
+          timeZone: userDetails[0].timeZone,
         })
       );
   } catch (error) {
