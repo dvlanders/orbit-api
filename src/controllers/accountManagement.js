@@ -219,7 +219,7 @@ exports.getAllBank = async (req, res) => {
 
 exports.deleteBank = async (req, res) => {
   try {
-    const { user_id } = req.params;
+    const { user_id, bank_id} = req.params;
 
     if (!user_id) {
       return res
@@ -248,7 +248,7 @@ exports.deleteBank = async (req, res) => {
     let deleteAccount;
     if (response.status == 200) {
       deleteAccount = await bankAccountSchema.update(
-        { user_id: userDetails.user_id },
+        { user_id: user_id, id: bank_id },
         { status: "Inactive" }
       );
     }

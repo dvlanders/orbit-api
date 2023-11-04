@@ -9,7 +9,7 @@ module.exports = (router) => {
   );
   router.get("/user/:user_id/bank/:bank_id", accountManagement.getBank);
   router.get("/user/:user_id/bank", accountManagement.getAllBank);
-  router.delete("/user/:user_id/bank", accountManagement.deleteBank);
+  router.delete("/user/:user_id/bank/:bank_id", accountManagement.deleteBank);
   router.get(
     "/user/:user_id/wireInstructions",
     accountManagement.wireInstructions
