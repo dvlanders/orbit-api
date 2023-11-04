@@ -73,13 +73,12 @@ exports.linkBank = async (req, res) => {
         ref_id: response.data.usd[0].ref_id,
         wire_withdrawal_fee: response.data.usd[0].wire_withdrawal_fee,
         verifiedStatus: "Pending",
-        verificationSent : false,
-        
+        verificationSent: false,
       });
       saveBank = await myBank.save();
     }
     if (saveBank) {
-      let responses =  saveBank
+      let responses = saveBank;
 
       return res
         .status(responseCode.success)
@@ -92,7 +91,7 @@ exports.linkBank = async (req, res) => {
   } catch (err) {
     console.log("error", err);
     return res
-      .status(err?.response?.status || 500 )
+      .status(err?.response?.status || 500)
       .json({ error: err?.response?.data?.error });
   }
 };
@@ -135,8 +134,8 @@ exports.verifyBank = async (req, res) => {
     let verifyBank;
     // if(response.data) {
     verifyBank = await bankAccountSchema.update(
-      { user_id: user_id , id : bank_id},
-      {verificationSent : true, verifiedStatus : "Success"}
+      { user_id: user_id, id: bank_id },
+      { verificationSent: true, verifiedStatus: "Success" }
     );
     // }
     return res.status(response.status || 200).json({ message: verifyBank });
@@ -149,10 +148,10 @@ exports.getBank = async (req, res) => {
   try {
     const { user_id, bank_id } = req.params;
 
-    if (!user_id) {
+    if (!user_id || !bank_id) {
       return res
         .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
     }
 
     const userDetails = await User.get(user_id);
@@ -165,16 +164,27 @@ exports.getBank = async (req, res) => {
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
 
-    let getABank =  await bankAccountSchema.scan().where("user_id").eq(user_id).where("id").eq(bank_id).exec();
-    return res.status(responseCode.success).json(rs.successResponse("BANK DATA RETRIVED", getABank ));
+    let getABank = await bankAccountSchema
+      .scan()
+      .where("user_id")
+      .eq(user_id)
+      .where("id")
+      .eq(bank_id)
+      .exec();
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("BANK DATA RETRIVED", getABank[0]));
   } catch (err) {
-    return res.status(responseCode.serverError).send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
+    return res
+      .status(responseCode.serverError)
+      .send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
   }
 };
 
 exports.getAllBank = async (req, res) => {
   try {
-    const { user_id} = req.params;
+    const { user_id } = req.params;
 
     if (!user_id) {
       return res
@@ -192,14 +202,20 @@ exports.getAllBank = async (req, res) => {
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
 
-    let getAllBank =  await bankAccountSchema.scan().where("user_id").eq(user_id).exec();
-    return res.status(responseCode.success).json(rs.successResponse("ALL BANK DATA RETRIVED",getAllBank));
+    let getAllBank = await bankAccountSchema
+      .scan()
+      .where("user_id")
+      .eq(user_id)
+      .exec();
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("ALL BANK DATA RETRIEVED", getAllBank));
   } catch (err) {
-    return res.status(responseCode.serverError).send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
+    return res
+      .status(responseCode.serverError)
+      .send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
   }
 };
-
-
 
 exports.deleteBank = async (req, res) => {
   try {
@@ -425,28 +441,38 @@ exports.dashboard = async (req, res) => {
     let monetization = 0;
     let adjustments = 0;
 
-    let paymentReq = {query: {type :  "PAYMENT"}}
+    let paymentReq = { query: { type: "PAYMENT" } };
     let paymentData = await payment.transfer(paymentReq);
-    let totalRev = 0
+    let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
-      // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
-      // const dateString = paymentData.data[i].transfer_date;
-      // const date = new Date(dateString);
-      // let  getMonth = date.getUTCMonth() + 1
-      
-      monthData = []
-      let month = 1
-      for (let i=0;i<paymentData.data.length;i++){
-        totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
-      }  
-      while(month<13){
-    let total = 0
-    for (let i=0;i<paymentData.data.length;i++){
-      const dateString = paymentData.data[i].transfer_date;
-      const date = new Date(dateString);
-      let  getMonth = date.getUTCMonth() + 1
-        if(getMonth == month){
-            total = total + (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments
+    // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+    // const dateString = paymentData.data[i].transfer_date;
+    // const date = new Date(dateString);
+    // let  getMonth = date.getUTCMonth() + 1
+
+    monthData = [];
+    let month = 1;
+    for (let i = 0; i < paymentData.data.length; i++) {
+      totalRev =
+        totalRev +
+        paymentData.data[i].quantity * paymentData.data[i].rate -
+        refund -
+        monetization -
+        adjustments;
+    }
+    while (month < 13) {
+      let total = 0;
+      for (let i = 0; i < paymentData.data.length; i++) {
+        const dateString = paymentData.data[i].transfer_date;
+        const date = new Date(dateString);
+        let getMonth = date.getUTCMonth() + 1;
+        if (getMonth == month) {
+          total =
+            total +
+            paymentData.data[i].quantity * paymentData.data[i].rate -
+            refund -
+            monetization -
+            adjustments;
         }
       }
       monthData.push({ month: month, totalAmount: total });
@@ -456,17 +482,17 @@ exports.dashboard = async (req, res) => {
     let payoutData = await payment.transfer(payoutReq);
 
     let responses = {
-      "totalPurchase":paymentData.count ? paymentData.count : null,
-      "purchasePercentage": null,
-      "totalCustomers":count,
-      "customersPercentage" : null,
-      "totalRevenue":totalRev ? totalRev : 0,
-      "montlyRevenue" :monthData,
-      "revenuePercentage" : null,
-      "totalSales":sales,
-      "paymentData" : paymentData.data ? paymentData.data : null,
-      "payoutData" : payoutData.data ? payoutData.data : null,
-    }
+      totalPurchase: paymentData.count ? paymentData.count : null,
+      purchasePercentage: null,
+      totalCustomers: count,
+      customersPercentage: null,
+      totalRevenue: totalRev ? totalRev : 0,
+      montlyRevenue: monthData,
+      revenuePercentage: null,
+      totalSales: sales,
+      paymentData: paymentData.data ? paymentData.data : null,
+      payoutData: payoutData.data ? payoutData.data : null,
+    };
 
     return res
       .status(responseCode.success)

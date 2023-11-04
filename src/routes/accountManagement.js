@@ -3,9 +3,12 @@ const { accountManagement } = require("../controllers");
 module.exports = (router) => {
   // Bank routes
   router.post("/user/:user_id/bank", accountManagement.linkBank);
-  router.post("/user/:user_id/verifybank/:bank_id", accountManagement.verifyBank);
+  router.post(
+    "/user/:user_id/verifybank/:bank_id",
+    accountManagement.verifyBank
+  );
   router.get("/user/:user_id/bank/:bank_id", accountManagement.getBank);
-  router.get("/user/:user_id/banks", accountManagement.getAllBank);
+  router.get("/user/:user_id/bank", accountManagement.getAllBank);
   router.delete("/user/:user_id/bank", accountManagement.deleteBank);
   router.get(
     "/user/:user_id/wireInstructions",
