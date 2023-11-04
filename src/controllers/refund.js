@@ -11,6 +11,9 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
 let uuid = uuidv4();
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
+const e = require("express");
+
+
 
 exports.wireTransfer = async (req, res) => {
   try {
@@ -31,6 +34,93 @@ exports.wireTransfer = async (req, res) => {
     return res.status(500).send(error);
   }
 };
+
+exports.currencyConvertion = async (req,res) => {
+  try{
+    const {user_id} = req.params
+    const {pair, side, quantity} = req.body
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+        const apiPath = `${baseUrl}/v1/quote`;
+       let response=  await axios({
+          method: "post",
+          url: apiPath,
+          headers: {
+            Authorization: "Bearer " + userDetails.userToken,
+          },
+          data : {
+            pair : pair,
+            side : side,
+            quantity : quantity
+        }
+        })
+        if(res){
+        return res.status(response.status).json({ message: response.data });
+        }else{
+          return response.data
+        }
+  }catch(error){
+    console.log("errrrrrrrrrrrrrrrrrrrrrrrr",error)
+    // return res.status(error.response?.status).send(error.response.data);
+  }
+}
+
+exports.withdrawalBank = async(req,res) => {
+  try{
+    const {user_id} = req.params
+    const {currency, address, amount, isWire, pair, side, quantity} = req.body
+
+    let reqs = { body: { pair : pair, side:side, quantity:quantity }, params : {user_id : user_id}};
+    let bankAmount = await this.currencyConvertion(reqs)
+    
+
+    let data
+    if(currency || address || amount || isWire){
+    data = {
+      currency : currency,
+      amount : amount ,
+      isWire : isWire ? isWire : false,
+      address : address
+    }
+    }
+    else if(currency || amount || isWire){
+      data = {
+        currency : currency,
+        amount : bankAmount.amount ,
+        isWire : isWire ? isWire : false,
+      }
+    }
+    const userDetails = await User.get(user_id);
+    if(amount < 31 && currency == "usd"){
+      return res
+      .status(responseCode.badRequest)
+      .json(rs.incorrectDetails("AMOUNT CANNOT BE LESS THAN 30 USD AS FEE RATE OF USD IS 30", {}));
+    } 
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+        const apiPath = `${baseUrl}/v1/user/withdraw`;
+       let response=  await axios({
+          method: "post",
+          url: apiPath,
+          headers: {
+            Authorization: "Bearer " + userDetails.userToken,
+          },
+          data : data
+        });
+        return res?.status(response.status).json({ message: response.data.data });
+  }catch(error){
+    return res.status(error.response?.status).send(error.response.data);
+  }
+}
 
 exports.MarketOrder = async (req, res) => {
   try {
