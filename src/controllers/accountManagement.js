@@ -503,3 +503,91 @@ exports.dashboard = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
+exports.addTeam = async(req,res) => {
+  try{
+    const {user_id} = req.params
+    const {email, admin_role, developer_role, identity_role, connect_role} = req.body
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    let mailDetails = {
+      from: `${process.env.FROM_EMAIL}`,
+      to: email,
+      subject: "Registration Form",
+      text: `Please fill up the google form, with the following role i.e  admin_role, developer_role, identity_role, connect_role \n ${process.env.REGISTER_FORM_LINK}`,
+    };
+    generate = await sendEmail.generateEmail(mailDetails); //Generate Email
+    if (!generate.messageId) {
+      return res
+      .status(responseCode.badRequest)
+      .json(rs.incorrectDetails("WRONG EMAIL ID", {}));
+  }
+  const myUser = new User({
+    user_id: uuidv4(),
+    email: email,
+    phoneNumber: "",
+    fullName: "",
+    businessName:"",
+    password: "",
+    userToken: "",
+    secretkey: "",
+    isVerified: false,
+    timeZone: timeZone,
+  });
+  let user = await myUser.save();
+  if(user)
+  return res
+      .status(responseCode.success)
+      .json(rs.successResponse("DATA RETRIVED", "Invitation send"));
+    
+  }catch(error){
+    return res
+    .status(responseCode.serverError)
+    .json(rs.errorResponse(error?.message.toString()));
+  }
+}
+
+exports.team = async(req,res) =>{
+  try {
+    const { user_id } = req.params;
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    let responseArr = [];
+    let user = await registration.getUser();
+    // userDetails.sfox_id == users.advisor_user_id
+    let clientAccount = user.filter(
+      (users) => users.account_type == "individual"
+    );
+    const count = await User.scan().exec();
+    for (let i = 0; i < clientAccount.length; i++) {
+      for (j = 0; j < count.length; j++) {
+        if (clientAccount[i].user_id == count[j].sfox_id) {
+          let response = {
+            customer_id: count[j].user_id,
+            name: count[j].fullName,
+            email: count[j].email,
+            created: count[j].createDate,
+          };
+          responseArr.push(response);
+        }
+      }
+    }
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
+}

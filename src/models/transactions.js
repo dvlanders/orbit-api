@@ -22,7 +22,9 @@ const transactionSchema = new dynamoose.Schema(
     algo_id: String,
     account_balance: Number,
     AccountTransferFee: Number,
-    description: String,
+    description: {
+      type: [String, dynamoose.type.NULL],
+    },
     wallet_display_id: String,
     added_by_user_email: String,
     symbol: String,

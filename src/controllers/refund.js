@@ -66,17 +66,16 @@ exports.currencyConvertion = async (req, res) => {
   }
 };
 
-exports.withdrawalBank = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-    const { currency, address, amount, isWire, pair, side, quantity } =
-      req.body;
-
-    let reqs = {
-      body: { pair: pair, side: side, quantity: quantity },
-      params: { user_id: user_id },
-    };
-    let bankAmount = await this.currencyConvertion(reqs);
+exports.withdrawalBank = async(req,res) => {
+  try{
+    const {user_id, transfer_id} = req.params
+    const {currency, address, amount, isWire, pair, side, quantity} = req.body
+    if (!transfer_id || !user_id)
+    return res
+      .status(responseCode.badRequest)
+      .json(rs.dataNotAdded("PROVIDE TRANSFER ID OR USERID", {}));
+    let reqs = { body: { pair : pair, side:side, quantity:quantity }, params : {user_id : user_id}};
+    let bankAmount = await this.currencyConvertion(reqs)
 
     let data;
     if (currency || address || amount || isWire) {

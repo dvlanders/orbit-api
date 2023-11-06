@@ -7,6 +7,8 @@ const Transactions = require("./../models/transactions");
 const payment = require("./payment");
 const { common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
+const bankAccountSchema = require("../models/bankAccounts");
+const { success } = require("../util/Constants");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
@@ -37,56 +39,57 @@ exports.transfer = async (req, res) => {
       },
       params: query,
     });
-    let finalData;
-    finalData = response.data.data;
-    const userDetails = await User.scan().where("sfox_id").exec();
-    // .eq(finalData[i].user_id)
-    for (let i = 0; i < userDetails.count; i++) {
+    let finalData = await Transfer.scan().where("type").eq(type).exec()
+    
+  
+    for (let i = 0; i < finalData.length; i++) {
+      let users = await User.scan().where("user_id").eq(finalData[i].user_id).exec()
       if (type == "PAYOUT") {
-        let responses;
-        if (userDetails[i]?.userToken) {
-          let apiBankPath = `${process.env.SFOX_BASE_URL}/v1/user/bank`;
-          responses = await axios({
-            method: "get",
-            url: apiBankPath,
-            headers: {
-              Authorization: "Bearer " + userDetails[i]?.userToken,
-            },
-          });
-          if (responses?.data?.usd?.length > 0) {
-            userDetails[i].bankAccount = responses?.data?.usd[0].account_number;
-            userDetails[i].bankName = responses?.data?.usd[0].bank_name;
+         let bank = await bankAccountSchema.scan().where("user_id").eq(finalData[i].user_id).where("verifiedStatus").eq("Success").where("status").eq("active").exec()
+          if (bank.length > 0) {
+            finalData[i].bankAccount = bank[0].account_number ;
+            finalData[i].bankName = bank[0].bank_name;
+           
           }
-          userDetails[i].bankAccount = null;
-          userDetails[i].bankName = null;
-        } else {
-          userDetails[i].bankAccount = null;
-          userDetails[i].bankName = null;
+          // finalData[i].bankAccount = null;
+          // finalData[i].bankName = null;   
+           
+          if(users[0].email) {
+            finalData[i].email = users[0].email;
+          }
+          //finalData[i].email = null
+
+      } else if(type == "PAYMENT") {
+        if(users[0].email) {
+          finalData[i].email = users[0].email;
         }
-        userDetails[i].email = userDetails[i]?.email;
-      } else if (type == "PAYMENT") {
-        userDetails[i].email = userDetails[i]?.email;
+        //finalData[i].email = null
       }
+
+
     }
+    
 
     common.eventBridge(
       "Transfer History Retrived Successfully",
       responseCode.success
     );
-    if (res) {
+    if (res){
       return res.status(responseCode.success).json(
         rs.successResponse("TRANFER HISTORY RETRIVED", {
           data: finalData,
           count: response.data.data.length,
         })
       );
-    } else {
+
+    
+    }else{
       return { data: finalData, count: response.data.data.length };
     }
   } catch (error) {
     console.log("error", error);
     common.eventBridge(error?.message.toString(), responseCode.serverError);
-    if (res) {
+    if (res){
       return res
         .status(error?.response?.status || 500)
         .send(error?.response?.data || error);
@@ -131,10 +134,8 @@ exports.transaction = async (req, res) => {
     if (response.data.length > 0)
       for (let i = 0; i < response.data.length; i++) {
         if (response.data[i].IdempotencyId == transfer_id) {
-          let transx = await Transactions.scan()
-            .where("IdempotencyId")
-            .eq(transfer_id)
-            .exec();
+          let transx = await Transactions.scan().where("IdempotencyId").eq(transfer_id).exec();
+  
           if (transx.length > 0) {
             responses = [
               {
@@ -151,7 +152,7 @@ exports.transaction = async (req, res) => {
                 status: transx[0].status ? transx[0].status : null,
                 description: transx[0].description
                   ? transx[0].description
-                  : null,
+                  : "",
                 net: transx[0].net_proceeds ? transx[0].net_proceeds : null,
                 statementDescriptor: getUser[0].email ? getUser[0].email : null,
                 totalAmountReceived: null,
@@ -180,7 +181,7 @@ exports.transaction = async (req, res) => {
               algo_id: response.data[i].algo_id,
               account_balance: response.data[i].account_balance,
               TransactionFee: response.data[i].AccountTransferFee,
-              description: response.data[i].description,
+              description: response.data[i].description ?  response.data[i].description : null ,
               wallet_display_id: response.data[i].wallet_display_id,
               added_by_user_email: response.data[i].added_by_user_email,
               symbol: response.data[i].symbol
