@@ -47,17 +47,19 @@ exports.transfer = async (req, res) => {
       if (type == "PAYOUT") {
          let bank = await bankAccountSchema.scan().where("user_id").eq(finalData[i].user_id).where("verifiedStatus").eq("Success").where("status").eq("active").exec()
           if (bank.length > 0) {
+            
             finalData[i].bankAccount = bank[0].account_number ;
             finalData[i].bankName = bank[0].bank_name;
-           
-          }
-          // finalData[i].bankAccount = null;
-          // finalData[i].bankName = null;   
+          }else{
+          finalData[i].bankAccount = null;
+          finalData[i].bankName = null;  
+          } 
            
           if(users[0].email) {
             finalData[i].email = users[0].email;
-          }
-          //finalData[i].email = null
+          }else{
+            finalData[i].email = null
+          }          
 
       } else if(type == "PAYMENT") {
         if(users[0].email) {
