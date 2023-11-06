@@ -25,6 +25,10 @@ const currencySchema = new dynamoose.Schema(
     },
     code: String,
     currency: String,
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: {

@@ -1,14 +1,31 @@
 const nodemailer = require("nodemailer");
+const ejs = require("ejs");
+const fs = require("fs");
+const path = require("path");
+let emailPath = path.join(__dirname, "../template/email.ejs");
 
 const transport = nodemailer.createTransport({
-  host: "smtp-relay.sendinblue.com",
+  host: process.env.EMAIL_HOST,
   auth: {
-    user: "sultan.mobilefirst@gmail.com",
-    pass: "b7yER3rILcPmz9Nd",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-exports.generateEmail = async function (mailDetails) {
-  let email = transport.sendMail(mailDetails);
+exports.generateEmail = async function (mailDetails, fullName) {
+  const ejsTemplate = fs.readFileSync(emailPath, "utf8"); // Read the EJS template file
+
+  const htmlContent = ejs.render(ejsTemplate, {
+    // subject: mailDetails.subject,
+    recipientName: fullName,
+  });
+
+  let email = transport.sendMail({
+    from: mailDetails.from,
+    to: mailDetails.to,
+    subject: mailDetails.subject,
+    text: mailDetails.text,
+    html: htmlContent,
+  });
   return email;
 };

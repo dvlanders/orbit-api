@@ -1,0 +1,287 @@
+.container {
+    width: 581px;
+    height: 820px;
+}
+
+.top-banner {
+    background-image: url('Dashboard\ Search\ Bar\ Update.png');
+    width: 581px;
+    height: 88px;
+}
+
+.top-banner-text {
+    color: white;
+    text-align: center;
+    padding-top: 16px;
+    font-size: 14px;
+    font-weight: 400;
+    font-family:'Poppins';
+}
+
+.hifi_header {
+    font-size: 32px;
+    font-weight: 500;
+    font-family:'Poppins';
+}
+
+.top-banner-texttwo {
+    margin-top: 22px;
+    line-height: 1px;
+    color: white;
+    text-align: center;
+    padding-bottom: 3px;
+    font-size: 31px;
+    font-weight: 100;
+    font-family:'Poppins';
+}
+
+.main-section {
+    display: flex;
+    flex-direction: column;
+    margin-left: 6%;
+}
+
+.main-section-InitialText {
+    font-size: 18px;
+    font-weight: 600;
+    font-family: 'inter';
+}
+
+.main-section-middleText {
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Noto Sans';
+    color: black;
+}
+
+.main-section-middleTextHi {
+    line-height: 1px;
+    font-size: 12px;
+    font-weight: 400;
+    font-family: 'Noto Sans';
+}
+
+.main-section-mainText {
+    width: 427px;
+    height: 37px;
+    font-size: 12px;
+    font-weight: 400;
+    font-family: 'Noto Sans';
+    color: #222222;
+}
+
+.signup-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: 5px;
+    color: #ffffff;
+    background-color: #007bff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.signup-button:hover {
+    background-color: #0056b3;
+}
+
+.main-section-endText {
+    width: 395px;
+    height: 37px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Noto Sans';
+    color: black;
+}
+
+.footer-textFirst {
+    margin-left: 4%;
+    font-weight: 400;
+    font-family: 'inter';
+    font-size: 16px;
+    font-weight: 200;
+}
+
+.hifi_footer {
+    font-size: 17px;
+    font-weight: 600;
+    font-family: 'inter';
+    color: #222222;
+}
+
+.footer-textTwo {
+    margin-top: -13px;
+    color: #222222;
+    width: 427px;
+    height: 37px;
+    font-size: 12px;
+    font-weight: 400;
+    font-family: 'Inter';
+}
+
+.footer-mainText {
+    color: #222222;
+    width: 580px;
+    height: 73px;
+    font-size: 8px;
+    font-weight: 400;
+    font-family: 'inter';
+    background-color: #F7F7F7;
+    background-size: cover;
+    margin-top: 8px;
+    font-family: 'Noto Music';
+}
+
+hr {
+    border: 0;
+    clear: both;
+    display: block;
+    width: 100%;
+    background-color: #80808061;
+    height: 1px;
+}
+
+
+/* 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hifi-Bridge</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <div style="display: flex; justify-content: center; align-items: flex-start; margin-top: -1%;">
+        <div style=" width: 581px; height: 820px;">
+            <div style="    background-image: url('imageheader.png'); width: 581px; height: 88px;">
+                <p style=" color: white;
+                text-align: center;
+                padding-top: 16px;
+                font-size: 14px;
+                font-weight: 400;
+                font-family:'Poppins';"> Get started with </p>
+                <p style=" margin-top: 22px;
+                line-height: 1px;
+                color: white;
+                text-align: center;
+                padding-bottom: 3px;
+                font-size: 31px;
+                font-weight: 100;
+                font-family:'Poppins';"> <span style="font-size: 32px;
+    font-weight: 500;
+    font-family:'Poppins';"> HIFI</span> Pay </p>
+            </div>
+            <div style="display: flex;
+            flex-direction: column;
+            margin-left: 6%;">
+                <p style=" font-size: 18px;
+                font-weight: 600;
+                font-family: 'inter';"> Verify your email</p>
+                <p style="line-height: 1px;
+                font-size: 12px;
+                font-weight: 400;
+                font-family: 'Noto Sans';"> Hi <%= recipientName %>,</p>
+                <p style="width: 427px;
+                height: 37px;
+                font-size: 12px;
+                font-weight: 400;
+                font-family: 'Noto Sans';
+                color: #222222;">Congratulations on getting started with HIFI Pay! To activate your
+                    account
+                    and start accepting payments please enter this verification code into your account when prompted:
+                </p>
+                <p style="font-size: 13px;
+                font-weight: 500;
+                font-family: 'Noto Sans';
+                color: black;"> Please click on the form below to register with the HiFi: </p>
+                <div style="text-align:start">
+                    <a  style=" display: inline-block;
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    text-align: center;
+                    text-decoration: none;
+                    border: none;
+                    border-radius: 5px;
+                    color: #ffffff;
+                    background-color: #007bff;
+                    cursor: pointer;
+                    transition: background-color 0.3s;" href="https://docs.google.com/" target="_blank">Sign Up With Email</a>
+                </div>
+                <p style="width: 395px;
+                height: 37px;
+                font-size: 13px;
+                font-weight: 500;
+                font-family: 'Noto Sans';
+                color: black;"> This verification code will expire in 1 hour. After which, you will need
+                    to
+                    request a new code.</p>
+                <p style="line-height: 1px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    font-family: 'Noto Sans';
+                    color: black;">Thank you,</p>
+                <hr>
+            </div>
+            <div style="display: flex;
+            flex-direction: column;
+            margin-left: 6%;">
+                <p style="margin-left: 4%;
+                font-weight: 400;
+                font-family: 'inter';
+                font-size: 16px;
+                font-weight: 200;"> <span style="font-size: 17px;
+    font-weight: 600;
+    font-family: 'inter';
+    color: #222222;"> HIFI </span> Bridge </p>
+                <div style="margin-top: -13px;
+                color: #222222;
+                width: 427px;
+                height: 37px;
+                font-size: 12px;
+                font-weight: 400;
+                font-family: 'Inter';">
+                    <p>By submitting the following verification code, you acknowledge that you have reviewed and accept
+                        our
+                        <a href="https://google.com" target="_blank" style="color: #6200EE;"> Terms of service</a> and
+                        <a href="https://google.com" target="_blank" style="color: #6418C3;">
+                            Authorization Agreement.</a>
+                    </p>
+                </div>
+            </div>
+            <div style="color: #222222;
+            width: 580px;
+            height: 73px;
+            font-size: 8px;
+            font-weight: 400;
+            font-family: 'inter';
+            background-color: #F7F7F7;
+            background-size: cover;
+            margin-top: 8px;
+            font-family: 'Noto Music';">
+                <p style="line-height: 10px; width: 422px; padding: 6px 9px 15px 35px;">HIFI Bridge, Inc. offers services and infrastructure through a
+                    distinguished third-party partner.
+                    HIFI Bridge, Inc. operates in alignment with the regulatory standards and licenses maintained by our
+                    partner, including their status as a Money Services Business registered FinCEN in the United States,
+                    MSB Registration Number 31000214127213. Additionally, an affiliated trust entity of our partner is
+                    overseen by the Wyoming Division of Banking. Cryptocurrency trading involves significant risks. Users
+                    are urged to thoroughly assess its appropriateness based on their specific situations. The
+                    information shared here is solely for informational purposes and should not be viewed as investment,
+                    tax, legal or other forms of advice by HIFI Bridge, Inc.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+
+
+*/

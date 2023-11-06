@@ -4,10 +4,8 @@ const valid = require("../util/Validator");
 const Ajv = require("ajv");
 const ajv = new Ajv();
 const speakeasy = require("speakeasy");
-const registration = require("./index");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs, messages } = require("../util");
-const { success } = require("../util/Constants");
 const resetPassword = process.env.RESET_PASSWORD;
 const User = require("./../models/userAuth");
 
@@ -69,12 +67,6 @@ exports.signUp = async (req, res) => {
 
     const password = process.env.REGISTER_PASSWORD;
 
-    // const mailDetails = {
-    //   from: `${process.env.FROM_EMAIL}`,
-    //   to: email,
-    //   subject: "Registration Form",
-    //   html: emailContent,
-    // };
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
@@ -82,7 +74,7 @@ exports.signUp = async (req, res) => {
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
     };
 
-    generate = await sendEmail.generateEmail(mailDetails); //Generate Email
+    generate = await sendEmail.generateEmail(mailDetails, fullName); //Generate Email
 
     if (generate.messageId) {
       let cipherText = common.encryptText(password);

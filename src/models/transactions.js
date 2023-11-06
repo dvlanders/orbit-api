@@ -27,7 +27,10 @@ const transactionSchema = new dynamoose.Schema(
     added_by_user_email: String,
     symbol: String,
     IdempotencyId: String,
-    user_id: String,
+    user_id: {
+      type: String,
+      required: true,
+    },
     timestamp: Number,
   },
   {

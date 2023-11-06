@@ -8,6 +8,9 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { currencyData } = require("../util/helper/currency");
 const { responseCode, rs } = require("../util");
+const WalletAddress = require("../models/walletAddress");
+const dynamoose = require("dynamoose");
+
 //Transfer
 
 /**
@@ -174,7 +177,7 @@ exports.walletCurrency = async (req, res) => {
 /**
  * @description Get currency data API
  */
-exports.getCurrency = async (rea, res) => {
+exports.getCurrency = async (req, res) => {
   try {
     let currency = await Currency.scan()
       .attributes(["symbol", "name", "code", "currency", "ascii_sign"])
@@ -184,6 +187,85 @@ exports.getCurrency = async (rea, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("CURRENCY RETRIVED", currency));
   } catch (error) {
+    return res.status(500).json(rs.errorResponse(error.toString()));
+  }
+};
+
+exports.addWallet = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    let isWallet = await WalletAddress.scan()
+      .where("user_id")
+      .eq(user_id)
+      .exec();
+
+    if (isWallet.count !== 0)
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("WALLET ADDRESS ALREADY ADDED"));
+
+    console.log(isWallet);
+
+    let currency = await Currency.scan()
+      .where("isActive")
+      .eq(true)
+      .attributes(["currency"])
+      .exec();
+
+    let cList = [];
+    for (const user of currency) cList.push(user.currency);
+
+    console.log(cList);
+
+    const transactionOperations = cList.map(async (c) => {
+      try {
+        console.log(c);
+        let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/deposit/address/${c}`;
+        let response = await axios({
+          method: "post",
+          url: apiPath,
+          headers: {
+            Authorization: "Bearer " + userDetails?.userToken,
+          },
+        });
+        if (response?.data) {
+          console.log(response?.data);
+
+          return await WalletAddress.transaction.create({
+            id: uuidv4(),
+            user_id: userDetails.user_id,
+            address: response?.data?.address,
+            currency: response?.data?.currency,
+          });
+        }
+      } catch (error) {
+        // Handle the error here
+        console.error("An error occurred:", error);
+      }
+    });
+    console.log(transactionOperations);
+
+    await dynamoose.transaction(transactionOperations);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("WALLET ADDRESS ADDED"));
+  } catch (error) {
+    console.log(error);
     return res.status(500).json(rs.errorResponse(error.toString()));
   }
 };

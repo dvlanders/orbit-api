@@ -3,7 +3,10 @@ const dynamoose = require("dynamoose");
 const bankSchema = new dynamoose.Schema(
   {
     id: String,
-    user_id : String,
+    user_id: {
+      type: String,
+      required: true,
+    },
     status: String,
     requires_verification: Number,
     requires_support: Number,
@@ -17,8 +20,8 @@ const bankSchema = new dynamoose.Schema(
     international_bank: Boolean,
     ref_id: String,
     wire_withdrawal_fee: Number,
-    verificationSent : Boolean,
-    verifiedStatus : String
+    verificationSent: Boolean,
+    verifiedStatus: String,
   },
   {
     timestamps: {

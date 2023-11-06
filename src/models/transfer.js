@@ -7,7 +7,10 @@ const transferSchema = new dynamoose.Schema(
     type: String,
     quantity: Number,
     currency: String,
-    user_id: String,
+    user_id: {
+      type: String,
+      required: true,
+    },
     rate: Number,
     purpose: String,
     description: String,
