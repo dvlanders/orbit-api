@@ -481,10 +481,30 @@ exports.dashboard = async (req, res) => {
     let payoutReq = { query: { type: "PAYOUT" } };
     let payoutData = await payment.transfer(payoutReq);
 
+     monthPurchase = [];
+    let mon = 1;
+    while (mon < 13) {
+      let totals = 0;
+      for (let i = 0; i < paymentData.data.length; i++) {
+        const dateString = paymentData.data[i].transfer_date;
+        const date = new Date(dateString);
+        let getMonth = date.getUTCMonth() + 1;
+        if (getMonth == mon) {
+          totals =
+            totals + payment.data.length
+        }
+      }
+      monthPurchase.push({ month: mon, purchase : totals });
+      mon = mon + 1;
+    }
+
+
     let responses = {
-      totalPurchase: paymentData.count ? paymentData.count : null,
+      totalPurchase: paymentData.count ? paymentData.count : 0,
+      monthlyPurchase : monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
-      totalCustomers: count,
+      totalCustomers: 0,
+      monthlyCustomers : 0,
       customersPercentage: null,
       totalRevenue: totalRev ? totalRev : 0,
       montlyRevenue: monthData,

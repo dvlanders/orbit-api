@@ -61,7 +61,6 @@ exports.currencyConvertion = async (req, res) => {
       return response.data;
     }
   } catch (error) {
-    console.log("errrrrrrrrrrrrrrrrrrrrrrrr", error);
     // return res.status(error.response?.status).send(error.response.data);
   }
 };
