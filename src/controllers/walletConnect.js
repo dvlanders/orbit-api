@@ -209,7 +209,10 @@ exports.addCustomerAddress = async (req, res) => {
   try {
     const { user_id } = req.params;
 
-    if (!user_id) {
+    if (
+      (!user_id || req.body?.address || !req.body?.currency,
+      !req.body?.walletType)
+    ) {
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
@@ -222,14 +225,36 @@ exports.addCustomerAddress = async (req, res) => {
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
 
-    let saveData = CustomerWalletAddress.create({
+    let address = req.body?.address;
+    let currency = req.body?.currency;
+    let walletType = req.body?.walletType;
+
+    let iswalletConnected = await CustomerWalletAddress.scan()
+      .attributes(["id", "address", "currency", "walletType"])
+      .where("address")
+      .eq(address)
+      .where("currency")
+      .eq(currency)
+      .exec();
+
+    if (iswalletConnected.count > 0) {
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("CUSTOMER ALREADY", iswalletConnected[0]));
+    }
+
+    let saveData = await CustomerWalletAddress.create({
       id: uuidv4(),
-      address: "String",
-      currency: "String",
-      walletType: "String",
+      address,
+      currency,
+      walletType,
     });
 
     console.log(saveData);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("ADDED CUSTOMER"));
   } catch (error) {
     return res
       .status(responseCode.serverError)
