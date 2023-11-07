@@ -8,5 +8,4 @@ module.exports = (router) => {
   router.post("/user/token/:userId", registration.userToken);
   router.delete("/user/:userId", registration.deleteUser);
   router.get("/users", registration.getUser);
- 
 };

@@ -6,7 +6,7 @@ module.exports = (app, express) => {
   const accountManagement = require("./accountManagement");
   const payout = require("./payout");
   const refund = require("./refund");
-  const walletConnect = require("./wallectConnect");
+  const walletConnect = require("./walletConnect");
   const upload = require("./upload");
 
   registration(router);
