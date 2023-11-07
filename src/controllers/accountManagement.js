@@ -475,6 +475,7 @@ exports.dashboard = async (req, res) => {
             adjustments;
         }
       }
+      if(total != 0)
       monthData.push({ month: month, totalAmount: total });
       month = month + 1;
     }
@@ -491,9 +492,10 @@ exports.dashboard = async (req, res) => {
         let getMonth = date.getUTCMonth() + 1;
         if (getMonth == mon) {
           totals =
-            totals + payment.data.length
+            totals + paymentData.data.length
         }
       }
+      if(totals != 0)
       monthPurchase.push({ month: mon, purchase : totals });
       mon = mon + 1;
     }
@@ -518,6 +520,7 @@ exports.dashboard = async (req, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("DATA RETRIVED", responses));
   } catch (error) {
+    console.log("erorrrrrrrrrrrrrrrrrrrrrrr",error)
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
