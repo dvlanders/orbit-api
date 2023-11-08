@@ -251,7 +251,7 @@ exports.signInGoogle = async (req, res) => {
 
     const userDetails = await User.scan().where("email").eq(email).exec();
 
-    console.log(userDetails[0]);
+    console.log(userDetails);
 
     if (userDetails?.count == 0) {
       common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);

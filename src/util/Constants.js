@@ -59,5 +59,6 @@ exports.deleted = (name) => `${name} DELETED SUCCESSFULLY!`;
 
 /* This is a function which is used to display the error message with no content. */
 exports.dataNotAdded = (name) => `${name} NOT ADDED`;
+exports.dataNotExist = (name) => `${name} DOES NOT EXIST`;
 
 exports.conflict = (name) => `${name} ALREADY EXIST`;

@@ -6,6 +6,7 @@ const {
   dataNotAdded,
   deleted,
   conflict,
+  dataNotExist,
 } = require("./Constants");
 
 exports.response = (statusCode, message, data) => {
@@ -48,6 +49,10 @@ exports.successResponse = (name, data) => {
 
 exports.dataNotAdded = (name) => {
   return this.response(responseCode.successNoRecords, dataNotAdded(name));
+};
+
+exports.dataNotExist = (name) => {
+  return this.response(responseCode.successNoRecords, dataNotExist(name));
 };
 
 exports.conflict = (name) => {
