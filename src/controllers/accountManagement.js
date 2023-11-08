@@ -443,6 +443,7 @@ exports.dashboard = async (req, res) => {
 
     let paymentReq = { query: { type: "PAYMENT" } };
     let paymentData = await payment.transfer(paymentReq);
+    console.log("eeeeeeeeeeeeeeeeeeeeeeeeee",paymentData)
     let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
     // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
@@ -460,25 +461,27 @@ exports.dashboard = async (req, res) => {
         monetization -
         adjustments;
     }
-    while (month < 13) {
+
+    while (month < 31) {
       let total = 0;
       for (let i = 0; i < paymentData.data.length; i++) {
         const dateString = paymentData.data[i].transfer_date;
         const date = new Date(dateString);
-        let getMonth = date.getUTCMonth() + 1;
+        let getMonth = date.getDate();
+        let onlymon = date.getUTCMonth() + 1;
+
+        
         if (getMonth == month) {
-          total =
-            total +
-            paymentData.data[i].quantity * paymentData.data[i].rate -
-            refund -
-            monetization -
-            adjustments;
+          total = total + paymentData.data[i].quantity * paymentData.data[i].rate - refund - monetization - 
+          adjustments;
         }
       }
       if(total != 0)
-      monthData.push({ month: month, totalAmount: total });
+      monthData.push({ day: month, totalAmount: total, month: 11});
       month = month + 1;
     }
+
+
     let payoutReq = { query: { type: "PAYOUT" } };
     let payoutData = await payment.transfer(payoutReq);
 
@@ -489,16 +492,21 @@ exports.dashboard = async (req, res) => {
       for (let i = 0; i < paymentData.data.length; i++) {
         const dateString = paymentData.data[i].transfer_date;
         const date = new Date(dateString);
-        let getMonth = date.getUTCMonth() + 1;
+        let getMonth = date.getDate();
+        //date.getUTCMonth() + 1;
         if (getMonth == mon) {
-          totals =
-            totals + paymentData.data.length
+          let purchaseLength = []
+          purchaseLength.push(paymentData.data[i])
+
+          totals = totals + purchaseLength.length
         }
       }
       if(totals != 0)
-      monthPurchase.push({ month: mon, purchase : totals });
+      monthPurchase.push({ day : mon, purchase : totals, month : 11 });
       mon = mon + 1;
     }
+
+    
 
 
     let responses = {
@@ -520,7 +528,6 @@ exports.dashboard = async (req, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("DATA RETRIVED", responses));
   } catch (error) {
-    console.log("erorrrrrrrrrrrrrrrrrrrrrrr",error)
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
