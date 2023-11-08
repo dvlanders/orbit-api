@@ -2,7 +2,8 @@ const nodemailer = require("nodemailer");
 const ejs = require("ejs");
 const fs = require("fs");
 const path = require("path");
-let emailPath = path.join(__dirname, "../template/email.ejs");
+let emailPath = path.join(__dirname, "../template/HifiBridgeTemp.ejs");
+console.log(emailPath);
 
 const transport = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,

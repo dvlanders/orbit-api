@@ -6,10 +6,11 @@ const Currency = require("../models/currency");
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
-const { currencyData } = require("../util/helper/currency");
+const { currencyData, currencyPairs } = require("../util/helper/currency");
 const { responseCode, rs } = require("../util");
 const WalletAddress = require("../models/walletAddress");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
+const CurrencyPair = require("../models/currencyPairs");
 const dynamoose = require("dynamoose");
 
 /**
@@ -268,68 +269,6 @@ exports.addCustomerAddress = async (req, res) => {
  * @param {*} res
  * @returns
  */
-exports.deposit = async (req, res) => {
-  try {
-    const { currency, user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-    });
-    return res.status(response.status).json({ message: response.data.data });
-  } catch (error) {
-    return res.status(error.response.status).send(error.response.data);
-  }
-};
-
-/**
- *
- * @param {*} req
- * @param {*} res
- * @returns
- */
-exports.walletTransfer = async (req, res) => {
-  try {
-    const { currency } = req.query;
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
-    let response = await axios({
-      method: "get",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-      query: currency,
-    });
-    return res.status(response.status).json({ message: response.data.data });
-  } catch (error) {
-    return res.status(error.response.status).send(error.response.data);
-  }
-};
-
-/**
- *
- * @param {*} req
- * @param {*} res
- * @returns
- */
 exports.walletTransfer = async (req, res) => {
   try {
     let data = {
@@ -338,6 +277,7 @@ exports.walletTransfer = async (req, res) => {
       from_wallet: req.body.from_wallet,
       to_wallet: req.body.to_wallet,
     };
+
     const { user_id } = req.params;
     const userDetails = await User.get(user_id);
     if (userDetails == undefined) {
@@ -346,10 +286,7 @@ exports.walletTransfer = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-    // if (req.body.quantity < 11)
-    //   return res
-    //     .status(responseCode.serverError)
-    //     .json(rs.errorResponse("QUANTITY MUST BE GREATER THAN 11", {}));
+
     data.transfer_id = uuidv4();
     let apiPath = `${baseUrl}/v1/account/transfer`;
     let response = await axios({
@@ -386,3 +323,188 @@ exports.walletTransfer = async (req, res) => {
     return res.status(error.response.status).send(error.response.data);
   }
 };
+
+exports.addcurrencypair = async (req, res) => {
+  try {
+    const currencyPairsArray = Object.keys(currencyPairs).map((key) => ({
+      ...currencyPairs[key],
+      key: key,
+    }));
+
+    let iscurrencyPair = await CurrencyPair.scan().exec();
+    if (iscurrencyPair.count > 0)
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("CURRENCY PAIR ALREADY ADDED"));
+
+    currencyPairsArray.map(async (e) => {
+      await CurrencyPair.create({
+        id: uuidv4(),
+        formattedSymbol: e.formatted_symbol,
+        symbol: e.symbol,
+        base: e.base,
+        quote: e.quote,
+      });
+    });
+
+    console.log(currencyPairsArray.length);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("ADDED THE CURRENCY PAIRS"));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error.toString()));
+  }
+};
+
+exports.marketOrder = async (req, res) => {
+  try {
+    const { user_id, side } = req.params;
+    const userDetails = await User.get(user_id);
+    console.log(userDetails);
+
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    let currencyPair = await CurrencyPair.scan()
+      .attributes(["base", "quote", "symbol"])
+      .where("base")
+      .eq(req.body?.currency)
+      .where("quote")
+      .eq("usdc")
+      .exec();
+
+    // console.log(currencyPair);
+    console.log(currencyPair[0].symbol);
+
+    let apiPath = `${baseUrl}/v1/orders/${side}`;
+    let response = await axios({
+      method: "post",
+      url: "https://api.staging.sfox.com/v1/orders/buy",
+      headers: {
+        Authorization:
+          "Bearer " +
+          "d7ae4196a5c953ddc57cc9cf1d527913d5fa66454cbae0bd0345d8392e4c1dba",
+      },
+      data: {
+        currency_pair: currencyPair[0].symbol,
+        price: 12,
+        quantity: 0.1,
+        algorithm_id: 200,
+        // client_order_id: uuidv4(),
+      },
+    });
+
+    console.log(response?.data);
+
+    // if (response.data && response.data.id) {
+    //   return res.status(200).send({
+    //     message: "Order created successfully",
+    //     data: response.data,
+    //   });
+    // } else {
+    //   return res.status(500).send({
+    //     message: "Failed to create order",
+    //     data: response.data,
+    //   });
+    // }
+
+    return res
+      .status(200)
+      .json(rs.successResponse("ORDER CREATED", response?.data));
+  } catch (error) {
+    console.log("Error creating market order:", error.toString());
+    return res.status(500).json({
+      message: "An error occurred while creating the market order",
+    });
+  }
+};
+
+// exports.getCurrencyPairs = async (req, res) => {
+//   try {
+//     let currencyList = await Currency.scan()
+//       .attributes(["currency"])
+//       .where("isActive")
+//       .eq(true)
+//       .exec();
+
+//     console.log(currencyList);
+//     const cuValues = currencyList.map((item) => item.currency);
+//     console.log(cuValues);
+
+//     return res.send("ok");
+//     // let currencyPairList = await  CurrencyPair.scan()
+//   } catch (error) {
+//     return res
+//       .status(responseCode.serverError)
+//       .json(rs.errorResponse(error.toString()));
+//   }
+// };
+
+// /**
+//  *
+//  * @param {*} req
+//  * @param {*} res
+//  * @returns
+//  */
+// exports.deposit = async (req, res) => {
+//   try {
+//     const { currency, user_id } = req.params;
+//     const userDetails = await User.get(user_id);
+//     if (userDetails == undefined) {
+//       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+//       return res
+//         .status(responseCode.badRequest)
+//         .json(rs.incorrectDetails("USER NOT FOUND", {}));
+//     }
+//     let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
+//     let response = await axios({
+//       method: "post",
+//       url: apiPath,
+//       headers: {
+//         Authorization: "Bearer " + userDetails.userToken,
+//       },
+//     });
+//     return res.status(response.status).json({ message: response.data.data });
+//   } catch (error) {
+//     return res.status(error.response.status).send(error.response.data);
+//   }
+// };
+
+// /**
+//  *
+//  * @param {*} req
+//  * @param {*} res
+//  * @returns
+//  */
+// exports.walletTransfer = async (req, res) => {
+//   try {
+//     const { currency } = req.query;
+//     const { user_id } = req.params;
+//     const userDetails = await User.get(user_id);
+//     if (userDetails == undefined) {
+//       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+//       return res
+//         .status(responseCode.badRequest)
+//         .json(rs.incorrectDetails("USER NOT FOUND", {}));
+//     }
+//     let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
+//     let response = await axios({
+//       method: "get",
+//       url: apiPath,
+//       headers: {
+//         Authorization: "Bearer " + userDetails.userToken,
+//       },
+//       query: currency,
+//     });
+//     return res.status(response.status).json({ message: response.data.data });
+//   } catch (error) {
+//     return res.status(error.response.status).send(error.response.data);
+//   }
+// };

@@ -165,7 +165,15 @@ exports.signIn = async (req, res) => {
         }
 
         if (getUser[0].isVerified == false) {
-          let temp_secret = speakeasy.generateSecret(); // Generate Secret Key
+          let temp_secret = speakeasy.generateSecret({
+            name: email,
+          }); // Generate Secret Key
+
+          const otpauth_url = speakeasy.otpauthURL({
+            secret: temp_secret.base32,
+            label: encodeURIComponent(email), // Ensure the email is URL encoded
+            issuer: "HIFI Pay", // Replace with your app's name
+          });
 
           let addKey = await User.update(
             {
@@ -185,7 +193,7 @@ exports.signIn = async (req, res) => {
               rs.successResponse("USER SIGNED IN", {
                 userId: getUser[0].user_id,
                 secret: temp_secret.base32,
-                qr_code: temp_secret.otpauth_url,
+                qr_code: otpauth_url,
                 businessName: getUser[0].businessName,
                 timeZone: getUser[0].timeZone,
               })
@@ -201,7 +209,9 @@ exports.signIn = async (req, res) => {
               userId: getUser[0].user_id,
               isVerified: true,
               secret: getUser[0].secretkey,
-              qr_code: `otpauth://totp/SecretKey?secret=${getUser[0].secretkey}`,
+              qr_code: `otpauth://totp/${encodeURIComponent(email)}?secret=${
+                getUser[0].secretkey
+              }&issuer=${encodeURIComponent("HIFI Pay")}`,
               businessName: getUser[0].businessName,
               timeZone: getUser[0].timeZone,
             })
@@ -261,7 +271,15 @@ exports.signInGoogle = async (req, res) => {
     }
 
     if (userDetails[0].isVerified == false) {
-      let temp_secret = speakeasy.generateSecret(); // Generating Secret Key
+      let temp_secret = speakeasy.generateSecret({
+        name: email,
+      }); // Generate Secret Key
+
+      const otpauth_url = speakeasy.otpauthURL({
+        secret: temp_secret.base32,
+        label: encodeURIComponent(email), // Ensure the email is URL encoded
+        issuer: "HIFI Pay", // Replace with your app's name
+      });
       let addKey = await User.update(
         {
           user_id: userDetails[0].user_id,
@@ -275,7 +293,7 @@ exports.signInGoogle = async (req, res) => {
           rs.successResponse("USER SIGNED IN", {
             userId: userDetails[0].user_id,
             secret: temp_secret.base32,
-            qr_code: temp_secret.otpauth_url,
+            qr_code: otpauth_url,
             businessName: userDetails[0].businessName,
             timeZone: userDetails[0].timeZone,
           })
@@ -287,7 +305,9 @@ exports.signInGoogle = async (req, res) => {
           userId: userDetails[0].user_id,
           isVerified: true,
           secret: userDetails[0].secretkey,
-          qr_code: `otpauth://totp/SecretKey?secret=${userDetails[0].secretkey}`,
+          qr_code: `otpauth://totp/${encodeURIComponent(email)}?secret=${
+            userDetails[0].secretkey
+          }&issuer=${encodeURIComponent("HIFI Pay")}`,
           timeZone: userDetails[0].timeZone,
         })
       );
