@@ -5,7 +5,7 @@ module.exports = (router) => {
   router.get("/transfer", payment.transfer);
 
   // transaction routes
-  router.get("/user/:user_id/transaction/:transfer_id", payment.transaction);
+  router.get("/user/:user_id/transaction", payment.transaction);
   router.put(
     "/user/:user_id/:trx_id/transfer/update",
     payment.tranferUpdate

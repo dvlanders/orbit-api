@@ -101,12 +101,12 @@ exports.transfer = async (req, res) => {
 
 exports.transaction = async (req, res) => {
   try {
-    let responses;
-    const { transfer_id, user_id } = req.params;
-    if (!transfer_id || !user_id)
+    let responses = [];
+    const { user_id } = req.params;
+    if (!user_id)
       return res
         .status(responseCode.badRequest)
-        .json(rs.dataNotAdded("PROVIDE TRANSFER ID OR USERID", {}));
+        .json(rs.dataNotAdded("PROVIDE USERID", {}));
     const { from_date, to_date, limit, offset, type } = req.query;
     let query = {
       from_date: from_date ? from_date : null,
@@ -133,41 +133,30 @@ exports.transaction = async (req, res) => {
       },
       params: query,
     });
+    
     if (response.data.length > 0)
       for (let i = 0; i < response.data.length; i++) {
-        if (response.data[i].IdempotencyId == transfer_id) {
-          let transx = await Transactions.scan().where("IdempotencyId").eq(transfer_id).exec();
-  
+    
+          let transx = await Transactions.scan().where("atxid").eq(response.data[i].atxid).exec();
+          
           if (transx.length > 0) {
-            responses = [
+            responses.push(
               {
                 id: transx[0].id,
                 amount: transx[0].amount ? transx[0].amount : null,
-                transactionFee: transx[0].AccountTransferFee
-                  ? transx[0].AccountTransferFee
-                  : null,
-                orderId: transx[0].order_id ? transx[0].order_id : null,
-                customerId: transx[0].client_order_id
-                  ? transx[0].client_order_id
-                  : null,
-                fees: transx[0].fees ? transx[0].fees : null,
+                customerEmail:  null,
                 status: transx[0].status ? transx[0].status : null,
-                description: transx[0].description
-                  ? transx[0].description
-                  : "",
-                net: transx[0].net_proceeds ? transx[0].net_proceeds : null,
+                description: transx[0].description ? transx[0].description : "",
                 statementDescriptor: getUser[0].email ? getUser[0].email : null,
-                totalAmountReceived: null,
-                amountPaid: null,
-                ordertotal: null,
+                date : transx[0].day ?  transx[0].day : null ,
               },
-            ];
+            );
           } else {
             const transaction = new Transactions({
-              id: response.data[i].id.toString(),
-              atxid: response.data[i].atxid,
-              order_id: response.data[i].order_id,
-              client_order_id: response.data[i].client_order_id,
+              id: response.data[i].id ? response.data[i].id.toString() : "0",
+              atxid: response.data[i].atxid ? response.data[i].atxid : "",
+              order_id: response.data[i].order_id ? response.data[i].order_id : "",
+              client_order_id: response.data[i].client_order_id ? response.data[i].client_order_id : '',
               day: response.data[i].day,
               action: response.data[i].action,
               currency: response.data[i].currency,
@@ -179,9 +168,9 @@ exports.transaction = async (req, res) => {
               status: response.data[i].status,
               hold_expires: response.data[i].hold_expires,
               tx_hash: response.data[i].tx_hash,
-              algo_name: response.data[i].algo_name,
-              algo_id: response.data[i].algo_id,
-              account_balance: response.data[i].account_balance,
+              algo_name: response.data[i].algo_name ? response.data[i].algo_name : "",
+              algo_id: response.data[i].algo_id ? response.data[i].algo_id : "",
+              account_balance: response.data[i].account_balance ? response.data[i].account_balance : 0 ,
               TransactionFee: response.data[i].AccountTransferFee,
               description: response.data[i].description ?  response.data[i].description : null ,
               wallet_display_id: response.data[i].wallet_display_id,
@@ -189,46 +178,35 @@ exports.transaction = async (req, res) => {
               symbol: response.data[i].symbol
                 ? response.data[i].symbol
                 : "null",
-              IdempotencyId: response.data[i].IdempotencyId,
+              IdempotencyId: response.data[i].IdempotencyId ? response.data[i].IdempotencyId : "",
               timestamp: response.data[i].timestamp,
               statementDescriptor: getUser[0].email,
               user_id: getUser[0].user_id,
               total_amount_received: null,
               amountPaid: null,
               ordertotal: null,
+              date : response.data[i].day
             });
             let transferAdded = await transaction.save();
             logger.info(`Retrived transactions`, transferAdded);
             transx = await Transactions.scan()
-              .where("IdempotencyId")
-              .eq(transfer_id)
+              .where("atxid")
+              .eq(response.data[i].atxid)
               .exec();
-            responses = [
+            responses.push(
               {
-                id: transx[0].id,
+               id: transx[0].id,
                 amount: transx[0].amount ? transx[0].amount : null,
-                transactionFee: transx[0].AccountTransferFee
-                  ? transx[0].AccountTransferFee
-                  : null,
-                orderId: transx[0].order_id ? transx[0].order_id : null,
-                customerId: transx[0].client_order_id
-                  ? transx[0].client_order_id
-                  : null,
-                fees: transx[0].fees ? transx[0].fees : null,
+                customerEmail:  null,
                 status: transx[0].status ? transx[0].status : null,
-                description: transx[0].description
-                  ? transx[0].description
-                  : null,
-                net: transx[0].net_proceeds ? transx[0].net_proceeds : null,
+                description: transx[0].description ? transx[0].description : "",
                 statementDescriptor: getUser[0].email ? getUser[0].email : null,
-                totalAmountReceived: null,
-                amountPaid: null,
-                ordertotal: null,
+                date : transx[0].day ?  transx[0].day : null ,
               },
-            ];
+            );
           }
         }
-      }
+      
     if (responses == undefined) {
       return res
         .status(responseCode.badRequest)
