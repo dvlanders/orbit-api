@@ -16,4 +16,5 @@ module.exports = (router) => {
   );
   router.get("/currencypair/add", walletConnect.addcurrencypair);
   router.post("/user/:user_id/:side/marketorder", walletConnect.marketOrder);
+  router.post("/currency/quote", walletConnect.quoteCurrency);
 };

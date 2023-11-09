@@ -12,6 +12,7 @@ const WalletAddress = require("../models/walletAddress");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const CurrencyPair = require("../models/currencyPairs");
 const dynamoose = require("dynamoose");
+const { format } = require("path/posix");
 
 /**
  * @description Get Currency List which are available --  API
@@ -423,6 +424,61 @@ exports.marketOrder = async (req, res) => {
     return res.status(500).json({
       message: "An error occurred while creating the market order",
     });
+  }
+};
+
+exports.quoteCurrency = async (req, res) => {
+  try {
+    if (!req.body?.base || !req.body?.base || !req.body?.base_value) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    let currencyPair = await CurrencyPair.scan()
+      .attributes(["base", "quote", "symbol"])
+      .where("base")
+      .eq(req.body?.base)
+      .where("quote")
+      .eq(req.body?.quote)
+      .where("isActive")
+      .eq(true)
+      .exec();
+
+    // console.log(currencyPair);
+
+    if (currencyPair.count === 0) {
+      return res
+        .status(responseCode.badGateway)
+        .json(rs.incorrectDetails("CURRENCY DOES NOT EXIST"));
+    }
+
+    let apiPath = `https://api.coinbase.com/v2/prices/${currencyPair[0].symbol}/sell?quote=true`;
+    let response = await axios({
+      method: "get",
+      url: apiPath,
+    });
+
+    console.log(response?.data);
+    if (Object.keys(response?.data?.data).length > 0) {
+      let number_exact = parseFloat(response?.data?.data?.amount);
+
+      let baseValue = parseFloat(req.body?.base_value);
+
+      let totalAmount = baseValue * number_exact;
+      console.log(totalAmount);
+
+      return res.status(responseCode.success).json(
+        rs.successResponse("QUOTE VALUE RETRIEVED", {
+          currency: req.body?.base,
+          quote_value: totalAmount,
+        })
+      );
+    }
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error.toString()));
   }
 };
 
