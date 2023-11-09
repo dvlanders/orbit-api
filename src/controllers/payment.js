@@ -67,11 +67,8 @@ exports.transfer = async (req, res) => {
         }
         //finalData[i].email = null
       }
-
-
     }
-    
-
+  
     common.eventBridge(
       "Transfer History Retrived Successfully",
       responseCode.success
@@ -99,22 +96,71 @@ exports.transfer = async (req, res) => {
   }
 };
 
+exports.internalTransaction = async(req, res) => {
+  try{
+    const {user_id, transaction_id } = req.params
+    if (!user_id || !transaction_id)
+    return res
+      .status(responseCode.badRequest)
+      .json(rs.dataNotAdded("PROVIDE USERID OR TRANSFERID", {}));
+      const count = await User.scan().exec();
+      var getUser = count.filter((item) => item.user_id == user_id);
+      if (getUser.length == 0 || getUser[0].userToken == "") {
+        common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+        return res
+          .status(responseCode.badRequest)
+          .json(rs.incorrectDetails("USER NOT FOUND", {}));
+      }
+
+      let transx = await Transactions.scan().where("id").eq(transaction_id).exec();
+      let responses = {
+        id: transx[0].id,
+        amount: transx[0].amount ? transx[0].amount : null,
+        transactionFee: transx[0].AccountTransferFee ? transx[0].AccountTransferFee : null,
+        orderId: transx[0].order_id ? transx[0].order_id : null,
+        customerEmail:  null,
+        fees: transx[0].fees ? transx[0].fees : null,
+        status: transx[0].status ? transx[0].status : null,
+        description: transx[0].description ? transx[0].description : "",
+        net: transx[0].net_proceeds ? transx[0].net_proceeds : null,
+        statementDescriptor: getUser[0].email ? getUser[0].email : null,
+        totalAmountReceived: null,
+        amountPaid: null,
+        ordertotal: null,
+        date : transx[0].day,
+      }
+      return res
+      .status(responseCode.successResponse || 200)
+      .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
+
+  }catch(err){
+    console.log("error", err);
+    return res.status(responseCode.serverError || 500).send(rs.errorResponse("Error", err));
+
+
+
+
+  }
+}
+
 exports.transaction = async (req, res) => {
   try {
     let responses = [];
     const { user_id } = req.params;
+    let query
     if (!user_id)
       return res
         .status(responseCode.badRequest)
         .json(rs.dataNotAdded("PROVIDE USERID", {}));
-    const { from_date, to_date, limit, offset, type } = req.query;
-    let query = {
+        if(req.query) {const { from_date, to_date, limit, offset, type } = req.query;
+    query = {
       from_date: from_date ? from_date : null,
       to_date: to_date ? to_date : null,
       limit: limit ? limit : null,
       offset: offset ? offset : null,
       type: type ? type : null,
     };
+  }
     const count = await User.scan().exec();
     var getUser = count.filter((item) => item.user_id == user_id);
 
@@ -131,7 +177,7 @@ exports.transaction = async (req, res) => {
       headers: {
         Authorization: "Bearer " + getUser[0].userToken,
       },
-      params: query,
+      params: query ? query : null,
     });
     
     if (response.data.length > 0)
@@ -218,10 +264,14 @@ exports.transaction = async (req, res) => {
           )
         );
     }
-
+    if(res){
     return res
-      .status(response.status)
+      .status(responseCode.successCreated)
       .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
+    }
+    else{
+      return responses
+    }
   } catch (err) {
     console.log("error", err);
     return res.status(err?.response?.status || 500).send(err?.response?.data);
@@ -414,7 +464,7 @@ exports.balances = async (req, res) => {
         payCount.push(paymentData.data[i]);
         pay =
           pay +
-          paymentData.data[i].quantity * paymentData.data[i].rate -
+          paymentData.data[i].amount -
           refund -
           monetization -
           adjustments;
@@ -427,16 +477,27 @@ exports.balances = async (req, res) => {
     let totalTransactions = pay - refund - adjustments - monetization;
 
     let responses = {
+
       currently_way_to_bank_account: 0,
+
       estimate_future_payouts: 0,
+
       payment_count: payCount.length ? payCount.length : 0,
+
       payment: pay,
+
       refund_count: 0,
+
       refund: 0,
+
       adjustments_count: 0,
+
       adjustments: 0,
+
       total_incoming: totalTransactions,
+
       total_outgoing: 0,
+
       recently_deposit: 0,
     };
     for (let i = 0; i < response.data.length; i++) {

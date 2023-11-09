@@ -441,9 +441,8 @@ exports.dashboard = async (req, res) => {
     let monetization = 0;
     let adjustments = 0;
 
-    let paymentReq = { query: { type: "PAYMENT" } };
-    let paymentData = await payment.transfer(paymentReq);
-    console.log("eeeeeeeeeeeeeeeeeeeeeeeeee",paymentData)
+    let paymentReq = { params: { user_id: user_id } };
+    let paymentData = await payment.transaction(paymentReq);
     let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
     // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
@@ -453,31 +452,30 @@ exports.dashboard = async (req, res) => {
 
     monthData = [];
     let month = 1;
-    for (let i = 0; i < paymentData.data.length; i++) {
+    for (let i = 0; i < paymentData.length; i++) {
       totalRev =
         totalRev +
-        paymentData.data[i].quantity * paymentData.data[i].rate -
+        paymentData[i].amount -
         refund -
         monetization -
         adjustments;
     }
-
     while (month < 31) {
       let total = 0;
-      for (let i = 0; i < paymentData.data.length; i++) {
-        const dateString = paymentData.data[i].transfer_date;
+      for (let i = 0; i < paymentData.length; i++) {
+        const dateString = paymentData[i].date;
         const date = new Date(dateString);
         let getMonth = date.getDate();
         let onlymon = date.getUTCMonth() + 1;
 
         
         if (getMonth == month) {
-          total = total + paymentData.data[i].quantity * paymentData.data[i].rate - refund - monetization - 
+          total = total + paymentData[i].amount - refund - monetization - 
           adjustments;
         }
       }
       if(total != 0)
-      monthData.push({ day: month, totalAmount: total, month: 11});
+      monthData.push({ day: month, totalAmount: total.toFixed(2), month: 11});
       month = month + 1;
     }
 
@@ -489,14 +487,14 @@ exports.dashboard = async (req, res) => {
     let mon = 1;
     while (mon < 13) {
       let totals = 0;
-      for (let i = 0; i < paymentData.data.length; i++) {
-        const dateString = paymentData.data[i].transfer_date;
+      for (let i = 0; i < paymentData.length; i++) {
+        const dateString = paymentData[i].date;
         const date = new Date(dateString);
         let getMonth = date.getDate();
         //date.getUTCMonth() + 1;
         if (getMonth == mon) {
           let purchaseLength = []
-          purchaseLength.push(paymentData.data[i])
+          purchaseLength.push(paymentData[i])
 
           totals = totals + purchaseLength.length
         }
@@ -506,22 +504,19 @@ exports.dashboard = async (req, res) => {
       mon = mon + 1;
     }
 
-    
-
-
     let responses = {
-      totalPurchase: paymentData.count ? paymentData.count : 0,
+      totalPurchase: paymentData.length ? paymentData.length : 0,
       monthlyPurchase : monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
       totalCustomers: 0,
       monthlyCustomers : 0,
       customersPercentage: null,
       totalRevenue: totalRev ? totalRev : 0,
-      montlyRevenue: monthData,
+      monthlyRevenue: monthData,
       revenuePercentage: null,
       totalSales: sales,
-      paymentData: paymentData.data ? paymentData.data : null,
-      payoutData: payoutData.data ? payoutData.data : null,
+      paymentData: paymentData ? paymentData : null,
+      payoutData:  null,
     };
 
     return res
