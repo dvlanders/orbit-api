@@ -160,7 +160,7 @@ exports.transaction = async (req, res) => {
       return res
         .status(responseCode.badRequest)
         .json(rs.dataNotAdded("PROVIDE USERID", {}));
-        
+
     if (req.query) {
       const { from, to, limit, offset, type } = req.query;
       let date = new Date(from);
@@ -470,19 +470,19 @@ exports.balances = async (req, res) => {
     let adjustments = 0;
     let monetization = 0;
 
-    let paymentReq = { query: { type: "PAYMENT" } };
-    let paymentData = await payment.transfer(paymentReq);
+    let paymentReq = { params: { user_id: user_id } };
+    let paymentData = await payment.transaction(paymentReq);
     // let OneDayPay = paymentData.filter(data => data.transfer_date.ge );
-    for (let i = 0; i < paymentData.data.length; i++) {
+    for (let i = 0; i < paymentData.length; i++) {
       const currentDate = new Date(); // Get the current date and time
-      const targetDate = new Date(paymentData.data[i].transfer_date); // Replace with the date you want to compare
+      const targetDate = new Date(paymentData[i].date); // Replace with the date you want to compare
       const twentyFourHoursInMilliseconds = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
       if (currentDate - targetDate < twentyFourHoursInMilliseconds) {
-        payCount.push(paymentData.data[i]);
+        payCount.push(paymentData[i]);
         pay =
           pay +
-          paymentData.data[i].amount -
+          paymentData[i].amount -
           refund -
           monetization -
           adjustments;
@@ -516,11 +516,13 @@ exports.balances = async (req, res) => {
       total_outgoing: 0,
 
       recently_deposit: 0,
+
+    
     };
     for (let i = 0; i < response.data.length; i++) {
       if (response.data[i].currency == currency) {
         responses.currency = response.data[i].currency;
-        responses.total = response.data[i].balance;
+        responses.total = response.data[i].balance - pay ;
       }
     }
     // let request = { query: { type: "PAYMENT" } };
