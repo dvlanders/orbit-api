@@ -408,13 +408,13 @@ exports.dashboard = async (req, res) => {
     .exec();
   
     
-
+    let customerCurrency = "";
     let monthlyCustomer = [];
     let customerCurrenc = []
     let months = 1;
     while (months < 31) {
       let totalCus = 0;
-      let totalCurrency = 0
+      
       for (let i = 0; i < totalCustomers.length; i++) {
         const dateString = totalCustomers[i].createDate;
         const date = new Date(dateString);
@@ -422,15 +422,15 @@ exports.dashboard = async (req, res) => {
         let onlymon = date.getUTCMonth() + 1;
 
         if (getMonths == months) {
-          let customerCurrency = [];
-          customerCurrency.push(totalCustomers[i].currency)
+        
+          customerCurrency = customerCurrency + totalCustomers[i].currency 
           let customerLength = [];
           customerLength.push(totalCustomers[i]);
 
          
           totalCus =
             totalCus + customerLength.length ;
-            totalCurrency = totalCurrency + customerCurrency.length
+           
         }
         
 
@@ -438,7 +438,7 @@ exports.dashboard = async (req, res) => {
       }
       if (totalCus != 0)
 
-      customerCurrenc.push({day : months, currency: totalCurrency, month : 11})
+      customerCurrenc.push({day : months, currency: customerCurrency, month : 11})
 
         monthlyCustomer.push({
           day: months,
