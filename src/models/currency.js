@@ -29,6 +29,9 @@ const currencySchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    logoUrl: {
+      type: String,
+    },
   },
   {
     timestamps: {

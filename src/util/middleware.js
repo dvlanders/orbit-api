@@ -1,5 +1,4 @@
 // JSON Web Token, is an open standard used to share security information between two parties — a client and a server.
-const jwt = require("jsonwebtoken");
 const { rs, responseCode } = require("./index");
 const { common } = require("../util/helper");
 const User = require("../models/userAuth");

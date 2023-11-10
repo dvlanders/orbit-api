@@ -28,6 +28,7 @@ exports.getCurrency = async (req, res) => {
         "ascii_sign",
         "min_withdrawal",
         "precision",
+        "logoUrl",
       ])
       .where("isActive")
       .eq(true)
