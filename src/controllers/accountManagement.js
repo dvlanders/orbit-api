@@ -5,7 +5,9 @@ const User = require("./../models/userAuth");
 const { common } = require("../util/helper");
 const registration = require("./registration");
 const payment = require("./payment");
+const customer = require("./customer")
 const { response } = require("../util/ResponseTemplate");
+const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
 
 let baseUrl = process.env.SFOX_BASE_URL;
@@ -337,17 +339,7 @@ exports.dashboard = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-    const customers = await User.scan().exec();
-    let count = customers.count;
-    let apiPath = `${baseUrl}/v1/quote`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-      data: { pair: "btcusd", side: "buy", quantity: 5 },
-    });
+    
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
@@ -389,12 +381,9 @@ exports.dashboard = async (req, res) => {
       month = month + 1;
     }
 
-    let payoutReq = { query: { type: "PAYOUT" } };
-    let payoutData = await payment.transfer(payoutReq);
-
     monthPurchase = [];
     let mon = 1;
-    while (mon < 13) {
+    while (mon < 31) {
       let totals = 0;
       for (let i = 0; i < paymentData.length; i++) {
         const dateString = paymentData[i].date;
@@ -413,12 +402,47 @@ exports.dashboard = async (req, res) => {
       mon = mon + 1;
     }
 
+    let totalCustomers = await CustomerWalletAddress.scan()
+    .where("user_id")
+    .eq(user_id)
+    .exec();
+    
+
+    let monthlyCustomer = [];
+    let months = 1;
+    while (months < 31) {
+      let totalCus = 0;
+      for (let i = 0; i < totalCustomers.length; i++) {
+        const dateString = totalCustomers[i].createDate;
+        const date = new Date(dateString);
+        let getMonths = date.getDate();
+        let onlymon = date.getUTCMonth() + 1;
+
+        if (getMonths == months) {
+          let customerLength = [];
+          customerLength.push(totalCustomers[i]);
+
+         
+          totalCus =
+            totalCus + customerLength.length ;
+        }
+      }
+      if (totalCus != 0)
+        monthlyCustomer.push({
+          day: months,
+          customers : totalCus,
+          month: 11,
+        });
+      months = months + 1;
+    }
+
+
     let responses = {
       totalPurchase: paymentData.length ? paymentData.length : 0,
       monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
-      totalCustomers: 0,
-      monthlyCustomers: 0,
+      totalCustomers: totalCustomers.count,
+      monthlyCustomers: monthlyCustomer,
       customersPercentage: null,
       totalRevenue: totalRev ? totalRev : 0,
       monthlyRevenue: monthData,
@@ -427,7 +451,7 @@ exports.dashboard = async (req, res) => {
       paymentData: paymentData ? paymentData : null,
       payoutData: null,
     };
-
+  
     return res
       .status(responseCode.success)
       .json(rs.successResponse("DATA RETRIVED", responses));
