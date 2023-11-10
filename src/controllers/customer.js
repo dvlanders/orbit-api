@@ -7,6 +7,8 @@ const { responseCode, rs } = require("../util");
 const { success } = require("../util/Constants");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const Currency = require("../models/currency");
+const moment = require("moment");
+const { response } = require("../util/ResponseTemplate");
 
 exports.merchantCustomer = async (req, res) => {
   try {
@@ -14,11 +16,48 @@ exports.merchantCustomer = async (req, res) => {
     let from_date = req.query?.from_date;
     let to_date = req.query?.to_date;
 
-    let mCustomerList = await CustomerWalletAddress.scan()
-      .attributes(["id", "currency", "createDate", "address", "email", "name"])
-      .where("user_id")
-      .eq(req.user["id"])
-      .exec();
+    let mCustomerList;
+
+    if (from_date && to_date) {
+      let fromDate = moment(from_date).valueOf();
+      let toDate = moment(to_date).valueOf();
+
+      if (fromDate > toDate) {
+        return res
+          .status(responseCode.badGateway)
+          .json(rs.incorrectDetails("FROM DATE GREATER THAN TO DATE"));
+      }
+
+      mCustomerList = await CustomerWalletAddress.scan()
+        .attributes([
+          "id",
+          "currency",
+          "createDate",
+          "address",
+          "email",
+          "name",
+        ])
+        .where("user_id")
+        .eq(req.user["id"])
+        .filter("createDate")
+        .between(fromDate, toDate)
+        .exec();
+    } else {
+      mCustomerList = await CustomerWalletAddress.scan()
+        .attributes([
+          "id",
+          "currency",
+          "createDate",
+          "address",
+          "email",
+          "name",
+        ])
+        .where("user_id")
+        .eq(req.user["id"])
+        .exec();
+    }
+
+    console.log(mCustomerList);
 
     if (mCustomerList.count != 0) {
       let uniqueCurrencyList = Array.from(
