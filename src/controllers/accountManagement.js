@@ -352,9 +352,8 @@ exports.dashboard = async (req, res) => {
     let monetization = 0;
     let adjustments = 0;
 
-    let paymentReq = { query: { type: "PAYMENT" } };
-    let paymentData = await payment.transfer(paymentReq);
-    console.log("eeeeeeeeeeeeeeeeeeeeeeeeee", paymentData);
+    let paymentReq = { params: { user_id: user_id } };
+    let paymentData = await payment.transaction(paymentReq);
     let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
     // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
@@ -378,15 +377,15 @@ exports.dashboard = async (req, res) => {
 
         if (getMonth == month) {
           total =
-            total +
-            paymentData.data[i].quantity * paymentData.data[i].rate -
-            refund -
-            monetization -
-            adjustments;
+            total + paymentData[i].amount - refund - monetization - adjustments;
         }
       }
       if (total != 0)
-        monthData.push({ day: month, totalAmount: total, month: 11 });
+        monthData.push({
+          day: month,
+          totalAmount: total.toFixed(2),
+          month: 11,
+        });
       month = month + 1;
     }
 
@@ -404,7 +403,7 @@ exports.dashboard = async (req, res) => {
         //date.getUTCMonth() + 1;
         if (getMonth == mon) {
           let purchaseLength = [];
-          purchaseLength.push(paymentData.data[i]);
+          purchaseLength.push(paymentData[i]);
 
           totals = totals + purchaseLength.length;
         }
@@ -415,7 +414,7 @@ exports.dashboard = async (req, res) => {
     }
 
     let responses = {
-      totalPurchase: paymentData.count ? paymentData.count : 0,
+      totalPurchase: paymentData.length ? paymentData.length : 0,
       monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
       totalCustomers: 0,

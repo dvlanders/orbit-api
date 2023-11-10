@@ -8,7 +8,7 @@ const payment = require("./payment");
 const { common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 const bankAccountSchema = require("../models/bankAccounts");
-const { success } = require("../util/Constants");
+const { success, responseCodes } = require("../util/Constants");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
@@ -141,7 +141,7 @@ exports.internalTransaction = async (req, res) => {
       date: transx[0].day,
     };
     return res
-      .status(responseCode.successResponse || 200)
+      .status(responseCode.success || 200)
       .json(rs.successResponse("RETRIVED TRANSACTIONS", responses));
   } catch (err) {
     console.log("error", err);
@@ -364,7 +364,7 @@ exports.monetization = async (req, res) => {
         user_id: user_id,
       },
     });
-    return res.status(response.status).json({
+    return res.status(responseCode.success).json({
       message: response.data.data,
     });
   } catch (error) {
@@ -386,7 +386,7 @@ exports.updateMonetization = async (req, res) => {
         new_monetization_amount: req.body.new_monetization_amount,
       },
     });
-    return res.status(response.status).json({
+    return res.status(responseCode.success).json({
       message: response.data.data,
     });
   } catch (error) {
@@ -408,7 +408,7 @@ exports.deleteMonetization = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
-    return res.status(response.status).json({
+    return res.status(responseCode.success).json({
       message: response.data.data,
     });
   } catch (error) {
@@ -427,7 +427,7 @@ exports.monetizationHistory = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
-    return res.status(response.status).json({
+    return res.status(responseCode.success).json({
       message: response.data.data,
     });
   } catch (error) {
@@ -521,11 +521,11 @@ exports.balances = async (req, res) => {
         responses.total = response.data[i].balance;
       }
     }
-    let request = { query: { type: "PAYMENT" } };
+    // let request = { query: { type: "PAYMENT" } };
 
-    let transferData = await this.transfer(request);
+    // let transferData = await this.transfer(request);
     return res
-      .status(response.status)
+      .status(responseCode.success)
       .json(rs.successResponse("RETRIVED BALANCE", responses));
   } catch (err) {
     console.log("err", err);
