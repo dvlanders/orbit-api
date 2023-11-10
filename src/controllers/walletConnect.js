@@ -213,7 +213,7 @@ exports.addCustomerAddress = async (req, res) => {
 
     if (
       (!user_id || req.body?.address || !req.body?.currency,
-      !req.body?.walletType)
+      !req.body?.walletType || !req.body?.email || !req.body?.name)
     ) {
       return res
         .status(responseCode.badRequest)
@@ -230,6 +230,8 @@ exports.addCustomerAddress = async (req, res) => {
     let address = req.body?.address;
     let currency = req.body?.currency;
     let walletType = req.body?.walletType;
+    let email = req.body?.email;
+    let name = req.body?.name;
 
     let iswalletConnected = await CustomerWalletAddress.scan()
       .attributes(["id", "address", "currency", "walletType"])
@@ -250,6 +252,9 @@ exports.addCustomerAddress = async (req, res) => {
       address,
       currency,
       walletType,
+      email,
+      name,
+      user_id,
     });
 
     console.log(saveData);

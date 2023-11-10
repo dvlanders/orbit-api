@@ -219,7 +219,7 @@ exports.getAllBank = async (req, res) => {
 
 exports.deleteBank = async (req, res) => {
   try {
-    const { user_id, bank_id} = req.params;
+    const { user_id, bank_id } = req.params;
 
     if (!user_id) {
       return res
@@ -294,95 +294,6 @@ exports.wireInstructions = async (req, res) => {
   }
 };
 
-exports.customer = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let responseArr = [];
-    let user = await registration.getUser();
-    // userDetails.sfox_id == users.advisor_user_id
-    let clientAccount = user.filter(
-      (users) => users.account_type == "individual"
-    );
-    const count = await User.scan().exec();
-    for (let i = 0; i < clientAccount.length; i++) {
-      for (j = 0; j < count.length; j++) {
-        if (clientAccount[i].user_id == count[j].sfox_id) {
-          let response = {
-            customer_id: count[j].user_id,
-            name: count[j].fullName,
-            email: count[j].email,
-            walletAddress: null,
-            created: count[j].createDate,
-          };
-          responseArr.push(response);
-        }
-      }
-    }
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
-};
-
-exports.customerDetails = async (req, res) => {
-  try {
-    const { user_id, customer_id } = req.params;
-    const userDetails = await User.get(customer_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let paymentReq = { query: { type: "PAYMENT" } };
-    let payments = await payment.transfer(paymentReq);
-    let paymentData = [];
-    for (let i = 0; i < payments.data.length; i++) {
-      if (payments.data[i].user_id == userDetails.sfox_id) {
-        paymentData.push(payments.data[i]);
-      }
-    }
-    //'02d8a2bf-5d00-449c-8058-d0aba5147e57',
-
-    let responseArr = [];
-    let response = {
-      name: userDetails.fullName,
-      email: userDetails.email,
-      spent: null,
-      since: userDetails.createDate,
-      MMR: null,
-      paymentData: paymentData ? paymentData : null,
-      currencyPaid: null,
-      currencyReceived: null,
-      exchangeRate: null,
-      blockchainRecord: null,
-      walletAddress: null,
-      type: null,
-      issuer: "Hifi Bridge",
-      signatureCheck: null,
-    };
-    responseArr.push(response);
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
-};
-
 exports.myAccount = async (req, res) => {
   try {
     const { user_id } = req.params;
@@ -441,8 +352,9 @@ exports.dashboard = async (req, res) => {
     let monetization = 0;
     let adjustments = 0;
 
-    let paymentReq = { params: { user_id: user_id } };
-    let paymentData = await payment.transaction(paymentReq);
+    let paymentReq = { query: { type: "PAYMENT" } };
+    let paymentData = await payment.transfer(paymentReq);
+    console.log("eeeeeeeeeeeeeeeeeeeeeeeeee", paymentData);
     let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
     // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
@@ -454,11 +366,7 @@ exports.dashboard = async (req, res) => {
     let month = 1;
     for (let i = 0; i < paymentData.length; i++) {
       totalRev =
-        totalRev +
-        paymentData[i].amount -
-        refund -
-        monetization -
-        adjustments;
+        totalRev + paymentData[i].amount - refund - monetization - adjustments;
     }
     while (month < 31) {
       let total = 0;
@@ -468,22 +376,24 @@ exports.dashboard = async (req, res) => {
         let getMonth = date.getDate();
         let onlymon = date.getUTCMonth() + 1;
 
-        
         if (getMonth == month) {
-          total = total + paymentData[i].amount - refund - monetization - 
-          adjustments;
+          total =
+            total +
+            paymentData.data[i].quantity * paymentData.data[i].rate -
+            refund -
+            monetization -
+            adjustments;
         }
       }
-      if(total != 0)
-      monthData.push({ day: month, totalAmount: total.toFixed(2), month: 11});
+      if (total != 0)
+        monthData.push({ day: month, totalAmount: total, month: 11 });
       month = month + 1;
     }
-
 
     let payoutReq = { query: { type: "PAYOUT" } };
     let payoutData = await payment.transfer(payoutReq);
 
-     monthPurchase = [];
+    monthPurchase = [];
     let mon = 1;
     while (mon < 13) {
       let totals = 0;
@@ -493,30 +403,30 @@ exports.dashboard = async (req, res) => {
         let getMonth = date.getDate();
         //date.getUTCMonth() + 1;
         if (getMonth == mon) {
-          let purchaseLength = []
-          purchaseLength.push(paymentData[i])
+          let purchaseLength = [];
+          purchaseLength.push(paymentData.data[i]);
 
-          totals = totals + purchaseLength.length
+          totals = totals + purchaseLength.length;
         }
       }
-      if(totals != 0)
-      monthPurchase.push({ day : mon, purchase : totals, month : 11 });
+      if (totals != 0)
+        monthPurchase.push({ day: mon, purchase: totals, month: 11 });
       mon = mon + 1;
     }
 
     let responses = {
-      totalPurchase: paymentData.length ? paymentData.length : 0,
-      monthlyPurchase : monthPurchase ? monthPurchase : 0,
+      totalPurchase: paymentData.count ? paymentData.count : 0,
+      monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
       totalCustomers: 0,
-      monthlyCustomers : 0,
+      monthlyCustomers: 0,
       customersPercentage: null,
       totalRevenue: totalRev ? totalRev : 0,
       monthlyRevenue: monthData,
       revenuePercentage: null,
       totalSales: sales,
       paymentData: paymentData ? paymentData : null,
-      payoutData:  null,
+      payoutData: null,
     };
 
     return res
@@ -529,10 +439,11 @@ exports.dashboard = async (req, res) => {
   }
 };
 
-exports.addTeam = async(req,res) => {
-  try{
-    const {user_id} = req.params
-    const {email, admin_role, developer_role, identity_role, connect_role} = req.body
+exports.addTeam = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const { email, admin_role, developer_role, identity_role, connect_role } =
+      req.body;
     const userDetails = await User.get(user_id);
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
@@ -549,35 +460,34 @@ exports.addTeam = async(req,res) => {
     generate = await sendEmail.generateEmail(mailDetails); //Generate Email
     if (!generate.messageId) {
       return res
-      .status(responseCode.badRequest)
-      .json(rs.incorrectDetails("WRONG EMAIL ID", {}));
-  }
-  const myUser = new User({
-    user_id: uuidv4(),
-    email: email,
-    phoneNumber: "",
-    fullName: "",
-    businessName:"",
-    password: "",
-    userToken: "",
-    secretkey: "",
-    isVerified: false,
-    timeZone: timeZone,
-  });
-  let user = await myUser.save();
-  if(user)
-  return res
-      .status(responseCode.success)
-      .json(rs.successResponse("DATA RETRIVED", "Invitation send"));
-    
-  }catch(error){
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("WRONG EMAIL ID", {}));
+    }
+    const myUser = new User({
+      user_id: uuidv4(),
+      email: email,
+      phoneNumber: "",
+      fullName: "",
+      businessName: "",
+      password: "",
+      userToken: "",
+      secretkey: "",
+      isVerified: false,
+      timeZone: timeZone,
+    });
+    let user = await myUser.save();
+    if (user)
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("DATA RETRIVED", "Invitation send"));
+  } catch (error) {
     return res
-    .status(responseCode.serverError)
-    .json(rs.errorResponse(error?.message.toString()));
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
   }
-}
+};
 
-exports.team = async(req,res) =>{
+exports.team = async (req, res) => {
   try {
     const { user_id } = req.params;
     const userDetails = await User.get(user_id);
@@ -615,4 +525,4 @@ exports.team = async(req,res) =>{
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
-}
+};

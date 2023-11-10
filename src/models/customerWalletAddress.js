@@ -6,6 +6,16 @@ const customerWalletAddressSchema = new dynamoose.Schema(
     address: String,
     currency: String,
     walletType: String,
+    user_id: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+    },
+    name: {
+      type: String,
+    },
   },
   {
     timestamps: {
