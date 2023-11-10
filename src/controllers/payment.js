@@ -160,11 +160,13 @@ exports.transaction = async (req, res) => {
       return res
         .status(responseCode.badRequest)
         .json(rs.dataNotAdded("PROVIDE USERID", {}));
+        
     if (req.query) {
-      const { from_date, to_date, limit, offset, type } = req.query;
+      const { from, to, limit, offset, type } = req.query;
+      let date = new Date(from);
       query = {
-        from_date: from_date ? from_date : null,
-        to_date: to_date ? to_date : null,
+        from: from ? from : null,
+        to: to ? to : null,
         limit: limit ? limit : null,
         offset: offset ? offset : null,
         type: type ? type : null,
