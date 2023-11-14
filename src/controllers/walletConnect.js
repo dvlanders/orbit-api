@@ -404,7 +404,7 @@ exports.marketOrder = async (req, res) => {
         price: 12,
         quantity: 0.1,
         algorithm_id: 200,
-        // client_order_id: uuidv4(),
+        client_order_id: uuidv4(),
       },
     });
 
@@ -435,138 +435,56 @@ exports.marketOrder = async (req, res) => {
 
 exports.quoteCurrency = async (req, res) => {
   try {
-    if (!req.body?.base || !req.body?.base || !req.body?.base_value) {
+    const { currency, amount } = req.body;
+
+    if (!amount || !currency)
       return res
         .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
-    }
-
-    let currencyPair = await CurrencyPair.scan()
+        .json(
+          rs.incorrectDetails(
+            `PLEASE PASS THE ${!amount ? "AMOUNT" : "CURRENCY"}`
+          )
+        );
+    let quote = "usd";
+    let currencyPair = currency + quote;
+    let side = "sell";
+    let amountPass = parseFloat(req.body?.amount);
+    console.log(amountPass);
+    let isCurrencyPair = await CurrencyPair.scan()
       .attributes(["base", "quote", "symbol"])
-      .where("base")
-      .eq(req.body?.base)
-      .where("quote")
-      .eq(req.body?.quote)
+      .where("symbol")
+      .eq(currencyPair)
       .where("isActive")
       .eq(true)
       .exec();
 
-    // console.log(currencyPair);
-
-    if (currencyPair.count === 0) {
+    console.log(isCurrencyPair);
+    if (isCurrencyPair.count === 0)
       return res
         .status(responseCode.badGateway)
-        .json(rs.incorrectDetails("CURRENCY DOES NOT EXIST"));
-    }
+        .json(rs.incorrectDetails("CURRENCY PAIR NOT SUPPORTED"));
 
-    let apiPath = `https://api.coinbase.com/v2/prices/${currencyPair[0].symbol}/sell?quote=true`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/quote`;
     let response = await axios({
-      method: "get",
+      method: "post",
       url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+      data: {
+        pair: currencyPair,
+        side: side,
+        amount: amountPass,
+      },
     });
+    console.log(req.user["userToken"]);
 
-    console.log(response?.data);
-    if (Object.keys(response?.data?.data).length > 0) {
-      let number_exact = parseFloat(response?.data?.data?.amount);
-
-      let baseValue = parseFloat(req.body?.base_value);
-
-      let totalAmount = baseValue * number_exact;
-      console.log(totalAmount);
-
-      return res.status(responseCode.success).json(
-        rs.successResponse("QUOTE VALUE RETRIEVED", {
-          currency: req.body?.base,
-          quote_value: totalAmount,
-        })
-      );
-    }
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("QUOTE PRICE RETRIEVED", response?.data));
   } catch (error) {
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error.toString()));
   }
 };
-
-// exports.getCurrencyPairs = async (req, res) => {
-//   try {
-//     let currencyList = await Currency.scan()
-//       .attributes(["currency"])
-//       .where("isActive")
-//       .eq(true)
-//       .exec();
-
-//     console.log(currencyList);
-//     const cuValues = currencyList.map((item) => item.currency);
-//     console.log(cuValues);
-
-//     return res.send("ok");
-//     // let currencyPairList = await  CurrencyPair.scan()
-//   } catch (error) {
-//     return res
-//       .status(responseCode.serverError)
-//       .json(rs.errorResponse(error.toString()));
-//   }
-// };
-
-// /**
-//  *
-//  * @param {*} req
-//  * @param {*} res
-//  * @returns
-//  */
-// exports.deposit = async (req, res) => {
-//   try {
-//     const { currency, user_id } = req.params;
-//     const userDetails = await User.get(user_id);
-//     if (userDetails == undefined) {
-//       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-//       return res
-//         .status(responseCode.badRequest)
-//         .json(rs.incorrectDetails("USER NOT FOUND", {}));
-//     }
-//     let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
-//     let response = await axios({
-//       method: "post",
-//       url: apiPath,
-//       headers: {
-//         Authorization: "Bearer " + userDetails.userToken,
-//       },
-//     });
-//     return res.status(response.status).json({ message: response.data.data });
-//   } catch (error) {
-//     return res.status(error.response.status).send(error.response.data);
-//   }
-// };
-
-// /**
-//  *
-//  * @param {*} req
-//  * @param {*} res
-//  * @returns
-//  */
-// exports.walletTransfer = async (req, res) => {
-//   try {
-//     const { currency } = req.query;
-//     const { user_id } = req.params;
-//     const userDetails = await User.get(user_id);
-//     if (userDetails == undefined) {
-//       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-//       return res
-//         .status(responseCode.badRequest)
-//         .json(rs.incorrectDetails("USER NOT FOUND", {}));
-//     }
-//     let apiPath = `${baseUrl}/v1/user/deposit/address/${currency}`;
-//     let response = await axios({
-//       method: "get",
-//       url: apiPath,
-//       headers: {
-//         Authorization: "Bearer " + userDetails.userToken,
-//       },
-//       query: currency,
-//     });
-//     return res.status(response.status).json({ message: response.data.data });
-//   } catch (error) {
-//     return res.status(error.response.status).send(error.response.data);
-//   }
-// };

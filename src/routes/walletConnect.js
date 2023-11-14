@@ -1,5 +1,7 @@
 const { walletConnect } = require("../controllers");
 
+const { authorizeUser } = require("../util/middleware");
+
 module.exports = (router) => {
   // transfer routes
   router.post("/user/:user_id/wallettransfer", walletConnect.walletTransfer);
@@ -16,5 +18,9 @@ module.exports = (router) => {
   );
   router.get("/currencypair/add", walletConnect.addcurrencypair);
   router.post("/user/:user_id/:side/marketorder", walletConnect.marketOrder);
-  router.post("/currency/quote", walletConnect.quoteCurrency);
+  router.post(
+    "/user/:user_id/currency/quote",
+    authorizeUser,
+    walletConnect.quoteCurrency
+  );
 };

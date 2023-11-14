@@ -6,7 +6,7 @@ const ajv = new Ajv();
 const speakeasy = require("speakeasy");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs, messages } = require("../util");
-const resetPassword = process.env.RESET_PASSWORD;
+const resetPasswordUrl = process.env.RESET_PASSWORD_URL;
 const User = require("./../models/userAuth");
 
 /**
@@ -72,6 +72,7 @@ exports.signUp = async (req, res) => {
       to: email,
       subject: "Registration Form",
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+      fileName: "RegisterTemplate.ejs",
     };
 
     generate = await sendEmail.generateEmail(mailDetails, fullName); //Generate Email
@@ -403,24 +404,26 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const count = await User.scan().exec();
-    var getUser = count.filter(function (item) {
-      return item.email == email;
-    });
+    const userDetails = await User.scan().where("email").eq(email).exec();
 
-    if (getUser.length == 0) {
-      common.eventBridge("PLEASE PROVIDE VALID EMAIL", responseCode.badRequest);
+    if (userDetails?.count === 0)
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE PROVIDE VALID EMAIL", {}));
-    }
+
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
       subject: "Reset Password",
-      text: `Please click on the link to reset the password ${resetPassword}?userId=${getUser[0].user_id}`,
+      text: `Please click on the link to reset the password ${resetPasswordUrl}?userId=${userDetails[0].user_id}`,
+      resetLink: `${resetPasswordUrl}?userId=${userDetails[0].user_id}`,
+      fileName: "ResetPasswordTemplate.ejs",
     };
-    generate = await sendEmail.generateEmail(mailDetails); // Generate Email
+
+    generate = await sendEmail.generateEmail(
+      mailDetails,
+      userDetails[0]?.fullName
+    ); // Generate Email
     if (generate.messageId) {
       common.eventBridge(
         "PLEASE CHECK EMAIL TO RESET PASSWORD",
@@ -428,8 +431,8 @@ exports.forgotPassword = async (req, res) => {
       );
       return res.status(responseCode.success).json(
         rs.successResponse("PLEASE CHECK EMAIL TO RESET PASSWORD", {
-          userId: getUser[0].user_id,
-          email: getUser[0].email,
+          userId: userDetails[0].user_id,
+          email: userDetails[0].email,
         })
       );
     } else {
