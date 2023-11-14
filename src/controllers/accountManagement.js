@@ -406,12 +406,15 @@ exports.dashboard = async (req, res) => {
     .where("user_id")
     .eq(user_id)
     .exec();
+  
     
-
+    let customerCurrency = "";
     let monthlyCustomer = [];
+    let customerCurrenc = []
     let months = 1;
     while (months < 31) {
       let totalCus = 0;
+      
       for (let i = 0; i < totalCustomers.length; i++) {
         const dateString = totalCustomers[i].createDate;
         const date = new Date(dateString);
@@ -419,15 +422,24 @@ exports.dashboard = async (req, res) => {
         let onlymon = date.getUTCMonth() + 1;
 
         if (getMonths == months) {
+        
+          customerCurrency = customerCurrency + totalCustomers[i].currency 
           let customerLength = [];
           customerLength.push(totalCustomers[i]);
 
          
           totalCus =
             totalCus + customerLength.length ;
+           
         }
+        
+
+
       }
       if (totalCus != 0)
+
+      customerCurrenc.push({day : months, currency: customerCurrency, month : 11})
+
         monthlyCustomer.push({
           day: months,
           customers : totalCus,
@@ -447,10 +459,13 @@ exports.dashboard = async (req, res) => {
       totalRevenue: totalRev ? totalRev : 0,
       monthlyRevenue: monthData,
       revenuePercentage: null,
-      totalSales: sales,
+      totalSales: customerCurrenc ? customerCurrenc : null,
       paymentData: paymentData ? paymentData : null,
       payoutData: null,
     };
+
+   
+    
   
     return res
       .status(responseCode.success)

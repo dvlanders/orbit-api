@@ -67,10 +67,10 @@ exports.currencyConvertion = async (req, res) => {
 
 exports.withdrawalBank = async (req, res) => {
   try {
-    const { user_id, transfer_id } = req.params;
-    const { currency, address, amount, isWire, pair, side, quantity } =
+    const { user_id, transfer_id } = req.params
+    const { currency, address, amount, isWire} =
       req.body;
-    if (!transfer_id || !user_id)
+    if (!user_id)
       return res
         .status(responseCode.badRequest)
         .json(rs.dataNotAdded("PROVIDE TRANSFER ID OR USERID", {}));
