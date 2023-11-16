@@ -94,7 +94,7 @@ exports.merchantCustomerList = async (req, res) => {
       uniqueRecordsArray.forEach((walletItem) => {
         // Find the first matching currency logo
         const matchingLogo = currencyList.find(
-          (cLogo) => cLogo.currency === walletItem.currency
+          (cLogo) => cLogo.currency === walletItem.cryptoCurrency
         );
         // If a matching logo is found, add it to the wallet item
         if (matchingLogo) {
@@ -152,7 +152,7 @@ exports.internalMerchantCustomer = async (req, res) => {
       mTransactionList.forEach((walletItem) => {
         // Find the first matching currency logo
         const matchingLogo = currencyList.find(
-          (cLogo) => cLogo.currency === walletItem.currency
+          (cLogo) => cLogo.currency === walletItem.cryptoCurrency
         );
         // If a matching logo is found, add it to the wallet item
         if (matchingLogo) {
@@ -252,7 +252,7 @@ exports.internalMerchantCustomerList = async (req, res) => {
       mTransactionList.forEach((walletItem) => {
         // Find the first matching currency logo
         const matchingLogo = currencyList.find(
-          (cLogo) => cLogo.currency === walletItem.currency
+          (cLogo) => cLogo.currency === walletItem.cryptoCurrency
         );
         // If a matching logo is found, add it to the wallet item
         if (matchingLogo) {
