@@ -5,7 +5,6 @@ const User = require("./../models/userAuth");
 const { common } = require("../util/helper");
 const registration = require("./registration");
 const payment = require("./payment");
-const customer = require("./customer")
 const { response } = require("../util/ResponseTemplate");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
@@ -339,7 +338,7 @@ exports.dashboard = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-    
+
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
@@ -403,18 +402,17 @@ exports.dashboard = async (req, res) => {
     }
 
     let totalCustomers = await CustomerWalletAddress.scan()
-    .where("user_id")
-    .eq(user_id)
-    .exec();
-  
-    
+      .where("user_id")
+      .eq(user_id)
+      .exec();
+
     let customerCurrency = "";
     let monthlyCustomer = [];
-    let customerCurrenc = []
+    let customerCurrenc = [];
     let months = 1;
     while (months < 31) {
       let totalCus = 0;
-      
+
       for (let i = 0; i < totalCustomers.length; i++) {
         const dateString = totalCustomers[i].createDate;
         const date = new Date(dateString);
@@ -422,32 +420,27 @@ exports.dashboard = async (req, res) => {
         let onlymon = date.getUTCMonth() + 1;
 
         if (getMonths == months) {
-        
-          customerCurrency = customerCurrency + totalCustomers[i].currency 
+          customerCurrency = customerCurrency + totalCustomers[i].currency;
           let customerLength = [];
           customerLength.push(totalCustomers[i]);
 
-         
-          totalCus =
-            totalCus + customerLength.length ;
-           
+          totalCus = totalCus + customerLength.length;
         }
-        
-
-
       }
       if (totalCus != 0)
-
-      customerCurrenc.push({day : months, currency: customerCurrency, month : 11})
-
-        monthlyCustomer.push({
+        customerCurrenc.push({
           day: months,
-          customers : totalCus,
+          currency: customerCurrency,
           month: 11,
         });
+
+      monthlyCustomer.push({
+        day: months,
+        customers: totalCus,
+        month: 11,
+      });
       months = months + 1;
     }
-
 
     let responses = {
       totalPurchase: paymentData.length ? paymentData.length : 0,
@@ -464,9 +457,6 @@ exports.dashboard = async (req, res) => {
       payoutData: null,
     };
 
-   
-    
-  
     return res
       .status(responseCode.success)
       .json(rs.successResponse("DATA RETRIVED", responses));

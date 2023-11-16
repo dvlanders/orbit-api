@@ -3,9 +3,14 @@ const { refund } = require("../controllers");
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
   // transfer routes
-  router.post("/user/:user_id/convertcurrency",refund.currencyConvertion)
+  router.post("/user/:user_id/convertcurrency", refund.currencyConvertion);
   router.get("/user/:user_id/wiretransfer", refund.wireTransfer);
-  router.post("/user/:user_id/withdrawalBank/:transaction_id", refund.withdrawalBank)
+  router.post(
+    "/user/:user_id/withdrawalBank/:transaction_id",
+    refund.withdrawalBank
+  );
   router.post("/user/:user_id/marketorder/:side", refund.MarketOrder);
-//   router.post("/user/:user_id/withdrawalBank", refund.withdrawalBank);
+  router.post("/user/:user_id/:side/marketorder", refund.marketOrder);
+  router.post("/user/:user_id/wallettransfer", refund.walletTransfer);
+  //   router.post("/user/:user_id/withdrawalBank", refund.withdrawalBank);
 };

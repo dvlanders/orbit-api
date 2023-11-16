@@ -8,7 +8,7 @@ module.exports = (app, express) => {
   const refund = require("./refund");
   const walletConnect = require("./walletConnect");
   const upload = require("./upload");
-  const customer = require("./customer");
+  const transaction = require("./transaction");
 
   registration(router);
   user(router);
@@ -18,6 +18,6 @@ module.exports = (app, express) => {
   refund(router);
   walletConnect(router);
   upload(router);
-  customer(router);
+  transaction(router);
   app.use("/", router);
 };

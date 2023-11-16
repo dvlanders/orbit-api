@@ -67,9 +67,8 @@ exports.currencyConvertion = async (req, res) => {
 
 exports.withdrawalBank = async (req, res) => {
   try {
-    const { user_id, transfer_id } = req.params
-    const { currency, address, amount, isWire} =
-      req.body;
+    const { user_id, transfer_id } = req.params;
+    const { currency, address, amount, isWire } = req.body;
     if (!user_id)
       return res
         .status(responseCode.badRequest)
@@ -124,6 +123,80 @@ exports.withdrawalBank = async (req, res) => {
     return res?.status(response.status).json({ message: response.data.data });
   } catch (error) {
     return res.status(error.response?.status).send(error.response.data);
+  }
+};
+
+/**
+ * market order API is used in the refund process after for to convert the usd to the usdc
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
+
+exports.marketOrder = async (req, res) => {
+  try {
+    const { user_id, side } = req.params;
+    const userDetails = await User.get(user_id);
+    console.log(userDetails);
+
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    let currencyPair = await CurrencyPair.scan()
+      .attributes(["base", "quote", "symbol"])
+      .where("base")
+      .eq(req.body?.currency)
+      .where("quote")
+      .eq("usdc")
+      .exec();
+
+    // console.log(currencyPair);
+    console.log(currencyPair[0].symbol);
+
+    let apiPath = `${baseUrl}/v1/orders/${side}`;
+    let response = await axios({
+      method: "post",
+      url: "https://api.staging.sfox.com/v1/orders/buy",
+      headers: {
+        Authorization:
+          "Bearer " +
+          "d7ae4196a5c953ddc57cc9cf1d527913d5fa66454cbae0bd0345d8392e4c1dba",
+      },
+      data: {
+        currency_pair: currencyPair[0].symbol,
+        price: 12,
+        quantity: 0.1,
+        algorithm_id: 200,
+        client_order_id: uuidv4(),
+      },
+    });
+
+    console.log(response?.data);
+
+    // if (response.data && response.data.id) {
+    //   return res.status(200).send({
+    //     message: "Order created successfully",
+    //     data: response.data,
+    //   });
+    // } else {
+    //   return res.status(500).send({
+    //     message: "Failed to create order",
+    //     data: response.data,
+    //   });
+    // }
+
+    return res
+      .status(200)
+      .json(rs.successResponse("ORDER CREATED", response?.data));
+  } catch (error) {
+    console.log("Error creating market order:", error.toString());
+    return res.status(500).json({
+      message: "An error occurred while creating the market order",
+    });
   }
 };
 
@@ -210,6 +283,66 @@ exports.MarketOrder = async (req, res) => {
   }
 };
 
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
+exports.walletTransfer = async (req, res) => {
+  try {
+    let data = {
+      currency: req.body.currency,
+      quantity: req.body.quantity,
+      from_wallet: req.body.from_wallet,
+      to_wallet: req.body.to_wallet,
+    };
+
+    const { user_id } = req.params;
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    data.transfer_id = uuidv4();
+    let apiPath = `${baseUrl}/v1/account/transfer`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + userDetails.userToken,
+      },
+      data: data,
+    });
+    if (response.data) {
+      const transfers = new Transfer({
+        user_id: response.data.data.user_id,
+        type: response.data.data.type,
+        purpose: response.data.data.purpose,
+        description: response.data.data.description,
+        currency: response.data.data.currency,
+        quantity: response.data.data.quantity,
+        rate: response.data.data.rate,
+        transfer_id: response.data.data.transfer_id,
+        transfer_status_code: response.data.data.transfer_status_code,
+        atx_id_charged: response.data.data.atx_id_charged,
+        atx_id_credited: response.data.data.atx_id_credited,
+        atx_status_charged: response.data.data.atx_status_charged,
+        atx_status_credited: response.data.data.atx_status_credited,
+        transfer_date: response.data.data.transfer_date,
+      });
+      //   let transferAdded = await transfers.save();
+      //   if (transferAdded)
+      return res.status(response.status).json({ message: response.data.data });
+    }
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
+  }
+};
 exports.transfer = async (req, res) => {
   try {
     let data = {
@@ -333,9 +466,8 @@ exports.withdrawalBank = async (req, res) => {
       currency: currency,
       amount: amount,
       isWire: isWire ? isWire : false,
-
-    }
-    if(address) datas.address = address
+    };
+    if (address) datas.address = address;
     const apiPath = `${baseUrl}/v1/user/withdraw`;
     let response = await axios({
       method: "post",
@@ -343,7 +475,7 @@ exports.withdrawalBank = async (req, res) => {
       headers: {
         Authorization: "Bearer " + userDetails.userToken,
       },
-      data: datas
+      data: datas,
     });
     return res.status(response.status).json({ message: response.data.data });
   } catch (error) {

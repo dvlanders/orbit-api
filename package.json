@@ -45,8 +45,6 @@
     "pg": "^8.11.3",
     "qrcode": "^1.5.3",
     "save-dev": "^0.0.1-security",
-    "sequelize": "^6.33.0",
-    "sequelize-cli": "^6.6.1",
     "speakeasy": "^2.0.0",
     "uuid": "^9.0.0",
     "winston": "^3.11.0",

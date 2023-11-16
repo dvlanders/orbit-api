@@ -12,7 +12,7 @@ const WalletAddress = require("../models/walletAddress");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const CurrencyPair = require("../models/currencyPairs");
 const dynamoose = require("dynamoose");
-const { format } = require("path/posix");
+const TransactionLog = require("../models/transactionLog");
 
 /**
  * @description Get Currency List which are available --  API
@@ -38,6 +38,256 @@ exports.getCurrency = async (req, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("CURRENCY RETRIVED", currency));
   } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error.toString()));
+  }
+};
+
+/**
+ *  @description Get one wallet currency address
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
+exports.getOneCurrencyWalletAddress = async (req, res) => {
+  try {
+    const { user_id, currency } = req.params;
+
+    if (!user_id || !currency) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    const walletAddress = await WalletAddress.scan()
+      .attributes(["currency", "address", "id"])
+      .where("currency")
+      .eq(currency)
+      .where("user_id")
+      .eq(user_id)
+      .exec();
+
+    if (walletAddress.count === 0)
+      return res
+        .status(responseCode.successNoRecords)
+        .json(rs.dataNotExist("CURRENCY"));
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("CURRENCY RETRIEVED", walletAddress[0]));
+  } catch (error) {
+    return res.status(500).json(rs.errorResponse(error.toString()));
+  }
+};
+
+exports.quoteCurrency = async (req, res) => {
+  try {
+    const { currency, amount } = req.body;
+
+    if (!amount || !currency)
+      return res
+        .status(responseCode.badRequest)
+        .json(
+          rs.incorrectDetails(
+            `PLEASE PASS THE ${!amount ? "AMOUNT" : "CURRENCY"}`
+          )
+        );
+    let quote = "usd";
+    let currencyPair = currency + quote;
+    let side = "sell";
+    let amountPass = parseFloat(req.body?.amount);
+    // console.log(amountPass);
+    let isCurrencyPair = await CurrencyPair.scan()
+      .attributes(["base", "quote", "symbol"])
+      .where("symbol")
+      .eq(currencyPair)
+      .where("isActive")
+      .eq(true)
+      .exec();
+
+    // console.log(isCurrencyPair);
+    if (isCurrencyPair.count === 0)
+      return res
+        .status(responseCode.badGateway)
+        .json(rs.incorrectDetails("CURRENCY PAIR NOT SUPPORTED"));
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/quote`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+      data: {
+        pair: currencyPair,
+        side: side,
+        amount: amountPass,
+      },
+    });
+    console.log(req.user["userToken"]);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("QUOTE PRICE RETRIEVED", response?.data));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error.toString()));
+  }
+};
+
+exports.addCustomerAddress = async (req, res) => {
+  try {
+    const {
+      merchantAddress,
+      customerAddress,
+      cryptoCurrency,
+      cryptoCurrencyAmount,
+      fiatCurrency,
+      fiatCurrencyAmount,
+      walletType,
+      name,
+      email,
+    } = req.body;
+
+    const requiredParams = [
+      merchantAddress,
+      customerAddress,
+      cryptoCurrency,
+      cryptoCurrencyAmount,
+      fiatCurrency,
+      fiatCurrencyAmount,
+      walletType,
+    ];
+
+    const isMissingData = requiredParams.some((param) => !param);
+
+    if (isMissingData) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    let saveData = await TransactionLog.create({
+      id: uuidv4(),
+      merchantAddress,
+      customerAddress,
+      cryptoCurrency,
+      cryptoCurrencyAmount: parseFloat(cryptoCurrencyAmount),
+      fiatCurrency,
+      fiatCurrencyAmount: parseFloat(fiatCurrencyAmount),
+      walletType,
+      email: email ? email : null,
+      name: name ? name : null,
+      user_id: req.user["id"],
+    });
+
+    console.log(saveData);
+
+    res.status(responseCode.success).json(
+      rs.successResponse("ADDED CUSTOMER", {
+        seconds: 90,
+      })
+    );
+
+    setTimeout(async () => {
+      try {
+        console.log("in the settimeout");
+        let apiPath = `${process.env.ETHERSCAN_URL}/api?module=account&action=txlist&address=${customerAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${process.env.ETHERSCAN_KEY}`;
+        console.log(apiPath);
+        let response = await axios({
+          method: "get",
+          url: apiPath,
+        });
+
+        console.log(response?.data?.result);
+        if (response?.data?.result.length > 0) {
+          let scaledAmount = BigInt(
+            Math.round(parseFloat(cryptoCurrencyAmount) * 1e18)
+          );
+
+          let etherscanData = response?.data?.result.filter(
+            (e) =>
+              e.from === customerAddress &&
+              e.to === merchantAddress &&
+              BigInt(e.value) === scaledAmount
+          );
+
+          console.log("filterreddata", etherscanData);
+          if (etherscanData.length > 0) {
+            let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+            console.log(apiPath);
+            let response = await axios({
+              method: "get",
+              url: apiPath,
+              headers: {
+                Authorization: "Bearer " + req.user["userToken"],
+              },
+              params: {
+                types: "deposit",
+                limit: 1,
+              },
+            });
+            // console.log(response?.data);
+            let finalData = [];
+            finalData = response?.data.filter(
+              (e) => e.tx_hash === etherscanData[0].hash
+            );
+            if (finalData.length > 0) {
+              console.log(finalData[0].tx_hash);
+              const updatedData = await TransactionLog.update(
+                { id: saveData.id },
+                {
+                  txnStatus: true,
+                  txId: finalData[0].id,
+                  aTxId: finalData[0].atxId,
+                  orderId: finalData[0]?.order_id
+                    ? finalData[0].order_id
+                    : null,
+                  clientOrderId: finalData[0]?.client_order_id
+                    ? finalData[0].client_order_id
+                    : null,
+                  day: finalData[0]?.day,
+                  action: finalData[0]?.action,
+                  memo: finalData[0]?.memo ? finalData[0]?.memo : null,
+                  amount: finalData[0].amount,
+                  price: finalData[0].price,
+                  fees: finalData[0].fees,
+                  status: finalData[0].status,
+                  holdExpires: finalData[0]?.hold_expires
+                    ? finalData[0].hold_expires
+                    : null,
+                  txHash: finalData[0].tx_hash,
+                  algoName: finalData[0]?.algo_name
+                    ? finalData[0].algo_name
+                    : null,
+                  algoId: finalData[0]?.algo_id ? finalData[0].algo_id : null,
+                  accountBalance: finalData[0].account_balance,
+                  accountTransferFee: finalData[0].AccountTransferFee,
+                  symbol: finalData[0]?.symbol ? finalData[0].symbol : null,
+                  idempotencyId: finalData[0]?.IdempotencyId
+                    ? finalData[0]?.IdempotencyId
+                    : null,
+                  timestamp: finalData[0].timestamp,
+                }
+              );
+              console.log("Transaction log updated:", updatedData);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error updating transaction log:", error);
+      }
+    }, 110000);
+  } catch (error) {
+    console.log(error);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error.toString()));
@@ -130,49 +380,6 @@ exports.addWalletAddress = async (req, res) => {
 };
 
 /**
- *  @description Get one wallet currency address
- * @param {*} req
- * @param {*} res
- * @returns
- */
-exports.getOneCurrencyWalletAddress = async (req, res) => {
-  try {
-    const { user_id, currency } = req.params;
-
-    if (!user_id || !currency) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
-    }
-
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    const walletAddress = await WalletAddress.scan()
-      .attributes(["currency", "address", "id"])
-      .where("currency")
-      .eq(currency)
-      .where("user_id")
-      .eq(user_id)
-      .exec();
-
-    if (walletAddress.count === 0)
-      return res
-        .status(responseCode.successNoRecords)
-        .json(rs.dataNotExist("CURRENCY"));
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("CURRENCY RETRIEVED", walletAddress[0]));
-  } catch (error) {
-    return res.status(500).json(rs.errorResponse(error.toString()));
-  }
-};
-
-/**
  *
  * @description Onetime Hit API for the data to be entered in the DB
  * @param {*} req
@@ -208,129 +415,6 @@ exports.walletCurrency = async (req, res) => {
   }
 };
 
-exports.addCustomerAddress = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-
-    if (
-      (!user_id || req.body?.address || !req.body?.currency,
-      !req.body?.walletType || !req.body?.email || !req.body?.name)
-    ) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
-    }
-
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    let address = req.body?.address;
-    let currency = req.body?.currency;
-    let walletType = req.body?.walletType;
-    let email = req.body?.email;
-    let name = req.body?.name;
-
-    let iswalletConnected = await CustomerWalletAddress.scan()
-      .attributes(["id", "address", "currency", "walletType"])
-      .where("address")
-      .eq(address)
-      .where("currency")
-      .eq(currency)
-      .exec();
-
-    if (iswalletConnected.count > 0) {
-      return res
-        .status(responseCode.success)
-        .json(rs.successResponse("CUSTOMER ALREADY", iswalletConnected[0]));
-    }
-
-    let saveData = await CustomerWalletAddress.create({
-      id: uuidv4(),
-      address,
-      currency,
-      walletType,
-      email,
-      name,
-      user_id,
-    });
-
-    console.log(saveData);
-
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("ADDED CUSTOMER"));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error.toString()));
-  }
-};
-
-/**
- *
- * @param {*} req
- * @param {*} res
- * @returns
- */
-exports.walletTransfer = async (req, res) => {
-  try {
-    let data = {
-      currency: req.body.currency,
-      quantity: req.body.quantity,
-      from_wallet: req.body.from_wallet,
-      to_wallet: req.body.to_wallet,
-    };
-
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    data.transfer_id = uuidv4();
-    let apiPath = `${baseUrl}/v1/account/transfer`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-      data: data,
-    });
-    if (response.data) {
-      const transfers = new Transfer({
-        user_id: response.data.data.user_id,
-        type: response.data.data.type,
-        purpose: response.data.data.purpose,
-        description: response.data.data.description,
-        currency: response.data.data.currency,
-        quantity: response.data.data.quantity,
-        rate: response.data.data.rate,
-        transfer_id: response.data.data.transfer_id,
-        transfer_status_code: response.data.data.transfer_status_code,
-        atx_id_charged: response.data.data.atx_id_charged,
-        atx_id_credited: response.data.data.atx_id_credited,
-        atx_status_charged: response.data.data.atx_status_charged,
-        atx_status_credited: response.data.data.atx_status_credited,
-        transfer_date: response.data.data.transfer_date,
-      });
-      //   let transferAdded = await transfers.save();
-      //   if (transferAdded)
-      return res.status(response.status).json({ message: response.data.data });
-    }
-  } catch (error) {
-    common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
-  }
-};
-
 exports.addcurrencypair = async (req, res) => {
   try {
     const currencyPairsArray = Object.keys(currencyPairs).map((key) => ({
@@ -359,129 +443,6 @@ exports.addcurrencypair = async (req, res) => {
     return res
       .status(responseCode.success)
       .json(rs.successResponse("ADDED THE CURRENCY PAIRS"));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error.toString()));
-  }
-};
-
-exports.marketOrder = async (req, res) => {
-  try {
-    const { user_id, side } = req.params;
-    const userDetails = await User.get(user_id);
-    console.log(userDetails);
-
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    let currencyPair = await CurrencyPair.scan()
-      .attributes(["base", "quote", "symbol"])
-      .where("base")
-      .eq(req.body?.currency)
-      .where("quote")
-      .eq("usdc")
-      .exec();
-
-    // console.log(currencyPair);
-    console.log(currencyPair[0].symbol);
-
-    let apiPath = `${baseUrl}/v1/orders/${side}`;
-    let response = await axios({
-      method: "post",
-      url: "https://api.staging.sfox.com/v1/orders/buy",
-      headers: {
-        Authorization:
-          "Bearer " +
-          "d7ae4196a5c953ddc57cc9cf1d527913d5fa66454cbae0bd0345d8392e4c1dba",
-      },
-      data: {
-        currency_pair: currencyPair[0].symbol,
-        price: 12,
-        quantity: 0.1,
-        algorithm_id: 200,
-        client_order_id: uuidv4(),
-      },
-    });
-
-    console.log(response?.data);
-
-    // if (response.data && response.data.id) {
-    //   return res.status(200).send({
-    //     message: "Order created successfully",
-    //     data: response.data,
-    //   });
-    // } else {
-    //   return res.status(500).send({
-    //     message: "Failed to create order",
-    //     data: response.data,
-    //   });
-    // }
-
-    return res
-      .status(200)
-      .json(rs.successResponse("ORDER CREATED", response?.data));
-  } catch (error) {
-    console.log("Error creating market order:", error.toString());
-    return res.status(500).json({
-      message: "An error occurred while creating the market order",
-    });
-  }
-};
-
-exports.quoteCurrency = async (req, res) => {
-  try {
-    const { currency, amount } = req.body;
-
-    if (!amount || !currency)
-      return res
-        .status(responseCode.badRequest)
-        .json(
-          rs.incorrectDetails(
-            `PLEASE PASS THE ${!amount ? "AMOUNT" : "CURRENCY"}`
-          )
-        );
-    let quote = "usd";
-    let currencyPair = currency + quote;
-    let side = "sell";
-    let amountPass = parseFloat(req.body?.amount);
-    console.log(amountPass);
-    let isCurrencyPair = await CurrencyPair.scan()
-      .attributes(["base", "quote", "symbol"])
-      .where("symbol")
-      .eq(currencyPair)
-      .where("isActive")
-      .eq(true)
-      .exec();
-
-    console.log(isCurrencyPair);
-    if (isCurrencyPair.count === 0)
-      return res
-        .status(responseCode.badGateway)
-        .json(rs.incorrectDetails("CURRENCY PAIR NOT SUPPORTED"));
-
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/quote`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + req.user["userToken"],
-      },
-      data: {
-        pair: currencyPair,
-        side: side,
-        amount: amountPass,
-      },
-    });
-    console.log(req.user["userToken"]);
-
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("QUOTE PRICE RETRIEVED", response?.data));
   } catch (error) {
     return res
       .status(responseCode.serverError)

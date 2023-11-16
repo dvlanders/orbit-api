@@ -1,5 +1,4 @@
 const dynamoose = require("dynamoose");
-const { STRING } = require("sequelize");
 
 const transactionSchema = new dynamoose.Schema(
   {
