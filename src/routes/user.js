@@ -8,4 +8,6 @@ module.exports = (router) => {
   router.post("/user/forgotpassword", user.forgotPassword);
   router.patch("/user/:userId/resetpassword", user.resetPassword);
   router.post("/signingoogle", user.signInGoogle);
+  router.post("/user/verify/otp", user.verifyOTP);
+  router.post("/user/resend/otp", user.resendOTP);
 };

@@ -67,12 +67,15 @@ exports.signUp = async (req, res) => {
 
     const password = process.env.REGISTER_PASSWORD;
 
+    let otp = common.generateRandomNumberWithDigits(6);
+
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
       subject: "Registration Form",
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
-      fileName: "RegisterTemplate.ejs",
+      fileName: "RegisterOTP.ejs",
+      otp: otp,
     };
 
     generate = await sendEmail.generateEmail(mailDetails, fullName); //Generate Email
@@ -92,28 +95,188 @@ exports.signUp = async (req, res) => {
         secretkey: "",
         isVerified: false,
         timeZone: timeZone,
+        otp: otp,
+        otpTimestamp: Date.now(),
       });
       let user = await myUser.save();
 
       if (user) {
         common.eventBridge(
-          "Account registered, please check your email for further process",
+          "OTP SENT TO YOU REGISTERED EMAIL",
           responseCode.success
         );
-        return res
-          .status(responseCode.success)
-          .json(
-            rs.successResponse(
-              "Account registered, please check your email for further process",
-              user
-            )
-          );
+        return res.status(responseCode.success).json(
+          rs.successResponse("OTP SENT TO YOUR REGISTERED EMAIL", {
+            email: user["email"],
+          })
+        );
       }
     } else {
       common.eventBridge("PLEASE ENTER VALID EMAIL", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER VALID EMAIL", {}));
+    }
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
+};
+
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { otp, email } = req.body;
+
+    console.log(email);
+
+    if (!otp || !email) {
+      common.eventBridge("PLEASE ENTER  OTP OR EMAIL", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER OTP OR EMAIL", {}));
+    }
+
+    let userDetails = await User.scan()
+      .where("email")
+      .eq("nivinclint@gmail.com")
+      .exec();
+
+    if (userDetails?.count == 0) {
+      return res.status(responseCode.unauthorized).json(rs.authErr({}));
+    }
+
+    if (userDetails[0].isOTPVerified == true)
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("USER ALREADY VERIFIED", {}));
+
+    const storedOTP = userDetails[0].otp;
+    const storedTimestamp = userDetails[0].otpTimestamp;
+    const validityPeriod = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+    console.log(storedOTP);
+    console.log(storedOTP === otp);
+    console.log(otp);
+    console.log(storedOTP && storedOTP === otp);
+
+    if (storedOTP && storedOTP === otp) {
+      const isExpired =
+        storedTimestamp && Date.now() - storedTimestamp < validityPeriod;
+      console.log(storedTimestamp && Date.now() - storedTimestamp);
+      console.log(validityPeriod);
+
+      console.log(isExpired);
+
+      if (!isExpired) {
+        // Update user's verification status or perform any other necessary actions
+
+        let userData = await User.update(
+          {
+            user_id: userDetails[0].user_id,
+          },
+          {
+            isOTPVerified: true,
+          }
+        );
+
+        console.log(userData);
+
+        delete userData.password;
+
+        return res
+          .status(responseCode.success)
+          .json(rs.successResponse("USER VERIFIED", {}));
+      } else {
+        common.eventBridge("OTP EXPIRED", responseCode.badRequest);
+        return res.status(responseCode.badRequest).json(
+          rs.incorrectDetails("OTP EXPIRED", {
+            isOTPVerified: false,
+          })
+        );
+      }
+    } else {
+      common.eventBridge(
+        "PLEASE ENTER THE CORRECT OTP",
+        responseCode.badRequest
+      );
+      return res.status(responseCode.badRequest).json(
+        rs.incorrectDetails("PLEASE ENTER THE CORRECT OTP", {
+          isOTPVerified: false,
+        })
+      );
+    }
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.badRequest);
+    return res
+      .status(responseCode.badRequest)
+      .json(rs.incorrectDetails(error?.message.toString(), {}));
+  }
+};
+
+exports.resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      common.eventBridge("PLEASE ENTER EMAIL", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER EMAIL", {}));
+    }
+
+    const userDetails = await User.scan().where("email").eq(email).exec();
+
+    if (userDetails?.count === 0) {
+      common.eventBridge("USER NOT FOUND", responseCode.notFound);
+      return res
+        .status(responseCode.notFound)
+        .json(rs.notFound("USER NOT FOUND"));
+    }
+
+    if (userDetails[0].isOTPVerified === true)
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("USER ALREADY VERIFIED"));
+
+    const newOTP = common.generateRandomNumberWithDigits(6);
+    const newOtpTimestamp = Date.now();
+
+    let mailDetails = {
+      from: `${process.env.FROM_EMAIL}`,
+      to: email,
+      subject: "Resend OTP - Registration",
+      text: `Your new OTP is: ${newOTP}`,
+      fileName: "RegisterOTP.ejs", // Update with the actual file name
+      otp: newOTP,
+    };
+
+    const generate = await sendEmail.generateEmail(
+      mailDetails,
+      userDetails[0].fullName
+    );
+
+    if (generate.messageId) {
+      // Update user's OTP and OTP timestamp
+      await User.update(
+        {
+          user_id: userDetails[0].user_id,
+        },
+        {
+          otp: newOTP,
+          otpTimestamp: newOtpTimestamp,
+        }
+      );
+
+      common.eventBridge("OTP RESENT", responseCode.success);
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("OTP RESENT"));
+    } else {
+      common.eventBridge("FAILED TO RESEND OTP", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("FAILED TO RESEND OTP"));
     }
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
@@ -154,6 +317,14 @@ exports.signIn = async (req, res) => {
 
       if (getUser.count > 0) {
         console.log(getUser);
+
+        if (getUser[0].isOTPVerified == false)
+          return res.status(responseCode.badGateway).json(
+            rs.incorrectDetails("PLEASE VERIFY USER", {
+              isOTPVerified: false,
+            })
+          );
+
         let decryptText = common.decryptText(getUser[0].password);
         if (decryptText !== password) {
           common.eventBridge(
@@ -270,6 +441,12 @@ exports.signInGoogle = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE REGISTER YOUR ACCOUNT", {}));
     }
+    if (userDetails[0].isOTPVerified == false)
+      return res.status(responseCode.badGateway).json(
+        rs.incorrectDetails("PLEASE VERIFY OTP", {
+          isOTPVerified: false,
+        })
+      );
 
     if (userDetails[0].isVerified == false) {
       let temp_secret = speakeasy.generateSecret({

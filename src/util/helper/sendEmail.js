@@ -19,6 +19,7 @@ exports.generateEmail = async function (mailDetails, fullName) {
   const htmlContent = ejs.render(ejsTemplate, {
     resetUrl: mailDetails?.resetLink,
     recipientName: fullName,
+    otp: mailDetails?.otp,
   });
 
   let email = transport.sendMail({

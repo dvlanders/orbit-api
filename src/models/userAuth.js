@@ -22,6 +22,18 @@ const personSchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    otp: {
+      type: String,
+      required: false,
+    },
+    otpTimestamp: {
+      type: Number,
+      required: false,
+    },
+    isOTPVerified: {
+      type: Boolean,
+      default: false,
+    },
     timeZone: {
       type: String,
       default: "America/New_York",
