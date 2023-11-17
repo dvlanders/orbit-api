@@ -8,6 +8,7 @@ const payment = require("./payment");
 const { response } = require("../util/ResponseTemplate");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
+const TransactionLog = require("../models/transactionLog");
 
 let baseUrl = process.env.SFOX_BASE_URL;
 
@@ -328,22 +329,35 @@ exports.myAccount = async (req, res) => {
 
 exports.dashboard = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const { sales } = req.query;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
 
-    let paymentReq = { params: { user_id: user_id } };
-    let paymentData = await payment.transaction(paymentReq);
+    let paymentReq = { params: { user_id: req.user["id"] } };
+    let paymentData = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "fiatCurrencyAmount",
+        "email",
+        "status",
+        "createDate",
+        "timestamp",
+      ])
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("txnStatus")
+      .eq(true)
+      .exec();
+
+    paymentData = paymentData.map((e) => ({
+      amount: e.fiatCurrencyAmount,
+      date: e.createDate,
+      status: e.status,
+      email: e.email,
+      id: e.id,
+      timestamp: e.timestamp,
+    }));
+
     let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
     // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
@@ -353,13 +367,13 @@ exports.dashboard = async (req, res) => {
 
     monthData = [];
     let month = 1;
-    for (let i = 0; i < paymentData.length; i++) {
+    for (let i = 0; i < paymentData.count; i++) {
       totalRev =
         totalRev + paymentData[i].amount - refund - monetization - adjustments;
     }
     while (month < 31) {
       let total = 0;
-      for (let i = 0; i < paymentData.length; i++) {
+      for (let i = 0; i < paymentData.count; i++) {
         const dateString = paymentData[i].date;
         const date = new Date(dateString);
         let getMonth = date.getDate();
@@ -379,11 +393,11 @@ exports.dashboard = async (req, res) => {
       month = month + 1;
     }
 
-    monthPurchase = [];
+    let monthPurchase = [];
     let mon = 1;
     while (mon < 31) {
       let totals = 0;
-      for (let i = 0; i < paymentData.length; i++) {
+      for (let i = 0; i < paymentData.count; i++) {
         const dateString = paymentData[i].date;
         const date = new Date(dateString);
         let getMonth = date.getDate();
@@ -402,7 +416,7 @@ exports.dashboard = async (req, res) => {
 
     let totalCustomers = await CustomerWalletAddress.scan()
       .where("user_id")
-      .eq(user_id)
+      .eq(req.user["id"])
       .exec();
 
     let customerCurrency = "";
@@ -442,7 +456,7 @@ exports.dashboard = async (req, res) => {
     }
 
     let responses = {
-      totalPurchase: paymentData.length ? paymentData.length : 0,
+      totalPurchase: paymentData.count ? paymentData.count : 0,
       monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
       totalCustomers: totalCustomers.count,
@@ -452,7 +466,9 @@ exports.dashboard = async (req, res) => {
       monthlyRevenue: monthData,
       revenuePercentage: null,
       totalSales: customerCurrenc ? customerCurrenc : null,
-      paymentData: paymentData ? paymentData : null,
+      paymentData: paymentData
+        ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
+        : null,
       payoutData: null,
     };
 

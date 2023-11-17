@@ -19,7 +19,11 @@ module.exports = (router) => {
   //account API
   router.get("/user/:user_id/myaccount", accountManagement.myAccount);
   //dashboard API
-  router.get("/user/:user_id/dashboard", accountManagement.dashboard);
+  router.get(
+    "/user/:user_id/dashboard",
+    authorizeUser,
+    accountManagement.dashboard
+  );
   //Team API
   router.get("/user/:user_id/team", accountManagement.team);
 };

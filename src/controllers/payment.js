@@ -444,7 +444,6 @@ exports.monetizationHistory = async (req, res) => {
  * @param {*} res
  * @returns
  */
-
 exports.balances = async (req, res) => {
   try {
     let transaction = await TransactionLog.scan()
@@ -455,7 +454,6 @@ exports.balances = async (req, res) => {
       .where("balanceStatus")
       .eq(false)
       .filter("createDate")
-
       .exec();
 
     let payment = 0;
