@@ -69,7 +69,7 @@ const transactionLogSchema = new dynamoose.Schema(
       type: Number,
       required: false,
     },
-    order_id: {
+    orderId: {
       type: [String, dynamoose.type.NULL],
       required: false,
     },
@@ -139,6 +139,10 @@ const transactionLogSchema = new dynamoose.Schema(
     timestamp: {
       type: Number,
       required: false,
+    },
+    balanceStatus: {
+      type: Boolean,
+      default: false,
     },
   },
   {

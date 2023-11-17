@@ -1,69 +1,23 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const Transfer = require("./../models/transfer");
-const AWS = require("aws-sdk");
-AWS.config.update({ region: "us-east-1" });
 const User = require("./../models/userAuth");
-const accountManagement = require("./accountManagement");
 let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 
-exports.wireTransfer = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-    let Req = { params: { user_id: user_id } };
-    let transfer = await accountManagement.wireInstructions(Req);
-    if (transfer) {
-      return res.status(200).send({
-        message: "DATA RETRIVED",
-        data: transfer,
-      });
-    }
-    return res.status(500).send({
-      error: "CANNOT RETRIVED THE DATA",
-      data: {},
-    });
-  } catch (error) {
-    return res.status(500).send(error);
-  }
-};
-
-exports.currencyConvertion = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-    const { pair, side, quantity } = req.body;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    const apiPath = `${baseUrl}/v1/quote`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-      data: {
-        pair: pair,
-        side: side,
-        quantity: quantity,
-      },
-    });
-    if (res) {
-      return res.status(response.status).json({ message: response.data });
-    } else {
-      return response.data;
-    }
-  } catch (error) {
-    // return res.status(error.response?.status).send(error.response.data);
-  }
-};
+/**
+ * @description
+ * 1. Wire Intructions
+ * 2. Currency Conversion
+ * 3. Market Order
+ * 4. Wallet tarnsfer`
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 
 exports.withdrawalBank = async (req, res) => {
   try {
@@ -132,7 +86,6 @@ exports.withdrawalBank = async (req, res) => {
  * @param {*} res
  * @returns
  */
-
 exports.marketOrder = async (req, res) => {
   try {
     const { user_id, side } = req.params;
@@ -228,43 +181,6 @@ exports.MarketOrder = async (req, res) => {
     );
 
     if (response.data && response.data.id) {
-      const eventbridge = new AWS.EventBridge();
-      const params = {
-        Entries: [
-          {
-            Source: "myApp", // change this to our application name
-            DetailType: "Market Order",
-            Detail: JSON.stringify(response.data),
-            EventBusName: "default",
-          },
-        ],
-      };
-      await eventbridge.putEvents(params).promise();
-
-      const cloudwatch = new AWS.CloudWatch();
-      const alarmParams = {
-        AlarmName: "MarketOrderAlarm",
-        ComparisonOperator: "GreaterThanThreshold",
-        EvaluationPeriods: 1,
-        MetricName: "MarketOrder",
-        Namespace: "myApp",
-        Period: 300,
-        Threshold: 1.0,
-        ActionsEnabled: true,
-        AlarmActions: [
-          "arn:aws:sns:us-east-1:123456789012:MySNSTopic", // Replace with your SNS Topic ARN
-        ],
-        Dimensions: [
-          {
-            Name: "OrderId",
-            Value: response.data.id,
-          },
-        ],
-        Statistic: "Sum",
-        Unit: "Count",
-      };
-      await cloudwatch.putMetricAlarm(alarmParams).promise();
-
       return res.status(200).send({
         message: "Order created successfully",
         data: response.data,
@@ -283,66 +199,6 @@ exports.MarketOrder = async (req, res) => {
   }
 };
 
-/**
- *
- * @param {*} req
- * @param {*} res
- * @returns
- */
-exports.walletTransfer = async (req, res) => {
-  try {
-    let data = {
-      currency: req.body.currency,
-      quantity: req.body.quantity,
-      from_wallet: req.body.from_wallet,
-      to_wallet: req.body.to_wallet,
-    };
-
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    data.transfer_id = uuidv4();
-    let apiPath = `${baseUrl}/v1/account/transfer`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-      data: data,
-    });
-    if (response.data) {
-      const transfers = new Transfer({
-        user_id: response.data.data.user_id,
-        type: response.data.data.type,
-        purpose: response.data.data.purpose,
-        description: response.data.data.description,
-        currency: response.data.data.currency,
-        quantity: response.data.data.quantity,
-        rate: response.data.data.rate,
-        transfer_id: response.data.data.transfer_id,
-        transfer_status_code: response.data.data.transfer_status_code,
-        atx_id_charged: response.data.data.atx_id_charged,
-        atx_id_credited: response.data.data.atx_id_credited,
-        atx_status_charged: response.data.data.atx_status_charged,
-        atx_status_credited: response.data.data.atx_status_credited,
-        transfer_date: response.data.data.transfer_date,
-      });
-      //   let transferAdded = await transfers.save();
-      //   if (transferAdded)
-      return res.status(response.status).json({ message: response.data.data });
-    }
-  } catch (error) {
-    common.eventBridge(error?.message.toString(), responseCode.serverError);
-    return res.status(error.response.status).send(error.response.data);
-  }
-};
 exports.transfer = async (req, res) => {
   try {
     let data = {
@@ -451,6 +307,66 @@ exports.transferStatus = async (req, res) => {
   }
 };
 
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
+exports.walletTransfer = async (req, res) => {
+  try {
+    let data = {
+      currency: req.body.currency,
+      quantity: req.body.quantity,
+      from_wallet: req.body.from_wallet,
+      to_wallet: req.body.to_wallet,
+    };
+
+    const { user_id } = req.params;
+    const userDetails = await User.get(user_id);
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    data.transfer_id = uuidv4();
+    let apiPath = `${baseUrl}/v1/account/transfer`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + userDetails.userToken,
+      },
+      data: data,
+    });
+    if (response.data) {
+      const transfers = new Transfer({
+        user_id: response.data.data.user_id,
+        type: response.data.data.type,
+        purpose: response.data.data.purpose,
+        description: response.data.data.description,
+        currency: response.data.data.currency,
+        quantity: response.data.data.quantity,
+        rate: response.data.data.rate,
+        transfer_id: response.data.data.transfer_id,
+        transfer_status_code: response.data.data.transfer_status_code,
+        atx_id_charged: response.data.data.atx_id_charged,
+        atx_id_credited: response.data.data.atx_id_credited,
+        atx_status_charged: response.data.data.atx_status_charged,
+        atx_status_credited: response.data.data.atx_status_credited,
+        transfer_date: response.data.data.transfer_date,
+      });
+      //   let transferAdded = await transfers.save();
+      //   if (transferAdded)
+      return res.status(response.status).json({ message: response.data.data });
+    }
+  } catch (error) {
+    common.eventBridge(error?.message.toString(), responseCode.serverError);
+    return res.status(error.response.status).send(error.response.data);
+  }
+};
 exports.withdrawalBank = async (req, res) => {
   try {
     const { user_id, transaction_id } = req.params;

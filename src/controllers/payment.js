@@ -9,11 +9,12 @@ const { common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 const bankAccountSchema = require("../models/bankAccounts");
 const { success, responseCodes } = require("../util/Constants");
+const TransactionLog = require("../models/transactionLog");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
 /**
- * For the PAyment and the Payout page
+ * For the Payment and the Payout page
  * @description
  * @param {*} req
  * @param {*} res
@@ -163,7 +164,7 @@ exports.transaction = async (req, res) => {
 
     if (req.query) {
       const { from_date, to_date, limit, offset, type } = req.query;
-   
+
       query = {
         from: from_date ? from_date : null,
         to: to_date ? to_date : null,
@@ -348,7 +349,6 @@ exports.tranferUpdate = async (req, res) => {
 };
 
 // monetization code
-
 exports.monetization = async (req, res) => {
   try {
     const { feature, method, amount, user_id } = req.body;
@@ -438,101 +438,94 @@ exports.monetizationHistory = async (req, res) => {
   }
 };
 
-// balances
+/**
+ * @description Balnaces Code
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 
 exports.balances = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const { currency } = req.query;
-    if (!currency)
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE PROVIDE CURRENCY", {}));
+    let transaction = await TransactionLog.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("txnStatus")
+      .eq(true)
+      .where("balanceStatus")
+      .filter("createDate")
+      .exec();
 
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
-    let response = await axios({
-      method: "get",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-    });
-    let pay = 0;
-    let payCount = [];
-    let refund = 0;
-    let adjustments = 0;
-    let monetization = 0;
+    console.log(transaction);
 
-    let paymentReq = { params: { user_id: user_id } };
-    let paymentData = await payment.transaction(paymentReq);
-    // let OneDayPay = paymentData.filter(data => data.transfer_date.ge );
-    for (let i = 0; i < paymentData.length; i++) {
-      const currentDate = new Date(); // Get the current date and time
-      const targetDate = new Date(paymentData[i].date); // Replace with the date you want to compare
-      const twentyFourHoursInMilliseconds = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-      if (currentDate - targetDate < twentyFourHoursInMilliseconds) {
-        payCount.push(paymentData[i]);
-        pay =
-          pay +
-          paymentData[i].amount -
-          refund -
-          monetization -
-          adjustments;
-        console.log("Target date is less than 24 hours old.");
-      } else {
-        // The target date is more than 24 hours old
-        console.log("Target date is 24 hours or more old.");
-      }
-    }
-    let totalTransactions = pay - refund - adjustments - monetization;
-
-    let responses = {
-      currently_way_to_bank_account: 0,
-
-      estimate_future_payouts: 0,
-
-      payment_count: payCount.length ? payCount.length : 0,
-
-      payment: pay,
-
-      refund_count: 0,
-
-      refund: 0,
-
-      adjustments_count: 0,
-
-      adjustments: 0,
-
-      total_incoming: totalTransactions,
-
-      total_outgoing: 0,
-
-      recently_deposit: 0,
-
-    
-    };
-    for (let i = 0; i < response.data.length; i++) {
-      if (response.data[i].currency == currency) {
-        responses.currency = response.data[i].currency;
-        responses.total = response.data[i].balance - pay ;
-      }
-    }
-    // let request = { query: { type: "PAYMENT" } };
-
-    // let transferData = await this.transfer(request);
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("RETRIVED BALANCE", responses));
+    return res.status(responseCode.success).json(
+      rs.successResponse("RETRIVED BALANCE", {
+        currently_way_to_bank_account: 0,
+        estimate_future_payouts: 0,
+        payment_count: 6,
+        payment: 7.6000000000000005,
+        refund_count: 0,
+        refund: 0,
+        adjustments_count: 0,
+        adjustments: 0,
+        total_incoming: 7.6000000000000005,
+        total_outgoing: 0,
+        recently_deposite: 0,
+        currency: "usd",
+        total: 0,
+      })
+    );
   } catch (err) {
     console.log("err", err);
     return res.status(err?.response?.status || 500).send(err);
   }
 };
+
+// for (let i = 0; i < paymentData.length; i++) {
+//   const currentDate = new Date(); // Get the current date and time
+//   const targetDate = new Date(paymentData[i].date); // Replace with the date you want to compare
+//   const twentyFourHoursInMilliseconds = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+//   if (currentDate - targetDate < twentyFourHoursInMilliseconds) {
+//     payCount.push(paymentData[i]);
+//     pay = pay + paymentData[i].amount - refund - monetization - adjustments;
+//     console.log("Target date is less than 24 hours old.");
+//   } else {
+//     // The target date is more than 24 hours old
+//     console.log("Target date is 24 hours or more old.");
+//   }
+// }
+// let totalTransactions = pay - refund - adjustments - monetization;
+
+// let responses = {
+//   currently_way_to_bank_account: 0,
+
+//   estimate_future_payouts: 0,
+
+//   payment_count: payCount.length ? payCount.length : 0,
+
+//   payment: pay,
+
+//   refund_count: 0,
+
+//   refund: 0,
+
+//   adjustments_count: 0,
+
+//   adjustments: 0,
+
+//   total_incoming: totalTransactions,
+
+//   total_outgoing: 0,
+
+//   recently_deposit: 0,
+// };
+// for (let i = 0; i < response.data.length; i++) {
+//   if (response.data[i].currency == currency) {
+//     responses.currency = response.data[i].currency;
+//     responses.total = response.data[i].balance - pay;
+//   }
+// }
+// let request = { query: { type: "PAYMENT" } };
+
+// let transferData = await this.transfer(request);

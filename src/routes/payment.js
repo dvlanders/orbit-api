@@ -1,5 +1,7 @@
 const { payment } = require("../controllers");
 
+const { authorizeUser } = require("../util/middleware");
+
 module.exports = (router) => {
   // transfer routes
   router.get("/transfer", payment.transfer);
@@ -18,6 +20,6 @@ module.exports = (router) => {
   router.delete("/monetization/:monetization_id", payment.deleteMonetization);
   router.delete("/monetization/history/?feature", payment.monetizationHistory);
 
-  // balance routes
-  router.get("/user/:user_id/balance", payment.balances);
+  // Balance Routes
+  router.get("/user/:user_id/balance", authorizeUser, payment.balances);
 };

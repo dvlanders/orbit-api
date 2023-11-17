@@ -267,28 +267,27 @@ exports.deleteBank = async (req, res) => {
 
 exports.wireInstructions = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const count = await User.scan().exec();
-    var getUser = count.filter((item) => item.user_id == user_id);
-
-    if (getUser.length == 0 || getUser[0].userToken == "") {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let apiPath = `${baseUrl}/v1/user/wire-instructions`;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/wire-instructions`;
     let response = await axios({
       method: "get",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + getUser[0].userToken,
+        Authorization: "Bearer " + req.user["userToken"],
       },
     });
-    if (res) {
-      return res.status(response.status).json({ message: response.data.data });
+    if (response?.data?.data) {
+      return res
+        .status(response.status)
+        .json(
+          rs.successResponse(
+            "WIRE INSTRUCTIONS RETREIVED",
+            response?.data?.data
+          )
+        );
     } else {
-      return response.data.data;
+      return res
+        .status(response.status)
+        .json(rs.successResponse("WIRE INSTRUCTIONS RETREIVED", {}));
     }
   } catch (err) {
     return res.status(err.response?.status).send(err.response?.data);

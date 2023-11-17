@@ -1,4 +1,5 @@
 const { accountManagement } = require("../controllers");
+const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   // Bank routes
@@ -12,6 +13,7 @@ module.exports = (router) => {
   router.delete("/user/:user_id/bank/:bank_id", accountManagement.deleteBank);
   router.get(
     "/user/:user_id/wireInstructions",
+    authorizeUser,
     accountManagement.wireInstructions
   );
   //account API
