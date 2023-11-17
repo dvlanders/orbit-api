@@ -465,8 +465,6 @@ exports.balances = async (req, res) => {
     let total_incoming = 0;
     let total = 0;
     if (transaction.count > 0) {
-      console.log(objectWithLargestTimestamp);
-
       transaction.map((e) => {
         payment += e.fiatCurrencyAmount;
         payment_count += 1;
@@ -477,7 +475,7 @@ exports.balances = async (req, res) => {
     // console.log(transaction);
 
     return res.status(responseCode.success).json(
-      rs.successResponse("RETRIVED BALANCE", {
+      rs.successResponse("BALANCE RETRIVED", {
         currently_way_to_bank_account: 0,
         estimate_future_payouts: 0,
         payment_count: payment_count,
