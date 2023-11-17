@@ -97,6 +97,7 @@ const transactionLogSchema = new dynamoose.Schema(
       required: false,
     },
     fees: {
+      // this fees is the monetization fee
       type: Number,
       required: false,
     },
@@ -125,6 +126,10 @@ const transactionLogSchema = new dynamoose.Schema(
       required: false,
     },
     accountTransferFee: {
+      type: Number,
+      required: false,
+    },
+    txnGasFee: {
       type: Number,
       required: false,
     },

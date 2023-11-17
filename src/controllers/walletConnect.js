@@ -202,18 +202,18 @@ exports.addCustomerAddress = async (req, res) => {
         console.log("in the settimeout");
         let apiPath = `${process.env.ETHERSCAN_URL}/api?module=account&action=txlist&address=${customerAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${process.env.ETHERSCAN_KEY}`;
         console.log(apiPath);
-        let response = await axios({
+        let responseEther = await axios({
           method: "get",
           url: apiPath,
         });
 
-        console.log(response?.data?.result);
-        if (response?.data?.result.length > 0) {
+        console.log(responseEther?.data?.result);
+        if (responseEther?.data?.result.length > 0) {
           let scaledAmount = BigInt(
             Math.round(parseFloat(cryptoCurrencyAmount) * 1e18)
           );
 
-          let etherscanData = response?.data?.result.filter(
+          let etherscanData = responseEther?.data?.result.filter(
             (e) =>
               e.from === customerAddress &&
               e.to === merchantAddress &&
@@ -242,6 +242,12 @@ exports.addCustomerAddress = async (req, res) => {
             );
             if (finalData.length > 0) {
               console.log(finalData[0].tx_hash);
+              let txngasfee =
+                parseFloat(
+                  BigInt(etherscanData[0].gas) *
+                    BigInt(etherscanData[0].gasPrice)
+                ) / 1e18;
+
               const updatedData = await TransactionLog.update(
                 { id: saveData.id },
                 {
@@ -276,6 +282,7 @@ exports.addCustomerAddress = async (req, res) => {
                     ? finalData[0]?.IdempotencyId
                     : null,
                   timestamp: finalData[0].timestamp,
+                  txnGasFee: txngasfee,
                 }
               );
               console.log("Transaction log updated:", updatedData);
