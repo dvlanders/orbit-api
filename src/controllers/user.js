@@ -138,10 +138,7 @@ exports.verifyOTP = async (req, res) => {
         .json(rs.incorrectDetails("PLEASE ENTER OTP OR EMAIL", {}));
     }
 
-    let userDetails = await User.scan()
-      .where("email")
-      .eq("nivinclint@gmail.com")
-      .exec();
+    let userDetails = await User.scan().where("email").eq(email).exec();
 
     if (userDetails?.count == 0) {
       return res.status(responseCode.unauthorized).json(rs.authErr({}));
@@ -169,7 +166,7 @@ exports.verifyOTP = async (req, res) => {
 
       console.log(isExpired);
 
-      if (!isExpired) {
+      if (isExpired) {
         // Update user's verification status or perform any other necessary actions
 
         let userData = await User.update(
@@ -180,6 +177,8 @@ exports.verifyOTP = async (req, res) => {
             isOTPVerified: true,
           }
         );
+
+        //  Register Email trigger
 
         console.log(userData);
 

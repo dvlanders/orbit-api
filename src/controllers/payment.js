@@ -453,26 +453,44 @@ exports.balances = async (req, res) => {
       .where("txnStatus")
       .eq(true)
       .where("balanceStatus")
+      .eq(false)
       .filter("createDate")
+
       .exec();
 
-    console.log(transaction);
+    let payment = 0;
+    let payment_count = 0;
+    let refund = 0;
+    let adjustments = 0;
+    let total_incoming = 0;
+    let total = 0;
+    if (transaction.count > 0) {
+      console.log(objectWithLargestTimestamp);
+
+      transaction.map((e) => {
+        payment += e.fiatCurrencyAmount;
+        payment_count += 1;
+      });
+    }
+    total = payment - refund - adjustments;
+
+    // console.log(transaction);
 
     return res.status(responseCode.success).json(
       rs.successResponse("RETRIVED BALANCE", {
         currently_way_to_bank_account: 0,
         estimate_future_payouts: 0,
-        payment_count: 6,
-        payment: 7.6000000000000005,
+        payment_count: payment_count,
+        payment: payment,
         refund_count: 0,
         refund: 0,
         adjustments_count: 0,
         adjustments: 0,
-        total_incoming: 7.6000000000000005,
+        total_incoming: 0,
         total_outgoing: 0,
-        recently_deposite: 0,
+        recently_deposit: 0,
         currency: "usd",
-        total: 0,
+        total: total,
       })
     );
   } catch (err) {
