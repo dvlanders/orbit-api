@@ -367,13 +367,13 @@ exports.dashboard = async (req, res) => {
 
     monthData = [];
     let month = 1;
-    for (let i = 0; i < paymentData.count; i++) {
+    for (let i = 0; i < paymentData.length; i++) {
       totalRev =
         totalRev + paymentData[i].amount - refund - monetization - adjustments;
     }
     while (month < 31) {
       let total = 0;
-      for (let i = 0; i < paymentData.count; i++) {
+      for (let i = 0; i < paymentData.length; i++) {
         const dateString = paymentData[i].date;
         const date = new Date(dateString);
         let getMonth = date.getDate();
@@ -397,7 +397,7 @@ exports.dashboard = async (req, res) => {
     let mon = 1;
     while (mon < 31) {
       let totals = 0;
-      for (let i = 0; i < paymentData.count; i++) {
+      for (let i = 0; i < paymentData.length; i++) {
         const dateString = paymentData[i].date;
         const date = new Date(dateString);
         let getMonth = date.getDate();
@@ -456,7 +456,7 @@ exports.dashboard = async (req, res) => {
     }
 
     let responses = {
-      totalPurchase: paymentData.count ? paymentData.count : 0,
+      totalPurchase: paymentData.length ? paymentData.length : 0,
       monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
       totalCustomers: totalCustomers.count,
@@ -466,9 +466,10 @@ exports.dashboard = async (req, res) => {
       monthlyRevenue: monthData,
       revenuePercentage: null,
       totalSales: customerCurrenc ? customerCurrenc : null,
-      paymentData: paymentData
-        ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
-        : null,
+      paymentData:
+        paymentData.length > 0
+          ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
+          : null,
       payoutData: null,
     };
 
