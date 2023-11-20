@@ -493,7 +493,7 @@ exports.addTeam = async (req, res) => {
     let isRole = roleList.includes(parseInt(role));
     if (!isRole)
       return res
-        .status(responseCode.success)
+        .status(responseCode.badRequest)
         .json(rs.incorrectDetails("ROLE TYPE DOES NOT EXIST"));
 
     // Check if the email already exists in the database

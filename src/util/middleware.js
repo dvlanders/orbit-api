@@ -31,12 +31,9 @@ exports.authorizeUser = async (req, res, next) => {
         .json(rs.response(responseCode.unauthorized, message, {}));
     }
 
-    // if(userDetails.role == 0) break;
-    // else if (userDetails.role == 1){
-
-    // }else if(userDetails.role == 2){
-
-    // }
+    if (userDetails.role == 1) {
+    } else if (userDetails.role == 2) {
+    }
 
     req.user = {
       id: userDetails?.user_id,
