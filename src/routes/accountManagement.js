@@ -31,4 +31,13 @@ module.exports = (router) => {
     authorizeUser,
     accountManagement.addTeam
   );
+  router.get(
+    "/user/:user_id/team/acceptinvite",
+    accountManagement.acceptInvite
+  );
+  router.get(
+    "/user/:user_id/team/list",
+    authorizeUser,
+    accountManagement.teamList
+  );
 };

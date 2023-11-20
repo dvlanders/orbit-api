@@ -9,6 +9,7 @@ const { response } = require("../util/ResponseTemplate");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
 const TransactionLog = require("../models/transactionLog");
+const moment = require("moment");
 
 let baseUrl = process.env.SFOX_BASE_URL;
 
@@ -627,6 +628,9 @@ exports.acceptInvite = async (req, res) => {
     invitedUser.isAccepted = true;
     invitedUser.isOTPVerified = true;
     invitedUser.isSfoxVerified = true;
+    invitedUser.sfox_id = invitingUser.sfox_id;
+    invitedUser.userToken = invitingUser.userToken;
+
     // Save the updated invited user details
     await invitedUser.save();
 
@@ -638,4 +642,48 @@ exports.acceptInvite = async (req, res) => {
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
+};
+
+exports.teamList = async (req, res) => {
+  try {
+    let teamList = await User.scan()
+      .attributes([
+        "fullName",
+        "email",
+        "isVerified",
+        "createDate",
+        "role",
+        "isAccepted",
+      ])
+      .where("invitedBy")
+      .eq(req.user["id"])
+      .exec();
+
+    let updatedTeamList = [];
+    const roleNames = {
+      0: "SUPER_ADMIN",
+      1: "ADMIN",
+      2: "ANALYST",
+    };
+    if (teamList.count > 0) {
+      updatedTeamList = teamList.map((user) => ({
+        ...user,
+        roleName: roleNames[user.role],
+      }));
+    }
+
+    updatedTeamList.unshift({
+      createDate: moment().toISOString(),
+      role: 0,
+      isAccepted: true,
+      email: req.user["email"],
+      fullName: req.user["fullName"],
+      isVerified: true,
+      roleName: roleNames[0],
+    });
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("RETRIVED TEAM LIST", updatedTeamList));
+  } catch (error) {}
 };

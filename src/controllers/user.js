@@ -71,7 +71,7 @@ exports.signUp = async (req, res) => {
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
-      subject: "Registration Form",
+      subject: "OTP - VERIFICATION CODE",
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
       fileName: "RegisterOTP.ejs",
       otp: otp,
@@ -243,7 +243,7 @@ exports.resendOTP = async (req, res) => {
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
-      subject: "Resend OTP - Registration",
+      subject: "OTP - VERIFICATION CODE",
       text: `Your new OTP is: ${newOTP}`,
       fileName: "RegisterOTP.ejs", // Update with the actual file name
       otp: newOTP,
@@ -316,12 +316,37 @@ exports.signIn = async (req, res) => {
       if (getUser.count > 0) {
         console.log(getUser);
 
-        if (getUser[0].isOTPVerified == false)
-          return res.status(responseCode.badGateway).json(
-            rs.incorrectDetails("PLEASE VERIFY USER", {
+        if (getUser[0].isOTPVerified == false) {
+          let otp = common.generateRandomNumberWithDigits(6);
+
+          let mailDetails = {
+            from: `${process.env.FROM_EMAIL}`,
+            to: email,
+            subject: "OTP - VERIFICATION CODE",
+            text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+            fileName: "RegisterOTP.ejs",
+            otp: otp,
+          };
+
+          generate = await sendEmail.generateEmail(
+            mailDetails,
+            getUser[0].fullName
+          ); //Generate Email
+          await User.update(
+            {
+              user_id: getUser[0].user_id,
+            },
+            {
+              otp: otp,
+            }
+          );
+
+          return res.status(responseCode.success).json(
+            rs.successResponse("PLEASE VERIFY USER, OTP SENT", {
               isOTPVerified: false,
             })
           );
+        }
 
         let decryptText = common.decryptText(getUser[0].password);
         if (decryptText !== password) {
@@ -439,12 +464,37 @@ exports.signInGoogle = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE REGISTER YOUR ACCOUNT", {}));
     }
-    if (userDetails[0].isOTPVerified == false)
-      return res.status(responseCode.badGateway).json(
-        rs.incorrectDetails("PLEASE VERIFY USER", {
+    if (userDetails[0].isOTPVerified == false) {
+      let otp = common.generateRandomNumberWithDigits(6);
+
+      let mailDetails = {
+        from: `${process.env.FROM_EMAIL}`,
+        to: email,
+        subject: "OTP - VERIFICATION CODE",
+        text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+        fileName: "RegisterOTP.ejs",
+        otp: otp,
+      };
+
+      generate = await sendEmail.generateEmail(
+        mailDetails,
+        userDetails[0].fullName
+      ); //Generate Email
+      await User.update(
+        {
+          user_id: userDetails[0].user_id,
+        },
+        {
+          otp: otp,
+        }
+      );
+
+      return res.status(responseCode.success).json(
+        rs.successResponse("PLEASE VERIFY USER, OTP SENT", {
           isOTPVerified: false,
         })
       );
+    }
 
     if (userDetails[0].isVerified == false) {
       let temp_secret = speakeasy.generateSecret({
