@@ -155,6 +155,9 @@ exports.addCustomerAddress = async (req, res) => {
       walletType,
       name,
       email,
+      quote_id,
+      oneCryptoPrice,
+      quoteId,
     } = req.body;
 
     const requiredParams = [
@@ -165,6 +168,9 @@ exports.addCustomerAddress = async (req, res) => {
       fiatCurrency,
       fiatCurrencyAmount,
       walletType,
+      quote_id,
+      oneCryptoPrice,
+      quoteId,
     ];
 
     const isMissingData = requiredParams.some((param) => !param);
@@ -220,7 +226,7 @@ exports.addCustomerAddress = async (req, res) => {
               BigInt(e.value) === scaledAmount
           );
 
-          console.log("filterreddata", etherscanData);
+          // console.log("filterreddata", etherscanData);
           if (etherscanData.length > 0) {
             let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
             console.log(apiPath);
@@ -285,7 +291,92 @@ exports.addCustomerAddress = async (req, res) => {
                   txnGasFee: txngasfee,
                 }
               );
+
               console.log("Transaction log updated:", updatedData);
+              // HAS TO BE TESTED
+              // let side = "sell";
+              // let apiPath = `${baseUrl}/v1/orders/${side}`;
+              // let marketOrderResponse = await axios({
+              //   method: "post",
+              //   url: apiPath,
+              //   headers: {
+              //     Authorization: "Bearer " + req.user["userToken"],
+              //   },
+              //   data: {
+              //     currency_pair: "ethusd",
+              //     price: parseFloat(oneCryptoPrice),
+              //     quantity: parseFloat(cryptoCurrencyAmount),
+              //     algorithm_id: 100,
+              //     client_order_id: quoteId,
+              //   },
+              // });
+
+              // if (marketOrderResponse?.data) {
+              //   setTimeout(async () => {
+              //     let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+              //     console.log(apiPath);
+              //     let marketOrderTransaction = await axios({
+              //       method: "get",
+              //       url: apiPath,
+              //       headers: {
+              //         Authorization: "Bearer " + req.user["userToken"],
+              //       },
+              //       params: {
+              //         types: "sell",
+              //         limit: 2,
+              //       },
+              //     });
+
+              //     let marketOrderFinal = [];
+              //     marketOrderFinal = marketOrderTransaction?.data.filter(
+              //       (e) => e.currency === "usd" && e.client_order_id === quoteId
+              //     );
+
+              //     if (marketOrderFinal.length > 0) {
+              //       let marketOrderData = await TransactionLog.update(
+              //         { id: saveData.id },
+              //         {
+              //           txnStatus: true,
+              //           txId: finalData[0].id,
+              //           aTxId: finalData[0].atxId,
+              //           orderId: finalData[0]?.order_id
+              //             ? finalData[0].order_id
+              //             : null,
+              //           clientOrderId: finalData[0]?.client_order_id
+              //             ? finalData[0].client_order_id
+              //             : null,
+              //           day: finalData[0]?.day,
+              //           action: finalData[0]?.action,
+              //           memo: finalData[0]?.memo ? finalData[0]?.memo : null,
+              //           amount: finalData[0].amount,
+              //           price: finalData[0].price,
+              //           fees: finalData[0].fees,
+              //           status: finalData[0].status,
+              //           holdExpires: finalData[0]?.hold_expires
+              //             ? finalData[0].hold_expires
+              //             : null,
+              //           txHash: finalData[0].tx_hash,
+              //           algoName: finalData[0]?.algo_name
+              //             ? finalData[0].algo_name
+              //             : null,
+              //           algoId: finalData[0]?.algo_id
+              //             ? finalData[0].algo_id
+              //             : null,
+              //           accountBalance: finalData[0].account_balance,
+              //           accountTransferFee: finalData[0].AccountTransferFee,
+              //           symbol: finalData[0]?.symbol
+              //             ? finalData[0].symbol
+              //             : null,
+              //           idempotencyId: finalData[0]?.IdempotencyId
+              //             ? finalData[0]?.IdempotencyId
+              //             : null,
+              //           timestamp: finalData[0].timestamp,
+              //           txnGasFee: txngasfee,
+              //         }
+              //       );
+              //     }
+              //   }, 110000);
+              // }
             }
           }
         }
@@ -293,10 +384,6 @@ exports.addCustomerAddress = async (req, res) => {
         console.error("Error updating transaction log:", error);
       }
     }, 110000);
-
-    setTimeout(async () => {
-      // https://api.staging.sfox.com/v1/orders/:side
-    });
   } catch (error) {
     console.log(error);
     return res

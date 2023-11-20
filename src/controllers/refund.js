@@ -8,6 +8,8 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 
+// TODO REFUND INTEGRATE WITH THE DB -- NIHAR
+// BELOW ARE THE MARKETORDER API -- NIHAR
 /**
  * @description
  * 1. Wire Intructions
@@ -123,7 +125,7 @@ exports.marketOrder = async (req, res) => {
         currency_pair: currencyPair[0].symbol,
         price: 12,
         quantity: 0.1,
-        algorithm_id: 200,
+        algorithm_id: 100,
         client_order_id: uuidv4(),
       },
     });

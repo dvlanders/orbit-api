@@ -62,3 +62,5 @@ exports.dataNotAdded = (name) => `${name} NOT ADDED`;
 exports.dataNotExist = (name) => `${name} DOES NOT EXIST`;
 
 exports.conflict = (name) => `${name} ALREADY EXIST`;
+
+exports.scopeAdmin = ["/user/:user_id/bank", "/user/:user_id/team/add"];

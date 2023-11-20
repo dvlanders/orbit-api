@@ -4,7 +4,6 @@ const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
 const { sendEmail, common } = require("../util/helper");
 const registration = require("./registration");
-const payment = require("./payment");
 const { response } = require("../util/ResponseTemplate");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
@@ -328,6 +327,7 @@ exports.myAccount = async (req, res) => {
   }
 };
 
+// ADD SALES IN THE DASHBOARD API -- NIHAR
 exports.dashboard = async (req, res) => {
   try {
     let refund = 0;

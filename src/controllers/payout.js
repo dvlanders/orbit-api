@@ -4,49 +4,43 @@ const Transfer = require("./../models/transfer");
 const User = require("./../models/userAuth");
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
-const payment  = require("./payment") 
-const refund = require("./refund")
+const payment = require("./payment");
+const refund = require("./refund");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 
+// 24 hours
 
-
-// 24 hours 
-
-exports.withdrawalCalculation = async ( req, res) => {
-  try{
-    
-    const {user_id} = req.params;
+exports.withdrawalCalculation = async (req, res) => {
+  try {
+    const { user_id } = req.params;
     if (!user_id) {
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE PROVIDE USERID", {}));
     }
-    const userDetails =  await User.scan().where("user_id").eq(user_id).exec();
+    const userDetails = await User.scan().where("user_id").eq(user_id).exec();
 
-    console.log("ddddddddddddddddddddddddd",userDetails, user_id, )
-  
+    console.log("ddddddddddddddddddddddddd", userDetails, user_id);
+
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-    let refunds = 0
+    let refunds = 0;
 
     let paymentReq = { params: { user_id: user_id } };
     let paymentData = await payment.transaction(paymentReq);
-    
 
-let totalPayment = 0
+    let totalPayment = 0;
     for (let i = 0; i < paymentData.length; i++) {
       totalPayment = totalPayment + paymentData[i].amount;
     }
-    
 
-    let montizeAmount = (totalPayment - refunds) * 2.5/100;
+    let montizeAmount = ((totalPayment - refunds) * 2.5) / 100;
 
-   
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings`;
     let responses = await axios({
       method: "post",
@@ -55,49 +49,47 @@ let totalPayment = 0
         Authorization: "Bearer " + token,
       },
       data: {
-        feature: 'SPOT_TRADE',
+        feature: "SPOT_TRADE",
         amount: montizeAmount,
-        method: 'FEE_RATE',
+        method: "FEE_RATE",
         user_id: userDetails[0].sfox_id,
       },
     });
-    
-  let monetizationFee = responses.data.monetization_amount;
 
-  totalWithdrawal = totalPayment - refunds - monetizationFee;
+    let monetizationFee = responses.data.monetization_amount;
 
-  let reqs = { params: { user_id: user_id }, body : {currency : "USD", amount : totalWithdrawal, isWire: true} };
-  let depositBank = await refund.withdrawalBank(reqs);
+    totalWithdrawal = totalPayment - refunds - monetizationFee;
 
- 
-  let getBank = await axios({
-    method: "delete",
-    url:  `${baseUrl}/v1/user/bank`,
-    headers: {
-      Authorization: "Bearer " + userDetails[0].userToken,
-    },
-  });
+    let reqs = {
+      params: { user_id: user_id },
+      body: { currency: "USD", amount: totalWithdrawal, isWire: true },
+    };
+    let depositBank = await refund.withdrawalBank(reqs);
 
+    let getBank = await axios({
+      method: "delete",
+      url: `${baseUrl}/v1/user/bank`,
+      headers: {
+        Authorization: "Bearer " + userDetails[0].userToken,
+      },
+    });
 
-  let finalResponse = {
-     amount: totalWithdrawal,
-     description : "PAYOUT",
-     date : "",
-     bankAccount : getBank.data.usd[0].bank_name,
-  }
-  return res
-        .status(responseCode.success)
-        .json(rs.successResponse("PAYOUT DONE", finalResponse));
-
-  }catch(error){
-    console.log("erorrrrrrrrrrrrrrrrrrrrr",error)
+    let finalResponse = {
+      amount: totalWithdrawal,
+      description: "PAYOUT",
+      date: "",
+      bankAccount: getBank.data.usd[0].bank_name,
+    };
     return res
-    .status(responseCode.serverError)
-    .json(rs.errorResponse(error?.message.toString()));
-
-
+      .status(responseCode.success)
+      .json(rs.successResponse("PAYOUT DONE", finalResponse));
+  } catch (error) {
+    console.log("erorrrrrrrrrrrrrrrrrrrrr", error);
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
   }
-}
+};
 //Transfer
 
 exports.createTransfer = async (req, res) => {
@@ -184,7 +176,6 @@ exports.createTransfer = async (req, res) => {
     return res.status(500).send(error?.response?.data);
   }
 };
-
 
 exports.confirmTransferPayment = async (req, res) => {
   try {
@@ -350,5 +341,3 @@ exports.cancelWithdrawal = async (req, res) => {
     return res.status(error.response?.status).send(error.response.data);
   }
 };
-
-
