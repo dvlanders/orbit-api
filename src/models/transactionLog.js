@@ -1,14 +1,3 @@
-// {
-//     "merchantAddress":  "0xd56a859314712b189008a3373f39509d0bb08009",
-//     "customerAddress": "0x4fF73f95656dc80a7CCe10d04ABCEB622fd03835",
-//     "cryptoCurrency": "eth",
-//     "cryptoCurrencyAmount": 0.00496316,
-//     "fiatCurrency":"usd",
-//     "fiatCurrencyAmount": 10,
-//     "walletType": "MetaMask",
-//     "email": "sultan.mobilefirst@gmail.com",
-//     "name":"Sultan Khan"
-// }
 const dynamoose = require("dynamoose");
 
 const transactionLogSchema = new dynamoose.Schema(

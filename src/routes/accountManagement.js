@@ -26,4 +26,9 @@ module.exports = (router) => {
   );
   //Team API
   router.get("/user/:user_id/team", accountManagement.team);
+  router.post(
+    "/user/:user_id/team/add",
+    authorizeUser,
+    accountManagement.addTeam
+  );
 };

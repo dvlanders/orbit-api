@@ -38,6 +38,18 @@ const personSchema = new dynamoose.Schema(
       type: String,
       default: "America/New_York",
     },
+    invitedBy: {
+      type: [String, dynamoose.type.NULL],
+      default: null,
+    },
+    role: {
+      type: Number,
+      default: 0, // 0 for superadmin
+    },
+    isAccepted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: {

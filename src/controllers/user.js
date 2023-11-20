@@ -6,7 +6,6 @@ const ajv = new Ajv();
 const speakeasy = require("speakeasy");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs, messages } = require("../util");
-const resetPasswordUrl = process.env.RESET_PASSWORD_URL;
 const User = require("./../models/userAuth");
 
 /**
@@ -591,8 +590,8 @@ exports.forgotPassword = async (req, res) => {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
       subject: "Reset Password",
-      text: `Please click on the link to reset the password ${resetPasswordUrl}?userId=${userDetails[0].user_id}`,
-      resetLink: `${resetPasswordUrl}?userId=${userDetails[0].user_id}`,
+      text: `Please click on the link to reset the password ${process.env.FRONTEND_URL}/auth/ResetPassword?userId=${userDetails[0].user_id}`,
+      resetLink: `${process.env.FRONTEND_URL}/auth/ResetPassword?userId=${userDetails[0].user_id}`,
       fileName: "ResetPasswordTemplate.ejs",
     };
 

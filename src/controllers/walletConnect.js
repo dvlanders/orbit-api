@@ -293,6 +293,10 @@ exports.addCustomerAddress = async (req, res) => {
         console.error("Error updating transaction log:", error);
       }
     }, 110000);
+
+    setTimeout(async () => {
+      // https://api.staging.sfox.com/v1/orders/:side
+    });
   } catch (error) {
     console.log(error);
     return res

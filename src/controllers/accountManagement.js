@@ -2,7 +2,7 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
-const { common } = require("../util/helper");
+const { sendEmail, common } = require("../util/helper");
 const registration = require("./registration");
 const payment = require("./payment");
 const { response } = require("../util/ResponseTemplate");
@@ -485,46 +485,77 @@ exports.dashboard = async (req, res) => {
 
 exports.addTeam = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const { email, admin_role, developer_role, identity_role, connect_role } =
-      req.body;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+    const { email, role } = req.body;
+    // 1 for Admin 2 for Analyst
+    let roleList = [1, 2];
+
+    let isRole = roleList.includes(parseInt(role));
+    if (!isRole)
+      return res
+        .status(responseCode.success)
+        .json(rs.incorrectDetails("ROLE TYPE DOES NOT EXIST"));
+
+    // Check if the email already exists in the database
+    const existingUser = await User.scan().where("email").eq(email).exec();
+
+    if (existingUser[0].isAccepted == false)
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("REQUEST ALREADY SENT"));
+
+    if (existingUser.count === 1) {
       return res
         .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+        .json(rs.incorrectDetails("USER ALREADY EXISTS", {}));
     }
+
+    const inviteUser = uuidv4();
+
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
       subject: "Registration Form",
-      text: `Please fill up the google form, with the following role i.e  admin_role, developer_role, identity_role, connect_role \n ${process.env.REGISTER_FORM_LINK}`,
+      text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+      fileName: "InviteTemplate.ejs",
+      fullName: email,
+      link: `${process.env.FRONTEND_URL}/auth/invite?invite_user=${inviteUser}`,
+      password: process.env.REGISTER_PASSWORD,
     };
-    generate = await sendEmail.generateEmail(mailDetails); //Generate Email
+
+    const generate = await sendEmail.generateEmail(mailDetails);
+
     if (!generate.messageId) {
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("WRONG EMAIL ID", {}));
     }
+
+    let cipherText = common.encryptText(process.env.REGISTER_PASSWORD);
+
     const myUser = new User({
-      user_id: uuidv4(),
+      user_id: inviteUser,
       email: email,
+      password: cipherText,
       phoneNumber: "",
       fullName: "",
       businessName: "",
-      password: "",
       userToken: "",
       secretkey: "",
-      isVerified: false,
-      timeZone: timeZone,
+      timeZone: "",
+      invitedBy: req.user["id"],
+      role: parseInt(role),
     });
+
+    // Save user data to the database
     let user = await myUser.save();
-    if (user)
-      return res
-        .status(responseCode.success)
-        .json(rs.successResponse("DATA RETRIVED", "Invitation send"));
+
+    console.log("usernew", user);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("INVITATION SENT"));
   } catch (error) {
+    // Handle any other errors
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
@@ -564,6 +595,44 @@ exports.team = async (req, res) => {
     return res
       .status(responseCode.success)
       .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
+};
+
+exports.acceptInvite = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    // Retrieve user details by user_id
+    const invitedUser = await User.get(user_id);
+
+    if (!invitedUser) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("INVALID INVITATION", {}));
+    }
+
+    // Get the user who sent the invitation
+    const invitingUser = await User.get(invitedUser.invitedBy);
+
+    if (!invitingUser) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("INVALID INVITING USER", {}));
+    }
+    // Update the invited user's status
+    invitedUser.isAccepted = true;
+    invitedUser.isOTPVerified = true;
+    invitedUser.isSfoxVerified = true;
+    // Save the updated invited user details
+    await invitedUser.save();
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("INVITATION ACCEPTED", {}));
   } catch (error) {
     return res
       .status(responseCode.serverError)
