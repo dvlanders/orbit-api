@@ -442,7 +442,7 @@ exports.signInGoogle = async (req, res) => {
     }
     if (userDetails[0].isOTPVerified == false)
       return res.status(responseCode.badGateway).json(
-        rs.incorrectDetails("PLEASE VERIFY OTP", {
+        rs.incorrectDetails("PLEASE VERIFY USER", {
           isOTPVerified: false,
         })
       );
