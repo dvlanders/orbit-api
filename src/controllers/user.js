@@ -392,6 +392,7 @@ exports.signIn = async (req, res) => {
                 qr_code: otpauth_url,
                 businessName: getUser[0].businessName,
                 timeZone: getUser[0].timeZone,
+                role: getUser[0].role,
               })
             );
           }
@@ -523,6 +524,7 @@ exports.signInGoogle = async (req, res) => {
             qr_code: otpauth_url,
             businessName: userDetails[0].businessName,
             timeZone: userDetails[0].timeZone,
+            role: userDetails[0].role,
           })
         );
       }
