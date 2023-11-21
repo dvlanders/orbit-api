@@ -565,7 +565,7 @@ exports.addTeam = async (req, res) => {
     let mailDetails = {
       from: `${process.env.FROM_EMAIL}`,
       to: email,
-      subject: "Registration Form",
+      subject: "HiFi Member Invitation",
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
       fileName: "InviteTemplate.ejs",
       link: `${process.env.FRONTEND_URL}/auth/invite?invite_user=${inviteUser}`,
