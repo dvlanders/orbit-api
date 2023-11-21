@@ -499,7 +499,7 @@ exports.addTeam = async (req, res) => {
     // Check if the email already exists in the database
     const existingUser = await User.scan().where("email").eq(email).exec();
 
-    if (existingUser[0].isAccepted == false)
+    if (existingUser[0]?.isAccepted == false)
       return res
         .status(responseCode.success)
         .json(rs.successResponse("REQUEST ALREADY SENT"));

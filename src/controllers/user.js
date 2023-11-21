@@ -96,6 +96,7 @@ exports.signUp = async (req, res) => {
         timeZone: timeZone,
         otp: otp,
         otpTimestamp: Date.now(),
+        isAccepted: true,
       });
       let user = await myUser.save();
 

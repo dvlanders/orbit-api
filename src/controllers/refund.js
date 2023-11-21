@@ -7,9 +7,8 @@ let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-// TODO REFUND INTEGRATE WITH THE DB -- NIHAR - Done 
+// TODO REFUND INTEGRATE WITH THE DB -- NIHAR - Done
 // BELOW ARE THE MARKETORDER API -- NIHAR - Done
 /**
  * @description
@@ -77,13 +76,13 @@ exports.withdrawalBank = async (req, res) => {
       address: address,
       isWire: isWire ? isWire : false,
     };
-    
+
     const params = {
-      TableName: 'WithdrawalsTable', // Replace with our DynamoDB table name for this one (Sultan)
+      TableName: "WithdrawalsTable", // Replace with our DynamoDB table name for this one (Sultan)
       Item: withdrawalData,
     };
 
-    await dynamoDB.put(params).promise();
+    // await dynamoDB.put(params).promise();
 
     const apiPath = `${baseUrl}/v1/user/withdraw`;
     let response = await axios({
@@ -94,7 +93,6 @@ exports.withdrawalBank = async (req, res) => {
       },
       data: data,
     });
-
 
     return res?.status(response.status).json({ message: response.data.data });
   } catch (error) {
@@ -138,11 +136,11 @@ exports.marketOrder = async (req, res) => {
     };
 
     const params = {
-      TableName: 'MarketOrdersTable', // Replace with our DynamoDB table name for this one (Sultan)
+      TableName: "MarketOrdersTable", // Replace with our DynamoDB table name for this one (Sultan)
       Item: orderData,
     };
 
-    await dynamoDB.put(params).promise();
+    // await dynamoDB.put(params).promise();
 
     let apiPath = `${baseUrl}/v1/orders/${side}`;
     let response = await axios({
@@ -225,12 +223,11 @@ exports.MarketOrder = async (req, res) => {
     };
 
     const params = {
-      TableName: 'MarketOrdersTable', // Replace with our DynamoDB table name for this one (Sultan)
+      TableName: "MarketOrdersTable", // Replace with our DynamoDB table name for this one (Sultan)
       Item: orderData,
     };
 
-    await dynamoDB.put(params).promise();
-
+    // await dynamoDB.put(params).promise();
 
     if (response.data && response.data.id) {
       return res.status(200).send({
@@ -419,6 +416,7 @@ exports.walletTransfer = async (req, res) => {
     return res.status(error.response.status).send(error.response.data);
   }
 };
+
 exports.withdrawalBank = async (req, res) => {
   try {
     const { user_id, transaction_id } = req.params;
