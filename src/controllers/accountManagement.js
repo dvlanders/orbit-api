@@ -568,7 +568,6 @@ exports.addTeam = async (req, res) => {
       subject: "Registration Form",
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
       fileName: "InviteTemplate.ejs",
-      fullName: "",
       link: `${process.env.FRONTEND_URL}/auth/invite?invite_user=${inviteUser}`,
       password: process.env.REGISTER_PASSWORD,
     };

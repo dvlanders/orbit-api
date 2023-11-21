@@ -20,6 +20,8 @@ exports.generateEmail = async function (mailDetails, fullName) {
     resetUrl: mailDetails?.resetLink,
     recipientName: fullName,
     otp: mailDetails?.otp,
+    link: mailDetails?.link,
+    password: mailDetails?.password,
   });
 
   let email = transport.sendMail({
