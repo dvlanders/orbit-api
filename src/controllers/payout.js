@@ -8,6 +8,7 @@ const payment = require("./payment");
 const refund = require("./refund");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // 24 hours
 
@@ -297,6 +298,21 @@ exports.withdrawal = async (req, res) => {
       },
       data: req.body,
     });
+
+    const withdrawalData = {
+      currency: currency,
+      address: address,
+      amount: amount,
+      isWire: false
+
+    };
+
+    const params = {
+      TableName: 'WithdrawalsTable', // Replace with our DynamoDB table name (Sultan)
+      Item: withdrawalData,
+    };
+
+    await dynamoDB.put(params).promise();
     return res.status(response.status).json({ message: response.data.data });
   } catch (error) {
     console.log("erroror", error);

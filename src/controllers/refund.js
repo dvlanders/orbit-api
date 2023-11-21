@@ -7,9 +7,10 @@ let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-// TODO REFUND INTEGRATE WITH THE DB -- NIHAR
-// BELOW ARE THE MARKETORDER API -- NIHAR
+// TODO REFUND INTEGRATE WITH THE DB -- NIHAR - Done 
+// BELOW ARE THE MARKETORDER API -- NIHAR - Done
 /**
  * @description
  * 1. Wire Intructions
@@ -67,6 +68,23 @@ exports.withdrawalBank = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
+
+    const withdrawalData = {
+      user_id: user_id,
+      transfer_id: transfer_id,
+      currency: currency,
+      amount: amount,
+      address: address,
+      isWire: isWire ? isWire : false,
+    };
+    
+    const params = {
+      TableName: 'WithdrawalsTable', // Replace with our DynamoDB table name for this one (Sultan)
+      Item: withdrawalData,
+    };
+
+    await dynamoDB.put(params).promise();
+
     const apiPath = `${baseUrl}/v1/user/withdraw`;
     let response = await axios({
       method: "post",
@@ -76,6 +94,8 @@ exports.withdrawalBank = async (req, res) => {
       },
       data: data,
     });
+
+
     return res?.status(response.status).json({ message: response.data.data });
   } catch (error) {
     return res.status(error.response?.status).send(error.response.data);
@@ -111,6 +131,18 @@ exports.marketOrder = async (req, res) => {
 
     // console.log(currencyPair);
     console.log(currencyPair[0].symbol);
+
+    const orderData = {
+      user_id: user_id,
+      // other response from this (Sultan)
+    };
+
+    const params = {
+      TableName: 'MarketOrdersTable', // Replace with our DynamoDB table name for this one (Sultan)
+      Item: orderData,
+    };
+
+    await dynamoDB.put(params).promise();
 
     let apiPath = `${baseUrl}/v1/orders/${side}`;
     let response = await axios({
@@ -181,6 +213,24 @@ exports.MarketOrder = async (req, res) => {
         },
       }
     );
+
+    const orderData = {
+      currency_pair: req.body.currency_pair,
+      price: req.body.price,
+      quantity: req.body.quantity,
+      algorithm_id: req.body.algorithm_id,
+      client_order_id: uuidv4(),
+      // other response from this (Sultan)
+      // there are 2 market order api here, which one is correct? (Sultan)
+    };
+
+    const params = {
+      TableName: 'MarketOrdersTable', // Replace with our DynamoDB table name for this one (Sultan)
+      Item: orderData,
+    };
+
+    await dynamoDB.put(params).promise();
+
 
     if (response.data && response.data.id) {
       return res.status(200).send({
