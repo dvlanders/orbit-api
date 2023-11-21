@@ -333,150 +333,150 @@ exports.dashboard = async (req, res) => {
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
+    req.user["timeZone"];
 
-    let paymentReq = { params: { user_id: req.user["id"] } };
-    let paymentData = await TransactionLog.scan()
-      .attributes([
-        "id",
-        "fiatCurrencyAmount",
-        "email",
-        "status",
-        "createDate",
-        "timestamp",
-      ])
-      .where("user_id")
-      .eq(req.user["id"])
-      .where("txnStatus")
-      .eq(true)
-      .exec();
+    // let paymentData = await TransactionLog.scan()
+    //   .attributes([
+    //     "id",
+    //     "amount",
+    //     "email",
+    //     "status",
+    //     "createDate",
+    //     "timestamp",
+    //   ])
+    //   .where("user_id")
+    //   .eq(req.user["id"])
+    //   .where("txnStatus")
+    //   .eq(true)
+    //   .exec();
 
-    paymentData = paymentData.map((e) => ({
-      amount: e.fiatCurrencyAmount,
-      date: e.createDate,
-      status: e.status,
-      email: e.email,
-      id: e.id,
-      timestamp: e.timestamp,
-    }));
+    // paymentData = paymentData.map((e) => ({
+    //   amount: e.amount,
+    //   date: e.createDate,
+    //   status: e.status,
+    //   email: e.email,
+    //   id: e.id,
+    //   timestamp: e.timestamp,
+    // }));
 
-    let totalRev = 0;
-    // for(let i=0;i<paymentData.data.length;i++){
-    // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
-    // const dateString = paymentData.data[i].transfer_date;
-    // const date = new Date(dateString);
-    // let  getMonth = date.getUTCMonth() + 1
+    // let totalRev = 0;
+    // // for(let i=0;i<paymentData.data.length;i++){
+    // // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+    // // const dateString = paymentData.data[i].transfer_date;
+    // // const date = new Date(dateString);
+    // // let  getMonth = date.getUTCMonth() + 1
 
-    monthData = [];
-    let month = 1;
-    for (let i = 0; i < paymentData.length; i++) {
-      totalRev =
-        totalRev + paymentData[i].amount - refund - monetization - adjustments;
-    }
-    while (month < 31) {
-      let total = 0;
-      for (let i = 0; i < paymentData.length; i++) {
-        const dateString = paymentData[i].date;
-        const date = new Date(dateString);
-        let getMonth = date.getDate();
-        let onlymon = date.getUTCMonth() + 1;
+    // let monthData = [];
+    // let month = 1;
+    // for (let i = 0; i < paymentData.length; i++) {
+    //   totalRev =
+    //     totalRev + paymentData[i].amount - refund - monetization - adjustments;
+    // }
+    // while (month < 31) {
+    //   let total = 0;
+    //   for (let i = 0; i < paymentData.length; i++) {
+    //     const dateString = paymentData[i].date;
+    //     const date = new Date(dateString);
+    //     let getMonth = date.getDate();
+    //     let onlymon = date.getUTCMonth() + 1;
 
-        if (getMonth == month) {
-          total =
-            total + paymentData[i].amount - refund - monetization - adjustments;
-        }
-      }
-      if (total != 0)
-        monthData.push({
-          day: month,
-          totalAmount: total.toFixed(2),
-          month: 11,
-        });
-      month = month + 1;
-    }
+    //     if (getMonth == month) {
+    //       total =
+    //         total + paymentData[i].amount - refund - monetization - adjustments;
+    //     }
+    //   }
+    //   if (total != 0)
+    //     monthData.push({
+    //       day: month,
+    //       totalAmount: total.toFixed(2),
+    //       month: 11,
+    //     });
+    //   month = month + 1;
+    // }
 
-    let monthPurchase = [];
-    let mon = 1;
-    while (mon < 31) {
-      let totals = 0;
-      for (let i = 0; i < paymentData.length; i++) {
-        const dateString = paymentData[i].date;
-        const date = new Date(dateString);
-        let getMonth = date.getDate();
-        //date.getUTCMonth() + 1;
-        if (getMonth == mon) {
-          let purchaseLength = [];
-          purchaseLength.push(paymentData[i]);
+    // let monthPurchase = [];
+    // let mon = 1;
+    // while (mon < 31) {
+    //   let totals = 0;
+    //   for (let i = 0; i < paymentData.length; i++) {
+    //     const dateString = paymentData[i].date;
+    //     const date = new Date(dateString);
+    //     let getMonth = date.getDate();
+    //     //date.getUTCMonth() + 1;
+    //     if (getMonth == mon) {
+    //       let purchaseLength = [];
+    //       purchaseLength.push(paymentData[i]);
 
-          totals = totals + purchaseLength.length;
-        }
-      }
-      if (totals != 0)
-        monthPurchase.push({ day: mon, purchase: totals, month: 11 });
-      mon = mon + 1;
-    }
+    //       totals = totals + purchaseLength.length;
+    //     }
+    //   }
+    //   if (totals != 0)
+    //     monthPurchase.push({ day: mon, purchase: totals, month: 11 });
+    //   mon = mon + 1;
+    // }
 
-    let totalCustomers = await CustomerWalletAddress.scan()
-      .where("user_id")
-      .eq(req.user["id"])
-      .exec();
+    // let totalCustomers = await CustomerWalletAddress.scan()
+    //   .where("user_id")
+    //   .eq(req.user["id"])
+    //   .exec();
 
-    let customerCurrency = "";
-    let monthlyCustomer = [];
-    let customerCurrenc = [];
-    let months = 1;
-    while (months < 31) {
-      let totalCus = 0;
+    // let customerCurrency = "";
+    // let monthlyCustomer = [];
+    // let customerCurrenc = [];
+    // let months = 1;
+    // while (months < 31) {
+    //   let totalCus = 0;
 
-      for (let i = 0; i < totalCustomers.length; i++) {
-        const dateString = totalCustomers[i].createDate;
-        const date = new Date(dateString);
-        let getMonths = date.getDate();
-        let onlymon = date.getUTCMonth() + 1;
+    //   for (let i = 0; i < totalCustomers.length; i++) {
+    //     const dateString = totalCustomers[i].createDate;
+    //     const date = new Date(dateString);
+    //     let getMonths = date.getDate();
+    //     let onlymon = date.getUTCMonth() + 1;
 
-        if (getMonths == months) {
-          customerCurrency = customerCurrency + totalCustomers[i].currency;
-          let customerLength = [];
-          customerLength.push(totalCustomers[i]);
+    //     if (getMonths == months) {
+    //       customerCurrency = customerCurrency + totalCustomers[i].currency;
+    //       let customerLength = [];
+    //       customerLength.push(totalCustomers[i]);
 
-          totalCus = totalCus + customerLength.length;
-        }
-      }
-      if (totalCus != 0)
-        customerCurrenc.push({
-          day: months,
-          currency: customerCurrency,
-          month: 11,
-        });
+    //       totalCus = totalCus + customerLength.length;
+    //     }
+    //   }
+    //   if (totalCus != 0)
+    //     customerCurrenc.push({
+    //       day: months,
+    //       currency: customerCurrency,
+    //       month: 11,
+    //     });
 
-      monthlyCustomer.push({
-        day: months,
-        customers: totalCus,
-        month: 11,
-      });
-      months = months + 1;
-    }
+    //   monthlyCustomer.push({
+    //     day: months,
+    //     customers: totalCus,
+    //     month: 11,
+    //   });
+    //   months = months + 1;
+    // }
 
-    let responses = {
-      totalPurchase: paymentData.length ? paymentData.length : 0,
-      monthlyPurchase: monthPurchase ? monthPurchase : 0,
-      purchasePercentage: null,
-      totalCustomers: totalCustomers.count,
-      monthlyCustomers: monthlyCustomer,
-      customersPercentage: null,
-      totalRevenue: totalRev ? totalRev : 0,
-      monthlyRevenue: monthData,
-      revenuePercentage: null,
-      totalSales: customerCurrenc ? customerCurrenc : null,
-      paymentData:
-        paymentData.length > 0
-          ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
-          : null,
-      payoutData: null,
-    };
+    // let responses = {
+    //   totalPurchase: paymentData.length ? paymentData.length : 0,
+    //   monthlyPurchase: monthPurchase ? monthPurchase : 0,
+    //   purchasePercentage: null,
+    //   totalCustomers: totalCustomers.count,
+    //   monthlyCustomers: monthlyCustomer,
+    //   customersPercentage: null,
+    //   totalRevenue: totalRev ? totalRev : 0,
+    //   monthlyRevenue: monthData,
+    //   revenuePercentage: null,
+    //   totalSales: customerCurrenc ? customerCurrenc : null,
+    //   paymentData:
+    //     paymentData.length > 0
+    //       ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
+    //       : null,
+    //   payoutData: null,
+    // };
 
     return res
       .status(responseCode.success)
-      .json(rs.successResponse("DATA RETRIVED", responses));
+      .json(rs.successResponse("DATA RETRIVED", { responses: "ok" }));
   } catch (error) {
     return res
       .status(responseCode.serverError)
@@ -518,7 +518,7 @@ exports.addTeam = async (req, res) => {
       subject: "Registration Form",
       text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
       fileName: "InviteTemplate.ejs",
-      fullName: email,
+      fullName: "",
       link: `${process.env.FRONTEND_URL}/auth/invite?invite_user=${inviteUser}`,
       password: process.env.REGISTER_PASSWORD,
     };

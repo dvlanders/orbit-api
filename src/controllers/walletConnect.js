@@ -5,7 +5,6 @@ const User = require("../models/userAuth");
 const Currency = require("../models/currency");
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
-const { sendEmail, common } = require("../util/helper");
 const { currencyData, currencyPairs } = require("../util/helper/currency");
 const { responseCode, rs } = require("../util");
 const WalletAddress = require("../models/walletAddress");
@@ -155,7 +154,6 @@ exports.addCustomerAddress = async (req, res) => {
       walletType,
       name,
       email,
-      quote_id,
       oneCryptoPrice,
       quoteId,
     } = req.body;
@@ -168,7 +166,6 @@ exports.addCustomerAddress = async (req, res) => {
       fiatCurrency,
       fiatCurrencyAmount,
       walletType,
-      quote_id,
       oneCryptoPrice,
       quoteId,
     ];
@@ -226,7 +223,7 @@ exports.addCustomerAddress = async (req, res) => {
               BigInt(e.value) === scaledAmount
           );
 
-          // console.log("filterreddata", etherscanData);
+          console.log("etherscanData", etherscanData);
           if (etherscanData.length > 0) {
             let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
             console.log(apiPath);
@@ -258,7 +255,7 @@ exports.addCustomerAddress = async (req, res) => {
                 { id: saveData.id },
                 {
                   txId: finalData[0].id,
-                  aTxId: finalData[0].atxId,
+                  aTxId: finalData[0].atxid,
                   day: finalData[0]?.day,
                   action: finalData[0]?.action,
                   status: finalData[0].status,
@@ -308,43 +305,27 @@ exports.addCustomerAddress = async (req, res) => {
                   marketOrderFinal = marketOrderTransaction?.data.filter(
                     (e) => e.currency === "usd" && e.client_order_id === quoteId
                   );
+                  console.log("marketOrderFinal0", marketOrderFinal);
 
                   if (marketOrderFinal.length > 0) {
                     let marketOrderData = await TransactionLog.update(
                       { id: saveData.id },
                       {
                         txnStatus: true, //
-                        orderId: finalData[0]?.order_id,
-                        clientOrderId: finalData[0]?.client_order_id,
-                        day: finalData[0]?.day,
-                        action: finalData[0]?.action,
-                        memo: finalData[0]?.memo ? finalData[0]?.memo : null,
-                        amount: finalData[0].amount,
-                        price: finalData[0].price,
-                        fees: finalData[0].fees,
-                        status: finalData[0].status,
-                        holdExpires: finalData[0]?.hold_expires
-                          ? finalData[0].hold_expires
-                          : null,
-                        txHash: finalData[0].tx_hash,
-                        algoName: finalData[0]?.algo_name
-                          ? finalData[0].algo_name
-                          : null,
-                        algoId: finalData[0]?.algo_id
-                          ? finalData[0].algo_id
-                          : null,
-                        accountBalance: finalData[0].account_balance,
-                        accountTransferFee: finalData[0].AccountTransferFee,
-                        symbol: finalData[0]?.symbol
-                          ? finalData[0].symbol
-                          : null,
-                        idempotencyId: finalData[0]?.IdempotencyId
-                          ? finalData[0]?.IdempotencyId
-                          : null,
-                        timestamp: finalData[0].timestamp,
-                        txnGasFee: txngasfee,
+                        orderId: marketOrderFinal[0]?.order_id,
+                        clientOrderId: marketOrderFinal[0]?.client_order_id,
+                        amount: marketOrderFinal[0].amount,
+                        price: marketOrderFinal[0].price,
+                        fees: marketOrderFinal[0].fees,
+                        algoName: marketOrderFinal[0]?.algo_name,
+                        algoId: marketOrderFinal[0]?.algo_id,
+                        accountBalance: marketOrderFinal[0].account_balance,
+                        symbol: marketOrderFinal[0]?.symbol,
+                        idempotencyId: marketOrderFinal[0]?.IdempotencyId,
+                        timestamp: marketOrderFinal[0].timestamp,
                       }
                     );
+                    console.log("marketOrderData", marketOrderData);
                   }
                 }, 110000);
               }
