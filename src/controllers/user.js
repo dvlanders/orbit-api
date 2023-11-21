@@ -179,6 +179,16 @@ exports.verifyOTP = async (req, res) => {
         );
 
         //  Register Email trigger
+        let mailDetails = {
+          from: `${process.env.FROM_EMAIL}`,
+          to: email,
+          subject: "Restration Form",
+          text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+          fileName: "RegisterTemplate.ejs",
+          fullName: "HiFi Member",
+        };
+
+        generate = await sendEmail.generateEmail(mailDetails); //Generate Email
 
         console.log(userData);
 

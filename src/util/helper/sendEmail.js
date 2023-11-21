@@ -18,7 +18,7 @@ exports.generateEmail = async function (mailDetails, fullName) {
 
   const htmlContent = ejs.render(ejsTemplate, {
     resetUrl: mailDetails?.resetLink,
-    recipientName: fullName,
+    recipientName: mailDetails?.fullName || fullName,
     otp: mailDetails?.otp,
     link: mailDetails?.link,
     password: mailDetails?.password,
