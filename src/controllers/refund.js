@@ -7,6 +7,7 @@ let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
+const { quoteCurrency } = require("./walletConnect");
 
 // TODO REFUND INTEGRATE WITH THE DB -- NIHAR - Done
 // BELOW ARE THE MARKETORDER API -- NIHAR - Done
@@ -108,30 +109,40 @@ exports.withdrawalBank = async (req, res) => {
  */
 exports.marketOrder = async (req, res) => {
   try {
-    let side = "sell";
-    let apiPath = `${baseUrl}/v1/orders/${side}`;
-    let marketOrderResponse = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + req.user["userToken"],
-      },
-      data: {
-        currency_pair: "usdcusd",
-        price: parseFloat(oneCryptoPrice),
-        quantity: parseFloat(cryptoCurrencyAmount),
-        algorithm_id: 100,
-        client_order_id: quoteId,
+    let base = "usdc";
+    let amount = 10;
+    console.log("oksd");
+    let respinse = await quoteCurrency({
+      body: { amount, currency: base },
+      user: {
+        userToken: req.user["userToken"],
       },
     });
 
-    return res
-      .status(200)
-      .json(rs.successResponse("ORDER CREATED", response?.data));
+    // let side = "sell";
+    // let apiPath = `${baseUrl}/v1/orders/${side}`;
+    // let marketOrderResponse = await axios({
+    //   method: "post",
+    //   url: apiPath,
+    //   headers: {
+    //     Authorization: "Bearer " + req.user["userToken"],
+    //   },
+    //   data: {
+    //     currency_pair: "usdcusd",
+    //     price: parseFloat(oneCryptoPrice),
+    //     quantity: parseFloat(cryptoCurrencyAmount),
+    //     algorithm_id: 100,
+    //     client_order_id: quoteId,
+    //   },
+    // });
+
+    console.log(respinse);
+
+    return res.json(rs.successResponse("ORDER CREATED", {}));
   } catch (error) {
     console.log("Error creating market order:", error.toString());
     return res.status(500).json({
-      message: "An error occurred while creating the market order",
+      message: error.toString(),
     });
   }
 };

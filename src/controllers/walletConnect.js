@@ -90,6 +90,8 @@ exports.quoteCurrency = async (req, res) => {
   try {
     const { currency, amount } = req.body;
 
+    console.log("in the quote");
+
     if (!amount || !currency)
       return res
         .status(responseCode.badRequest)
@@ -98,6 +100,8 @@ exports.quoteCurrency = async (req, res) => {
             `PLEASE PASS THE ${!amount ? "AMOUNT" : "CURRENCY"}`
           )
         );
+    console.log("in the quote1");
+    console.log(req.body);
     let quote = "usd";
     let currencyPair = currency + quote;
     let side = "sell";
@@ -117,6 +121,9 @@ exports.quoteCurrency = async (req, res) => {
         .status(responseCode.badGateway)
         .json(rs.incorrectDetails("CURRENCY PAIR NOT SUPPORTED"));
 
+    // console.log(isCurrencyPair);
+
+    console.log("istoken   ");
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/quote`;
     let response = await axios({
       method: "post",
@@ -132,7 +139,7 @@ exports.quoteCurrency = async (req, res) => {
     });
     console.log(req.user["userToken"]);
 
-    return res
+    res
       .status(responseCode.success)
       .json(rs.successResponse("QUOTE PRICE RETRIEVED", response?.data));
   } catch (error) {

@@ -464,7 +464,7 @@ exports.balances = async (req, res) => {
     let total = 0;
     if (transaction.count > 0) {
       transaction.map((e) => {
-        payment += e.fiatCurrencyAmount;
+        payment += e.amount;
         payment_count += 1;
       });
     }
