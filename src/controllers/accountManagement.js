@@ -334,17 +334,25 @@ exports.dashboard = async (req, res) => {
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
-    let registeredMonth =
-      momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1; // +1 as the numbering in the momentjs libary starts from 0 index
-    console.log(registeredMonth);
 
-    let registeredDate = momentTZ(req.user["createDate"])
+    let registeredYear = momentTZ(req.user["createDate"])
       .tz(req.user["timeZone"])
-      .date();
+      .year();
 
-    let registeredDaysInMonth = momentTZ(req.user["createDate"])
+    let currentYear = momentTZ(moment().toISOString())
       .tz(req.user["timeZone"])
-      .daysInMonth();
+      .year();
+    console.log("registeredYear", currentYear);
+
+    let isRegisteredCurrentYear = registeredYear == currentYear ? true : false;
+    let startYear = currentYear;
+
+    let startMonth = 1;
+    if (isRegisteredCurrentYear) {
+      startYear = registeredYear;
+      startMonth =
+        momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1; // +1 as the numbering in the momentjs libary starts from 0 index
+    }
 
     let paymentData = await TransactionLog.scan()
       .attributes([
@@ -377,11 +385,15 @@ exports.dashboard = async (req, res) => {
     }));
 
     let tSales = [];
-    if (paymentData.length !== 0)
-      while (registeredDate <= registeredDaysInMonth) {
-        let dataArr = paymentData.filter(
+    if (paymentData.length !== 0) {
+      let filterData = paymentData.filter(
+        (e) => startYear === momentTZ(e.date).tz(req.user["timeZone"]).year()
+      );
+      while (startMonth <= 12) {
+        // 12 months ,
+        let dataArr = filterData.filter(
           (e) =>
-            momentTZ(e.date).tz(req.user["timeZone"]).date() === registeredDate
+            momentTZ(e.date).tz(req.user["timeZone"]).month() + 1 === startMonth
         );
 
         if (dataArr.length > 0) {
@@ -390,22 +402,23 @@ exports.dashboard = async (req, res) => {
           dataArr.map((e) => (CryptoAmount += e.cryptoCurrencyAmount));
 
           tSales.push({
-            day: registeredDate,
+            month: startMonth,
             currency: "eth",
             amount: CryptoAmount,
           });
         } else {
           tSales.push({
-            day: registeredDate,
+            month: startMonth,
             currency: "eth",
             amount: 0,
           });
         }
 
-        // console.log(dataArr);
+        console.log(dataArr);
 
-        registeredDate++;
+        startMonth++;
       }
+    }
 
     let totalRev = 0;
     // for(let i=0;i<paymentData.data.length;i++){
@@ -531,6 +544,7 @@ exports.dashboard = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
 // console.log(
 //   momentTZ("2023-10-16T23:59:23.803Z").tz("America/New_York").daysInMonth()
 // );

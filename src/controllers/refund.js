@@ -108,71 +108,22 @@ exports.withdrawalBank = async (req, res) => {
  */
 exports.marketOrder = async (req, res) => {
   try {
-    const { user_id, side } = req.params;
-    const userDetails = await User.get(user_id);
-    console.log(userDetails);
-
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
-    let currencyPair = await CurrencyPair.scan()
-      .attributes(["base", "quote", "symbol"])
-      .where("base")
-      .eq(req.body?.currency)
-      .where("quote")
-      .eq("usdc")
-      .exec();
-
-    // console.log(currencyPair);
-    console.log(currencyPair[0].symbol);
-
-    const orderData = {
-      user_id: user_id,
-      // other response from this (Sultan)
-    };
-
-    const params = {
-      TableName: "MarketOrdersTable", // Replace with our DynamoDB table name for this one (Sultan)
-      Item: orderData,
-    };
-
-    // await dynamoDB.put(params).promise();
-
+    let side = "sell";
     let apiPath = `${baseUrl}/v1/orders/${side}`;
-    let response = await axios({
+    let marketOrderResponse = await axios({
       method: "post",
-      url: "https://api.staging.sfox.com/v1/orders/buy",
+      url: apiPath,
       headers: {
-        Authorization:
-          "Bearer " +
-          "d7ae4196a5c953ddc57cc9cf1d527913d5fa66454cbae0bd0345d8392e4c1dba",
+        Authorization: "Bearer " + req.user["userToken"],
       },
       data: {
-        currency_pair: currencyPair[0].symbol,
-        price: 12,
-        quantity: 0.1,
+        currency_pair: "usdcusd",
+        price: parseFloat(oneCryptoPrice),
+        quantity: parseFloat(cryptoCurrencyAmount),
         algorithm_id: 100,
-        client_order_id: uuidv4(),
+        client_order_id: quoteId,
       },
     });
-
-    console.log(response?.data);
-
-    // if (response.data && response.data.id) {
-    //   return res.status(200).send({
-    //     message: "Order created successfully",
-    //     data: response.data,
-    //   });
-    // } else {
-    //   return res.status(500).send({
-    //     message: "Failed to create order",
-    //     data: response.data,
-    //   });
-    // }
 
     return res
       .status(200)
