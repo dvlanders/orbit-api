@@ -46,6 +46,7 @@ exports.authorizeUser = async (req, res, next) => {
       sfox_id: userDetails?.sfox_id,
       secretkey: userDetails?.secretkey,
       timeZone: userDetails?.timeZone,
+      createDate: userDetails?.createDate,
     };
 
     next();

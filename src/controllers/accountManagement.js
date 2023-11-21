@@ -9,6 +9,7 @@ const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
 const TransactionLog = require("../models/transactionLog");
 const moment = require("moment");
+const momentTZ = require("moment-timezone");
 
 let baseUrl = process.env.SFOX_BASE_URL;
 
@@ -333,157 +334,206 @@ exports.dashboard = async (req, res) => {
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
-    req.user["timeZone"];
+    let registeredMonth =
+      momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1; // +1 as the numbering in the momentjs libary starts from 0 index
+    console.log(registeredMonth);
 
-    // let paymentData = await TransactionLog.scan()
-    //   .attributes([
-    //     "id",
-    //     "amount",
-    //     "email",
-    //     "status",
-    //     "createDate",
-    //     "timestamp",
-    //   ])
-    //   .where("user_id")
-    //   .eq(req.user["id"])
-    //   .where("txnStatus")
-    //   .eq(true)
-    //   .exec();
+    let registeredDate = momentTZ(req.user["createDate"])
+      .tz(req.user["timeZone"])
+      .date();
 
-    // paymentData = paymentData.map((e) => ({
-    //   amount: e.amount,
-    //   date: e.createDate,
-    //   status: e.status,
-    //   email: e.email,
-    //   id: e.id,
-    //   timestamp: e.timestamp,
-    // }));
+    let registeredDaysInMonth = momentTZ(req.user["createDate"])
+      .tz(req.user["timeZone"])
+      .daysInMonth();
 
-    // let totalRev = 0;
-    // // for(let i=0;i<paymentData.data.length;i++){
-    // // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
-    // // const dateString = paymentData.data[i].transfer_date;
-    // // const date = new Date(dateString);
-    // // let  getMonth = date.getUTCMonth() + 1
+    let paymentData = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "amount",
+        "email",
+        "status",
+        "createDate",
+        "timestamp",
+        "txHash",
+        "cryptoCurrencyAmount",
+        "cryptoCurrency",
+      ])
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("txnStatus")
+      .eq(true)
+      .exec();
 
-    // let monthData = [];
-    // let month = 1;
-    // for (let i = 0; i < paymentData.length; i++) {
-    //   totalRev =
-    //     totalRev + paymentData[i].amount - refund - monetization - adjustments;
-    // }
-    // while (month < 31) {
-    //   let total = 0;
-    //   for (let i = 0; i < paymentData.length; i++) {
-    //     const dateString = paymentData[i].date;
-    //     const date = new Date(dateString);
-    //     let getMonth = date.getDate();
-    //     let onlymon = date.getUTCMonth() + 1;
+    paymentData = paymentData.map((e) => ({
+      amount: e.amount,
+      date: e.createDate,
+      status: e.status,
+      email: e.email,
+      id: e.id,
+      timestamp: e.timestamp,
+      txHash: e.txHash,
+      cryptoCurrencyAmount: e.cryptoCurrencyAmount,
+      cryptoCurrency: e.cryptoCurrency,
+    }));
 
-    //     if (getMonth == month) {
-    //       total =
-    //         total + paymentData[i].amount - refund - monetization - adjustments;
-    //     }
-    //   }
-    //   if (total != 0)
-    //     monthData.push({
-    //       day: month,
-    //       totalAmount: total.toFixed(2),
-    //       month: 11,
-    //     });
-    //   month = month + 1;
-    // }
+    let tSales = [];
+    if (paymentData.length !== 0)
+      while (registeredDate <= registeredDaysInMonth) {
+        let dataArr = paymentData.filter(
+          (e) =>
+            momentTZ(e.date).tz(req.user["timeZone"]).date() === registeredDate
+        );
 
-    // let monthPurchase = [];
-    // let mon = 1;
-    // while (mon < 31) {
-    //   let totals = 0;
-    //   for (let i = 0; i < paymentData.length; i++) {
-    //     const dateString = paymentData[i].date;
-    //     const date = new Date(dateString);
-    //     let getMonth = date.getDate();
-    //     //date.getUTCMonth() + 1;
-    //     if (getMonth == mon) {
-    //       let purchaseLength = [];
-    //       purchaseLength.push(paymentData[i]);
+        if (dataArr.length > 0) {
+          let CryptoAmount = 0;
 
-    //       totals = totals + purchaseLength.length;
-    //     }
-    //   }
-    //   if (totals != 0)
-    //     monthPurchase.push({ day: mon, purchase: totals, month: 11 });
-    //   mon = mon + 1;
-    // }
+          dataArr.map((e) => (CryptoAmount += e.cryptoCurrencyAmount));
 
-    // let totalCustomers = await CustomerWalletAddress.scan()
-    //   .where("user_id")
-    //   .eq(req.user["id"])
-    //   .exec();
+          tSales.push({
+            day: registeredDate,
+            currency: "eth",
+            amount: CryptoAmount,
+          });
+        } else {
+          tSales.push({
+            day: registeredDate,
+            currency: "eth",
+            amount: 0,
+          });
+        }
 
-    // let customerCurrency = "";
-    // let monthlyCustomer = [];
-    // let customerCurrenc = [];
-    // let months = 1;
-    // while (months < 31) {
-    //   let totalCus = 0;
+        // console.log(dataArr);
 
-    //   for (let i = 0; i < totalCustomers.length; i++) {
-    //     const dateString = totalCustomers[i].createDate;
-    //     const date = new Date(dateString);
-    //     let getMonths = date.getDate();
-    //     let onlymon = date.getUTCMonth() + 1;
+        registeredDate++;
+      }
 
-    //     if (getMonths == months) {
-    //       customerCurrency = customerCurrency + totalCustomers[i].currency;
-    //       let customerLength = [];
-    //       customerLength.push(totalCustomers[i]);
+    let totalRev = 0;
+    // for(let i=0;i<paymentData.data.length;i++){
+    // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+    // const dateString = paymentData.data[i].transfer_date;
+    // const date = new Date(dateString);
+    // let  getMonth = date.getUTCMonth() + 1
 
-    //       totalCus = totalCus + customerLength.length;
-    //     }
-    //   }
-    //   if (totalCus != 0)
-    //     customerCurrenc.push({
-    //       day: months,
-    //       currency: customerCurrency,
-    //       month: 11,
-    //     });
+    let monthData = [];
+    let month = 1;
+    for (let i = 0; i < paymentData.length; i++) {
+      totalRev =
+        totalRev + paymentData[i].amount - refund - monetization - adjustments;
+    }
+    while (month < 31) {
+      let total = 0;
+      for (let i = 0; i < paymentData.length; i++) {
+        const dateString = paymentData[i].date;
+        const date = new Date(dateString);
+        let getMonth = date.getDate();
+        let onlymon = date.getUTCMonth() + 1;
 
-    //   monthlyCustomer.push({
-    //     day: months,
-    //     customers: totalCus,
-    //     month: 11,
-    //   });
-    //   months = months + 1;
-    // }
+        if (getMonth == month) {
+          total =
+            total + paymentData[i].amount - refund - monetization - adjustments;
+        }
+      }
+      if (total != 0)
+        monthData.push({
+          day: month,
+          totalAmount: total.toFixed(2),
+          month: 11,
+        });
+      month = month + 1;
+    }
 
-    // let responses = {
-    //   totalPurchase: paymentData.length ? paymentData.length : 0,
-    //   monthlyPurchase: monthPurchase ? monthPurchase : 0,
-    //   purchasePercentage: null,
-    //   totalCustomers: totalCustomers.count,
-    //   monthlyCustomers: monthlyCustomer,
-    //   customersPercentage: null,
-    //   totalRevenue: totalRev ? totalRev : 0,
-    //   monthlyRevenue: monthData,
-    //   revenuePercentage: null,
-    //   totalSales: customerCurrenc ? customerCurrenc : null,
-    //   paymentData:
-    //     paymentData.length > 0
-    //       ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
-    //       : null,
-    //   payoutData: null,
-    // };
+    let monthPurchase = [];
+    let mon = 1;
+    while (mon < 31) {
+      let totals = 0;
+      for (let i = 0; i < paymentData.length; i++) {
+        const dateString = paymentData[i].date;
+        const date = new Date(dateString);
+        let getMonth = date.getDate();
+        //date.getUTCMonth() + 1;
+        if (getMonth == mon) {
+          let purchaseLength = [];
+          purchaseLength.push(paymentData[i]);
+
+          totals = totals + purchaseLength.length;
+        }
+      }
+      if (totals != 0)
+        monthPurchase.push({ day: mon, purchase: totals, month: 11 });
+      mon = mon + 1;
+    }
+
+    let totalCustomers = await CustomerWalletAddress.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .exec();
+
+    let customerCurrency = "";
+    let monthlyCustomer = [];
+    let customerCurrenc = [];
+    let months = 1;
+    while (months < 31) {
+      let totalCus = 0;
+
+      for (let i = 0; i < totalCustomers.length; i++) {
+        const dateString = totalCustomers[i].createDate;
+        const date = new Date(dateString);
+        let getMonths = date.getDate();
+        let onlymon = date.getUTCMonth() + 1;
+
+        if (getMonths == months) {
+          customerCurrency = customerCurrency + totalCustomers[i].currency;
+          let customerLength = [];
+          customerLength.push(totalCustomers[i]);
+
+          totalCus = totalCus + customerLength.length;
+        }
+      }
+      if (totalCus != 0)
+        customerCurrenc.push({
+          day: months,
+          currency: customerCurrency,
+          month: 11,
+        });
+
+      monthlyCustomer.push({
+        day: months,
+        customers: totalCus,
+        month: 11,
+      });
+      months = months + 1;
+    }
+
+    let responses = {
+      totalPurchase: paymentData.length ? paymentData.length : 0,
+      monthlyPurchase: monthPurchase ? monthPurchase : 0,
+      purchasePercentage: null,
+      totalCustomers: totalCustomers.count,
+      monthlyCustomers: monthlyCustomer,
+      customersPercentage: null,
+      totalRevenue: totalRev ? totalRev : 0,
+      monthlyRevenue: monthData,
+      revenuePercentage: null,
+      totalSales: tSales,
+      paymentData:
+        paymentData.length > 0
+          ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
+          : null,
+      payoutData: null,
+    };
 
     return res
       .status(responseCode.success)
-      .json(rs.successResponse("DATA RETRIVED", { responses: "ok" }));
+      .json(rs.successResponse("DATA RETRIVED", responses));
   } catch (error) {
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
-
+// console.log(
+//   momentTZ("2023-10-16T23:59:23.803Z").tz("America/New_York").daysInMonth()
+// );
 exports.addTeam = async (req, res) => {
   try {
     const { email, role } = req.body;
