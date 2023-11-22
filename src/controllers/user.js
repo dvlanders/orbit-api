@@ -403,6 +403,7 @@ exports.signIn = async (req, res) => {
                 businessName: getUser[0].businessName,
                 timeZone: getUser[0].timeZone,
                 role: getUser[0].role,
+                invitedBy: getUser[0]?.invitedBy,
               })
             );
           }
@@ -422,6 +423,7 @@ exports.signIn = async (req, res) => {
               businessName: getUser[0].businessName,
               timeZone: getUser[0].timeZone,
               role: getUser[0].role,
+              invitedBy: getUser[0]?.invitedBy,
             })
           );
         }
@@ -536,6 +538,7 @@ exports.signInGoogle = async (req, res) => {
             businessName: userDetails[0].businessName,
             timeZone: userDetails[0].timeZone,
             role: userDetails[0].role,
+            invitedBy: userDetails[0]?.invitedBy,
           })
         );
       }
@@ -550,6 +553,7 @@ exports.signInGoogle = async (req, res) => {
           }&issuer=${encodeURIComponent("HIFI Pay")}`,
           timeZone: userDetails[0].timeZone,
           role: userDetails[0].role,
+          invitedBy: userDetails[0]?.invitedBy,
         })
       );
   } catch (error) {

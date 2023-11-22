@@ -602,7 +602,7 @@ exports.addTeam = async (req, res) => {
       password: cipherText,
       phoneNumber: "",
       fullName: "",
-      businessName: "",
+      businessName: req.user["businessName"],
       userToken: "",
       secretkey: "",
       timeZone: "",
