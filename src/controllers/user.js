@@ -421,6 +421,7 @@ exports.signIn = async (req, res) => {
               }&issuer=${encodeURIComponent("HIFI Pay")}`,
               businessName: getUser[0].businessName,
               timeZone: getUser[0].timeZone,
+              role: getUser[0].role,
             })
           );
         }
@@ -548,6 +549,7 @@ exports.signInGoogle = async (req, res) => {
             userDetails[0].secretkey
           }&issuer=${encodeURIComponent("HIFI Pay")}`,
           timeZone: userDetails[0].timeZone,
+          role: userDetails[0].role,
         })
       );
   } catch (error) {

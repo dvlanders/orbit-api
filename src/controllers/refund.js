@@ -109,35 +109,55 @@ exports.withdrawalBank = async (req, res) => {
  */
 exports.marketOrder = async (req, res) => {
   try {
+    // @nihar here the rfq and the market order are hit then we can apply for the  with draw
+    //  so for this API we can need the to store the data in the DB for the transaction the data is refunding
+    const { amount } = req.body;
+    if (!amount)
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails(`PLEASE PASS THE AMOUNT`));
     let base = "usdc";
-    let amount = 10;
-    console.log("oksd");
-    let respinse = await quoteCurrency({
-      body: { amount, currency: base },
-      user: {
-        userToken: req.user["userToken"],
+    console.log("in the quote1");
+    console.log(req.body);
+    let quote = "usd";
+    let currencyPair = "usdcusd";
+    let side = "sell";
+    let amountPass = parseFloat(amount);
+    // console.log(amountPass);
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/quote`;
+    let response = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+      data: {
+        pair: currencyPair,
+        side: side,
+        amount: amountPass,
       },
     });
 
-    // let side = "sell";
-    // let apiPath = `${baseUrl}/v1/orders/${side}`;
-    // let marketOrderResponse = await axios({
-    //   method: "post",
-    //   url: apiPath,
-    //   headers: {
-    //     Authorization: "Bearer " + req.user["userToken"],
-    //   },
-    //   data: {
-    //     currency_pair: "usdcusd",
-    //     price: parseFloat(oneCryptoPrice),
-    //     quantity: parseFloat(cryptoCurrencyAmount),
-    //     algorithm_id: 100,
-    //     client_order_id: quoteId,
-    //   },
-    // });
-
-    console.log(respinse);
-
+    let marketOrderResponse = {};
+    if (response?.data) {
+      console.log(response?.data);
+      let apiPath = `${baseUrl}/v1/orders/${side}`;
+      marketOrderResponse = await axios({
+        method: "post",
+        url: apiPath,
+        headers: {
+          Authorization: "Bearer " + req.user["userToken"],
+        },
+        data: {
+          currency_pair: currencyPair,
+          price: response?.data.sell_price,
+          quantity: response?.data.quantity,
+          algorithm_id: 100,
+          client_order_id: response?.data.quote_id,
+        },
+      });
+    }
     return res.json(rs.successResponse("ORDER CREATED", {}));
   } catch (error) {
     console.log("Error creating market order:", error.toString());
