@@ -8,6 +8,7 @@ let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 const { quoteCurrency } = require("./walletConnect");
+const TransactionLog = require("../models/transactionLog");
 
 // TODO REFUND INTEGRATE WITH THE DB -- NIHAR - Done
 // BELOW ARE THE MARKETORDER API -- NIHAR - Done
@@ -107,41 +108,85 @@ exports.withdrawalBank = async (req, res) => {
  * @param {*} res
  * @returns
  */
-exports.marketOrder = async (req, res) => {
+exports.reundCustomer = async (req, res) => {
   try {
     // @nihar here the rfq and the market order are hit then we can apply for the  with draw
     //  so for this API we can need the to store the data in the DB for the transaction the data is refunding
-    const { amount } = req.body;
-    if (!amount)
+
+    const { id } = req.params;
+
+    if (id === null || !id)
       return res
         .status(responseCode.badRequest)
-        .json(rs.incorrectDetails(`PLEASE PASS THE AMOUNT`));
-    let base = "usdc";
-    console.log("in the quote1");
-    console.log(req.body);
-    let quote = "usd";
-    let currencyPair = "usdcusd";
-    let side = "sell";
-    let amountPass = parseFloat(amount);
-    // console.log(amountPass);
+        .json(rs.incorrectDetails("PLEASE PASS THE TXN HASH"));
 
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/quote`;
-    let response = await axios({
-      method: "post",
+    let transaction = await TransactionLog.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("id")
+      .eq(id)
+      .where("txnStatus")
+      .eq(true)
+      .exec();
+
+    // console.log(transaction);
+
+    if (transaction.count === 0) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("INVALID TRANSACTION"));
+    }
+    transaction = transaction[0];
+    if (transaction.amount <= 11) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("REFUND ONLY ABOVE 11 USD"));
+    }
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
+    let checkBalance = await axios({
+      method: "get",
       url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+    });
+
+    let balance = [];
+    if (checkBalance?.data) {
+      balance = checkBalance?.data?.filter((e) => e.currency === "usd");
+      if (balance.length !== 0) {
+        if (balance[0]?.balance <= transaction.amount) {
+          return res
+            .status(responseCode.badRequest)
+            .json(rs.incorrectDetails("MERCHANT HAS LOW FUNDS FOR THE REFUND"));
+        }
+      }
+    }
+
+    let currencyPair = "usdcusd";
+    let side = "buy";
+
+    let apiPathQuote = `${process.env.SFOX_BASE_URL}/v1/quote`;
+    let RFQResponse = await axios({
+      method: "post",
+      url: apiPathQuote,
       headers: {
         Authorization: "Bearer " + req.user["userToken"],
       },
       data: {
         pair: currencyPair,
         side: side,
-        amount: amountPass,
+        amount: parseFloat(transaction.amount),
       },
     });
 
+    console.log(parseFloat(transaction.amount));
+    console.log(transaction.amount);
+
     let marketOrderResponse = {};
-    if (response?.data) {
-      console.log(response?.data);
+    if (RFQResponse?.data?.quote_id) {
+      console.log(RFQResponse?.data);
       let apiPath = `${baseUrl}/v1/orders/${side}`;
       marketOrderResponse = await axios({
         method: "post",
@@ -151,19 +196,121 @@ exports.marketOrder = async (req, res) => {
         },
         data: {
           currency_pair: currencyPair,
-          price: response?.data.sell_price,
-          quantity: response?.data.quantity,
+          amount: RFQResponse?.data?.quantity,
           algorithm_id: 100,
-          client_order_id: response?.data.quote_id,
+          client_order_id: RFQResponse?.data?.quote_id,
         },
       });
+      console.log(marketOrderResponse?.data);
+
+      let saveData = await TransactionLog.create({
+        id: uuidv4(),
+        merchantAddress: transaction.merchantAddress,
+        customerAddress: transaction.customerAddress,
+        cryptoCurrency: "usdc",
+        cryptoCurrencyAmount: RFQResponse?.data?.quantity,
+        fiatCurrency: "usd",
+        fiatCurrencyAmount: transaction.amount,
+        walletType: "HIFIPay",
+        email: req.user["email"],
+        name: req.user["fullName"],
+        user_id: req.user["id"],
+        price: RFQResponse?.data?.buy_price,
+        clientOrderId: RFQResponse?.data?.quote_id,
+      });
+
+      setTimeout(async () => {
+        let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+        console.log(apiPath);
+        let marketOrderTransaction = await axios({
+          method: "get",
+          url: apiPath,
+          headers: {
+            Authorization: "Bearer " + req.user["userToken"],
+          },
+          params: {
+            types: "buy",
+            limit: 2,
+          },
+        });
+      }, 110000);
+
+      if (marketOrderTransaction?.data.length !== 0) {
+        marketOrderTransaction?.data.filter(
+          (e) =>
+            e.client_order_id === RFQResponse?.data?.quote_id &&
+            e.currency === "usdc"
+        );
+      }
+
+      // settimeout
+
+      // if (marketOrderResponse?.data) {
+      //   let apiPath = `${baseUrl}/v1/user/withdraw`;
+      //   let withdrawResponse = await axios({
+      //     method: "post",
+      //     url: apiPath,
+      //     headers: {
+      //       Authorization: "Bearer " + req.user["userToken"],
+      //     },
+      //     data: {
+      //       currency_pair: currencyPair,
+      //       amount: RFQResponse?.data?.quantity,
+      //       algorithm_id: 100,
+      //       client_order_id: RFQResponse?.data?.quote_id,
+      //     },
+      //   });
+
+      //   let withdrawData = await TransactionLog.update(
+      //     { id: saveData.id },
+      //     {
+      //       aTxId: withdrawResponse?.data?.atx_id,
+      //     }
+      //   );
+
+      //   //     {
+      //   //       "success": true,
+      //   //       "id": "wmjy2jznxebp7fob52mqsmylggxqhdl6x6d5jpnrh5omp4gt63stxc423a",
+      //   //       "atx_id": 2224334,
+      //   //       "tx_status": 1100,
+      //   //       "currency": "usdc",
+      //   //       "amount": 11,
+      //   //       "address": "0x4ff73f95656dc80a7cce10d04abceb622fd03835"
+      //   //   }
+
+      //   //   {
+      //   //     "id": 4097375,
+      //   //     "atxid": 2224334,
+      //   //     "day": "2023-11-22T17:11:06.000Z",
+      //   //     "action": "Withdraw",
+      //   //     "currency": "usdc",
+      //   //     "memo": "",
+      //   //     "amount": -11,
+      //   //     "net_proceeds": -11,
+      //   //     "price": 0.999853,
+      //   //     "fees": 10,
+      //   //     "status": "done",
+      //   //     "hold_expires": "",
+      //   //     "tx_hash": "0xacdaab3abaaca80f83c675fa2e1d6746296017778752e3c63110f420fc8649b0",
+      //   //     "algo_name": "",
+      //   //     "algo_id": "",
+      //   //     "account_balance": 0.96714888,
+      //   //     "AccountTransferFee": 10,
+      //   //     "description": "0x4ff73f95656dc80a7cce10d04abceb622fd03835",
+      //   //     "wallet_display_id": "5a3f1b1c-719d-11e9-b0be-0ea0e44d1000",
+      //   //     "added_by_user_email": "zach@hifibridge.com",
+      //   //     "symbol": null,
+      //   //     "IdempotencyId": "",
+      //   //     "timestamp": 1700673066000
+      //   // },
+      // }
     }
-    return res.json(rs.successResponse("ORDER CREATED", {}));
+    return res.json(rs.successResponse("ORDER CREATED", RFQResponse?.data));
   } catch (error) {
-    console.log("Error creating market order:", error.toString());
-    return res.status(500).json({
-      message: error.toString(),
-    });
+    console.log("Error creating market order:", error?.response?.data);
+    return res
+      .status(error?.response?.status || 500)
+      .json(rs.errorResponse(error?.response?.data, error?.response?.status));
   }
 };
 

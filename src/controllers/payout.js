@@ -8,91 +8,38 @@ const payment = require("./payment");
 const refund = require("./refund");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
-// const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-// 24 hours
+//Transfer
 
-exports.withdrawalCalculation = async (req, res) => {
+exports.makeTranfer = async (req, res) => {
   try {
-    const { user_id } = req.params;
-    if (!user_id) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE PROVIDE USERID", {}));
-    }
-    const userDetails = await User.scan().where("user_id").eq(user_id).exec();
-
-    console.log("ddddddddddddddddddddddddd", userDetails, user_id);
-
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let refunds = 0;
-
-    let paymentReq = { params: { user_id: user_id } };
-    let paymentData = await payment.transaction(paymentReq);
-
-    let totalPayment = 0;
-    for (let i = 0; i < paymentData.length; i++) {
-      totalPayment = totalPayment + paymentData[i].amount;
-    }
-
-    let montizeAmount = ((totalPayment - refunds) * 2.5) / 100;
-
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings`;
-    let responses = await axios({
+    let uuid = uuidv4();
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
+    let response = await axios({
       method: "post",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
       },
       data: {
-        feature: "SPOT_TRADE",
-        amount: montizeAmount,
-        method: "FEE_RATE",
-        user_id: userDetails[0].sfox_id,
+        transfer_id: uuid,
+        user_id: req.user["sfox_id"],
+        type: "PAYOUT",
+        purpose: "GOOD",
+        description: "Payout to the merchant",
+        currency: "usd",
+        quantity: 10,
+        rate: 10,
       },
-    });
-
-    let monetizationFee = responses.data.monetization_amount;
-
-    totalWithdrawal = totalPayment - refunds - monetizationFee;
-
-    let reqs = {
-      params: { user_id: user_id },
-      body: { currency: "USD", amount: totalWithdrawal, isWire: true },
-    };
-    let depositBank = await refund.withdrawalBank(reqs);
-
-    let getBank = await axios({
-      method: "delete",
-      url: `${baseUrl}/v1/user/bank`,
-      headers: {
-        Authorization: "Bearer " + userDetails[0].userToken,
-      },
-    });
-
-    let finalResponse = {
-      amount: totalWithdrawal,
-      description: "PAYOUT",
-      date: "",
-      bankAccount: getBank.data.usd[0].bank_name,
-    };
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("PAYOUT DONE", finalResponse));
-  } catch (error) {
-    console.log("erorrrrrrrrrrrrrrrrrrrrr", error);
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
+    })
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  } catch (error) {}
 };
-//Transfer
-
 exports.createTransfer = async (req, res) => {
   try {
     const { cuser_id: customer_user_id } = req.params;
@@ -138,40 +85,40 @@ exports.createTransfer = async (req, res) => {
 
     console.log(data);
 
-    data.transfer_id = uuidv4();
+    // data.transfer_id = uuidv4();
 
-    let apiPath = `${baseUrl}/v1/enterprise/transfer`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + process.env.SFOX_ENTERPRISE_API_KEY,
-      },
-      data: data,
-    });
-    if (response.data) {
-      const transfers = new Transfer({
-        user_id: customer_user_id,
-        type: response.data.data.type,
-        purpose: response.data.data.purpose,
-        description: response.data.data.description,
-        currency: response.data.data.currency,
-        quantity: response.data.data.quantity,
-        rate: response.data.data.rate,
-        transfer_id: response.data.data.transfer_id,
-        transfer_status_code: response.data.data.transfer_status_code,
-        atx_id_charged: response.data.data.atx_id_charged,
-        atx_id_credited: response.data.data.atx_id_credited,
-        atx_status_charged: response.data.data.atx_status_charged,
-        atx_status_credited: response.data.data.atx_status_credited,
-        transfer_date: response.data.data.transfer_date,
-      });
-      let transferAdded = await transfers.save();
-      if (transferAdded)
-        return res
-          .status(200)
-          .json(rs.successResponse("TRANSFER", response?.data?.data));
-    }
+    // let apiPath = `${baseUrl}/v1/enterprise/transfer`;
+    // let response = await axios({
+    //   method: "post",
+    //   url: apiPath,
+    //   headers: {
+    //     Authorization: "Bearer " + process.env.SFOX_ENTERPRISE_API_KEY,
+    //   },
+    //   data: data,
+    // });
+    // if (response.data) {
+    //   const transfers = new Transfer({
+    //     user_id: customer_user_id,
+    //     type: response.data.data.type,
+    //     purpose: response.data.data.purpose,
+    //     description: response.data.data.description,
+    //     currency: response.data.data.currency,
+    //     quantity: response.data.data.quantity,
+    //     rate: response.data.data.rate,
+    //     transfer_id: response.data.data.transfer_id,
+    //     transfer_status_code: response.data.data.transfer_status_code,
+    //     atx_id_charged: response.data.data.atx_id_charged,
+    //     atx_id_credited: response.data.data.atx_id_credited,
+    //     atx_status_charged: response.data.data.atx_status_charged,
+    //     atx_status_credited: response.data.data.atx_status_credited,
+    //     transfer_date: response.data.data.transfer_date,
+    //   });
+    //   let transferAdded = await transfers.save();
+    // if (transferAdded)
+    return res
+      .status(200)
+      .json(rs.successResponse("TRANSFER", response?.data?.data));
+    // }
   } catch (error) {
     common.eventBridge(error?.message.toString(), responseCode.serverError);
     return res.status(500).send(error?.response?.data);
@@ -286,7 +233,86 @@ exports.transferStatus = async (req, res) => {
 };
 
 // Withdrawal
+// 24 hours
+exports.withdrawalCalculation = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    if (!user_id) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE PROVIDE USERID", {}));
+    }
+    const userDetails = await User.scan().where("user_id").eq(user_id).exec();
 
+    console.log("ddddddddddddddddddddddddd", userDetails, user_id);
+
+    if (userDetails == undefined) {
+      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+    let refunds = 0;
+
+    let paymentReq = { params: { user_id: user_id } };
+    let paymentData = await payment.transaction(paymentReq);
+
+    let totalPayment = 0;
+    for (let i = 0; i < paymentData.length; i++) {
+      totalPayment = totalPayment + paymentData[i].amount;
+    }
+
+    let montizeAmount = ((totalPayment - refunds) * 2.5) / 100;
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/monetization/settings`;
+    let responses = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + token,
+      },
+      data: {
+        feature: "SPOT_TRADE",
+        amount: montizeAmount,
+        method: "FEE_RATE",
+        user_id: userDetails[0].sfox_id,
+      },
+    });
+
+    let monetizationFee = responses.data.monetization_amount;
+
+    totalWithdrawal = totalPayment - refunds - monetizationFee;
+
+    let reqs = {
+      params: { user_id: user_id },
+      body: { currency: "USD", amount: totalWithdrawal, isWire: true },
+    };
+    let depositBank = await refund.withdrawalBank(reqs);
+
+    let getBank = await axios({
+      method: "delete",
+      url: `${baseUrl}/v1/user/bank`,
+      headers: {
+        Authorization: "Bearer " + userDetails[0].userToken,
+      },
+    });
+
+    let finalResponse = {
+      amount: totalWithdrawal,
+      description: "PAYOUT",
+      date: "",
+      bankAccount: getBank.data.usd[0].bank_name,
+    };
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("PAYOUT DONE", finalResponse));
+  } catch (error) {
+    console.log("erorrrrrrrrrrrrrrrrrrrrr", error);
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
+};
 exports.withdrawal = async (req, res) => {
   try {
     const apiPath = `${baseUrl}/v1/user/withdraw/confirm`;
