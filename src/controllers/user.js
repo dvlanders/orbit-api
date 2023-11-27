@@ -375,12 +375,6 @@ exports.signIn = async (req, res) => {
             name: email,
           }); // Generate Secret Key
 
-          const otpauth_url = speakeasy.otpauthURL({
-            secret: temp_secret.base32,
-            label: encodeURIComponent(email), // Ensure the email is URL encoded
-            issuer: "HIFI Pay", // Replace with your app's name
-          });
-
           let addKey = await User.update(
             {
               user_id: getUser[0].user_id,
@@ -399,7 +393,9 @@ exports.signIn = async (req, res) => {
               rs.successResponse("USER SIGNED IN", {
                 userId: getUser[0].user_id,
                 secret: temp_secret.base32,
-                qr_code: otpauth_url,
+                qr_code: `otpauth://totp/${encodeURIComponent(email)}?secret=${
+                  temp_secret.base32
+                }&issuer=${encodeURIComponent("HIFI Pay")}`,
                 businessName: getUser[0].businessName,
                 timeZone: getUser[0].timeZone,
                 role: getUser[0].role,
@@ -534,7 +530,9 @@ exports.signInGoogle = async (req, res) => {
           rs.successResponse("USER SIGNED IN", {
             userId: userDetails[0].user_id,
             secret: temp_secret.base32,
-            qr_code: otpauth_url,
+            qr_code: `otpauth://totp/${encodeURIComponent(email)}?secret=${
+              temp_secret.base32
+            }&issuer=${encodeURIComponent("HIFI Pay")}`,
             businessName: userDetails[0].businessName,
             timeZone: userDetails[0].timeZone,
             role: userDetails[0].role,
@@ -600,7 +598,8 @@ exports.verifyTOTP = async (req, res) => {
         token: userToken,
       }); // Verify TOTP
       console.log(verified);
-      if (userDetails[0].isVerified == false) {
+
+      if (verified) {
         await User.update(
           {
             user_id: userDetails[0].user_id,
@@ -609,14 +608,13 @@ exports.verifyTOTP = async (req, res) => {
             isVerified: true,
           }
         );
-      }
-      if (verified)
+
         return res.status(responseCode.success).json(
           rs.successResponse("USER VERIFIED", {
             verified: true,
           })
         );
-      else {
+      } else {
         common.eventBridge("USER NOT VERIFIED", responseCode.badRequest);
         return res.status(responseCode.badRequest).json(
           rs.incorrectDetails("USER NOT VERIFIED", {
