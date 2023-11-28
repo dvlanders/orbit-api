@@ -50,6 +50,11 @@ const personSchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: String,
   },
   {
     timestamps: {

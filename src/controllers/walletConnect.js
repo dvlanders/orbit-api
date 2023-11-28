@@ -143,6 +143,7 @@ exports.quoteCurrency = async (req, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("QUOTE PRICE RETRIEVED", response?.data));
   } catch (error) {
+    console.log(error);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(error.toString()));
@@ -154,10 +155,10 @@ exports.addCustomerAddress = async (req, res) => {
     const {
       merchantAddress,
       customerAddress,
-      cryptoCurrency,
-      cryptoCurrencyAmount,
-      fiatCurrency,
-      fiatCurrencyAmount,
+      inwardCurrency,
+      inwardBaseAmount,
+      outwardCurrency,
+      outwardBaseAmount,
       walletType,
       name,
       email,
@@ -168,10 +169,10 @@ exports.addCustomerAddress = async (req, res) => {
     const requiredParams = [
       merchantAddress,
       customerAddress,
-      cryptoCurrency,
-      cryptoCurrencyAmount,
-      fiatCurrency,
-      fiatCurrencyAmount,
+      inwardCurrency,
+      inwardBaseAmount,
+      outwardCurrency,
+      outwardBaseAmount,
       walletType,
       oneCryptoPrice,
       quoteId,
@@ -189,14 +190,16 @@ exports.addCustomerAddress = async (req, res) => {
       id: uuidv4(),
       merchantAddress,
       customerAddress,
-      cryptoCurrency,
-      cryptoCurrencyAmount: parseFloat(cryptoCurrencyAmount),
-      fiatCurrency,
-      fiatCurrencyAmount: parseFloat(fiatCurrencyAmount),
+      clientOrderId: quoteId,
+      inwardCurrency,
+      inwardBaseAmount: parseFloat(inwardBaseAmount), // directly From the customer,
+      outwardCurrency,
+      outwardBaseAmount: parseFloat(outwardBaseAmount),
       walletType,
       email: email ? email : null,
       name: name ? name : null,
       user_id: req.user["id"],
+      action: "Deposit",
     });
 
     console.log(saveData);
@@ -207,142 +210,142 @@ exports.addCustomerAddress = async (req, res) => {
       })
     );
 
-    setTimeout(async () => {
-      try {
-        console.log("in the settimeout");
-        let apiPath = `${process.env.ETHERSCAN_URL}/api?module=account&action=txlist&address=${customerAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${process.env.ETHERSCAN_KEY}`;
-        console.log(apiPath);
-        let responseEther = await axios({
-          method: "get",
-          url: apiPath,
-        });
+    // setTimeout(async () => {
+    //   try {
+    //     console.log("in the settimeout");
+    //     let apiPath = `${process.env.ETHERSCAN_URL}/api?module=account&action=txlist&address=${customerAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${process.env.ETHERSCAN_KEY}`;
+    //     console.log(apiPath);
+    //     let responseEther = await axios({
+    //       method: "get",
+    //       url: apiPath,
+    //     });
 
-        console.log(responseEther?.data?.result);
-        if (responseEther?.data?.result.length > 0) {
-          let scaledAmount = BigInt(
-            Math.round(parseFloat(cryptoCurrencyAmount) * 1e18)
-          );
+    //     console.log(responseEther?.data?.result);
+    //     if (responseEther?.data?.result.length > 0) {
+    //       let scaledAmount = BigInt(
+    //         Math.round(parseFloat(cryptoCurrencyAmount) * 1e18)
+    //       );
 
-          let etherscanData = responseEther?.data?.result.filter(
-            (e) =>
-              e.from === customerAddress &&
-              e.to === merchantAddress &&
-              BigInt(e.value) === scaledAmount
-          );
+    //       let etherscanData = responseEther?.data?.result.filter(
+    //         (e) =>
+    //           e.from === customerAddress &&
+    //           e.to === merchantAddress &&
+    //           BigInt(e.value) === scaledAmount
+    //       );
 
-          console.log("etherscanData", etherscanData);
-          if (etherscanData.length > 0) {
-            let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
-            console.log(apiPath);
-            let response = await axios({
-              method: "get",
-              url: apiPath,
-              headers: {
-                Authorization: "Bearer " + req.user["userToken"],
-              },
-              params: {
-                types: "deposit",
-                limit: 1,
-              },
-            });
-            // console.log(response?.data);
-            let finalData = [];
-            finalData = response?.data.filter(
-              (e) => e.tx_hash === etherscanData[0].hash
-            );
-            if (finalData.length > 0) {
-              console.log(finalData[0].tx_hash);
-              let txngasfee =
-                parseFloat(
-                  BigInt(etherscanData[0].gas) *
-                    BigInt(etherscanData[0].gasPrice)
-                ) / 1e18;
+    //       console.log("etherscanData", etherscanData);
+    //       if (etherscanData.length > 0) {
+    //         let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+    //         console.log(apiPath);
+    //         let response = await axios({
+    //           method: "get",
+    //           url: apiPath,
+    //           headers: {
+    //             Authorization: "Bearer " + req.user["userToken"],
+    //           },
+    //           params: {
+    //             types: "deposit",
+    //             limit: 1,
+    //           },
+    //         });
+    //         // console.log(response?.data);
+    //         let finalData = [];
+    //         finalData = response?.data.filter(
+    //           (e) => e.tx_hash === etherscanData[0].hash
+    //         );
+    //         if (finalData.length > 0) {
+    //           console.log(finalData[0].tx_hash);
+    //           let txngasfee =
+    //             parseFloat(
+    //               BigInt(etherscanData[0].gas) *
+    //                 BigInt(etherscanData[0].gasPrice)
+    //             ) / 1e18;
 
-              const updatedData = await TransactionLog.update(
-                { id: saveData.id },
-                {
-                  txId: finalData[0].id,
-                  aTxId: finalData[0].atxid,
-                  day: finalData[0]?.day,
-                  action: finalData[0]?.action,
-                  status: finalData[0].status,
-                  txHash: finalData[0].tx_hash,
-                  accountTransferFee: finalData[0].AccountTransferFee,
-                  timestamp: finalData[0].timestamp,
-                  txnGasFee: txngasfee,
-                }
-              );
+    //           const updatedData = await TransactionLog.update(
+    //             { id: saveData.id },
+    //             {
+    //               txId: finalData[0].id,
+    //               aTxId: finalData[0].atxid,
+    //               day: finalData[0]?.day,
+    //               action: finalData[0]?.action,
+    //               status: finalData[0].status,
+    //               txHash: finalData[0].tx_hash,
+    //               accountTransferFee: finalData[0].AccountTransferFee,
+    //               timestamp: finalData[0].timestamp,
+    //               txnGasFee: txngasfee,
+    //             }
+    //           );
 
-              console.log("Transaction log updated:", updatedData);
-              // HAS TO BE TESTED
-              let side = "sell";
-              let apiPath = `${baseUrl}/v1/orders/${side}`;
-              let marketOrderResponse = await axios({
-                method: "post",
-                url: apiPath,
-                headers: {
-                  Authorization: "Bearer " + req.user["userToken"],
-                },
-                data: {
-                  currency_pair: "ethusd",
-                  price: parseFloat(oneCryptoPrice),
-                  quantity: parseFloat(cryptoCurrencyAmount),
-                  algorithm_id: 100,
-                  client_order_id: quoteId,
-                },
-              });
+    //           console.log("Transaction log updated:", updatedData);
+    //           // HAS TO BE TESTED
+    //           let side = "sell";
+    //           let apiPath = `${baseUrl}/v1/orders/${side}`;
+    //           let marketOrderResponse = await axios({
+    //             method: "post",
+    //             url: apiPath,
+    //             headers: {
+    //               Authorization: "Bearer " + req.user["userToken"],
+    //             },
+    //             data: {
+    //               currency_pair: "ethusd",
+    //               price: parseFloat(oneCryptoPrice),
+    //               quantity: parseFloat(cryptoCurrencyAmount),
+    //               algorithm_id: 100,
+    //               client_order_id: quoteId,
+    //             },
+    //           });
 
-              if (marketOrderResponse?.data) {
-                setTimeout(async () => {
-                  let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
-                  console.log(apiPath);
-                  let marketOrderTransaction = await axios({
-                    method: "get",
-                    url: apiPath,
-                    headers: {
-                      Authorization: "Bearer " + req.user["userToken"],
-                    },
-                    params: {
-                      types: "sell",
-                      limit: 2,
-                    },
-                  });
+    //           if (marketOrderResponse?.data) {
+    //             setTimeout(async () => {
+    //               let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+    //               console.log(apiPath);
+    //               let marketOrderTransaction = await axios({
+    //                 method: "get",
+    //                 url: apiPath,
+    //                 headers: {
+    //                   Authorization: "Bearer " + req.user["userToken"],
+    //                 },
+    //                 params: {
+    //                   types: "sell",
+    //                   limit: 2,
+    //                 },
+    //               });
 
-                  let marketOrderFinal = [];
-                  marketOrderFinal = marketOrderTransaction?.data.filter(
-                    (e) => e.currency === "usd" && e.client_order_id === quoteId
-                  );
-                  console.log("marketOrderFinal0", marketOrderFinal);
+    //               let marketOrderFinal = [];
+    //               marketOrderFinal = marketOrderTransaction?.data.filter(
+    //                 (e) => e.currency === "usd" && e.client_order_id === quoteId
+    //               );
+    //               console.log("marketOrderFinal0", marketOrderFinal);
 
-                  if (marketOrderFinal.length > 0) {
-                    let marketOrderData = await TransactionLog.update(
-                      { id: saveData.id },
-                      {
-                        txnStatus: true, //
-                        orderId: marketOrderFinal[0]?.order_id,
-                        clientOrderId: marketOrderFinal[0]?.client_order_id,
-                        amount: marketOrderFinal[0].amount,
-                        price: marketOrderFinal[0].price,
-                        fees: marketOrderFinal[0].fees,
-                        algoName: marketOrderFinal[0]?.algo_name,
-                        algoId: marketOrderFinal[0]?.algo_id,
-                        accountBalance: marketOrderFinal[0].account_balance,
-                        symbol: marketOrderFinal[0]?.symbol,
-                        idempotencyId: marketOrderFinal[0]?.IdempotencyId,
-                        timestamp: marketOrderFinal[0].timestamp,
-                      }
-                    );
-                    console.log("marketOrderData", marketOrderData);
-                  }
-                }, 110000);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error updating transaction log:", error);
-      }
-    }, 110000);
+    //               if (marketOrderFinal.length > 0) {
+    //                 let marketOrderData = await TransactionLog.update(
+    //                   { id: saveData.id },
+    //                   {
+    //                     txnStatus: true, //
+    //                     orderId: marketOrderFinal[0]?.order_id,
+    //                     clientOrderId: marketOrderFinal[0]?.client_order_id,
+    //                     amount: marketOrderFinal[0].amount,
+    //                     price: marketOrderFinal[0].price,
+    //                     fees: marketOrderFinal[0].fees,
+    //                     algoName: marketOrderFinal[0]?.algo_name,
+    //                     algoId: marketOrderFinal[0]?.algo_id,
+    //                     accountBalance: marketOrderFinal[0].account_balance,
+    //                     symbol: marketOrderFinal[0]?.symbol,
+    //                     idempotencyId: marketOrderFinal[0]?.IdempotencyId,
+    //                     timestamp: marketOrderFinal[0].timestamp,
+    //                   }
+    //                 );
+    //                 console.log("marketOrderData", marketOrderData);
+    //               }
+    //             }, 110000);
+    //           }
+    //         }
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error("Error updating transaction log:", error);
+    //   }
+    // }, 110000);
   } catch (error) {
     console.log(error);
     return res
@@ -350,6 +353,133 @@ exports.addCustomerAddress = async (req, res) => {
       .json(rs.errorResponse(error.toString()));
   }
 };
+
+async function transactionHistory() {
+  try {
+    console.log("in the settimeout");
+    let getTransactionList = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "cryptoCurrency",
+        "createDate",
+        "customerAddress",
+        "merchantAddress",
+        "clientOrderId",
+        "inwardBaseAmount",
+        "user_id",
+        "action",
+      ])
+      .where("txnStatus")
+      .eq(false)
+      .where("clientOrderId")
+      .not()
+      .eq(null)
+      .exec();
+
+    // console.log(getTransactionList);
+    if (getTransactionList.count === 0) return;
+
+    let userIdList = Array.from(
+      new Set(getTransactionList.map((e) => e.user_id))
+    );
+
+    let userTokensList = await User.scan()
+      .attributes(["user_id", "userToken"])
+      .where("user_id")
+      .in(userIdList)
+      .exec();
+    console.log(userIdList);
+
+    console.log(userTokensList);
+
+    getTransactionList.map(async (txn) => {
+      let offset = 5;
+      let apiPath = `${process.env.ETHERSCAN_URL}/api?module=account&action=txlist&address=${txn.customerAddress}&startblock=0&endblock=99999999&page=1&offset=${offset}&sort=desc&apikey=${process.env.ETHERSCAN_KEY}`;
+      console.log(apiPath);
+
+      let responseEther = await axios({
+        method: "get",
+        url: apiPath,
+      });
+
+      if (responseEther?.data?.result.length === 0) return;
+
+      let etherScanList = responseEther?.data?.result;
+
+      // console.log(etherScanList);
+      let scaledAmount = BigInt(
+        Math.round(parseFloat(txn.inwardBaseAmount) * 1e18)
+      );
+
+      console.log(scaledAmount);
+
+      let etherscanData = etherScanList.filter(
+        (e) =>
+          e.from === txn.customerAddress &&
+          e.to === txn.merchantAddress &&
+          BigInt(e.value) === scaledAmount
+      );
+
+      if (etherscanData.length === 0) return;
+
+      console.log(etherscanData);
+
+      let userToken = userTokensList.find((obj) => obj.user_id === txn.user_id);
+
+      let txnApiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+      console.log(txnApiPath);
+
+      console.log(userToken);
+      let txnResponse = await axios({
+        method: "get",
+        url: txnApiPath,
+        headers: {
+          Authorization: "Bearer " + userToken.userToken,
+        },
+        params: {
+          types: txn.action.toLowerCase(),
+          limit: 5,
+        },
+      });
+
+      let finalData = [];
+      finalData = txnResponse?.data.filter(
+        (e) => e.tx_hash === etherscanData[0].hash
+      );
+
+      console.log("finalData");
+      console.log(finalData);
+
+      if (finalData.length === 0) return;
+
+      finalData = finalData[0];
+
+      let txngasfee =
+        parseFloat(
+          BigInt(etherscanData[0].gas) * BigInt(etherscanData[0].gasPrice)
+        ) / 1e18;
+
+      const updatedData = await TransactionLog.update(
+        { id: txn.id },
+        {
+          txId: finalData.id,
+          aTxId: finalData.atxid,
+          day: finalData?.day,
+          action: finalData?.action,
+          status: finalData.status,
+          txHash: finalData.tx_hash,
+          accountTransferFee: finalData.AccountTransferFee,
+          timestamp: finalData.timestamp,
+          txnGasFee: txngasfee,
+        }
+      );
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// transactionHistory();
 
 /**
  * @description This is used to generte and add the Wallet Address of the currency to the DB

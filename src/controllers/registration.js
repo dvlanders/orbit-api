@@ -214,8 +214,11 @@ exports.deleteUser = async (req, res) => {
         Authorization: "Bearer " + token,
       },
     });
-    await userDetails.delete();
+    userDetails.isDeleted = true;
+    userDetails.deletedAt = new Date(); // Set the current timestamp
+    await userDetails.save();
 
+    console.log("userDetails//", userDetails);
     return res
       .status(response?.status || responseCode.success)
       .json(rs.successResponse("USER DELETED "));

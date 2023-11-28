@@ -39,13 +39,23 @@ exports.linkBank = async (req, res) => {
     }
 
     const userDetails = await User.get(user_id);
-    console.log(userDetails);
-
     if (userDetails == undefined) {
       common.eventBridge("USER NOT FOUND", responseCode.badRequest);
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
+    }
+
+    let getBanks = await bankAccountSchema
+      .scan()
+      .where("user_id")
+      .eq(user_id)
+      .exec();
+
+    if (getBanks?.count > 0) {
+      return res
+        .status(responseCode.conflict)
+        .json(rs.conflict("BANK ACCOUNT"));
     }
 
     const apiPath = `${baseUrl}/v1/user/bank`;
@@ -57,6 +67,7 @@ exports.linkBank = async (req, res) => {
       },
       data: data,
     });
+
     let saveBank;
     if (response.data.usd.length > 0) {
       const myBank = new bankAccountSchema({
@@ -223,7 +234,6 @@ exports.getAllBank = async (req, res) => {
 exports.deleteBank = async (req, res) => {
   try {
     const { user_id, bank_id } = req.params;
-
     if (!user_id) {
       return res
         .status(responseCode.badRequest)
@@ -239,7 +249,6 @@ exports.deleteBank = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("USER NOT FOUND", {}));
     }
-
     let apiPath = `${baseUrl}/v1/user/bank`;
     let response = await axios({
       method: "delete",
@@ -248,14 +257,9 @@ exports.deleteBank = async (req, res) => {
         Authorization: "Bearer " + userDetails.userToken,
       },
     });
-    let deleteAccount;
+
     if (response.status == 200) {
-      deleteAccount = await bankAccountSchema.update(
-        { user_id: user_id, id: bank_id },
-        { status: "Inactive" }
-      );
-    }
-    if (deleteAccount) {
+      await bankAccountSchema.delete({ user_id: user_id, id: bank_id });
       return res
         .status(response.status)
         .json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });

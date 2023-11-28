@@ -14,21 +14,37 @@ const transactionLogSchema = new dynamoose.Schema(
       type: String,
       required: true,
     },
-    cryptoCurrency: {
+    inwardCurrency: {
       type: String,
       required: true,
     },
-    cryptoCurrencyAmount: {
+    inwardBaseAmount: {
       type: Number,
       required: true,
     },
-    fiatCurrency: {
+    inwardTotalAmount: {
+      type: Number,
+      required: false,
+    },
+    inwardTxnFees: {
+      type: Number,
+      required: false,
+    },
+    outwardCurrency: {
       type: String,
       required: true,
     },
-    fiatCurrencyAmount: {
+    outwardBaseAmount: {
       type: Number,
       required: true,
+    },
+    outwardTotalAmount: {
+      type: Number,
+      required: false,
+    },
+    outwardTxnFees: {
+      type: Number,
+      required: false,
     },
     walletType: {
       type: String,
@@ -64,7 +80,7 @@ const transactionLogSchema = new dynamoose.Schema(
     },
     clientOrderId: {
       type: [String, dynamoose.type.NULL],
-      required: false,
+      required: true,
     },
     day: {
       type: String,
