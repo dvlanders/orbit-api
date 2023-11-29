@@ -281,24 +281,8 @@ exports.internalMerchantCustomerList = async (req, res) => {
   try {
     console.log(req.user["id"]);
     let mTransactionList;
-    // mTransactionList = await TransactionLog.scan()
-    //   .where("user_id")
-    //   .eq(req.user["id"])
-    //   .where("txnStatus")
-    //   .eq(true)
-    //   .exec({ removeUndefinedValues: true });
+
     mTransactionList = await TransactionLog.scan()
-      .attributes([
-        "id",
-        "amount",
-        "email",
-        "status",
-        "createDate",
-        "timestamp",
-        "txHash",
-        "cryptoCurrencyAmount",
-        "inwardCurrency",
-      ])
       .where("user_id")
       .eq(req.user["id"])
       .where("txnStatus")

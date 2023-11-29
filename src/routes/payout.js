@@ -1,4 +1,5 @@
 const { payout } = require("../controllers");
+const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   /* This is a route that will be used to add a new user to the database. */
@@ -23,4 +24,5 @@ module.exports = (router) => {
   router.post("/user/:user_id/withdrawal/resend", payout.resendWithdrawal);
   router.delete("/user/:user_id/cancelWithdrawal", payout.cancelWithdrawal);
   router.post("/transfer/:cuser_id", payout.createTransfer);
+  router.post("/transfer/:user_id/payout", authorizeUser, payout.makeTranfer);
 };
