@@ -70,10 +70,10 @@ async function makeTranferPayout() {
 
       console.log(balance);
 
-      let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
+      let apiPathTransfer = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
       let response = await axios({
         method: "post",
-        url: apiPath,
+        url: apiPathTransfer,
         headers: {
           Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
         },
