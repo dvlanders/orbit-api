@@ -8,12 +8,26 @@ const payment = require("./payment");
 const refund = require("./refund");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
+const bankAccountSchema = require("./../models/bankAccounts");
 
-//Transfer
+//Transfer PAYOUT in the merchant Account
 
 exports.makeTranfer = async (req, res) => {
   try {
     let uuid = uuidv4();
+
+    let getABank = await bankAccountSchema
+      .scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .exec();
+
+    if (getABank.count === 0) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE LINK BANK ACCOUNT"));
+    }
+
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
     let response = await axios({
       method: "post",
@@ -26,20 +40,20 @@ exports.makeTranfer = async (req, res) => {
         user_id: req.user["sfox_id"],
         type: "PAYOUT",
         purpose: "GOOD",
-        description: "Payout to the merchant",
+        description: "Payout To The Merchant",
         currency: "usd",
         quantity: 10,
         rate: 10,
       },
-    })
-      .then((response) => {
-        console.log(response);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  } catch (error) {}
+    });
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("PAYOUT DONE", response?.data));
+  } catch (error) {
+    return res.status(500).json(rs.errorResponse(error.toString()));
+  }
 };
+
 exports.createTransfer = async (req, res) => {
   try {
     const { cuser_id: customer_user_id } = req.params;

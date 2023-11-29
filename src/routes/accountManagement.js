@@ -3,9 +3,9 @@ const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
   // Bank routes
-  router.post("/user/:user_id/bank", accountManagement.linkBank);
+  router.post("/user/:user_id/bank", authorizeUser, accountManagement.linkBank);
   router.post(
-    "/user/:user_id/verifybank/:bank_id",
+    "/user/:user_id/verifybank",
     authorizeUser,
     accountManagement.verifyBank
   );

@@ -4,7 +4,6 @@ const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
 const { sendEmail, common } = require("../util/helper");
 const registration = require("./registration");
-const { response } = require("../util/ResponseTemplate");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
 const TransactionLog = require("../models/transactionLog");
@@ -30,32 +29,16 @@ exports.linkBank = async (req, res) => {
       wireInstructions: req.body.wireInstructions,
     };
 
-    const { user_id } = req.params;
-
-    if (!user_id) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
-    }
-
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-
     let getBanks = await bankAccountSchema
       .scan()
       .where("user_id")
-      .eq(user_id)
+      .eq(req.user["id"])
       .exec();
 
     if (getBanks?.count > 0) {
       return res
         .status(responseCode.conflict)
-        .json(rs.conflict("BANK ACCOUNT"));
+        .json(rs.conflict("ONE BANK ACCOUNT LINKED - "));
     }
 
     const apiPath = `${baseUrl}/v1/user/bank`;
@@ -63,7 +46,7 @@ exports.linkBank = async (req, res) => {
       method: "post",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + userDetails.userToken,
+        Authorization: "Bearer " + req.user["userToken"],
       },
       data: data,
     });
@@ -72,7 +55,7 @@ exports.linkBank = async (req, res) => {
     if (response.data.usd.length > 0) {
       const myBank = new bankAccountSchema({
         id: response.data.usd[0].id,
-        user_id: user_id,
+        user_id: req.user["id"],
         status: response.data.usd[0].status,
         requires_verification: response.data.usd[0].requires_verification,
         requires_support: response.data.usd[0].requires_support,
@@ -96,7 +79,7 @@ exports.linkBank = async (req, res) => {
 
       return res
         .status(responseCode.success)
-        .json(rs.successResponse("Bank Linked", responses));
+        .json(rs.successResponse("BANK LINKED", responses));
     } else {
       return res
         .status(responseCode.badRequest)
@@ -119,12 +102,16 @@ exports.linkBank = async (req, res) => {
  */
 exports.verifyBank = async (req, res) => {
   try {
-    const { bank_id } = req.params;
+    let getBanks = await bankAccountSchema
+      .scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .exec();
 
-    if (!bank_id) {
+    if (getBanks.count === 0) {
       return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE PASS THE BANK ID", {}));
+        .status(responseCode.successNoRecords)
+        .json(rs.dataNotExist("BANK "));
     }
 
     if (process.env.NODE_ENV == "production") {
@@ -147,7 +134,7 @@ exports.verifyBank = async (req, res) => {
 
     let verifyBank;
     verifyBank = await bankAccountSchema.update(
-      { user_id: user_id, id: bank_id },
+      { id: getBanks[0].id },
       { verificationSent: true, verifiedStatus: "Success" }
     );
     return res.status(200).json({ message: verifyBank });
