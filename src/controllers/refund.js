@@ -127,6 +127,8 @@ exports.reundCustomer = async (req, res) => {
       .eq(id)
       .where("txnStatus")
       .eq(true)
+      .where("marketOrderStatus")
+      .eq(true)
       .exec();
 
     // console.log(transaction);
@@ -137,7 +139,7 @@ exports.reundCustomer = async (req, res) => {
         .json(rs.incorrectDetails("INVALID TRANSACTION"));
     }
     transaction = transaction[0];
-    if (transaction.amount <= 11) {
+    if (transaction.outwardTotalAmount <= 11) {
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("REFUND ONLY ABOVE 11 USD"));
@@ -156,7 +158,7 @@ exports.reundCustomer = async (req, res) => {
     if (checkBalance?.data) {
       balance = checkBalance?.data?.filter((e) => e.currency === "usd");
       if (balance.length !== 0) {
-        if (balance[0]?.balance <= transaction.amount) {
+        if (balance[0]?.balance <= transaction.outwardTotalAmount) {
           return res
             .status(responseCode.badRequest)
             .json(rs.incorrectDetails("MERCHANT HAS LOW FUNDS FOR THE REFUND"));
@@ -177,12 +179,12 @@ exports.reundCustomer = async (req, res) => {
       data: {
         pair: currencyPair,
         side: side,
-        amount: parseFloat(transaction.amount),
+        amount: parseFloat(transaction.outwardTotalAmount),
       },
     });
 
-    console.log(parseFloat(transaction.amount));
-    console.log(transaction.amount);
+    console.log(parseFloat(transaction.outwardTotalAmount));
+    console.log(transaction.outwardTotalAmount);
 
     let marketOrderResponse = {};
     if (RFQResponse?.data?.quote_id) {
@@ -207,41 +209,44 @@ exports.reundCustomer = async (req, res) => {
         id: uuidv4(),
         merchantAddress: transaction.merchantAddress,
         customerAddress: transaction.customerAddress,
-        cryptoCurrency: "usdc",
+        inwardCurrency: "usd",
+        inwardBaseAmount: transaction.outwardTotalAmount,
         cryptoCurrencyAmount: RFQResponse?.data?.quantity,
-        fiatCurrency: "usd",
-        fiatCurrencyAmount: transaction.amount,
+        outwardCurrency: "usdc",
+        outwardBaseAmount: RFQResponse?.data?.quantity,
         walletType: "HIFIPay",
         email: req.user["email"],
         name: req.user["fullName"],
         user_id: req.user["id"],
         price: RFQResponse?.data?.buy_price,
         clientOrderId: RFQResponse?.data?.quote_id,
+        action: "withdrawl",
+        txnStatus: true,
       });
 
-      setTimeout(async () => {
-        let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
-        console.log(apiPath);
-        let marketOrderTransaction = await axios({
-          method: "get",
-          url: apiPath,
-          headers: {
-            Authorization: "Bearer " + req.user["userToken"],
-          },
-          params: {
-            types: "buy",
-            limit: 2,
-          },
-        });
-      }, 110000);
+      // setTimeout(async () => {
+      //   let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+      //   console.log(apiPath);
+      //   let marketOrderTransaction = await axios({
+      //     method: "get",
+      //     url: apiPath,
+      //     headers: {
+      //       Authorization: "Bearer " + req.user["userToken"],
+      //     },
+      //     params: {
+      //       types: "buy",
+      //       limit: 2,
+      //     },
+      //   });
+      // }, 110000);
 
-      if (marketOrderTransaction?.data.length !== 0) {
-        marketOrderTransaction?.data.filter(
-          (e) =>
-            e.client_order_id === RFQResponse?.data?.quote_id &&
-            e.currency === "usdc"
-        );
-      }
+      // if (marketOrderTransaction?.data.length !== 0) {
+      //   marketOrderTransaction?.data.filter(
+      //     (e) =>
+      //       e.client_order_id === RFQResponse?.data?.quote_id &&
+      //       e.currency === "usdc"
+      //   );
+      // }
 
       // settimeout
 

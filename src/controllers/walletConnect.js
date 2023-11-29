@@ -12,6 +12,7 @@ const CustomerWalletAddress = require("../models/customerWalletAddress");
 const CurrencyPair = require("../models/currencyPairs");
 const dynamoose = require("dynamoose");
 const TransactionLog = require("../models/transactionLog");
+const cron = require("node-cron");
 
 /**
  * @description Get Currency List which are available --  API
@@ -35,7 +36,7 @@ exports.getCurrency = async (req, res) => {
 
     return res
       .status(responseCode.success)
-      .json(rs.successResponse("CURRENCY RETRIVED", currency));
+      .json(rs.successResponse("CURRENCY RETRIEVED", currency));
   } catch (error) {
     return res
       .status(responseCode.serverError)
@@ -376,7 +377,7 @@ async function transactionHistory() {
       .eq(null)
       .exec();
 
-    // console.log(getTransactionList);
+    console.log(getTransactionList.count);
     if (getTransactionList.count === 0) return;
 
     let userIdList = Array.from(
@@ -465,21 +466,202 @@ async function transactionHistory() {
           txId: finalData.id,
           aTxId: finalData.atxid,
           day: finalData?.day,
-          action: finalData?.action,
+          action: finalData?.action.toLowerCase(),
+          price: finalData?.price,
           status: finalData.status,
           txHash: finalData.tx_hash,
           accountTransferFee: finalData.AccountTransferFee,
           timestamp: finalData.timestamp,
-          txnGasFee: txngasfee,
+          inwardTxnFees: txngasfee,
+          txnStatus: true,
         }
       );
+
+      if (finalData?.action.toLowerCase() === "deposit") {
+        let side = "sell";
+        // addd the currency pair dynamically
+        let apiPath = `${baseUrl}/v1/orders/${side}`;
+        let marketOrderResponse = await axios({
+          method: "post",
+          url: apiPath,
+          headers: {
+            Authorization: "Bearer " + userToken.userToken,
+          },
+          data: {
+            currency_pair: "ethusd",
+            price: parseFloat(finalData?.price),
+            quantity: parseFloat(finalData?.amount),
+            algorithm_id: 100,
+            client_order_id: txn.clientOrderId,
+          },
+        });
+        console.log(marketOrderResponse?.data);
+      }
     });
   } catch (error) {
     console.log(error);
   }
 }
 
-// transactionHistory();
+// cron.schedule("*/1 * * * *", () => {
+//   transactionHistory();
+// });
+
+async function marketOrderTransaction() {
+  try {
+    let getTransactionList = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "cryptoCurrency",
+        "createDate",
+        "customerAddress",
+        "merchantAddress",
+        "clientOrderId",
+        "inwardBaseAmount",
+        "user_id",
+        "action",
+        "price",
+      ])
+      .where("txnStatus")
+      .eq(true)
+      .where("clientOrderId")
+      .not()
+      .eq(null)
+      .where("marketOrderStatus")
+      .eq(false)
+      .exec();
+
+    console.log("getTransactionList");
+    if (getTransactionList.count === 0) return;
+
+    let userIdList = Array.from(
+      new Set(getTransactionList.map((e) => e.user_id))
+    );
+
+    let userTokensList = await User.scan()
+      .attributes(["user_id", "userToken"])
+      .where("user_id")
+      .in(userIdList)
+      .exec();
+    console.log(userIdList);
+
+    console.log(userTokensList);
+
+    getTransactionList.map(async (txn) => {
+      let userToken = userTokensList.find((obj) => obj.user_id === txn.user_id);
+
+      let side;
+      let currency;
+
+      if (txn.action == "deposit") {
+        side = "sell";
+        currency = "usd";
+      }
+
+      if (txn.action == "withdrawl") {
+        side = "buy";
+        currency = "usdc";
+      }
+
+      console.log(txn.action);
+
+      let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+      console.log(apiPath);
+      let marketOrderTxn = await axios({
+        method: "get",
+        url: apiPath,
+        headers: {
+          Authorization: "Bearer " + userToken.userToken,
+        },
+        // change the limit formula based on teh side type
+        params: {
+          types: side,
+          limit: 10,
+        },
+      });
+
+      console.log(marketOrderTxn?.data);
+
+      if (marketOrderTxn?.data.length === 0) return;
+
+      let marketOrderFinal = [];
+      marketOrderFinal = marketOrderTxn?.data.filter(
+        (e) =>
+          e.currency === currency && e.client_order_id === txn.clientOrderId
+      );
+      console.log("marketOrderFinal0", marketOrderFinal);
+
+      if (marketOrderFinal.length > 0) {
+        let MRDataObj = marketOrderFinal[0];
+        let marketOrderData;
+        if (txn.action == "deposit") {
+          marketOrderData = await TransactionLog.update(
+            { id: txn.id },
+            {
+              orderId: MRDataObj?.order_id,
+              clientOrderId: MRDataObj?.client_order_id,
+              outwardTxnFees: MRDataObj.fees,
+              algoName: MRDataObj?.algo_name,
+              algoId: MRDataObj?.algo_id,
+              symbol: MRDataObj?.symbol,
+              idempotencyId: MRDataObj?.IdempotencyId,
+              outwardTotalAmount: MRDataObj.amount,
+              marketOrderStatus: true,
+            }
+          );
+        } else if (txn.action == "withdrawl") {
+          marketOrderData = await TransactionLog.update(
+            { id: txn.id },
+            {
+              orderId: MRDataObj?.order_id,
+              clientOrderId: MRDataObj?.client_order_id,
+              inwardTotalAmount: MRDataObj.amount,
+              price: MRDataObj?.price,
+              inwardTxnFees: MRDataObj.fees,
+              algoName: MRDataObj?.algo_name,
+              algoId: MRDataObj?.algo_id,
+              symbol: MRDataObj?.symbol,
+              idempotencyId: MRDataObj?.IdempotencyId,
+              marketOrderStatus: true,
+              day: MRDataObj?.day,
+              inwardAccountBalance: MRDataObj?.account_balance,
+            }
+          );
+
+          let apiPath = `${baseUrl}/v1/user/withdraw`;
+
+          let withdrawResponse = await axios({
+            method: "post",
+            url: apiPath,
+            headers: {
+              Authorization: "Bearer " + userToken.userToken,
+            },
+            data: {
+              currency: currency,
+              address: txn.customerAddress,
+              amount: MRDataObj.amount,
+            },
+          });
+          console.log(withdrawResponse?.data);
+
+          let withdrawStatus = await TransactionLog.update(
+            { id: txn.id },
+            {
+              aTxId: withdrawResponse?.data?.atx_id,
+            }
+          );
+          console.log(withdrawStatus);
+        }
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// cron.schedule("*/1 * * * *", () => {
+//   marketOrderTransaction();
+// });
 
 /**
  * @description This is used to generte and add the Wallet Address of the currency to the DB

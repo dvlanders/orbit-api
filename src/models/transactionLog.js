@@ -66,6 +66,10 @@ const transactionLogSchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    marketOrderStatus: {
+      type: Boolean,
+      default: false,
+    },
     txId: {
       type: Number,
       required: false,
@@ -154,6 +158,14 @@ const transactionLogSchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    inwardAccountBalance: {
+      type: Number,
+      required: false,
+    },
+    outwardAccountBalance: {
+      type: Number,
+      required: false,
+    },
   },
   {
     timestamps: {
@@ -164,3 +176,5 @@ const transactionLogSchema = new dynamoose.Schema(
 );
 let TransactionLog = dynamoose.model("transactionLog", transactionLogSchema);
 module.exports = TransactionLog;
+
+// Refund API

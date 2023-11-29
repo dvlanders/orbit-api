@@ -6,6 +6,7 @@ module.exports = (router) => {
   router.post("/user/:user_id/bank", accountManagement.linkBank);
   router.post(
     "/user/:user_id/verifybank/:bank_id",
+    authorizeUser,
     accountManagement.verifyBank
   );
   router.get("/user/:user_id/bank/:bank_id", accountManagement.getBank);

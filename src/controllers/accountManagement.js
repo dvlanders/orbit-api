@@ -110,50 +110,49 @@ exports.linkBank = async (req, res) => {
   }
 };
 
+/**
+ * @description SFox Api for the verification of the bank as per the discussion with Nihar will be activated in the production environment and also for
+ * testing purpose SFox will be providing us some testing bank account
+ * @param {*} req
+ * @param {*} res
+ * @returns
+ */
 exports.verifyBank = async (req, res) => {
   try {
-    const { user_id, bank_id } = req.params;
-    // const { verifyAmount1, verifyAmount2 } = req.body;
+    const { bank_id } = req.params;
 
-    if (!user_id) {
+    if (!bank_id) {
       return res
         .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+        .json(rs.incorrectDetails("PLEASE PASS THE BANK ID", {}));
     }
 
-    const userDetails = await User.get(user_id);
-    console.log(userDetails);
+    if (process.env.NODE_ENV == "production") {
+      const { verifyAmount1, verifyAmount2 } = req.body;
 
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
+      let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/bank/verify`;
+      let response = await axios({
+        method: "post",
+        url: apiPath,
+        headers: {
+          Authorization: "Bearer " + req.user["userToken"],
+        },
+        data: {
+          verifyAmount1: verifyAmount1,
+          verifyAmount2: verifyAmount2,
+        },
+      });
+      console.log(response?.data);
     }
 
-    // await bankAccountSchema
-
-    // let apiPath = `${baseUrl}/v1/user/bank/verify`;
-    // let response = await axios({
-    //   method: "post",
-    //   url: apiPath,
-    //   headers: {
-    //     Authorization: "Bearer " + getUser[0].userToken,
-    //   },
-    //   data: {
-    //     verifyAmount1 : 0.02,
-    //     verifyAmount2 : 0.03
-    //   },
-    // });
     let verifyBank;
-    // if(response.data) {
     verifyBank = await bankAccountSchema.update(
       { user_id: user_id, id: bank_id },
       { verificationSent: true, verifiedStatus: "Success" }
     );
-    // }
-    return res.status(response.status || 200).json({ message: verifyBank });
+    return res.status(200).json({ message: verifyBank });
   } catch (err) {
+    console.log(err);
     return res.status(err?.response?.status || 500).send(err.response?.data);
   }
 };
@@ -332,13 +331,11 @@ exports.myAccount = async (req, res) => {
   }
 };
 
-// ADD SALES IN THE DASHBOARD API -- NIHAR
 exports.dashboard = async (req, res) => {
   try {
     let refund = 0;
     let monetization = 0;
     let adjustments = 0;
-
     let registeredYear = momentTZ(req.user["createDate"])
       .tz(req.user["timeZone"])
       .year();
@@ -389,37 +386,46 @@ exports.dashboard = async (req, res) => {
     }));
 
     let tSales = [];
+    let currencyObjects;
+
     if (paymentData.length !== 0) {
       let filterData = paymentData.filter(
         (e) => startYear === momentTZ(e.date).tz(req.user["timeZone"]).year()
       );
+
+      let uniqueCurrencies = [
+        ...new Set(paymentData.map((e) => e.cryptoCurrency)),
+      ];
+      currencyObjects = uniqueCurrencies.map((currency) => ({
+        name: currency,
+      }));
       while (startMonth <= 12) {
-        // 12 months ,
-        let dataArr = filterData.filter(
-          (e) =>
-            momentTZ(e.date).tz(req.user["timeZone"]).month() + 1 === startMonth
-        );
+        uniqueCurrencies.forEach((currency) => {
+          let dataArr = filterData.filter(
+            (e) =>
+              momentTZ(e.date).tz(req.user["timeZone"]).month() + 1 ===
+                startMonth && e.cryptoCurrency === currency
+          );
 
-        if (dataArr.length > 0) {
-          let CryptoAmount = 0;
+          if (dataArr.length > 0) {
+            let CryptoAmount = 0;
 
-          dataArr.map((e) => (CryptoAmount += e.cryptoCurrencyAmount));
+            dataArr.forEach((e) => (CryptoAmount += e.cryptoCurrencyAmount));
 
-          tSales.push({
-            month: startMonth,
-            currency: "eth",
-            amount: CryptoAmount,
-          });
-        } else {
-          tSales.push({
-            month: startMonth,
-            currency: "eth",
-            amount: 0,
-          });
-        }
-
-        console.log(dataArr);
-
+            tSales.push({
+              month: startMonth,
+              currency: currency,
+              amount: CryptoAmount,
+            });
+          } else {
+            tSales.push({
+              month: startMonth,
+              currency: currency,
+              amount: 0,
+            });
+          }
+        });
+        console.log(startMonth);
         startMonth++;
       }
     }
@@ -532,6 +538,7 @@ exports.dashboard = async (req, res) => {
       monthlyRevenue: monthData,
       revenuePercentage: null,
       totalSales: tSales,
+      currencies: currencyObjects,
       paymentData:
         paymentData.length > 0
           ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
@@ -548,6 +555,238 @@ exports.dashboard = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
+// ADD SALES IN THE DASHBOARD API -- NIHAR
+// exports.dashboard = async (req, res) => {
+//   try {
+//     let refund = 0;
+//     let monetization = 0;
+//     let adjustments = 0;
+
+//     let registeredYear = momentTZ(req.user["createDate"])
+//       .tz(req.user["timeZone"])
+//       .year();
+
+//     let currentYear = momentTZ(moment().toISOString())
+//       .tz(req.user["timeZone"])
+//       .year();
+//     console.log("registeredYear", currentYear);
+
+//     let isRegisteredCurrentYear = registeredYear == currentYear ? true : false;
+//     let startYear = currentYear;
+
+//     let startMonth = 1;
+//     if (isRegisteredCurrentYear) {
+//       startYear = registeredYear;
+//       startMonth =
+//         momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1; // +1 as the numbering in the momentjs libary starts from 0 index
+//     }
+
+//     let paymentData = await TransactionLog.scan()
+//       .attributes([
+//         "id",
+//         "amount",
+//         "email",
+//         "status",
+//         "createDate",
+//         "timestamp",
+//         "txHash",
+//         "cryptoCurrencyAmount",
+//         "cryptoCurrency",
+//       ])
+//       .where("user_id")
+//       .eq(req.user["id"])
+//       .where("txnStatus")
+//       .eq(true)
+//       .exec();
+
+//     paymentData = paymentData.map((e) => ({
+//       amount: e.amount,
+//       date: e.createDate,
+//       status: e.status,
+//       email: e.email,
+//       id: e.id,
+//       timestamp: e.timestamp,
+//       txHash: e.txHash,
+//       cryptoCurrencyAmount: e.cryptoCurrencyAmount,
+//       cryptoCurrency: e.cryptoCurrency,
+//     }));
+
+//     let tSales = [];
+//     if (paymentData.length !== 0) {
+//       let filterData = paymentData.filter(
+//         (e) => startYear === momentTZ(e.date).tz(req.user["timeZone"]).year()
+//       );
+
+//       let uniqueCurrencies = [
+//         ...new Set(paymentData.map((e) => e.cryptoCurrency)),
+//       ];
+//       while (startMonth <= 12) {
+//         uniqueCurrencies.forEach((currency) => {
+//           let dataArr = filterData.filter(
+//             (e) =>
+//               momentTZ(e.date).tz(req.user["timeZone"]).month() + 1 ===
+//                 startMonth && e.cryptoCurrency === currency
+//           );
+
+//           let totalAmount = dataArr.reduce(
+//             (total, e) => total + e.cryptoCurrencyAmount,
+//             0
+//           );
+
+//           // Check if the currency already exists in tSales
+//           let existingCurrency = tSales.find(
+//             (item) => item.currency === currency
+//           );
+
+//           if (existingCurrency) {
+//             // If the currency exists, update the existing entry
+//             existingCurrency.months.push({
+//               month: startMonth,
+//               amount: totalAmount,
+//             });
+//           } else {
+//             // If the currency doesn't exist, add a new entry
+//             tSales.push({
+//               currency: currency,
+//               months: [
+//                 {
+//                   month: startMonth,
+//                   amount: totalAmount,
+//                 },
+//               ],
+//             });
+//           }
+//         });
+
+//         startMonth++;
+//       }
+//     }
+
+//     let totalRev = 0;
+//     // for(let i=0;i<paymentData.data.length;i++){
+//     // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
+//     // const dateString = paymentData.data[i].transfer_date;
+//     // const date = new Date(dateString);
+//     // let  getMonth = date.getUTCMonth() + 1
+
+//     let monthData = [];
+//     let month = 1;
+//     for (let i = 0; i < paymentData.length; i++) {
+//       totalRev =
+//         totalRev + paymentData[i].amount - refund - monetization - adjustments;
+//     }
+//     while (month < 31) {
+//       let total = 0;
+//       for (let i = 0; i < paymentData.length; i++) {
+//         const dateString = paymentData[i].date;
+//         const date = new Date(dateString);
+//         let getMonth = date.getDate();
+//         let onlymon = date.getUTCMonth() + 1;
+
+//         if (getMonth == month) {
+//           total =
+//             total + paymentData[i].amount - refund - monetization - adjustments;
+//         }
+//       }
+//       if (total != 0)
+//         monthData.push({
+//           day: month,
+//           totalAmount: total.toFixed(2),
+//           month: 11,
+//         });
+//       month = month + 1;
+//     }
+
+//     let monthPurchase = [];
+//     let mon = 1;
+//     while (mon < 31) {
+//       let totals = 0;
+//       for (let i = 0; i < paymentData.length; i++) {
+//         const dateString = paymentData[i].date;
+//         const date = new Date(dateString);
+//         let getMonth = date.getDate();
+//         //date.getUTCMonth() + 1;
+//         if (getMonth == mon) {
+//           let purchaseLength = [];
+//           purchaseLength.push(paymentData[i]);
+
+//           totals = totals + purchaseLength.length;
+//         }
+//       }
+//       if (totals != 0)
+//         monthPurchase.push({ day: mon, purchase: totals, month: 11 });
+//       mon = mon + 1;
+//     }
+
+//     let totalCustomers = await CustomerWalletAddress.scan()
+//       .where("user_id")
+//       .eq(req.user["id"])
+//       .exec();
+
+//     let customerCurrency = "";
+//     let monthlyCustomer = [];
+//     let customerCurrenc = [];
+//     let months = 1;
+//     while (months < 31) {
+//       let totalCus = 0;
+
+//       for (let i = 0; i < totalCustomers.length; i++) {
+//         const dateString = totalCustomers[i].createDate;
+//         const date = new Date(dateString);
+//         let getMonths = date.getDate();
+//         let onlymon = date.getUTCMonth() + 1;
+
+//         if (getMonths == months) {
+//           customerCurrency = customerCurrency + totalCustomers[i].currency;
+//           let customerLength = [];
+//           customerLength.push(totalCustomers[i]);
+
+//           totalCus = totalCus + customerLength.length;
+//         }
+//       }
+//       if (totalCus != 0)
+//         customerCurrenc.push({
+//           day: months,
+//           currency: customerCurrency,
+//           month: 11,
+//         });
+
+//       monthlyCustomer.push({
+//         day: months,
+//         customers: totalCus,
+//         month: 11,
+//       });
+//       months = months + 1;
+//     }
+
+//     let responses = {
+//       totalPurchase: paymentData.length ? paymentData.length : 0,
+//       monthlyPurchase: monthPurchase ? monthPurchase : 0,
+//       purchasePercentage: null,
+//       totalCustomers: totalCustomers.count,
+//       monthlyCustomers: monthlyCustomer,
+//       customersPercentage: null,
+//       totalRevenue: totalRev ? totalRev : 0,
+//       monthlyRevenue: monthData,
+//       revenuePercentage: null,
+//       totalSales: tSales,
+//       paymentData:
+//         paymentData.length > 0
+//           ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
+//           : null,
+//       payoutData: null,
+//     };
+
+//     return res
+//       .status(responseCode.success)
+//       .json(rs.successResponse("DATA RETRIVED", responses));
+//   } catch (error) {
+//     return res
+//       .status(responseCode.serverError)
+//       .json(rs.errorResponse(error?.message.toString()));
+//   }
+// };
 
 // console.log(
 //   momentTZ("2023-10-16T23:59:23.803Z").tz("America/New_York").daysInMonth()
