@@ -607,6 +607,7 @@ async function marketOrderTransaction() {
               idempotencyId: MRDataObj?.IdempotencyId,
               outwardTotalAmount: MRDataObj.amount,
               marketOrderStatus: true,
+              withdrawStatus: true,
             }
           );
         } else if (txn.action == "withdraw") {
