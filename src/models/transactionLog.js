@@ -66,6 +66,10 @@ const transactionLogSchema = new dynamoose.Schema(
       type: Boolean,
       default: false,
     },
+    withdrawStatus: {
+      type: Boolean,
+      default: false,
+    },
     marketOrderStatus: {
       type: Boolean,
       default: false,
@@ -75,8 +79,9 @@ const transactionLogSchema = new dynamoose.Schema(
       required: false,
     },
     aTxId: {
-      type: Number,
+      type: [Number, dynamoose.type.NULL],
       required: false,
+      default: null,
     },
     orderId: {
       type: [String, dynamoose.type.NULL],

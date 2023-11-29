@@ -2,12 +2,10 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const Transfer = require("./../models/transfer");
 const User = require("./../models/userAuth");
-let userToken = process.env.USER_AUTH_TOKEN;
 let baseUrl = process.env.SFOX_BASE_URL;
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
-const { quoteCurrency } = require("./walletConnect");
 const TransactionLog = require("../models/transactionLog");
 
 // TODO REFUND INTEGRATE WITH THE DB -- NIHAR - Done
@@ -220,97 +218,15 @@ exports.reundCustomer = async (req, res) => {
         user_id: req.user["id"],
         price: RFQResponse?.data?.buy_price,
         clientOrderId: RFQResponse?.data?.quote_id,
-        action: "withdrawl",
+        action: "withdraw",
         txnStatus: true,
       });
-
-      // setTimeout(async () => {
-      //   let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
-      //   console.log(apiPath);
-      //   let marketOrderTransaction = await axios({
-      //     method: "get",
-      //     url: apiPath,
-      //     headers: {
-      //       Authorization: "Bearer " + req.user["userToken"],
-      //     },
-      //     params: {
-      //       types: "buy",
-      //       limit: 2,
-      //     },
-      //   });
-      // }, 110000);
-
-      // if (marketOrderTransaction?.data.length !== 0) {
-      //   marketOrderTransaction?.data.filter(
-      //     (e) =>
-      //       e.client_order_id === RFQResponse?.data?.quote_id &&
-      //       e.currency === "usdc"
-      //   );
-      // }
-
-      // settimeout
-
-      // if (marketOrderResponse?.data) {
-      //   let apiPath = `${baseUrl}/v1/user/withdraw`;
-      //   let withdrawResponse = await axios({
-      //     method: "post",
-      //     url: apiPath,
-      //     headers: {
-      //       Authorization: "Bearer " + req.user["userToken"],
-      //     },
-      //     data: {
-      //       currency_pair: currencyPair,
-      //       amount: RFQResponse?.data?.quantity,
-      //       algorithm_id: 100,
-      //       client_order_id: RFQResponse?.data?.quote_id,
-      //     },
-      //   });
-
-      //   let withdrawData = await TransactionLog.update(
-      //     { id: saveData.id },
-      //     {
-      //       aTxId: withdrawResponse?.data?.atx_id,
-      //     }
-      //   );
-
-      //   //     {
-      //   //       "success": true,
-      //   //       "id": "wmjy2jznxebp7fob52mqsmylggxqhdl6x6d5jpnrh5omp4gt63stxc423a",
-      //   //       "atx_id": 2224334,
-      //   //       "tx_status": 1100,
-      //   //       "currency": "usdc",
-      //   //       "amount": 11,
-      //   //       "address": "0x4ff73f95656dc80a7cce10d04abceb622fd03835"
-      //   //   }
-
-      //   //   {
-      //   //     "id": 4097375,
-      //   //     "atxid": 2224334,
-      //   //     "day": "2023-11-22T17:11:06.000Z",
-      //   //     "action": "Withdraw",
-      //   //     "currency": "usdc",
-      //   //     "memo": "",
-      //   //     "amount": -11,
-      //   //     "net_proceeds": -11,
-      //   //     "price": 0.999853,
-      //   //     "fees": 10,
-      //   //     "status": "done",
-      //   //     "hold_expires": "",
-      //   //     "tx_hash": "0xacdaab3abaaca80f83c675fa2e1d6746296017778752e3c63110f420fc8649b0",
-      //   //     "algo_name": "",
-      //   //     "algo_id": "",
-      //   //     "account_balance": 0.96714888,
-      //   //     "AccountTransferFee": 10,
-      //   //     "description": "0x4ff73f95656dc80a7cce10d04abceb622fd03835",
-      //   //     "wallet_display_id": "5a3f1b1c-719d-11e9-b0be-0ea0e44d1000",
-      //   //     "added_by_user_email": "zach@hifibridge.com",
-      //   //     "symbol": null,
-      //   //     "IdempotencyId": "",
-      //   //     "timestamp": 1700673066000
-      //   // },
-      // }
     }
-    return res.json(rs.successResponse("ORDER CREATED", RFQResponse?.data));
+    return res.json(
+      rs.successResponse("ORDER CREATED", {
+        txn_id: saveData.id,
+      })
+    );
   } catch (error) {
     console.log("Error creating market order:", error?.response?.data);
     return res

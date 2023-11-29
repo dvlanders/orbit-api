@@ -503,9 +503,9 @@ async function transactionHistory() {
   }
 }
 
-// cron.schedule("*/1 * * * *", () => {
-//   transactionHistory();
-// });
+cron.schedule("*/1 * * * *", () => {
+  transactionHistory();
+});
 
 async function marketOrderTransaction() {
   try {
@@ -558,7 +558,7 @@ async function marketOrderTransaction() {
         currency = "usd";
       }
 
-      if (txn.action == "withdrawl") {
+      if (txn.action == "withdraw") {
         side = "buy";
         currency = "usdc";
       }
@@ -609,7 +609,7 @@ async function marketOrderTransaction() {
               marketOrderStatus: true,
             }
           );
-        } else if (txn.action == "withdrawl") {
+        } else if (txn.action == "withdraw") {
           marketOrderData = await TransactionLog.update(
             { id: txn.id },
             {
@@ -659,9 +659,114 @@ async function marketOrderTransaction() {
   }
 }
 
-// cron.schedule("*/1 * * * *", () => {
-//   marketOrderTransaction();
-// });
+cron.schedule("*/1 * * * *", () => {
+  marketOrderTransaction();
+});
+
+async function withdrawTransaction() {
+  try {
+    let getTransactionList = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "cryptoCurrency",
+        "createDate",
+        "customerAddress",
+        "merchantAddress",
+        "clientOrderId",
+        "inwardBaseAmount",
+        "user_id",
+        "action",
+        "price",
+        "aTxId",
+      ])
+      .where("txnStatus")
+      .eq(true)
+      .where("clientOrderId")
+      .not()
+      .eq(null)
+      .where("marketOrderStatus")
+      .eq(true)
+      .where("aTxId")
+      .not()
+      .eq(null)
+      .where("action")
+      .eq("withdraw")
+      .where("withdrawStatus")
+      .eq(false)
+      .exec();
+
+    console.log(getTransactionList.count);
+
+    if (getTransactionList.count === 0) return;
+    console.log("getTransactionList");
+    let userIdList = Array.from(
+      new Set(getTransactionList.map((e) => e.user_id))
+    );
+
+    let userTokensList = await User.scan()
+      .attributes(["user_id", "userToken"])
+      .where("user_id")
+      .in(userIdList)
+      .exec();
+
+    getTransactionList.map(async (txn) => {
+      let userToken = userTokensList.find((obj) => obj.user_id === txn.user_id);
+
+      let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+      console.log(apiPath);
+      let marketOrderTxn = await axios({
+        method: "get",
+        url: apiPath,
+        headers: {
+          Authorization: "Bearer " + userToken.userToken,
+        },
+        // change the limit formula based on teh side type
+        params: {
+          types: txn.action,
+          limit: 10,
+        },
+      });
+
+      if (marketOrderTxn?.data.length === 0) return;
+
+      let marketOrderFinal = [];
+      marketOrderFinal = marketOrderTxn?.data.filter(
+        (e) => e.atxid === txn.aTxId && e.status == "done"
+      );
+
+      if (marketOrderFinal.length == 0) return;
+
+      if (marketOrderFinal.length > 0) {
+        let WDataObj = marketOrderFinal[0];
+        let marketOrderData;
+
+        console.log(WDataObj);
+
+        console.log(WDataObj?.amount + WDataObj?.fees);
+        marketOrderData = await TransactionLog.update(
+          { id: txn.id },
+          {
+            outwardTotalAmount: -(WDataObj?.amount + WDataObj?.fees),
+            outwardTxnFees: WDataObj.fees,
+            outwardAccountBalance: WDataObj?.account_balance,
+            outwardBaseAmount: WDataObj?.amount * -1,
+            txHash: WDataObj?.tx_hash,
+            timestamp: WDataObj?.timestamp,
+            accountTransferFee: WDataObj?.AccountTransferFee,
+            withdrawStatus: true,
+            status: WDataObj?.status,
+          }
+        );
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+cron.schedule("*/1 * * * *", () => {
+  withdrawTransaction();
+});
 
 /**
  * @description This is used to generte and add the Wallet Address of the currency to the DB
