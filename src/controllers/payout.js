@@ -9,50 +9,167 @@ const refund = require("./refund");
 const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 const bankAccountSchema = require("./../models/bankAccounts");
+const TransactionLog = require("../models/transactionLog");
 
 //Transfer PAYOUT in the merchant Account
 
-exports.makeTranfer = async (req, res) => {
+async function makeTranferPayout() {
   try {
-    let uuid = uuidv4();
+    let userList = await User.scan()
+      .attributes(["user_id", "userToken", "sfox_id"])
+      .where("user_id")
+      .in([
+        "4fb4ef7b-5576-431b-8d88-ad0b962be1df",
+        "838a911a-3e2a-4411-842a-7befaf0f0ae0",
+      ])
+      .exec();
+    if (userList.count === 0) return;
+    // console.log(userList);
 
-    let getABank = await bankAccountSchema
+    let users = userList.map((e) => e.user_id);
+
+    let getBankList = await bankAccountSchema
       .scan()
       .where("user_id")
-      .eq(req.user["id"])
+      .in(users)
       .exec();
 
-    if (getABank.count === 0) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE LINK BANK ACCOUNT"));
-    }
+    if (getBankList.count === 0) return;
 
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
-      },
-      data: {
-        transfer_id: uuid,
-        user_id: req.user["sfox_id"],
-        type: "PAYOUT",
-        purpose: "GOOD",
-        description: "Payout To The Merchant",
-        currency: "usd",
-        quantity: 10,
-        rate: 10,
-      },
+    let bankObjectsWithUserData = getBankList.map((bankUser) => {
+      // Find the user data from the userList
+      let userData = userList.find((usr) => usr.user_id === bankUser.user_id);
+
+      // Combine the bankUser object with the userData
+      return {
+        ...bankUser,
+        ...userData,
+      };
     });
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("PAYOUT DONE", response?.data));
+
+    console.log(bankObjectsWithUserData);
+
+    bankObjectsWithUserData.map(async (usr) => {
+      let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
+      let checkBalance = await axios({
+        method: "get",
+        url: apiPath,
+        headers: {
+          Authorization: "Bearer " + usr.userToken,
+        },
+      });
+
+      let balance = [];
+      if (checkBalance?.data) {
+        balance = checkBalance?.data?.filter((e) => e.currency === "usd");
+        if (balance.length !== 0) {
+          if (balance[0].available < 10) return;
+          balance = balance[0];
+        }
+      }
+
+      console.log(balance);
+
+      let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
+      let response = await axios({
+        method: "post",
+        url: apiPath,
+        headers: {
+          Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
+        },
+        data: {
+          transfer_id: uuid,
+          user_id: req.user["sfox_id"],
+          type: "PAYOUT",
+          purpose: "GOOD",
+          description: "Payout To The Merchant",
+          currency: "usd",
+          quantity: 10,
+          rate: 10,
+        },
+      });
+    });
+
+    // let payoutData = response?.data?.data;
+
+    // if (payoutData) {
+    //   let apiPath = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
+    //   console.log(apiPath);
+    //   let marketOrderTxn = await axios({
+    //     method: "get",
+    //     url: apiPath,
+    //     headers: {
+    //       Authorization: "Bearer " + req.user["userToken"],
+    //     },
+    //     // change the limit formula based on teh side type
+    //     params: {
+    //       types: "credit",
+    //       limit: 5,
+    //     },
+    //   });
+
+    //   if (marketOrderTxn?.data.length > 0) {
+    //     let finalData = marketOrderTxn?.data.filter(
+    //       (e) => payoutData.atx_id_credited === e.atxid
+    //     );
+    //     if (finalData.length > 0) {
+    //       let finalObj = finalData[0];
+    //       let saveData = await TransactionLog.create({
+    //         id: uuidv4(),
+
+    //       });
+    //     }
+    //   }
+    // }
+
+    //   {
+    //     "id": 4134310,
+    //     "atxid": 2260083,
+    //     "order_id": "",
+    //     "client_order_id": "",
+    //     "day": "2023-11-29T13:04:37.000Z",
+    //     "action": "Credit",
+    //     "currency": "usd",
+    //     "memo": "Payout To The Merchant",
+    //     "amount": 10,
+    //     "net_proceeds": 10,
+    //     "price": 1,
+    //     "fees": 0,
+    //     "status": "done",
+    //     "hold_expires": "",
+    //     "tx_hash": "",
+    //     "algo_name": "",
+    //     "algo_id": "",
+    //     "account_balance": 34.04087562,
+    //     "AccountTransferFee": 0,
+    //     "description": "",
+    //     "wallet_display_id": "5a3f1b1c-719d-11e9-b0be-0ea0e44d1000",
+    //     "added_by_user_email": "skcloud21a@gmail.com",
+    //     "symbol": null,
+    //     "IdempotencyId": "d3ce13a1-ebed-422f-a3e0-47a9c1042c9d",
+    //     "timestamp": 1701263077000
+    // },
+
+    //   "transfer_id": "c1c92583-af23-4648-bf8e-6780a38fed30",
+    //   "transfer_status_code": "COMPLETE",
+    //   "type": "PAYOUT",
+    //   "quantity": 10,
+    //   "currency": "usd",
+    //   "user_id": "418909b5-8b30-4d25-b724-efac389f7722",
+    //   "rate": 10,
+    //   "purpose": "GOOD",
+    //   "description": "Payout To The Merchant",
+    //   "atx_id_charged": 2259853,
+    //   "atx_id_credited": 2259854,
+    //   "atx_status_charged": 1200,
+    //   "atx_status_credited": 1200,
+    //   "transfer_date": "2023-11-29T12:01:54.000Z"
   } catch (error) {
-    return res.status(500).json(rs.errorResponse(error.toString()));
+    console.log(error.toString());
   }
-};
+}
+
+// makeTranferPayout();
 
 exports.createTransfer = async (req, res) => {
   try {
