@@ -24,5 +24,9 @@ module.exports = (router) => {
   router.post("/user/:user_id/withdrawal/resend", payout.resendWithdrawal);
   router.delete("/user/:user_id/cancelWithdrawal", payout.cancelWithdrawal);
   router.post("/transfer/:cuser_id", payout.createTransfer);
-  // router.post("/transfer/:user_id/payout", authorizeUser, payout.makeTranfer);
+  router.get(
+    "/transfer/:user_id/payout",
+    authorizeUser,
+    payout.payoutTransations
+  );
 };

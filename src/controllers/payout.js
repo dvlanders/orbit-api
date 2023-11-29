@@ -10,6 +10,7 @@ const { sendEmail, common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 const bankAccountSchema = require("./../models/bankAccounts");
 const TransactionLog = require("../models/transactionLog");
+const cron = require("node-cron");
 
 //Transfer PAYOUT in the merchant Account
 
@@ -63,6 +64,7 @@ async function makeTranferPayout() {
       if (checkBalance?.data) {
         balance = checkBalance?.data?.filter((e) => e.currency === "usd");
         if (balance.length !== 0) {
+          console.log(balance[0].available);
           if (balance[0].available < 10) return;
           balance = balance[0];
         }
@@ -83,14 +85,74 @@ async function makeTranferPayout() {
           user_id: usr["sfox_id"],
           type: "PAYMENT",
           purpose: "GOOD",
-          description: "Payout To The Merchant",
+          description: "Payment To The Merchant",
           currency: "usd",
           quantity: 5,
           rate: 1,
         },
       });
-      console.log(responsePayment?.data);
+      console.log(responsePayment?.data?.data);
 
+      let payoutData = responsePayment?.data?.data;
+
+      let saveData = await TransactionLog.create({
+        id: uuidv4(),
+        user_id: usr["user_id"],
+        aTxId: payoutData?.atx_id_charged,
+        day: payoutData?.transfer_date,
+        action: "charge",
+        inwardCurrency: payoutData?.currency,
+        outwardCurrency: payoutData?.currency,
+        idempotencyId: payoutData?.transfer_id,
+        timestamp: payoutData?.timestamp,
+        merchantAddress: null,
+        customerAddress: null,
+        inwardBaseAmount: 0,
+        outwardBaseAmount: 0,
+        walletType: "HiFiPay",
+      });
+      console.log(saveData);
+    });
+  } catch (error) {
+    console.log(error.toString());
+  }
+}
+
+async function getPayoutTxn() {
+  try {
+    let logTxn = await TransactionLog.scan()
+      .where("action")
+      .eq("charge")
+      .where("inwardBaseAmount")
+      .eq(0)
+      .exec();
+
+    if (logTxn.count === 0) return;
+
+    let userIds = logTxn.map((e) => e.user_id);
+
+    let uniqueUserList = Array.from(new Set(userIds));
+
+    let userList = await User.scan()
+      .attributes(["user_id", "userToken", "sfox_id"])
+      .where("user_id")
+      .in(uniqueUserList)
+      .exec();
+
+    let bankObjectsWithUserData = logTxn.map((bankUser) => {
+      // Find the user data from the userList
+      let userData = userList.find((usr) => usr.user_id === bankUser.user_id);
+
+      // Combine the bankUser object with the userData
+      return {
+        ...bankUser,
+        ...userData,
+      };
+    });
+
+    if (bankObjectsWithUserData.length === 0) return;
+
+    bankObjectsWithUserData.map(async (usr) => {
       let apiPathTxn = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
       console.log(apiPathTxn);
       let paymentTxn = await axios({
@@ -99,7 +161,7 @@ async function makeTranferPayout() {
         headers: {
           Authorization: "Bearer " + usr["userToken"],
         },
-        // change the limit formula based on teh side type
+        // change the limit formula based on the side type
         params: {
           types: "charge",
           limit: 5,
@@ -107,33 +169,80 @@ async function makeTranferPayout() {
       });
 
       console.log(paymentTxn?.data);
-      paymentTxn = paymentTxn?.data.filter((e) => uuid === e.IdempotencyId);
+      paymentTxn = paymentTxn?.data?.filter(
+        (e) => e.IdempotencyId === usr.idempotencyId
+      );
 
-      let saveData = await TransactionLog.create({
-        id: uuidv4(),
-        user_id: usr["user_id"],
-        orderId: paymentTxn?.id,
-        aTxId: paymentTxn?.atxid,
-        day: paymentTxn?.day,
-        action: paymentTxn?.action.toLowerCase(),
-        inwardCurrency: paymentTxn?.currency,
-        memo: paymentTxn?.memo,
-        inwardBaseAmount: paymentTxn?.amount * -1,
-        price: paymentTxn?.price,
-        inwardTxnFees: paymentTxn?.fees,
-        status: paymentTxn?.status,
-        inwardAccountBalance: paymentTxn?.account_balance,
-        accountTransferFee: paymentTxn?.AccountTransferFee,
-        idempotencyId: paymentTxn?.IdempotencyId,
-        timestamp: paymentTxn?.timestamp,
-      });
+      if (paymentTxn.length === 0) return;
+      paymentTxn = paymentTxn[0];
+
+      console.log(paymentTxn);
+
+      let saveData = await TransactionLog.update(
+        {
+          id: usr["id"],
+        },
+        {
+          txId: paymentTxn?.id,
+          aTxId: paymentTxn?.atxid,
+          day: paymentTxn?.day,
+          memo: paymentTxn?.memo,
+          inwardBaseAmount: paymentTxn?.amount * -1,
+          outwardBaseAmount: paymentTxn?.amount * -1,
+          price: paymentTxn?.price,
+          inwardTxnFees: paymentTxn?.fees,
+          walletType: "HiFiPay",
+          status: paymentTxn?.status,
+          inwardAccountBalance: paymentTxn?.account_balance,
+          accountTransferFee: paymentTxn?.AccountTransferFee,
+          idempotencyId: paymentTxn?.IdempotencyId,
+          timestamp: paymentTxn?.timestamp,
+          txnStatus: true,
+          withdrawStatus: true,
+          marketOrderStatus: true,
+          merchantAddress: null,
+          customerAddress: null,
+        }
+      );
+      console.log(saveData);
     });
   } catch (error) {
     console.log(error.toString());
   }
 }
 
-// makeTranferPayout();
+cron.schedule("0 2 * * *", () => {
+  makeTranferPayout();
+});
+
+cron.schedule("0 2 * * *", () => {
+  getPayoutTxn();
+});
+
+exports.payoutTransations = async (req, res) => {
+  try {
+    console.log(req.user["id"]);
+    let mTransactionList;
+
+    mTransactionList = await TransactionLog.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("action")
+      .eq("charge")
+      .where("inwardBaseAmount")
+      .not()
+      .eq(0)
+      .exec();
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("CUSTOMERS RETRIVED", mTransactionList));
+  } catch (err) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(err.toString()));
+  }
+};
 
 exports.createTransfer = async (req, res) => {
   try {

@@ -375,6 +375,9 @@ async function transactionHistory() {
       .where("clientOrderId")
       .not()
       .eq(null)
+      .where("action")
+      .not()
+      .in(["charge"])
       .exec();
 
     console.log(getTransactionList.count);
@@ -504,7 +507,7 @@ async function transactionHistory() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  // transactionHistory();
+  transactionHistory();
 });
 
 async function marketOrderTransaction() {
@@ -529,6 +532,9 @@ async function marketOrderTransaction() {
       .eq(null)
       .where("marketOrderStatus")
       .eq(false)
+      .where("action")
+      .not()
+      .in(["charge"])
       .exec();
 
     console.log("getTransactionList");
@@ -661,7 +667,7 @@ async function marketOrderTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  // marketOrderTransaction();
+  marketOrderTransaction();
 });
 
 async function withdrawTransaction() {
@@ -709,7 +715,8 @@ async function withdrawTransaction() {
       .where("user_id")
       .in(userIdList)
       .exec();
-
+    // Processing Automatic withdrawal
+    // Started
     getTransactionList.map(async (txn) => {
       let userToken = userTokensList.find((obj) => obj.user_id === txn.user_id);
 
@@ -756,6 +763,7 @@ async function withdrawTransaction() {
             accountTransferFee: WDataObj?.AccountTransferFee,
             withdrawStatus: true,
             status: WDataObj?.status,
+            action: "withdraw",
           }
         );
       }
@@ -766,7 +774,7 @@ async function withdrawTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  // withdrawTransaction();
+  withdrawTransaction();
 });
 
 /**

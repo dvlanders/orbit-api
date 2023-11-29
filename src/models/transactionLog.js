@@ -7,12 +7,14 @@ const transactionLogSchema = new dynamoose.Schema(
       required: true,
     },
     merchantAddress: {
-      type: String,
-      required: true,
+      type: [String, dynamoose.type.NULL],
+      required: false,
+      default: null,
     },
     customerAddress: {
-      type: String,
-      required: true,
+      type: [String, dynamoose.type.NULL],
+      required: false,
+      default: null,
     },
     inwardCurrency: {
       type: String,
@@ -89,7 +91,7 @@ const transactionLogSchema = new dynamoose.Schema(
     },
     clientOrderId: {
       type: [String, dynamoose.type.NULL],
-      required: true,
+      required: false,
     },
     day: {
       type: String,
