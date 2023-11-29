@@ -21,7 +21,11 @@ exports.merchantCustomerList = async (req, res) => {
 
     if (from_date && to_date) {
       let fromDate = moment(from_date).valueOf();
-      let toDate = moment(to_date).valueOf();
+      let toDate = moment(to_date)
+        .add(23, "hours")
+        .add(59, "minutes")
+        .add(59, "seconds")
+        .valueOf();
 
       if (fromDate > toDate) {
         return res
@@ -32,7 +36,7 @@ exports.merchantCustomerList = async (req, res) => {
       mCustomerList = await TransactionLog.scan()
         .attributes([
           "id",
-          "cryptoCurrency",
+          "inwardCurrency",
           "createDate",
           "customerAddress",
           "email",
@@ -42,9 +46,14 @@ exports.merchantCustomerList = async (req, res) => {
         .eq(req.user["id"])
         .where("txnStatus")
         .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .where("withdrawStatus")
+        .eq(true)
         .filter("createDate")
         .between(fromDate, toDate)
         .exec();
+      console.log("mCustomerList1", mCustomerList);
     } else {
       mCustomerList = await TransactionLog.scan()
         .attributes([

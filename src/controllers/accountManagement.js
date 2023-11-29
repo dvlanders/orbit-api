@@ -351,13 +351,19 @@ exports.dashboard = async (req, res) => {
         "createDate",
         "timestamp",
         "txHash",
-        "cryptoCurrencyAmount",
-        "cryptoCurrency",
+        "inwardBaseAmount",
+        "inwardCurrency",
       ])
       .where("user_id")
       .eq(req.user["id"])
       .where("txnStatus")
       .eq(true)
+      .where("marketOrderStatus")
+      .eq(true)
+      .where("withdrawStatus")
+      .eq(true)
+      .where("action")
+      .eq("deposit")
       .exec();
 
     paymentData = paymentData.map((e) => ({
@@ -368,8 +374,8 @@ exports.dashboard = async (req, res) => {
       id: e.id,
       timestamp: e.timestamp,
       txHash: e.txHash,
-      cryptoCurrencyAmount: e.cryptoCurrencyAmount,
-      cryptoCurrency: e.cryptoCurrency,
+      inwardBaseAmount: e.inwardBaseAmount,
+      inwardCurrency: e.inwardCurrency,
     }));
 
     let tSales = [];
@@ -381,8 +387,9 @@ exports.dashboard = async (req, res) => {
       );
 
       let uniqueCurrencies = [
-        ...new Set(paymentData.map((e) => e.cryptoCurrency)),
+        ...new Set(paymentData.map((e) => e.inwardCurrency)),
       ];
+
       currencyObjects = uniqueCurrencies.map((currency) => ({
         name: currency,
       }));
@@ -391,13 +398,13 @@ exports.dashboard = async (req, res) => {
           let dataArr = filterData.filter(
             (e) =>
               momentTZ(e.date).tz(req.user["timeZone"]).month() + 1 ===
-                startMonth && e.cryptoCurrency === currency
+                startMonth && e.inwardCurrency === currency
           );
 
           if (dataArr.length > 0) {
             let CryptoAmount = 0;
 
-            dataArr.forEach((e) => (CryptoAmount += e.cryptoCurrencyAmount));
+            dataArr.forEach((e) => (CryptoAmount += e.inwardBaseAmount));
 
             tSales.push({
               month: startMonth,
@@ -440,7 +447,11 @@ exports.dashboard = async (req, res) => {
 
         if (getMonth == month) {
           total =
-            total + paymentData[i].amount - refund - monetization - adjustments;
+            total +
+            paymentData[i].inwardBaseAmount -
+            refund -
+            monetization -
+            adjustments;
         }
       }
       if (total != 0)
