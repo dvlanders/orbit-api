@@ -234,6 +234,25 @@ exports.payoutTransations = async (req, res) => {
       .eq(0)
       .exec();
 
+    console.log(mTransactionList);
+
+    if (mTransactionList.count > 0) {
+      let bankDetails = await bankAccountSchema
+        .scan()
+        .attributes(["account_number", "bank_name"])
+        .where("user_id")
+        .eq(req.user["id"])
+        .exec();
+      mTransactionList = mTransactionList.map((transaction) => {
+        // Find the corresponding bank detail
+        // Merge the transaction object with the bank detail object
+        return {
+          ...transaction, // spread operator to include all properties of the transaction
+          ...bankDetails[0], // spread operator to include all properties of the bank detail
+        };
+      });
+    }
+
     return res
       .status(responseCode.success)
       .json(rs.successResponse("CUSTOMERS RETRIVED", mTransactionList));
