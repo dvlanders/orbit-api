@@ -351,6 +351,8 @@ exports.dashboard = async (req, res) => {
         "createDate",
         "timestamp",
         "txHash",
+        "outwardBaseAmount",
+        "outwardCurrency",
         "inwardBaseAmount",
         "inwardCurrency",
       ])
@@ -366,13 +368,15 @@ exports.dashboard = async (req, res) => {
       .eq("deposit")
       .exec();
     paymentData = paymentData.map((e) => ({
-      amount: e.amount,
+      amount: e.outwardBaseAmount,
       date: e.createDate,
       status: e.status,
       email: e.email,
       id: e.id,
       timestamp: e.timestamp,
       txHash: e.txHash,
+      outwardBaseAmount: e.outwardBaseAmount,
+      outwardCurrency: e.outwardCurrency,
       inwardBaseAmount: e.inwardBaseAmount,
       inwardCurrency: e.inwardCurrency,
     }));
@@ -456,7 +460,11 @@ exports.dashboard = async (req, res) => {
     let month = 1;
     for (let i = 0; i < paymentData.length; i++) {
       totalRev =
-        totalRev + paymentData[i].amount - refund - monetization - adjustments;
+        totalRev +
+        paymentData[i].outwardBaseAmount -
+        refund -
+        monetization -
+        adjustments;
     }
     while (month < 31) {
       let total = 0;
@@ -469,7 +477,7 @@ exports.dashboard = async (req, res) => {
         if (getMonth == month) {
           total =
             total +
-            paymentData[i].inwardBaseAmount -
+            paymentData[i].outwardBaseAmount -
             refund -
             monetization -
             adjustments;
@@ -550,7 +558,7 @@ exports.dashboard = async (req, res) => {
       totalPurchase: paymentData.length ? paymentData.length : 0,
       monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
-      totalCustomers: totalCustomers.count,
+      totalCustomers: 1,
       monthlyCustomers: monthlyCustomer,
       customersPercentage: null,
       totalRevenue: totalRev ? totalRev : 0,
