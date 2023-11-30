@@ -83,8 +83,12 @@ exports.merchantCustomerList = async (req, res) => {
       const uniqueRecords = {};
 
       // Iterate through the array and add records to the uniqueRecords object
+
       mCustomerList.forEach((record) => {
-        if (!uniqueRecords.hasOwnProperty(record.address)) {
+        if (
+          !uniqueRecords.hasOwnProperty(record.address) &&
+          record.inwardCurrency !== "usd"
+        ) {
           uniqueRecords[record.address] = record;
         }
       });
@@ -528,5 +532,3 @@ exports.updateReceipt = async (req, res) => {
       .json(rs.errorResponse(error.toString()));
   }
 };
-
-console.log(Date.now());
