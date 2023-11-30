@@ -261,14 +261,12 @@ exports.getRefundStatus = async (req, res) => {
 
     let status = typeof transationStatus.aTxId == "number";
     console.log(status);
-    return res
-      .status(responseCode.success)
-      .json(
-        rs.successResponse("WITHDRAW OTP SENT", {
-          status,
-          aTxId: transationStatus.aTxId,
-        })
-      );
+    return res.status(responseCode.success).json(
+      rs.successResponse("WITHDRAW OTP SENT", {
+        status,
+        aTxId: transationStatus.aTxId,
+      })
+    );
   } catch (error) {
     return res
       .status(error?.response?.status || 500)
@@ -276,7 +274,40 @@ exports.getRefundStatus = async (req, res) => {
   }
 };
 
-exports.confirmRefund = async (req, res) => {};
+exports.confirmRefund = async (req, res) => {
+  try {
+    const { otp, atxid } = req.body;
+
+    if (!otp || !atxid) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/withdraw/confirm`;
+    let refundVefiry = await axios({
+      method: "post",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+      data: {
+        otp: otp,
+        atx_id: parseInt(atxid),
+      },
+    });
+
+    console.log(refundVefiry?.data);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("OTP VERIFIED", refundVefiry?.data));
+  } catch (error) {
+    return res
+      .status(error?.response?.status || 500)
+      .json(rs.errorResponse(error?.response?.data, error?.response?.status));
+  }
+};
 
 exports.MarketOrder = async (req, res) => {
   try {

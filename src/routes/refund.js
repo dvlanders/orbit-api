@@ -18,4 +18,9 @@ module.exports = (router) => {
     authorizeUser,
     refund.getRefundStatus
   );
+  router.post(
+    "/user/:user_id/refund/confirm",
+    authorizeUser,
+    refund.confirmRefund
+  );
 };
