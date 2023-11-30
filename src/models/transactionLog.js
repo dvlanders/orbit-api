@@ -161,6 +161,10 @@ const transactionLogSchema = new dynamoose.Schema(
       type: Number,
       required: false,
     },
+    receiptTimestamp: {
+      type: Number,
+      required: false,
+    },
     balanceStatus: {
       type: Boolean,
       default: false,

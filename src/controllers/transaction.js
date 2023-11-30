@@ -502,3 +502,31 @@ exports.internalMerchantCustomerList = async (req, res) => {
       .json(rs.errorResponse(err.toString()));
   }
 };
+
+exports.updateReceipt = async (req, res) => {
+  try {
+    const { txnid } = req.params;
+
+    if (txnid === null || !txnid)
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE PASS THE REQUIRED DETAILS"));
+
+    let updateReciptDate = await TransactionLog.update(
+      { id: txnid },
+      { receiptTimestamp: Date.now() }
+    );
+
+    console.log(updateReciptDate);
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("UPDATE RECEIPT"));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error.toString()));
+  }
+};
+
+console.log(Date.now());

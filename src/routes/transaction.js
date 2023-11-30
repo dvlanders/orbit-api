@@ -25,4 +25,10 @@ module.exports = (router) => {
     authorizeUser,
     transaction.internalMerchantCustomerList
   );
+
+  router.get(
+    "/user/:user_id/receipt/:txnid/update",
+    authorizeUser,
+    transaction.updateReceipt
+  );
 };
