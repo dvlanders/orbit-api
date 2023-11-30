@@ -263,7 +263,12 @@ exports.getRefundStatus = async (req, res) => {
     console.log(status);
     return res
       .status(responseCode.success)
-      .json(rs.successResponse("WITHDRAW OTP SENT", { status }));
+      .json(
+        rs.successResponse("WITHDRAW OTP SENT", {
+          status,
+          aTxId: transationStatus.aTxId,
+        })
+      );
   } catch (error) {
     return res
       .status(error?.response?.status || 500)

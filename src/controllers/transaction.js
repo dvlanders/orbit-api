@@ -420,30 +420,58 @@ exports.internalMerchantCustomerList = async (req, res) => {
     console.log(req.user["id"]);
     let mTransactionList;
 
-    mTransactionList = await TransactionLog.scan()
-      .where("user_id")
-      .eq(req.user["id"])
-      .where("txnStatus")
-      .eq(true)
-      .where("marketOrderStatus")
-      .eq(true)
-      .where("withdrawStatus")
-      .eq(true)
-      .where("action")
-      .in(["deposit", "withdraw"])
-      .exec();
+    let from_date = req.query?.from_date;
+    let to_date = req.query?.to_date;
+
+    if (from_date && to_date) {
+      let fromDate = moment(from_date).valueOf();
+      let toDate = moment(to_date)
+        .add(23, "hours")
+        .add(59, "minutes")
+        .add(59, "seconds")
+        .valueOf();
+
+      if (fromDate > toDate) {
+        return res
+          .status(responseCode.badGateway)
+          .json(rs.incorrectDetails("FROM DATE GREATER THAN TO DATE"));
+      }
+
+      mTransactionList = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("txnStatus")
+        .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .where("withdrawStatus")
+        .eq(true)
+        .where("action")
+        .in(["deposit", "withdraw"])
+        .filter("createDate")
+        .between(fromDate, toDate)
+        .exec();
+    } else {
+      mTransactionList = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("txnStatus")
+        .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .where("withdrawStatus")
+        .eq(true)
+        .where("action")
+        .in(["deposit", "withdraw"])
+        .exec();
+    }
+
     if (mTransactionList.count != 0) {
-      // let uniqueCurrencyList = Array.from(
-      //   new Set(mTransactionList.map((e) => e.cryptoCurrency))
-      // );
       const uniqueCurrencyList = [
         ...new Set(
           mTransactionList.map((e) => e.inwardCurrency).filter(Boolean)
         ),
       ];
-      // console.log('hey',mTransactionList);
-      // return false
-
       let currencyList = await Currency.scan()
         .attributes(["currency", "logoUrl"])
         .where("isActive")
