@@ -365,7 +365,6 @@ exports.dashboard = async (req, res) => {
       .where("action")
       .eq("deposit")
       .exec();
-
     paymentData = paymentData.map((e) => ({
       amount: e.amount,
       date: e.createDate,
@@ -377,6 +376,28 @@ exports.dashboard = async (req, res) => {
       inwardBaseAmount: e.inwardBaseAmount,
       inwardCurrency: e.inwardCurrency,
     }));
+
+    let paymentOutData = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "status",
+        "createDate",
+        "inwardBaseAmount",
+        "inwardCurrency",
+      ])
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("txnStatus")
+      .eq(true)
+      .where("marketOrderStatus")
+      .eq(true)
+      .where("withdrawStatus")
+      .eq(true)
+      .where("action")
+      .eq("charge")
+      .exec();
+
+    // return false
 
     let tSales = [];
     let currencyObjects;
@@ -541,7 +562,12 @@ exports.dashboard = async (req, res) => {
         paymentData.length > 0
           ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
           : null,
-      payoutData: null,
+      payoutData:
+        paymentOutData.length > 0
+          ? paymentOutData
+              .sort((a, b) => b.createDate - a.createDate)
+              .slice(0, 4)
+          : null,
     };
 
     return res
