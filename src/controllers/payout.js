@@ -263,6 +263,62 @@ exports.payoutTransations = async (req, res) => {
   }
 };
 
+exports.payoutTransationOne = async (req, res) => {
+  try {
+    console.log(req.user["id"]);
+    const { pyid } = req.params;
+    if (!pyid) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    let mTransactionList;
+
+    mTransactionList = await TransactionLog.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("id")
+      .eq(pyid)
+      .where("action")
+      .eq("charge")
+      .where("inwardBaseAmount")
+      .not()
+      .eq(0)
+      .exec();
+
+    console.log(mTransactionList);
+
+    if (mTransactionList.count > 0) {
+      let bankDetails = await bankAccountSchema
+        .scan()
+        .attributes(["account_number", "bank_name"])
+        .where("user_id")
+        .eq(req.user["id"])
+        .exec();
+      mTransactionList = [
+        {
+          ...mTransactionList[0], // spread operator to include all properties of the transaction
+          ...bankDetails[0], // spread operator to include all properties of the bank detail
+        },
+      ];
+    }
+
+    return res
+      .status(responseCode.success)
+      .json(
+        rs.successResponse(
+          "CUSTOMERS RETRIVED",
+          mTransactionList.length == 0 ? {} : mTransactionList[0]
+        )
+      );
+  } catch (err) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(err.toString()));
+  }
+};
+
 exports.createTransfer = async (req, res) => {
   try {
     const { cuser_id: customer_user_id } = req.params;

@@ -29,4 +29,10 @@ module.exports = (router) => {
     authorizeUser,
     payout.payoutTransations
   );
+
+  router.get(
+    "/transfer/:user_id/payout/:pyid",
+    authorizeUser,
+    payout.payoutTransationOne
+  );
 };
