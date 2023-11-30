@@ -11,6 +11,7 @@ const { responseCode, rs } = require("../util");
 const bankAccountSchema = require("./../models/bankAccounts");
 const TransactionLog = require("../models/transactionLog");
 const cron = require("node-cron");
+const moment = require("moment");
 
 //Transfer PAYOUT in the merchant Account
 
@@ -224,17 +225,46 @@ exports.payoutTransations = async (req, res) => {
     console.log(req.user["id"]);
     let mTransactionList;
 
-    mTransactionList = await TransactionLog.scan()
-      .where("user_id")
-      .eq(req.user["id"])
-      .where("action")
-      .eq("charge")
-      .where("inwardBaseAmount")
-      .not()
-      .eq(0)
-      .exec();
+    let from_date = req.query?.from_date;
+    let to_date = req.query?.to_date;
 
-    console.log(mTransactionList);
+    if (from_date && to_date) {
+      let fromDate = moment(from_date).valueOf();
+      let toDate = moment(to_date)
+        .add(23, "hours")
+        .add(59, "minutes")
+        .add(59, "seconds")
+        .valueOf();
+
+      console.log(moment(to_date));
+      if (fromDate > toDate) {
+        return res
+          .status(responseCode.badGateway)
+          .json(rs.incorrectDetails("FROM DATE GREATER THAN TO DATE"));
+      }
+
+      mTransactionList = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("action")
+        .eq("charge")
+        .where("inwardBaseAmount")
+        .not()
+        .eq(0)
+        .filter("createDate")
+        .between(fromDate, toDate)
+        .exec();
+    } else {
+      mTransactionList = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("action")
+        .eq("charge")
+        .where("inwardBaseAmount")
+        .not()
+        .eq(0)
+        .exec();
+    }
 
     if (mTransactionList.count > 0) {
       let bankDetails = await bankAccountSchema
@@ -274,7 +304,6 @@ exports.payoutTransationOne = async (req, res) => {
     }
 
     let mTransactionList;
-
     mTransactionList = await TransactionLog.scan()
       .where("user_id")
       .eq(req.user["id"])
