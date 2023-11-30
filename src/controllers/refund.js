@@ -222,7 +222,7 @@ exports.reundCustomer = async (req, res) => {
         txnStatus: true,
       });
     }
-    return res.json(
+    return res.status(responseCode.success).json(
       rs.successResponse("ORDER CREATED", {
         txn_id: saveData.id,
       })
@@ -234,6 +234,44 @@ exports.reundCustomer = async (req, res) => {
       .json(rs.errorResponse(error?.response?.data, error?.response?.status));
   }
 };
+
+exports.getRefundStatus = async (req, res) => {
+  try {
+    const { rid } = req.params;
+
+    if (!rid) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+    }
+
+    let transationStatus = await TransactionLog.get(rid);
+
+    if (transationStatus == undefined) transationStatus = {};
+
+    if (
+      Object.keys(transationStatus).length == 0 ||
+      transationStatus.action !== "withdraw"
+    ) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("TRANSATION DOES NOT EXIST"));
+    }
+    console.log(transationStatus.aTxId);
+
+    let status = typeof transationStatus.aTxId == "number";
+    console.log(status);
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("WITHDRAW OTP SENT", { status }));
+  } catch (error) {
+    return res
+      .status(error?.response?.status || 500)
+      .json(rs.errorResponse(error?.response?.data, error?.response?.status));
+  }
+};
+
+exports.confirmRefund = async (req, res) => {};
 
 exports.MarketOrder = async (req, res) => {
   try {

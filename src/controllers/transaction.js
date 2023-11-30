@@ -6,7 +6,6 @@ const { success } = require("../util/Constants");
 const CustomerWalletAddress = require("../models/customerWalletAddress");
 const Currency = require("../models/currency");
 const moment = require("moment");
-const { response } = require("../util/ResponseTemplate");
 const TransactionLog = require("../models/transactionLog");
 
 exports.merchantCustomerList = async (req, res) => {

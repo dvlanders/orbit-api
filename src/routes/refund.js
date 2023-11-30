@@ -13,4 +13,9 @@ module.exports = (router) => {
   );
   router.post("/user/:user_id/wallettransfer", refund.walletTransfer);
   //   router.post("/user/:user_id/withdrawalBank", refund.withdrawalBank);
+  router.get(
+    "/user/:user_id/refund/:rid/status",
+    authorizeUser,
+    refund.getRefundStatus
+  );
 };
