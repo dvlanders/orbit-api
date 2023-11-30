@@ -50,6 +50,8 @@ exports.merchantCustomerList = async (req, res) => {
         .eq(true)
         .where("withdrawStatus")
         .eq(true)
+        .where("action")
+        .in(["deposit", "withdraw"])
         .filter("createDate")
         .between(fromDate, toDate)
         .exec();
@@ -72,6 +74,8 @@ exports.merchantCustomerList = async (req, res) => {
         .eq(true)
         .where("withdrawStatus")
         .eq(true)
+        .where("action")
+        .in(["deposit", "withdraw"])
         .exec();
     }
 
@@ -151,6 +155,8 @@ exports.internalMerchantCustomer = async (req, res) => {
       .eq(true)
       .where("withdrawStatus")
       .eq(true)
+      .where("action")
+      .in(["deposit", "withdraw"])
       .where("customerAddress")
       .eq(customerWalletAddress)
       .exec();
@@ -277,6 +283,8 @@ exports.internalMerchantCustomerOne = async (req, res) => {
       .eq(true)
       .where("withdrawStatus")
       .eq(true)
+      .where("action")
+      .in(["deposit", "withdraw"])
       .exec();
 
     if (mTransaction.count != 0) {
@@ -422,6 +430,8 @@ exports.internalMerchantCustomerList = async (req, res) => {
       .eq(true)
       .where("withdrawStatus")
       .eq(true)
+      .where("action")
+      .in(["deposit", "withdraw"])
       .exec();
     if (mTransactionList.count != 0) {
       // let uniqueCurrencyList = Array.from(
