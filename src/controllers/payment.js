@@ -10,6 +10,7 @@ const { responseCode, rs } = require("../util");
 const bankAccountSchema = require("../models/bankAccounts");
 const { success, responseCodes } = require("../util/Constants");
 const TransactionLog = require("../models/transactionLog");
+const moment = require("moment");
 
 let token = process.env.SFOX_ENTERPRISE_API_KEY;
 
@@ -446,40 +447,74 @@ exports.monetizationHistory = async (req, res) => {
  */
 exports.balances = async (req, res) => {
   try {
+    const firstDayOfMonth = moment().startOf("month").valueOf();
+    const currentDate = moment().endOf("day").valueOf();
+
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
+    let checkBalance = await axios({
+      method: "get",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+    });
+
+    let balance = [];
+    if (checkBalance?.data) {
+      balance = checkBalance?.data?.filter((e) => e.currency === "usd");
+    }
+
     let transaction = await TransactionLog.scan()
       .where("user_id")
       .eq(req.user["id"])
       .where("txnStatus")
       .eq(true)
-      .where("balanceStatus")
-      .eq(false)
+      .where("marketOrderStatus")
+      .eq(true)
+      .where("withdrawStatus")
+      .eq(true)
       .filter("createDate")
+      .between(firstDayOfMonth, currentDate)
       .exec();
 
+    // return false
     let payment = 0;
     let payment_count = 0;
+    let refund_count = 0;
     let refund = 0;
     let adjustments = 0;
     let total_incoming = 0;
     let total = 0;
+    // let totalIncoming;
+    // let totalOutgoing;
+    // if (transaction.count > 0) {
+    //   transaction.map((e) => {
+    //     payment += e.inwardBaseAmount;
+    //     payment_count += 1;
+    //   });
+    // }
     if (transaction.count > 0) {
-      transaction.map((e) => {
-        payment += e.amount;
-        payment_count += 1;
+      transaction.forEach((transaction) => {
+        if (transaction.action === "deposit") {
+          payment += transaction.outwardBaseAmount;
+          payment_count += 1;
+        } else if (transaction.action === "withdraw") {
+          refund += transaction.inwardBaseAmount;
+          refund_count += 1;
+        }
       });
     }
-    total = payment - refund - adjustments;
 
-    // console.log(transaction);
-
+    // total = payment - refund - adjustments;
+    total = balance?.[0]?.balance || 0;
     return res.status(responseCode.success).json(
       rs.successResponse("BALANCE RETRIVED", {
         currently_way_to_bank_account: 0,
         estimate_future_payouts: 0,
         payment_count: payment_count,
         payment: payment,
-        refund_count: 0,
-        refund: 0,
+        refund_count: refund_count,
+        refund: refund,
         adjustments_count: 0,
         adjustments: 0,
         total_incoming: 0,
