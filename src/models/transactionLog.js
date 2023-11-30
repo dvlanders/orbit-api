@@ -177,6 +177,10 @@ const transactionLogSchema = new dynamoose.Schema(
       type: Number,
       required: false,
     },
+    description: {
+      type: [String, dynamoose.type.NULL],
+      default: null,
+    },
   },
   {
     timestamps: {

@@ -143,6 +143,8 @@ exports.reundCustomer = async (req, res) => {
         .json(rs.incorrectDetails("REFUND ONLY ABOVE 11 USD"));
     }
 
+    var refundId;
+
     let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
     let checkBalance = await axios({
       method: "get",
@@ -221,10 +223,12 @@ exports.reundCustomer = async (req, res) => {
         action: "withdraw",
         txnStatus: true,
       });
+
+      refundId = saveData.id;
     }
     return res.status(responseCode.success).json(
       rs.successResponse("ORDER CREATED", {
-        txn_id: saveData.id,
+        txn_id: refundId,
       })
     );
   } catch (error) {

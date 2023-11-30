@@ -165,6 +165,7 @@ exports.addCustomerAddress = async (req, res) => {
       email,
       oneCryptoPrice,
       quoteId,
+      description,
     } = req.body;
 
     const requiredParams = [
@@ -201,6 +202,7 @@ exports.addCustomerAddress = async (req, res) => {
       name: name ? name : null,
       user_id: req.user["id"],
       action: "Deposit",
+      description: description ? description : null,
     });
 
     console.log(saveData);
@@ -506,7 +508,7 @@ async function transactionHistory() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  // transactionHistory();
+  transactionHistory();
 });
 
 async function marketOrderTransaction() {
@@ -665,7 +667,7 @@ async function marketOrderTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  // marketOrderTransaction();
+  marketOrderTransaction();
 });
 
 async function withdrawTransaction() {
@@ -772,7 +774,7 @@ async function withdrawTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  // withdrawTransaction();
+  withdrawTransaction();
 });
 
 /**
