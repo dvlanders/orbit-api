@@ -376,8 +376,7 @@ async function transactionHistory() {
       .not()
       .eq(null)
       .where("action")
-      .not()
-      .in(["charge"])
+      .in(["deposit"])
       .exec();
 
     console.log(getTransactionList.count);
@@ -533,8 +532,7 @@ async function marketOrderTransaction() {
       .where("marketOrderStatus")
       .eq(false)
       .where("action")
-      .not()
-      .in(["charge"])
+      .in(["deposit", "withdraw"])
       .exec();
 
     console.log("getTransactionList");
