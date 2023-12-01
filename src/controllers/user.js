@@ -327,6 +327,14 @@ exports.signIn = async (req, res) => {
       if (getUser.count > 0) {
         console.log(getUser);
 
+        if (!getUser[0].isSfoxVerified) {
+          return res
+            .status(responseCode.success)
+            .json(
+              rs.successResponse("ACCOUNT IN SERVICE REGISTRATION PROCESS", {})
+            );
+        }
+
         if (getUser[0].isOTPVerified == false) {
           let otp = common.generateRandomNumberWithDigits(6);
 
@@ -475,6 +483,15 @@ exports.signInGoogle = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE REGISTER YOUR ACCOUNT", {}));
     }
+
+    if (!userDetails[0].isSfoxVerified) {
+      return res
+        .status(responseCode.success)
+        .json(
+          rs.successResponse("ACCOUNT IN SERVICE REGISTRATION PROCESS", {})
+        );
+    }
+
     if (userDetails[0].isOTPVerified == false) {
       let otp = common.generateRandomNumberWithDigits(6);
 
