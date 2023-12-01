@@ -401,8 +401,6 @@ exports.dashboard = async (req, res) => {
       .eq("charge")
       .exec();
 
-    // return false
-
     let tSales = [];
     let currencyObjects;
 
@@ -450,11 +448,6 @@ exports.dashboard = async (req, res) => {
     }
 
     let totalRev = 0;
-    // for(let i=0;i<paymentData.data.length;i++){
-    // totalRev = totalRev +  (paymentData.data[i].quantity * paymentData.data[i].rate) - refund - monetization - adjustments ;
-    // const dateString = paymentData.data[i].transfer_date;
-    // const date = new Date(dateString);
-    // let  getMonth = date.getUTCMonth() + 1
 
     let monthData = [];
     let month = 1;
@@ -575,7 +568,7 @@ exports.dashboard = async (req, res) => {
           ? paymentOutData
               .sort((a, b) => b.createDate - a.createDate)
               .slice(0, 4)
-          : null,
+          : [],
     };
 
     return res
