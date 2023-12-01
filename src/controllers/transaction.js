@@ -516,6 +516,14 @@ exports.updateReceipt = async (req, res) => {
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE PASS THE REQUIRED DETAILS"));
 
+    let isTxn = await TransactionLog.get(txnid);
+
+    if (isTxn === undefined) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("TRANSACTION DOES NOT EXIST"));
+    }
+
     let updateReciptDate = await TransactionLog.update(
       { id: txnid },
       { receiptTimestamp: Date.now() }
