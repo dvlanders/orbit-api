@@ -355,6 +355,7 @@ exports.dashboard = async (req, res) => {
         "outwardCurrency",
         "inwardBaseAmount",
         "inwardCurrency",
+        "customerAddress",
       ])
       .where("user_id")
       .eq(req.user["id"])
@@ -367,6 +368,7 @@ exports.dashboard = async (req, res) => {
       .where("action")
       .eq("deposit")
       .exec();
+
     paymentData = paymentData.map((e) => ({
       amount: e.outwardBaseAmount,
       date: e.createDate,
@@ -379,6 +381,7 @@ exports.dashboard = async (req, res) => {
       outwardCurrency: e.outwardCurrency,
       inwardBaseAmount: e.inwardBaseAmount,
       inwardCurrency: e.inwardCurrency,
+      customerAddress: e.customerAddress,
     }));
 
     let paymentOutData = await TransactionLog.scan()
@@ -403,8 +406,18 @@ exports.dashboard = async (req, res) => {
 
     let tSales = [];
     let currencyObjects;
-
+    let customerCount = 0;
     if (paymentData.length !== 0) {
+      const uniqueRecords = {};
+
+      paymentData.forEach((record) => {
+        if (!uniqueRecords.hasOwnProperty(record.customerAddress)) {
+          uniqueRecords[record.customerAddress] = record;
+        }
+      });
+
+      customerCount = Object.keys(uniqueRecords).length;
+
       let filterData = paymentData.filter(
         (e) => startYear === momentTZ(e.date).tz(req.user["timeZone"]).year()
       );
@@ -551,7 +564,7 @@ exports.dashboard = async (req, res) => {
       totalPurchase: paymentData.length ? paymentData.length : 0,
       monthlyPurchase: monthPurchase ? monthPurchase : 0,
       purchasePercentage: null,
-      totalCustomers: 1,
+      totalCustomers: customerCount,
       monthlyCustomers: monthlyCustomer,
       customersPercentage: null,
       totalRevenue: totalRev ? totalRev : 0,

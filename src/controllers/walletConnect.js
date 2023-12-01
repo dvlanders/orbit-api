@@ -507,7 +507,7 @@ async function transactionHistory() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  transactionHistory();
+  // transactionHistory();
 });
 
 async function marketOrderTransaction() {
@@ -666,7 +666,7 @@ async function marketOrderTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  marketOrderTransaction();
+  // marketOrderTransaction();
 });
 
 async function withdrawTransaction() {
@@ -773,7 +773,7 @@ async function withdrawTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  withdrawTransaction();
+  // withdrawTransaction();
 });
 
 /**
