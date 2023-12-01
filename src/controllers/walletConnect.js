@@ -165,7 +165,6 @@ exports.addCustomerAddress = async (req, res) => {
       email,
       oneCryptoPrice,
       quoteId,
-      description,
     } = req.body;
 
     const requiredParams = [
@@ -202,7 +201,7 @@ exports.addCustomerAddress = async (req, res) => {
       name: name ? name : null,
       user_id: req.user["id"],
       action: "deposit",
-      description: description ? description : null,
+      description: req.body?.description ? req.body?.description : null,
     });
 
     console.log(saveData);
