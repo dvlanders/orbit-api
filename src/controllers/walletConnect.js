@@ -201,7 +201,7 @@ exports.addCustomerAddress = async (req, res) => {
       email: email ? email : null,
       name: name ? name : null,
       user_id: req.user["id"],
-      action: "Deposit",
+      action: "deposit",
       description: description ? description : null,
     });
 
