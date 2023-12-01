@@ -222,6 +222,7 @@ exports.reundCustomer = async (req, res) => {
         clientOrderId: RFQResponse?.data?.quote_id,
         action: "withdraw",
         txnStatus: true,
+        description: req.body?.reason ? req.body?.reason : null,
       });
 
       refundId = saveData.id;
