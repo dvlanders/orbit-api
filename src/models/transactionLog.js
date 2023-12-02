@@ -181,6 +181,11 @@ const transactionLogSchema = new dynamoose.Schema(
       type: [String, dynamoose.type.NULL],
       default: null,
     },
+    refundTxnId: {
+      type: [String, dynamoose.type.NULL],
+      required: false,
+      default: null,
+    },
   },
   {
     timestamps: {

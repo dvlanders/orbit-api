@@ -113,6 +113,8 @@ exports.reundCustomer = async (req, res) => {
 
     const { id } = req.params;
 
+    const { partialRefundAmount } = req.body;
+
     if (id === null || !id)
       return res
         .status(responseCode.badRequest)
@@ -129,7 +131,7 @@ exports.reundCustomer = async (req, res) => {
       .eq(true)
       .exec();
 
-    // console.log(transaction);
+    console.log(transaction);
 
     if (transaction.count === 0) {
       return res
@@ -137,10 +139,60 @@ exports.reundCustomer = async (req, res) => {
         .json(rs.incorrectDetails("INVALID TRANSACTION"));
     }
     transaction = transaction[0];
-    if (transaction.outwardTotalAmount <= 11) {
+
+    let refundAmount = 0;
+
+    if (partialRefundAmount) {
+      refundAmount = partialRefundAmount;
+    } else {
+      refundAmount = transaction.outwardTotalAmount;
+    }
+
+    if (refundAmount < 11) {
       return res
         .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("REFUND ONLY ABOVE 11 USD"));
+        .json(rs.incorrectDetails("REFUND ONLY ABOVE 10 USD"));
+    }
+
+    let refundTxn = await TransactionLog.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("refundTxnId")
+      .eq(id)
+      .where("action")
+      .eq("withdraw")
+      .exec();
+
+    let refundSum = 0;
+
+    // Maximum Amount can be refunded
+    let maxPayable = transaction.outwardTotalAmount - refundSum;
+
+    console.log(refundTxn.count);
+
+    if (refundTxn.count !== 0) {
+      if (refundTxn.count === 1) {
+        refundSum = refundTxn[0].inwardBaseAmount;
+      } else {
+        refundTxn.map((e) => (refundSum += e.inwardBaseAmount));
+      }
+
+      // Maximum Amount can be refunded
+      maxPayable = transaction.outwardTotalAmount - refundSum;
+    }
+
+    console.log(maxPayable);
+    console.log(refundAmount);
+
+    if (maxPayable < refundAmount) {
+      return res
+        .status(responseCode.success)
+        .json(rs.successResponse("MAX ALLOWED REFUND LIMIT EXCEEDED"));
+    }
+    if (maxPayable < 11) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("REFUND ONLY ABOVE 10 USD"));
     }
 
     var refundId;
@@ -158,7 +210,7 @@ exports.reundCustomer = async (req, res) => {
     if (checkBalance?.data) {
       balance = checkBalance?.data?.filter((e) => e.currency === "usd");
       if (balance.length !== 0) {
-        if (balance[0]?.balance <= transaction.outwardTotalAmount) {
+        if (balance[0]?.balance < refundAmount) {
           return res
             .status(responseCode.badRequest)
             .json(rs.incorrectDetails("MERCHANT HAS LOW FUNDS FOR THE REFUND"));
@@ -179,12 +231,9 @@ exports.reundCustomer = async (req, res) => {
       data: {
         pair: currencyPair,
         side: side,
-        amount: parseFloat(transaction.outwardTotalAmount),
+        amount: parseFloat(refundAmount),
       },
     });
-
-    console.log(parseFloat(transaction.outwardTotalAmount));
-    console.log(transaction.outwardTotalAmount);
 
     let marketOrderResponse = {};
     if (RFQResponse?.data?.quote_id) {
@@ -210,8 +259,7 @@ exports.reundCustomer = async (req, res) => {
         merchantAddress: transaction.merchantAddress,
         customerAddress: transaction.customerAddress,
         inwardCurrency: "usd",
-        inwardBaseAmount: transaction.outwardTotalAmount,
-        cryptoCurrencyAmount: RFQResponse?.data?.quantity,
+        inwardBaseAmount: refundAmount,
         outwardCurrency: "usdc",
         outwardBaseAmount: RFQResponse?.data?.quantity,
         walletType: "HIFIPay",
@@ -223,6 +271,7 @@ exports.reundCustomer = async (req, res) => {
         action: "withdraw",
         txnStatus: true,
         description: req.body?.reason ? req.body?.reason : null,
+        refundTxnId: id,
       });
 
       refundId = saveData.id;
@@ -233,7 +282,7 @@ exports.reundCustomer = async (req, res) => {
       })
     );
   } catch (error) {
-    console.log("Error creating market order:", error?.response?.data);
+    console.log("Error creating market order:", error);
     return res
       .status(error?.response?.status || 500)
       .json(rs.errorResponse(error?.response?.data, error?.response?.status));
