@@ -554,7 +554,7 @@ async function marketOrderTransaction() {
 
     getTransactionList.map(async (txn) => {
       let userToken = userTokensList.find((obj) => obj.user_id === txn.user_id);
-
+      console.log(txn);
       let side;
       let currency;
 
@@ -635,6 +635,8 @@ async function marketOrderTransaction() {
           );
 
           let apiPath = `${baseUrl}/v1/user/withdraw`;
+          console.log(MRDataObj.amount);
+          console.log(parseFloat(MRDataObj.amount));
 
           let withdrawResponse = await axios({
             method: "post",
@@ -704,7 +706,7 @@ async function withdrawTransaction() {
     console.log(getTransactionList.count);
 
     if (getTransactionList.count === 0) return;
-    console.log("getTransactionList");
+    console.log("withdrawTransaction");
     let userIdList = Array.from(
       new Set(getTransactionList.map((e) => e.user_id))
     );
@@ -733,6 +735,8 @@ async function withdrawTransaction() {
           limit: 10,
         },
       });
+
+      console.log(txn);
 
       if (marketOrderTxn?.data.length === 0) return;
 

@@ -34,6 +34,8 @@ async function makeTranferPayout() {
       .scan()
       .where("user_id")
       .in(users)
+      .where("verifiedStatus")
+      .eq("Success")
       .exec();
 
     if (getBankList.count === 0) return;
@@ -66,53 +68,48 @@ async function makeTranferPayout() {
         balance = checkBalance?.data?.filter((e) => e.currency === "usd");
         if (balance.length !== 0) {
           console.log(balance[0].available);
-          if (balance[0].available < 10) return;
+          // for the balance is greater than 60 then then we payout to the bank using wire transaction, where fees is 60 USD
+          if (balance[0].available < 60) return;
           balance = balance[0];
         }
       }
 
       console.log(balance);
 
-      let uuid = uuidv4();
-      let apiPathTransfer = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
-      let responsePayment = await axios({
+      let apiPathWithdraw = `${baseUrl}/v1/user/withdraw`;
+      let responseWithdraw = await axios({
         method: "post",
-        url: apiPathTransfer,
+        url: apiPathWithdraw,
         headers: {
-          Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
+          Authorization: "Bearer " + usr.userToken,
         },
         data: {
-          transfer_id: uuid,
-          user_id: usr["sfox_id"],
-          type: "PAYMENT",
-          purpose: "GOOD",
-          description: "Payment To The Merchant",
           currency: "usd",
-          quantity: 5,
-          rate: 1,
+          amount: balance[0].available,
+          isWire: true,
         },
       });
-      console.log(responsePayment?.data?.data);
+      console.log(responseWithdraw?.data);
 
-      let payoutData = responsePayment?.data?.data;
-
-      let saveData = await TransactionLog.create({
-        id: uuidv4(),
-        user_id: usr["user_id"],
-        aTxId: payoutData?.atx_id_charged,
-        day: payoutData?.transfer_date,
-        action: "charge",
-        inwardCurrency: payoutData?.currency,
-        outwardCurrency: payoutData?.currency,
-        idempotencyId: payoutData?.transfer_id,
-        timestamp: payoutData?.timestamp,
-        merchantAddress: null,
-        customerAddress: null,
-        inwardBaseAmount: 0,
-        outwardBaseAmount: 0,
-        walletType: "HiFiPay",
-      });
-      console.log(saveData);
+      if (responseWithdraw?.data?.success === true) {
+        responseWithdraw = responseWithdraw?.data;
+        let saveData = await TransactionLog.create({
+          id: uuidv4(),
+          user_id: usr["user_id"],
+          aTxId: responseWithdraw?.atx_id,
+          action: "payout",
+          outwardCurrency: responseWithdraw?.currency,
+          inwardCurrency: responseWithdraw?.currency,
+          outwardBaseAmount: parseInt(responseWithdraw?.amount),
+          merchantAddress: usr["account_number"],
+          memo: usr["bank_name"],
+          walletType: "HIFIPay",
+          marketOrderStatus: true,
+          txnStatus: true,
+          inwardBaseAmount: 0,
+        });
+        console.log(saveData);
+      }
     });
   } catch (error) {
     console.log(error.toString());
@@ -123,9 +120,9 @@ async function getPayoutTxn() {
   try {
     let logTxn = await TransactionLog.scan()
       .where("action")
-      .eq("charge")
-      .where("inwardBaseAmount")
-      .eq(0)
+      .eq("payout")
+      .where("withdrawStatus")
+      .eq(false)
       .exec();
 
     if (logTxn.count === 0) return;
@@ -140,20 +137,20 @@ async function getPayoutTxn() {
       .in(uniqueUserList)
       .exec();
 
-    let bankObjectsWithUserData = logTxn.map((bankUser) => {
+    let finalTxnData = logTxn.map((txn) => {
       // Find the user data from the userList
-      let userData = userList.find((usr) => usr.user_id === bankUser.user_id);
+      let userData = userList.find((usr) => usr.user_id === txn.user_id);
 
-      // Combine the bankUser object with the userData
+      // Combine the txn object with the userData
       return {
-        ...bankUser,
+        ...txn,
         ...userData,
       };
     });
 
-    if (bankObjectsWithUserData.length === 0) return;
+    if (finalTxnData.length === 0) return;
 
-    bankObjectsWithUserData.map(async (usr) => {
+    finalTxnData.map(async (usr) => {
       let apiPathTxn = `${process.env.SFOX_BASE_URL}/v1/account/transactions`;
       console.log(apiPathTxn);
       let paymentTxn = await axios({
@@ -164,45 +161,31 @@ async function getPayoutTxn() {
         },
         // change the limit formula based on the side type
         params: {
-          types: "charge",
-          limit: 5,
+          types: "withdraw",
         },
       });
 
       console.log(paymentTxn?.data);
-      paymentTxn = paymentTxn?.data?.filter(
-        (e) => e.IdempotencyId === usr.idempotencyId
-      );
+      paymentTxn = paymentTxn?.data?.filter((e) => e.atxid === usr.aTxId);
 
       if (paymentTxn.length === 0) return;
       paymentTxn = paymentTxn[0];
 
       console.log(paymentTxn);
-
       let saveData = await TransactionLog.update(
         {
           id: usr["id"],
         },
         {
-          txId: paymentTxn?.id,
-          aTxId: paymentTxn?.atxid,
           day: paymentTxn?.day,
-          memo: paymentTxn?.memo,
-          inwardBaseAmount: paymentTxn?.amount * -1,
-          outwardBaseAmount: paymentTxn?.amount * -1,
+          outwardTotalAmount: paymentTxn?.amount * -1 - paymentTxn?.fees, // amount is -amount
           price: paymentTxn?.price,
-          inwardTxnFees: paymentTxn?.fees,
-          walletType: "HiFiPay",
+          outwardTxnFees: paymentTxn?.fees,
+          walletType: "HIFIPay",
           status: paymentTxn?.status,
-          inwardAccountBalance: paymentTxn?.account_balance,
           accountTransferFee: paymentTxn?.AccountTransferFee,
-          idempotencyId: paymentTxn?.IdempotencyId,
           timestamp: paymentTxn?.timestamp,
-          txnStatus: true,
           withdrawStatus: true,
-          marketOrderStatus: true,
-          merchantAddress: null,
-          customerAddress: null,
         }
       );
       console.log(saveData);
@@ -213,11 +196,11 @@ async function getPayoutTxn() {
 }
 
 cron.schedule("0 2 * * *", () => {
-  // makeTranferPayout();
+  makeTranferPayout();
 });
 
-cron.schedule("0 2 * * *", () => {
-  // getPayoutTxn();
+cron.schedule("5 2 * * *", () => {
+  getPayoutTxn();
 });
 
 exports.payoutTransations = async (req, res) => {
@@ -247,10 +230,9 @@ exports.payoutTransations = async (req, res) => {
         .where("user_id")
         .eq(req.user["id"])
         .where("action")
-        .eq("charge")
-        .where("inwardBaseAmount")
-        .not()
-        .eq(0)
+        .eq("payout")
+        .where("withdrawStatus")
+        .eq(true)
         .filter("createDate")
         .between(fromDate, toDate)
         .exec();
@@ -259,28 +241,10 @@ exports.payoutTransations = async (req, res) => {
         .where("user_id")
         .eq(req.user["id"])
         .where("action")
-        .eq("charge")
-        .where("inwardBaseAmount")
-        .not()
-        .eq(0)
+        .eq("payout")
+        .where("withdrawStatus")
+        .eq(true)
         .exec();
-    }
-
-    if (mTransactionList.count > 0) {
-      let bankDetails = await bankAccountSchema
-        .scan()
-        .attributes(["account_number", "bank_name"])
-        .where("user_id")
-        .eq(req.user["id"])
-        .exec();
-      mTransactionList = mTransactionList.map((transaction) => {
-        // Find the corresponding bank detail
-        // Merge the transaction object with the bank detail object
-        return {
-          ...transaction, // spread operator to include all properties of the transaction
-          ...bankDetails[0], // spread operator to include all properties of the bank detail
-        };
-      });
     }
 
     return res
@@ -310,28 +274,12 @@ exports.payoutTransationOne = async (req, res) => {
       .where("id")
       .eq(pyid)
       .where("action")
-      .eq("charge")
-      .where("inwardBaseAmount")
-      .not()
-      .eq(0)
+      .eq("payout")
+      .where("withdrawStatus")
+      .eq(true)
       .exec();
 
     console.log(mTransactionList);
-
-    if (mTransactionList.count > 0) {
-      let bankDetails = await bankAccountSchema
-        .scan()
-        .attributes(["account_number", "bank_name"])
-        .where("user_id")
-        .eq(req.user["id"])
-        .exec();
-      mTransactionList = [
-        {
-          ...mTransactionList[0], // spread operator to include all properties of the transaction
-          ...bankDetails[0], // spread operator to include all properties of the bank detail
-        },
-      ];
-    }
 
     return res
       .status(responseCode.success)
@@ -690,3 +638,23 @@ exports.cancelWithdrawal = async (req, res) => {
     return res.status(error.response?.status).send(error.response.data);
   }
 };
+
+// let uuid = uuidv4();
+// let apiPathTransfer = `${process.env.SFOX_BASE_URL}/v1/enterprise/transfer`;
+// let responsePayment = await axios({
+//   method: "post",
+//   url: apiPathTransfer,
+//   headers: {
+//     Authorization: `Bearer ${process.env.SFOX_ENTERPRISE_API_KEY}`,
+//   },
+//   data: {
+//     transfer_id: uuid,
+//     user_id: usr["sfox_id"],
+//     type: "PAYMENT",
+//     purpose: "GOOD",
+//     description: "Payment To The Merchant",
+//     currency: "usd",
+//     quantity: 5,
+//     rate: 1,
+//   },
+// });

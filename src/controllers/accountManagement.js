@@ -389,7 +389,7 @@ exports.dashboard = async (req, res) => {
         "id",
         "status",
         "createDate",
-        "inwardBaseAmount",
+        "outwardTotalAmount",
         "inwardCurrency",
       ])
       .where("user_id")
