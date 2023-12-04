@@ -1146,7 +1146,7 @@ exports.dashboard = async (req, res) => {
       customerCount = Object.keys(uniqueRecords).length;
     }
 
-    let totalSales = Object.keys({}).map((month) => {
+    let totalSales = Object.keys(monthlySums).map((month) => {
       let currencies = Object.values(monthlySums[month]).map(
         ({ currency, amount, month }) => {
           return { currency, amount, month };
