@@ -376,11 +376,8 @@ exports.payoutTransationOne = async (req, res) => {
       finalTxnList = finalTxnList.map((txn) => {
         if (txn.action == "deposit") {
           totalPayment += txn.outwardBaseAmount;
-          console.log(txn.outwardBaseAmount);
           paymentCount += +1;
           paymentFees += txn.outwardTxnFees;
-          console.log(txn.outwardTxnFees);
-          console.log(txn);
         }
 
         if (txn.action == "withdraw") {
