@@ -318,7 +318,7 @@ exports.myAccount = async (req, res) => {
   }
 };
 
-exports.dashboard = async (req, res) => {
+exports.dashboard1 = async (req, res) => {
   try {
     let refund = 0;
     let monetization = 0;
@@ -1030,4 +1030,147 @@ exports.teamList = async (req, res) => {
       .status(responseCode.success)
       .json(rs.successResponse("RETRIVED TEAM LIST", updatedTeamList));
   } catch (error) {}
+};
+
+exports.dashboard = async (req, res) => {
+  try {
+    let paymentData = await TransactionLog.scan()
+      .attributes([
+        "id",
+        "email",
+        "status",
+        "createDate",
+        "timestamp",
+        "txHash",
+        "outwardBaseAmount",
+        "outwardCurrency",
+        "inwardBaseAmount",
+        "inwardCurrency",
+        "customerAddress",
+        "action",
+      ])
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("txnStatus")
+      .eq(true)
+      .where("marketOrderStatus")
+      .eq(true)
+      .where("withdrawStatus")
+      .eq(true)
+      .where("action")
+      .in(["deposit", "withdraw", "payout"])
+      .exec();
+
+    let totalPurchase = 0; // The number of payments by the customer.
+    let totalVolume = 0; // The sum of the payment done by the customer.
+    const uniqueRecords = {};
+    let customerCount = 0;
+    let paymentArray = [];
+    let payoutArray = [];
+
+    let refund = 0;
+    let monetization = 0;
+    let adjustments = 0;
+    let registeredYear = momentTZ(req.user["createDate"])
+      .tz(req.user["timeZone"])
+      .year();
+    console.log("registeredYear", registeredYear);
+    let currentYear = momentTZ(moment().toISOString())
+      .tz(req.user["timeZone"])
+      .year();
+    console.log("currentYear", currentYear);
+
+    let isRegisteredCurrentYear = registeredYear == currentYear ? true : false;
+    console.log(isRegisteredCurrentYear);
+    let startYear = currentYear;
+
+    let startMonth = 1;
+    if (isRegisteredCurrentYear) {
+      startYear = registeredYear;
+      // +1 as the numbering in the momentjs libary starts from 0 index
+      startMonth =
+        momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1;
+    }
+    let monthlySums = {};
+    let currencies = {};
+
+    if (paymentData.count !== 0) {
+      paymentData.map((txn) => {
+        if (txn.action == "deposit") {
+          totalVolume += txn.outwardBaseAmount;
+          totalPurchase += +1;
+          if (paymentArray.length < 4) paymentArray.unshift(txn);
+
+          // Convert transaction date to the user's timezone
+          let txnDate = momentTZ(txn.createDate).tz(req.user["timeZone"]);
+          // Check if the transaction is in the start year and month is greater or equal to startMonth
+          if (
+            txnDate.year() === startYear &&
+            txnDate.month() + 1 >= startMonth
+          ) {
+            let month = txnDate.month() + 1; // Get month (1-12)
+
+            if (!currencies[txn.inwardCurrency]) {
+              currencies[txn.inwardCurrency] = {
+                name: txn.inwardCurrency,
+              };
+            }
+
+            // Initialize the month in monthlySums if not already there
+            if (!monthlySums[month]) {
+              monthlySums[month] = {};
+            }
+
+            // Initialize the currency in the month if not already there
+            if (!monthlySums[month][txn.inwardCurrency]) {
+              monthlySums[month][txn.inwardCurrency] = {
+                month: month,
+                currency: txn.inwardCurrency,
+                amount: 0,
+              };
+            }
+
+            // Add the transaction amount to the sum for the month and currency
+            // Assuming txn.inwardBaseAmount is the amount of the transaction
+            monthlySums[month][txn.inwardCurrency].amount +=
+              txn.inwardBaseAmount;
+          }
+          if (!uniqueRecords.hasOwnProperty(txn.customerAddress)) {
+            uniqueRecords[txn.customerAddress] = txn;
+          }
+        }
+
+        if (txn.action == "payout" && payoutArray.length < 4)
+          payoutArray.unshift(txn);
+      });
+      customerCount = Object.keys(uniqueRecords).length;
+    }
+
+    // totalRevenue = deposit - refund - monetization - adjastments
+
+    let responses = {
+      totalPurchase: totalPurchase,
+      totalVolume,
+      totalSales: monthlySums,
+      currencies: Object.values(currencies),
+      paymentData: paymentArray,
+      payoutData: payoutArray,
+      totalCustomers: customerCount,
+      monthlyPurchase: 0,
+      purchasePercentage: null,
+      monthlyCustomers: 0,
+      customersPercentage: null,
+      totalRevenue: 0,
+      monthlyRevenue: 0,
+      revenuePercentage: null,
+    };
+
+    return res
+      .status(responseCode.success)
+      .json(rs.successResponse("DATA RETRIVED", responses));
+  } catch (error) {
+    return res
+      .status(responseCode.serverError)
+      .json(rs.errorResponse(error?.message.toString()));
+  }
 };
