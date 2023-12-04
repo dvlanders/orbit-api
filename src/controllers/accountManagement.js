@@ -1146,12 +1146,21 @@ exports.dashboard = async (req, res) => {
       customerCount = Object.keys(uniqueRecords).length;
     }
 
+    let totalSales = Object.keys({}).map((month) => {
+      let currencies = Object.values(monthlySums[month]).map(
+        ({ currency, amount, month }) => {
+          return { currency, amount, month };
+        }
+      );
+      return { [month]: currencies };
+    });
+
     // totalRevenue = deposit - refund - monetization - adjastments
 
     let responses = {
       totalPurchase: totalPurchase,
       totalVolume,
-      totalSales: monthlySums,
+      totalSales: totalSales,
       currencies: Object.values(currencies),
       paymentData: paymentArray,
       payoutData: payoutArray,
