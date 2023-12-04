@@ -13,6 +13,7 @@ const CurrencyPair = require("../models/currencyPairs");
 const dynamoose = require("dynamoose");
 const TransactionLog = require("../models/transactionLog");
 const cron = require("node-cron");
+const web3 = require("web3");
 
 /**
  * @description Get Currency List which are available --  API
@@ -935,3 +936,8 @@ exports.addcurrencypair = async (req, res) => {
       .json(rs.errorResponse(error.toString()));
   }
 };
+
+// console.log(2112);
+// console.log(BigInt(2112 * 1e18));
+
+// console.log(web3.utils.toWei((0.022323).toString(), "ether"));

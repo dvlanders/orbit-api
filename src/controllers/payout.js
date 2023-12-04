@@ -272,6 +272,7 @@ exports.payoutTransations = async (req, res) => {
 
 exports.payoutTransationOne = async (req, res) => {
   try {
+    // todo as payout might be for the users 3 as the 1st payout so we have to handle that scenario
     console.log(req.user["id"]);
     const { pyid } = req.params;
     if (!pyid) {
@@ -303,14 +304,19 @@ exports.payoutTransationOne = async (req, res) => {
     let grossAmount = 0;
     let netAmount = 0;
     if (mTransactionList.count > 0) {
-      let previousPayoutCount = mTransactionList[0].payoutCount - 1;
-
-      // 2 Feb 2 am
-
-      //  2 jan 2 am
-
-      // 0
-      if (mTransactionList[0].payoutCount == 1) {
+      let checkTxnCount = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("action")
+        .eq("payout")
+        .where("withdrawStatus")
+        .eq(true)
+        .where("txnStatus")
+        .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .exec();
+      if (checkTxnCount.count === 1) {
         finalTxnList = await TransactionLog.scan()
           .where("user_id")
           .eq(req.user["id"])
@@ -328,6 +334,8 @@ exports.payoutTransationOne = async (req, res) => {
         payoutStartDate = req.user["createDate"];
         payoutEndDate = mTransactionList[0].createDate;
       } else {
+        let previousPayoutCount = mTransactionList[0].payoutCount - 1;
+
         let mTransactionList1 = await TransactionLog.scan()
           .where("user_id")
           .eq(req.user["id"])
