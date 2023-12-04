@@ -186,6 +186,10 @@ const transactionLogSchema = new dynamoose.Schema(
       required: false,
       default: null,
     },
+    payoutCount: {
+      type: Number,
+      required: false,
+    },
   },
   {
     timestamps: {

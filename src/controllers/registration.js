@@ -197,28 +197,39 @@ exports.getUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    let userId = req.params.userId;
+    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
+    let checkBalance = await axios({
+      method: "get",
+      url: apiPath,
+      headers: {
+        Authorization: "Bearer " + req.user["userToken"],
+      },
+    });
 
-    const userDetails = await User.get(userId);
+    let balance = [];
+    if (checkBalance?.data) {
+      balance = checkBalance?.data?.filter((e) => e.currency === "usd");
+      if (balance.length !== 0) {
+        console.log(balance[0].available);
+        // for the balance is greater than 60 then then we payout to the bank using wire transaction, where fees is 60 USD
+        if (balance[0].available < 60) return;
+        balance = balance[0];
+      }
+    }
 
-    if (userDetails === undefined)
-      return res
-        .status(responseCode.notFound)
-        .json(rs.response(responseCode.notFound, "USER DOES NOT EXIST", {}));
-
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/account/${userDetails.sfox_id}`;
+    console.log(balance);
+    let txnApiPath = `${process.env.SFOX_BASE_URL}/v1/enterprise/account/${userDetails.sfox_id}`;
     let response = await axios({
       method: "delete",
       url: apiPath,
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: "Bearer " + req.user["userToken"],
       },
     });
-    userDetails.isDeleted = true;
-    userDetails.deletedAt = new Date(); // Set the current timestamp
-    await userDetails.save();
+    // userDetails.isDeleted = true;
+    // userDetails.deletedAt = new Date(); // Set the current timestamp
+    // await userDetails.save();
 
-    console.log("userDetails//", userDetails);
     return res
       .status(response?.status || responseCode.success)
       .json(rs.successResponse("USER DELETED "));

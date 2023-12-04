@@ -53,6 +53,17 @@ async function makeTranferPayout() {
 
     console.log(bankObjectsWithUserData);
 
+    let logTxn = await TransactionLog.scan()
+      .where("action")
+      .eq("payout")
+      .exec();
+
+    let nextPayoutCount = 1;
+
+    if (logTxn.count > 0) {
+      nextPayoutCount = logTxn[0].payoutCount + 1;
+    }
+
     bankObjectsWithUserData.map(async (usr) => {
       let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/balance`;
       let checkBalance = await axios({
@@ -93,6 +104,7 @@ async function makeTranferPayout() {
 
       if (responseWithdraw?.data?.success === true) {
         responseWithdraw = responseWithdraw?.data;
+
         let saveData = await TransactionLog.create({
           id: uuidv4(),
           user_id: usr["user_id"],
@@ -107,6 +119,7 @@ async function makeTranferPayout() {
           marketOrderStatus: true,
           txnStatus: true,
           inwardBaseAmount: 0,
+          payoutCount: nextPayoutCount,
         });
         console.log(saveData);
       }
@@ -279,16 +292,104 @@ exports.payoutTransationOne = async (req, res) => {
       .eq(true)
       .exec();
 
+    let finalTxnList;
+    let totalPayment = 0;
+    let paymentCount = 0;
+    let totalRefund = 0;
+    let refundCount = 0;
+    let payoutStartDate = "";
+    let payoutEndDate = "";
+    let paymentFees = 0;
+    let grossAmount = 0;
+    let netAmount = 0;
+    if (mTransactionList.count > 0) {
+      let previousPayoutCount = mTransactionList[0].payoutCount - 1;
+
+      // 2 Feb 2 am
+
+      //  2 jan 2 am
+
+      // 0
+      if (mTransactionList[0].payoutCount == 1) {
+        finalTxnList = await TransactionLog.scan()
+          .where("user_id")
+          .eq(req.user["id"])
+          .where("id")
+          .eq(pyid)
+          .where("action")
+          .in(["deposit", "withdraw"])
+          .where("withdrawStatus")
+          .eq(true)
+          .where("payoutCount")
+          .lt(moment(mTransactionList[0].createDate).valueOf())
+          .exec();
+        payoutStartDate = req.user["createDate"];
+        payoutEndDate = mTransactionList[0].createDate;
+      } else {
+        let mTransactionList1 = await TransactionLog.scan()
+          .where("user_id")
+          .eq(req.user["id"])
+          .where("id")
+          .eq(pyid)
+          .where("action")
+          .eq("payout")
+          .where("withdrawStatus")
+          .eq(true)
+          .where("payoutCount")
+          .eq(previousPayoutCount)
+          .exec();
+
+        finalTxnList = await TransactionLog.scan()
+          .where("user_id")
+          .eq(req.user["id"])
+          .where("id")
+          .eq(pyid)
+          .where("action")
+          .in(["deposit", "withdraw"])
+          .where("withdrawStatus")
+          .eq(true)
+          .filter("createDate")
+          .between(
+            moment(mTransactionList[0].createDate).valueOf(),
+            moment(mTransactionList1[0].createDate).valueOf()
+          )
+          .exec();
+
+        payoutStartDate = mTransactionList1[0].createDate;
+        payoutEndDate = mTransactionList[0].createDate;
+      }
+
+      finalTxnList = finalTxnList.map((txn) => {
+        if (txn.action == "deposit") {
+          totalPayment += txn.outwardBaseAmount;
+          paymentCount += +1;
+          paymentFees += txn.outwardTxnFees;
+        }
+
+        if (txn.action == "withdraw") {
+          totalRefund += txn.inwardTotalAmount;
+          refundCount += +1;
+          paymentFees += txn.inwardTxnFees;
+        }
+      });
+    }
+
     console.log(mTransactionList);
 
-    return res
-      .status(responseCode.success)
-      .json(
-        rs.successResponse(
-          "CUSTOMERS RETRIVED",
-          mTransactionList.length == 0 ? {} : mTransactionList[0]
-        )
-      );
+    return res.status(responseCode.success).json(
+      rs.successResponse("CUSTOMERS RETRIVED", {
+        txnData: mTransactionList.length == 0 ? {} : mTransactionList[0],
+        payoutStartDate,
+        payoutEndDate,
+        totalPayment,
+        paymentCount,
+        totalRefund,
+        refundCount,
+        paymentFees,
+        grossAmount,
+        netAmount,
+      })
+    );
   } catch (err) {
     return res
       .status(responseCode.serverError)
