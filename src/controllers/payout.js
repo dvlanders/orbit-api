@@ -209,11 +209,11 @@ async function getPayoutTxn() {
 }
 
 cron.schedule("0 2 * * *", () => {
-  makeTranferPayout();
+  // makeTranferPayout();
 });
 
 cron.schedule("5 2 * * *", () => {
-  getPayoutTxn();
+  // getPayoutTxn();
 });
 
 exports.payoutTransations = async (req, res) => {
@@ -314,13 +314,15 @@ exports.payoutTransationOne = async (req, res) => {
         finalTxnList = await TransactionLog.scan()
           .where("user_id")
           .eq(req.user["id"])
-          .where("id")
-          .eq(pyid)
           .where("action")
           .in(["deposit", "withdraw"])
           .where("withdrawStatus")
           .eq(true)
-          .where("payoutCount")
+          .where("txnStatus")
+          .eq(true)
+          .where("marketOrderStatus")
+          .eq(true)
+          .where("createDate")
           .lt(moment(mTransactionList[0].createDate).valueOf())
           .exec();
         payoutStartDate = req.user["createDate"];
@@ -329,11 +331,13 @@ exports.payoutTransationOne = async (req, res) => {
         let mTransactionList1 = await TransactionLog.scan()
           .where("user_id")
           .eq(req.user["id"])
-          .where("id")
-          .eq(pyid)
           .where("action")
           .eq("payout")
           .where("withdrawStatus")
+          .eq(true)
+          .where("txnStatus")
+          .eq(true)
+          .where("marketOrderStatus")
           .eq(true)
           .where("payoutCount")
           .eq(previousPayoutCount)
@@ -342,11 +346,13 @@ exports.payoutTransationOne = async (req, res) => {
         finalTxnList = await TransactionLog.scan()
           .where("user_id")
           .eq(req.user["id"])
-          .where("id")
-          .eq(pyid)
           .where("action")
           .in(["deposit", "withdraw"])
           .where("withdrawStatus")
+          .eq(true)
+          .where("txnStatus")
+          .eq(true)
+          .where("marketOrderStatus")
           .eq(true)
           .filter("createDate")
           .between(
@@ -362,8 +368,11 @@ exports.payoutTransationOne = async (req, res) => {
       finalTxnList = finalTxnList.map((txn) => {
         if (txn.action == "deposit") {
           totalPayment += txn.outwardBaseAmount;
+          console.log(txn.outwardBaseAmount);
           paymentCount += +1;
           paymentFees += txn.outwardTxnFees;
+          console.log(txn.outwardTxnFees);
+          console.log(txn);
         }
 
         if (txn.action == "withdraw") {
@@ -374,7 +383,7 @@ exports.payoutTransationOne = async (req, res) => {
       });
     }
 
-    console.log(mTransactionList);
+    // console.log(mTransactionList);
 
     return res.status(responseCode.success).json(
       rs.successResponse("CUSTOMERS RETRIVED", {
