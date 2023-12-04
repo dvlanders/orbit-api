@@ -209,11 +209,11 @@ async function getPayoutTxn() {
 }
 
 cron.schedule("0 2 * * *", () => {
-  // makeTranferPayout();
+  makeTranferPayout();
 });
 
 cron.schedule("5 2 * * *", () => {
-  // getPayoutTxn();
+  getPayoutTxn();
 });
 
 exports.payoutTransations = async (req, res) => {
