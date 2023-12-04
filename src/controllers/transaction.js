@@ -74,7 +74,7 @@ exports.merchantCustomerList = async (req, res) => {
         .where("withdrawStatus")
         .eq(true)
         .where("action")
-        .in(["deposit", "withdraw"])
+        .in(["deposit"])
         .exec();
     }
 
@@ -82,14 +82,9 @@ exports.merchantCustomerList = async (req, res) => {
       // Iterate through the array and add records to the uniqueRecords object
       const uniqueRecords = {};
 
-      // Iterate through the array and add records to the uniqueRecords object
-
       mCustomerList.forEach((record) => {
-        if (
-          !uniqueRecords.hasOwnProperty(record.address) &&
-          record.inwardCurrency !== "usd"
-        ) {
-          uniqueRecords[record.address] = record;
+        if (!uniqueRecords.hasOwnProperty(record.customerAddress)) {
+          uniqueRecords[record.customerAddress] = record;
         }
       });
 
