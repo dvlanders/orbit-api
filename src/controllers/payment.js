@@ -467,6 +467,7 @@ exports.balances = async (req, res) => {
       balance = checkBalance?.data?.filter((e) => e.currency === "usd");
     }
     console.log(balance);
+    balance = balance[0];
 
     let transaction = await TransactionLog.scan()
       .where("user_id")
@@ -477,9 +478,50 @@ exports.balances = async (req, res) => {
       .eq(true)
       .where("withdrawStatus")
       .eq(true)
-      .filter("createDate")
-      .between(firstDayOfMonth, currentDate)
+      .where("action")
+      .eq("payout")
       .exec();
+
+    // console.log(transaction);
+    let maxCreateDateObject;
+    let txnWD;
+
+    if (transaction.count > 0) {
+      maxCreateDateObject = transaction.reduce((max, txn) => {
+        return new Date(max.createDate) > new Date(txn.createDate) ? max : txn;
+      }, transaction[0]); // Initialize with the first transaction
+
+      txnWD = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("txnStatus")
+        .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .where("withdrawStatus")
+        .eq(true)
+        .where("action")
+        .in(["withdraw", "deposit"])
+        .where("createDate")
+        .gt(moment(maxCreateDateObject.createDate).valueOf())
+        .exec();
+    } else {
+      txnWD = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("txnStatus")
+        .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .where("withdrawStatus")
+        .eq(true)
+        .where("action")
+        .in(["withdraw", "deposit"])
+        .exec();
+    }
+
+    // let startDate = maxCreateDateObject.createDate;
+    // let endDate = moment().toISOString();
 
     let payment = 0;
     let payment_count = 0;
@@ -488,34 +530,28 @@ exports.balances = async (req, res) => {
     let adjustments = 0;
     let total_incoming = 0;
     let total = 0;
-    // let totalIncoming;
-    // let totalOutgoing;
-    // if (transaction.count > 0) {
-    //   transaction.map((e) => {
-    //     payment += e.inwardBaseAmount;
-    //     payment_count += 1;
-    //   });
-    // }
-    if (transaction.count > 0) {
-      transaction.forEach((transaction) => {
-        if (transaction.action === "deposit") {
-          payment += transaction.outwardBaseAmount;
+
+    if (txnWD.count > 0) {
+      txnWD.forEach((txn) => {
+        if (txn.action === "deposit") {
+          payment += txn.outwardTotalAmount;
           payment_count += 1;
-        } else if (transaction.action === "withdraw") {
-          refund += transaction.inwardBaseAmount;
+        } else if (txn.action === "withdraw") {
+          refund += txn.inwardBaseAmount;
           refund_count += 1;
         }
       });
     }
+
     console.log(payment);
     console.log(refund);
 
-    // total = payment - refund - adjustments;
-    total = balance?.[0]?.balance || 0;
+    total = payment - refund - adjustments;
+    total_available_balance = balance?.available;
     return res.status(responseCode.success).json(
       rs.successResponse("BALANCE RETRIVED", {
         currently_way_to_bank_account: 0,
-        estimate_future_payouts: 0,
+        estimate_future_payouts: total_available_balance,
         payment_count: payment_count,
         payment: payment,
         refund_count: refund_count,
