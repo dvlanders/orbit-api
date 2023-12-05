@@ -96,7 +96,7 @@ async function makeTranferPayout() {
         },
         data: {
           currency: "usd",
-          amount: balance[0].available,
+          amount: balance.available,
           isWire: true,
         },
       });
@@ -364,8 +364,8 @@ exports.payoutTransationOne = async (req, res) => {
           .eq(true)
           .filter("createDate")
           .between(
-            moment(mTransactionList[0].createDate).valueOf(),
-            moment(mTransactionList1[0].createDate).valueOf()
+            moment(mTransactionList1[0].createDate).valueOf(),
+            moment(mTransactionList[0].createDate).valueOf()
           )
           .exec();
 

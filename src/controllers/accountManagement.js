@@ -1046,6 +1046,7 @@ exports.dashboard = async (req, res) => {
         "outwardCurrency",
         "inwardBaseAmount",
         "inwardCurrency",
+        "inwardTotalAmount",
         "customerAddress",
         "action",
       ])
@@ -1060,15 +1061,16 @@ exports.dashboard = async (req, res) => {
       .where("action")
       .in(["deposit", "withdraw", "payout"])
       .exec();
-
+    // console.log(paymentData);
     let totalPurchase = 0; // The number of payments by the customer.
     let totalVolume = 0; // The sum of the payment done by the customer.
     const uniqueRecords = {};
     let customerCount = 0;
     let paymentArray = [];
     let payoutArray = [];
+    let monthlyCalculationArray = [];
 
-    let refund = 0;
+    let refundAmount = 0;
     let monetization = 0;
     let adjustments = 0;
     let registeredYear = momentTZ(req.user["createDate"])
@@ -1094,16 +1096,38 @@ exports.dashboard = async (req, res) => {
     let monthlySums = {};
     let currencies = {};
 
+    let monthlyPurchase = {};
+    let monthlyCustomers;
+
     if (paymentData.count !== 0) {
       paymentData.map((txn) => {
         if (txn.action == "deposit") {
+          monthlyCalculationArray.push(txn);
           totalVolume += txn.outwardBaseAmount;
           totalPurchase += +1;
           if (paymentArray.length < 4) paymentArray.unshift(txn);
-
           // Convert transaction date to the user's timezone
           let txnDate = momentTZ(txn.createDate).tz(req.user["timeZone"]);
           // Check if the transaction is in the start year and month is greater or equal to startMonth
+          let year = txnDate.year();
+          let theMonth = txnDate.month() + 1; // Month is 0-indexed in JavaScript, so adding 1
+
+          if (!monthlyPurchase[year]) {
+            monthlyPurchase[year] = {};
+          }
+
+          if (!monthlyPurchase[year][theMonth]) {
+            monthlyPurchase[year][theMonth] = {
+              month: theMonth,
+              purchase: 0,
+              amount: 0,
+              year: year,
+            };
+          }
+          // Increment purchase count and add to the amount
+          monthlyPurchase[year][theMonth].purchase += 1;
+          monthlyPurchase[year][theMonth].amount += txn.outwardBaseAmount;
+
           if (
             txnDate.year() === startYear &&
             txnDate.month() + 1 >= startMonth
@@ -1142,7 +1166,13 @@ exports.dashboard = async (req, res) => {
 
         if (txn.action == "payout" && payoutArray.length < 4)
           payoutArray.unshift(txn);
+
+        if (txn.action == "withdraw") {
+          // console.log( txn.inwardTotalAmount);
+          refundAmount += txn.inwardTotalAmount;
+        }
       });
+      monthlyCustomers = getUniqueCustomersByMonth(monthlyCalculationArray);
       customerCount = Object.keys(uniqueRecords).length;
     }
 
@@ -1155,9 +1185,69 @@ exports.dashboard = async (req, res) => {
       return { [month]: currencies };
     });
 
-    // totalRevenue = deposit - refund - monetization - adjastments
+    let result = [];
+
+    Object.keys(monthlyPurchase).forEach((year) => {
+      Object.keys(monthlyPurchase[year]).forEach((month) => {
+        result.push(monthlyPurchase[year][month]);
+      });
+    });
+    //  - Monetization and Adjustments
+    totalRevenue = totalVolume - refundAmount;
+
+    let customersPercentage = 0;
+    if (monthlyCustomers.length > 0) {
+      let currentMonth =
+        monthlyCustomers[monthlyCustomers.length - 1].customerCount;
+      let previousMonth = 0;
+      if (monthlyCustomers.length > 1) {
+        previousMonth =
+          monthlyCustomers[monthlyCustomers.length - 2].customerCount;
+      }
+      if (previousMonth === 0 && currentMonth > 0) {
+        customersPercentage = 100;
+      } else if (currentMonth === 0 && previousMonth > 0) {
+        customersPercentage = -100; // From a positive number to 0
+      } else {
+        customersPercentage =
+          ((currentMonth - previousMonth) / previousMonth) * 100;
+      }
+    }
+
+    let volumePercentage = 0;
+    let purchasePercentage = 0;
+
+    if (result.length > 0) {
+      let currentMonthVolume = result[result.length - 1].amount;
+      let previousMonthVolume = 0;
+
+      let currentMonthPurchase = result[result.length - 1].purchase;
+      let previousMonthPurchase = 0;
+
+      if (result.length > 1) {
+        previousMonthVolume = result[result.length - 2].amount;
+        previousMonthPurchase = result[result.length - 2].purchase;
+      }
+
+      if (previousMonthVolume === 0 && currentMonthVolume > 0) {
+        volumePercentage = 100;
+        purchasePercentage = 100;
+      } else if (currentMonthVolume === 0 && previousMonthVolume > 0) {
+        volumePercentage = -100; // From a positive number to 0
+        purchasePercentage = -100;
+      } else {
+        volumePercentage =
+          ((currentMonthVolume - previousMonthVolume) / previousMonthVolume) *
+          100;
+        purchasePercentage =
+          ((currentMonthPurchase - previousMonthPurchase) /
+            previousMonthPurchase) *
+          100;
+      }
+    }
 
     let responses = {
+      totalPurchaseVolume: result,
       totalPurchase: totalPurchase,
       totalVolume,
       totalSales: totalSales,
@@ -1165,13 +1255,12 @@ exports.dashboard = async (req, res) => {
       paymentData: paymentArray,
       payoutData: payoutArray,
       totalCustomers: customerCount,
-      monthlyPurchase: 0,
-      purchasePercentage: null,
-      monthlyCustomers: 0,
-      customersPercentage: null,
-      totalRevenue: 0,
+      monthlyCustomers: monthlyCustomers,
+      totalRevenue: totalRevenue,
       monthlyRevenue: 0,
-      revenuePercentage: null,
+      volumePercentage,
+      customersPercentage: customersPercentage,
+      purchasePercentage,
     };
 
     return res
@@ -1183,3 +1272,53 @@ exports.dashboard = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+function getUniqueCustomersByMonth(data) {
+  // Helper function to extract year and month from a date string
+  function getYearMonth(dateStr) {
+    let date = new Date(dateStr);
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth() + 1, // Month is 0-indexed in JavaScript, so adding 1
+    };
+  }
+
+  let uniqueCustomers = new Map();
+
+  // Sort data by createDate in ascending order
+  data.sort((a, b) => new Date(a.createDate) - new Date(b.createDate));
+
+  for (let item of data) {
+    let { year, month } = getYearMonth(item.createDate);
+    let yearMonthKey = `${year}-${month}`; // Creating a combined key for year and month
+    let customer = item.customerAddress;
+
+    // Check if this customer has already appeared in any previous month
+    let isNewCustomer = true;
+    for (let [key, value] of uniqueCustomers) {
+      if (key < yearMonthKey && value.has(customer)) {
+        isNewCustomer = false;
+        break;
+      }
+    }
+
+    // If this is a new customer for this month or earlier, add them
+    if (isNewCustomer) {
+      if (!uniqueCustomers.has(yearMonthKey)) {
+        uniqueCustomers.set(yearMonthKey, new Set());
+      }
+      uniqueCustomers.get(yearMonthKey).add(customer);
+    }
+  }
+
+  // Convert the map to the desired array format with customer count
+  let result = Array.from(uniqueCustomers).map(([yearMonthKey, customers]) => {
+    let [year, month] = yearMonthKey.split("-").map(Number);
+    return {
+      year,
+      month,
+      customerCount: customers.size,
+    };
+  });
+
+  return result;
+}
