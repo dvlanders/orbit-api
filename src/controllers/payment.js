@@ -550,7 +550,7 @@ exports.balances = async (req, res) => {
     total_available_balance = balance?.available;
     return res.status(responseCode.success).json(
       rs.successResponse("BALANCE RETRIVED", {
-        currently_way_to_bank_account: 0,
+        currently_way_to_bank_account: total,
         estimate_future_payouts: total_available_balance,
         payment_count: payment_count,
         payment: payment,
