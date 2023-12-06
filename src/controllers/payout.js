@@ -273,14 +273,13 @@ exports.payoutTransations = async (req, res) => {
 exports.payoutTransationOne = async (req, res) => {
   try {
     // todo as payout might be for the users 3 as the 1st payout so we have to handle that scenario
-    console.log(req.user["id"]);
+    // console.log(req.user["id"]);
     const { pyid } = req.params;
     if (!pyid) {
       return res
         .status(responseCode.badRequest)
         .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
     }
-
     let mTransactionList;
     mTransactionList = await TransactionLog.scan()
       .where("user_id")
@@ -293,6 +292,12 @@ exports.payoutTransationOne = async (req, res) => {
       .eq(true)
       .exec();
 
+    if (mTransactionList.count === 0) {
+      return res
+        .status(responseCode.badRequest)
+        .json(rs.incorrectDetails("PAYOUT DOES NOT EXIST", {}));
+    }
+
     let finalTxnList;
     let totalPayment = 0;
     let paymentCount = 0;
@@ -303,96 +308,99 @@ exports.payoutTransationOne = async (req, res) => {
     let paymentFees = 0;
     let grossAmount = 0;
     let netAmount = 0;
-    if (mTransactionList.count > 0) {
-      let checkTxnCount = await TransactionLog.scan()
+
+    let checkTxnCount = await TransactionLog.scan()
+      .where("user_id")
+      .eq(req.user["id"])
+      .where("action")
+      .eq("payout")
+      .where("withdrawStatus")
+      .eq(true)
+      .where("txnStatus")
+      .eq(true)
+      .where("marketOrderStatus")
+      .eq(true)
+      .exec();
+
+    // console.log(checkTxnCount);
+    // console.log(mTransactionList[0].payoutCount);
+
+    let txnOne;
+    checkTxnCount.count > 1
+      ? (txnOne = checkTxnCount[checkTxnCount.count - 1])
+      : (txnOne = checkTxnCount[0]);
+    // console.log(txnOne.payoutCount);
+
+    if (
+      checkTxnCount.count === 1 ||
+      mTransactionList[0].payoutCount === txnOne.payoutCount
+    ) {
+      finalTxnList = await TransactionLog.scan()
         .where("user_id")
         .eq(req.user["id"])
         .where("action")
-        .eq("payout")
+        .in(["deposit", "withdraw"])
         .where("withdrawStatus")
         .eq(true)
         .where("txnStatus")
         .eq(true)
         .where("marketOrderStatus")
         .eq(true)
+        .where("createDate")
+        .lt(moment(txnOne.createDate).valueOf())
         .exec();
-      if (checkTxnCount.count === 1) {
-        finalTxnList = await TransactionLog.scan()
-          .where("user_id")
-          .eq(req.user["id"])
-          .where("action")
-          .in(["deposit", "withdraw"])
-          .where("withdrawStatus")
-          .eq(true)
-          .where("txnStatus")
-          .eq(true)
-          .where("marketOrderStatus")
-          .eq(true)
-          .where("createDate")
-          .lt(moment(mTransactionList[0].createDate).valueOf())
-          .exec();
-        payoutStartDate = req.user["createDate"];
-        payoutEndDate = mTransactionList[0].createDate;
-      } else {
-        let previousPayoutCount = mTransactionList[0].payoutCount - 1;
+      payoutStartDate = req.user["createDate"];
+      payoutEndDate = txnOne.createDate;
+    } else {
+      let previousPayoutCount = mTransactionList[0].payoutCount - 1;
+      // console.log(previousPayoutCount);
 
-        let mTransactionList1 = await TransactionLog.scan()
-          .where("user_id")
-          .eq(req.user["id"])
-          .where("action")
-          .eq("payout")
-          .where("withdrawStatus")
-          .eq(true)
-          .where("txnStatus")
-          .eq(true)
-          .where("marketOrderStatus")
-          .eq(true)
-          .where("payoutCount")
-          .eq(previousPayoutCount)
-          .exec();
+      let mTransactionList1 = checkTxnCount.filter(
+        (e) => e.payoutCount === previousPayoutCount
+      );
 
-        finalTxnList = await TransactionLog.scan()
-          .where("user_id")
-          .eq(req.user["id"])
-          .where("action")
-          .in(["deposit", "withdraw"])
-          .where("withdrawStatus")
-          .eq(true)
-          .where("txnStatus")
-          .eq(true)
-          .where("marketOrderStatus")
-          .eq(true)
-          .filter("createDate")
-          .between(
-            moment(mTransactionList1[0].createDate).valueOf(),
-            moment(mTransactionList[0].createDate).valueOf()
-          )
-          .exec();
+      // console.log(mTransactionList1);
+      finalTxnList = await TransactionLog.scan()
+        .where("user_id")
+        .eq(req.user["id"])
+        .where("action")
+        .in(["deposit", "withdraw"])
+        .where("withdrawStatus")
+        .eq(true)
+        .where("txnStatus")
+        .eq(true)
+        .where("marketOrderStatus")
+        .eq(true)
+        .filter("createDate")
+        .between(
+          moment(mTransactionList1[0].createDate).valueOf(),
+          moment(mTransactionList[0].createDate).valueOf()
+        )
+        .exec();
 
-        payoutStartDate = mTransactionList1[0].createDate;
-        payoutEndDate = mTransactionList[0].createDate;
+      payoutStartDate = mTransactionList1[0].createDate;
+      payoutEndDate = mTransactionList[0].createDate;
+    }
+
+    finalTxnList = finalTxnList.map((txn) => {
+      if (txn.action == "deposit") {
+        totalPayment += txn.outwardBaseAmount;
+        paymentCount += +1;
+        paymentFees += txn.outwardTxnFees;
       }
 
-      finalTxnList = finalTxnList.map((txn) => {
-        if (txn.action == "deposit") {
-          totalPayment += txn.outwardBaseAmount;
-          paymentCount += +1;
-          paymentFees += txn.outwardTxnFees;
-        }
-
-        if (txn.action == "withdraw") {
-          totalRefund += txn.inwardTotalAmount;
-          refundCount += +1;
-          paymentFees += txn.inwardTxnFees;
-        }
-      });
-    }
+      if (txn.action == "withdraw") {
+        totalRefund += txn.inwardTotalAmount;
+        refundCount += +1;
+        paymentFees += txn.inwardTxnFees;
+      }
+    });
 
     // console.log(mTransactionList);
 
     return res.status(responseCode.success).json(
       rs.successResponse("CUSTOMERS RETRIVED", {
-        txnData: mTransactionList.length == 0 ? {} : mTransactionList[0],
+        txnData: mTransactionList?.length == 0 ? {} : mTransactionList[0],
         payoutStartDate,
         payoutEndDate,
         totalPayment,
@@ -405,6 +413,7 @@ exports.payoutTransationOne = async (req, res) => {
       })
     );
   } catch (err) {
+    console.log(err);
     return res
       .status(responseCode.serverError)
       .json(rs.errorResponse(err.toString()));
