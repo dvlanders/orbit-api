@@ -54,7 +54,7 @@ exports.merchantCustomerList = async (req, res) => {
         .filter("createDate")
         .between(fromDate, toDate)
         .exec();
-      console.log("mCustomerList1", mCustomerList);
+      // console.log("mCustomerList1", mCustomerList);
     } else {
       mCustomerList = await TransactionLog.scan()
         .attributes([
@@ -91,7 +91,7 @@ exports.merchantCustomerList = async (req, res) => {
       // Convert the unique records object back to an array
       uniqueRecordsArray = Object.values(uniqueRecords);
 
-      console.log(uniqueRecordsArray);
+      // console.log(uniqueRecordsArray);
 
       // let uniqueCurrencyList = Array.from(
       //   new Set(mCustomerList.map((e) => e.cryptoCurrency))
@@ -118,6 +118,7 @@ exports.merchantCustomerList = async (req, res) => {
           walletItem.logoUrl = matchingLogo.logoUrl;
         }
       });
+      uniqueRecordsArray.sort((a, b) => b.createDate - a.createDate);
     }
 
     return res
@@ -199,67 +200,9 @@ exports.internalMerchantCustomer = async (req, res) => {
   }
 };
 
-// exports.internalMerchantCustomer = async (req, res) => {
-//   try {
-//     console.log(req.user["id"]);
-
-//     const { cid: customerWalletAddress } = req.params;
-
-//     if (customerWalletAddress === null || !customerWalletAddress) {
-//       return res
-//         .status(responseCode.badRequest)
-//         .json(rs.incorrectDetails("PLEASE PASS THE TXN HASH"));
-//     }
-
-//     let mTransactionList;
-
-//     mTransactionList = await TransactionLog.scan()
-//       .where("user_id")
-//       .eq(req.user["id"])
-//       .where("txnStatus")
-//       .eq(true)
-//       .where("customerAddress")
-//       .eq(customerWalletAddress)
-//       .exec();
-
-//     if (mTransactionList.count != 0) {
-//       let uniqueCurrencyList = Array.from(
-//         new Set(mTransactionList.map((e) => e.cryptoCurrency))
-//       );
-
-//       let currencyList = await Currency.scan()
-//         .attributes(["currency", "logoUrl"])
-//         .where("isActive")
-//         .eq(true)
-//         .where("currency")
-//         .in(uniqueCurrencyList)
-//         .exec();
-
-//       mTransactionList.forEach((walletItem) => {
-//         // Find the first matching currency logo
-//         const matchingLogo = currencyList.find(
-//           (cLogo) => cLogo.currency === walletItem.cryptoCurrency
-//         );
-//         // If a matching logo is found, add it to the wallet item
-//         if (matchingLogo) {
-//           walletItem.logoUrl = matchingLogo.logoUrl;
-//         }
-//       });
-//     }
-
-//     return res
-//       .status(responseCode.success)
-//       .json(rs.successResponse("CUSTOMERS RETRIVED", mTransactionList));
-//   } catch (err) {
-//     return res
-//       .status(responseCode.serverError)
-//       .json(rs.errorResponse(err.toString()));
-//   }
-// };
-
 exports.internalMerchantCustomerOne = async (req, res) => {
   try {
-    console.log(req.user["id"]);
+    // console.log(req.user["id"]);
     const { txhash } = req.params;
 
     if (txhash === null || !txhash) {
@@ -293,8 +236,7 @@ exports.internalMerchantCustomerOne = async (req, res) => {
         .where("currency")
         .eq(mTransaction[0]?.inwardCurrency)
         .exec();
-      console.log("currencyList", currencyList);
-      // return false
+      // console.log("currencyList", currencyList);
 
       mTransaction[0].logoUrl = currencyList?.[0]?.logoUrl || "";
     }
@@ -314,109 +256,9 @@ exports.internalMerchantCustomerOne = async (req, res) => {
   }
 };
 
-// exports.internalMerchantCustomerOne = async (req, res) => {
-//   try {
-//     console.log(req.user["id"]);
-//     const { txhash } = req.params;
-
-//     if (txhash === null || !txhash) {
-//       return res
-//         .status(responseCode.badRequest)
-//         .json(rs.incorrectDetails("PLEASE PASS THE TXN HASH"));
-//     }
-
-//     let mTransaction;
-
-//     mTransaction = await TransactionLog.scan()
-//       .where("user_id")
-//       .eq(req.user["id"])
-//       .where("txHash")
-//       .eq(txhash)
-//       .where("txnStatus")
-//       .eq(true)
-//       .exec();
-
-//     if (mTransaction.count != 0) {
-//       let currencyList = await Currency.scan()
-//         .attributes(["currency", "logoUrl"])
-//         .where("isActive")
-//         .eq(true)
-//         .where("currency")
-//         .eq(mTransaction[0]?.cryptoCurrency)
-//         .exec();
-
-//       mTransaction[0].logoUrl = currencyList[0].logoUrl;
-//     }
-
-//     return res
-//       .status(responseCode.success)
-//       .json(
-//         rs.successResponse(
-//           "CUSTOMERS RETRIVED",
-//           mTransaction.length > 0 ? mTransaction[0] : {}
-//         )
-//       );
-//   } catch (err) {
-//     return res
-//       .status(responseCode.serverError)
-//       .json(rs.errorResponse(err.toString()));
-//   }
-// };
-
-/**
- * @description This API is used to get the data regarding the all customer transactions
- */
-// exports.internalMerchantCustomerList = async (req, res) => {
-//   try {
-//     console.log(req.user["id"]);
-
-//     let mTransactionList;
-
-//     mTransactionList = await TransactionLog.scan()
-//       .where("user_id")
-//       .eq(req.user["id"])
-//       .where("txnStatus")
-//       .eq(true)
-//       .exec();
-
-//     if (mTransactionList.count != 0) {
-//       let uniqueCurrencyList = Array.from(
-//         new Set(mTransactionList.map((e) => e.cryptoCurrency))
-//       );
-
-//       let currencyList = await Currency.scan()
-//         .attributes(["currency", "logoUrl"])
-//         .where("isActive")
-//         .eq(true)
-//         .where("currency")
-//         .in(uniqueCurrencyList)
-//         .exec();
-
-//       mTransactionList.forEach((walletItem) => {
-//         // Find the first matching currency logo
-//         const matchingLogo = currencyList.find(
-//           (cLogo) => cLogo.currency === walletItem.cryptoCurrency
-//         );
-//         // If a matching logo is found, add it to the wallet item
-//         if (matchingLogo) {
-//           walletItem.logoUrl = matchingLogo.logoUrl;
-//         }
-//       });
-//     }
-
-//     return res
-//       .status(responseCode.success)
-//       .json(rs.successResponse("CUSTOMERS RETRIVED", mTransactionList));
-//   } catch (err) {
-//     return res
-//       .status(responseCode.serverError)
-//       .json(rs.errorResponse(err.toString()));
-//   }
-// };
-
 exports.internalMerchantCustomerList = async (req, res) => {
   try {
-    console.log(req.user["id"]);
+    // console.log(req.user["id"]);
     let mTransactionList;
 
     let from_date = req.query?.from_date;
@@ -478,7 +320,7 @@ exports.internalMerchantCustomerList = async (req, res) => {
         .where("currency")
         .in(uniqueCurrencyList)
         .exec();
-      console.log("currencyList", currencyList);
+      // console.log("currencyList", currencyList);
 
       mTransactionList.forEach((walletItem) => {
         // Find the first matching currency logo
@@ -490,6 +332,7 @@ exports.internalMerchantCustomerList = async (req, res) => {
           walletItem.logoUrl = matchingLogo.logoUrl;
         }
       });
+      mTransactionList.sort((a, b) => b.createDate - a.createDate);
     }
 
     return res
@@ -524,7 +367,7 @@ exports.updateReceipt = async (req, res) => {
       { receiptTimestamp: Date.now() }
     );
 
-    console.log(updateReciptDate);
+    // console.log(updateReciptDate);
 
     return res
       .status(responseCode.success)

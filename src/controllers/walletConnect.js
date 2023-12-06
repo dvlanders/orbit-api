@@ -418,14 +418,14 @@ async function transactionHistory() {
 
       console.log(scaledAmount);
 
-      let etherscanData = etherScanList.filter(
+      let etherscanData = etherScanList?.filter(
         (e) =>
           e.from === txn.customerAddress &&
           e.to === txn.merchantAddress &&
           BigInt(e.value) === scaledAmount
       );
 
-      if (etherscanData.length === 0) return;
+      if (etherscanData?.length === 0) return;
 
       console.log(etherscanData);
 
