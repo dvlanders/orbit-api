@@ -318,282 +318,6 @@ exports.myAccount = async (req, res) => {
   }
 };
 
-exports.dashboard1 = async (req, res) => {
-  try {
-    let refund = 0;
-    let monetization = 0;
-    let adjustments = 0;
-    let registeredYear = momentTZ(req.user["createDate"])
-      .tz(req.user["timeZone"])
-      .year();
-
-    let currentYear = momentTZ(moment().toISOString())
-      .tz(req.user["timeZone"])
-      .year();
-    console.log("registeredYear", currentYear);
-
-    let isRegisteredCurrentYear = registeredYear == currentYear ? true : false;
-    let startYear = currentYear;
-
-    let startMonth = 1;
-    if (isRegisteredCurrentYear) {
-      startYear = registeredYear;
-      startMonth =
-        momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1; // +1 as the numbering in the momentjs libary starts from 0 index
-    }
-
-    let paymentData = await TransactionLog.scan()
-      .attributes([
-        "id",
-        "amount",
-        "email",
-        "status",
-        "createDate",
-        "timestamp",
-        "txHash",
-        "outwardBaseAmount",
-        "outwardCurrency",
-        "inwardBaseAmount",
-        "inwardCurrency",
-        "customerAddress",
-      ])
-      .where("user_id")
-      .eq(req.user["id"])
-      .where("txnStatus")
-      .eq(true)
-      .where("marketOrderStatus")
-      .eq(true)
-      .where("withdrawStatus")
-      .eq(true)
-      .where("action")
-      .eq("deposit")
-      .exec();
-
-    paymentData = paymentData.map((e) => ({
-      amount: e.outwardBaseAmount,
-      date: e.createDate,
-      status: e.status,
-      email: e.email,
-      id: e.id,
-      timestamp: e.timestamp,
-      txHash: e.txHash,
-      outwardBaseAmount: e.outwardBaseAmount,
-      outwardCurrency: e.outwardCurrency,
-      inwardBaseAmount: e.inwardBaseAmount,
-      inwardCurrency: e.inwardCurrency,
-      customerAddress: e.customerAddress,
-    }));
-
-    let paymentOutData = await TransactionLog.scan()
-      .attributes([
-        "id",
-        "status",
-        "createDate",
-        "outwardTotalAmount",
-        "inwardCurrency",
-      ])
-      .where("user_id")
-      .eq(req.user["id"])
-      .where("txnStatus")
-      .eq(true)
-      .where("marketOrderStatus")
-      .eq(true)
-      .where("withdrawStatus")
-      .eq(true)
-      .where("action")
-      .eq("charge")
-      .exec();
-
-    let tSales = [];
-    let currencyObjects;
-    let customerCount = 0;
-    if (paymentData.length !== 0) {
-      const uniqueRecords = {};
-
-      paymentData.forEach((record) => {
-        if (!uniqueRecords.hasOwnProperty(record.customerAddress)) {
-          uniqueRecords[record.customerAddress] = record;
-        }
-      });
-
-      customerCount = Object.keys(uniqueRecords).length;
-
-      let filterData = paymentData.filter(
-        (e) => startYear === momentTZ(e.date).tz(req.user["timeZone"]).year()
-      );
-
-      let uniqueCurrencies = [
-        ...new Set(paymentData.map((e) => e.inwardCurrency)),
-      ];
-
-      currencyObjects = uniqueCurrencies.map((currency) => ({
-        name: currency,
-      }));
-      while (startMonth <= 12) {
-        uniqueCurrencies.forEach((currency) => {
-          let dataArr = filterData.filter(
-            (e) =>
-              momentTZ(e.date).tz(req.user["timeZone"]).month() + 1 ===
-                startMonth && e.inwardCurrency === currency
-          );
-
-          if (dataArr.length > 0) {
-            let CryptoAmount = 0;
-
-            dataArr.forEach((e) => (CryptoAmount += e.inwardBaseAmount));
-
-            tSales.push({
-              month: startMonth,
-              currency: currency,
-              amount: CryptoAmount,
-            });
-          } else {
-            tSales.push({
-              month: startMonth,
-              currency: currency,
-              amount: 0,
-            });
-          }
-        });
-        console.log(startMonth);
-        startMonth++;
-      }
-    }
-
-    let totalRev = 0;
-
-    let monthData = [];
-    let month = 1;
-    for (let i = 0; i < paymentData.length; i++) {
-      totalRev =
-        totalRev +
-        paymentData[i].outwardBaseAmount -
-        refund -
-        monetization -
-        adjustments;
-    }
-    while (month < 31) {
-      let total = 0;
-      for (let i = 0; i < paymentData.length; i++) {
-        const dateString = paymentData[i].date;
-        const date = new Date(dateString);
-        let getMonth = date.getDate();
-        let onlymon = date.getUTCMonth() + 1;
-
-        if (getMonth == month) {
-          total =
-            total +
-            paymentData[i].outwardBaseAmount -
-            refund -
-            monetization -
-            adjustments;
-        }
-      }
-      if (total != 0)
-        monthData.push({
-          day: month,
-          totalAmount: total.toFixed(2),
-          month: 11,
-        });
-      month = month + 1;
-    }
-
-    let monthPurchase = [];
-    let mon = 1;
-    while (mon < 31) {
-      let totals = 0;
-      for (let i = 0; i < paymentData.length; i++) {
-        const dateString = paymentData[i].date;
-        const date = new Date(dateString);
-        let getMonth = date.getDate();
-        //date.getUTCMonth() + 1;
-        if (getMonth == mon) {
-          let purchaseLength = [];
-          purchaseLength.push(paymentData[i]);
-
-          totals = totals + purchaseLength.length;
-        }
-      }
-      if (totals != 0)
-        monthPurchase.push({ day: mon, purchase: totals, month: 11 });
-      mon = mon + 1;
-    }
-
-    let totalCustomers = await CustomerWalletAddress.scan()
-      .where("user_id")
-      .eq(req.user["id"])
-      .exec();
-
-    let customerCurrency = "";
-    let monthlyCustomer = [];
-    let customerCurrenc = [];
-    let months = 1;
-    while (months < 31) {
-      let totalCus = 0;
-
-      for (let i = 0; i < totalCustomers.length; i++) {
-        const dateString = totalCustomers[i].createDate;
-        const date = new Date(dateString);
-        let getMonths = date.getDate();
-        let onlymon = date.getUTCMonth() + 1;
-
-        if (getMonths == months) {
-          customerCurrency = customerCurrency + totalCustomers[i].currency;
-          let customerLength = [];
-          customerLength.push(totalCustomers[i]);
-
-          totalCus = totalCus + customerLength.length;
-        }
-      }
-      if (totalCus != 0)
-        customerCurrenc.push({
-          day: months,
-          currency: customerCurrency,
-          month: 11,
-        });
-
-      monthlyCustomer.push({
-        day: months,
-        customers: totalCus,
-        month: 11,
-      });
-      months = months + 1;
-    }
-
-    let responses = {
-      totalPurchase: paymentData.length ? paymentData.length : 0,
-      monthlyPurchase: monthPurchase ? monthPurchase : 0,
-      purchasePercentage: null,
-      totalCustomers: customerCount,
-      monthlyCustomers: monthlyCustomer,
-      customersPercentage: null,
-      totalRevenue: totalRev ? totalRev : 0,
-      monthlyRevenue: monthData,
-      revenuePercentage: null,
-      totalSales: tSales,
-      currencies: currencyObjects,
-      paymentData:
-        paymentData.length > 0
-          ? paymentData.sort((a, b) => b.timestamp - a.timestamp).slice(0, 4)
-          : null,
-      payoutData:
-        paymentOutData.length > 0
-          ? paymentOutData
-              .sort((a, b) => b.createDate - a.createDate)
-              .slice(0, 4)
-          : [],
-    };
-
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("DATA RETRIVED", responses));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
-};
-
 // ADD SALES IN THE DASHBOARD API -- NIHAR
 // exports.dashboard = async (req, res) => {
 //   try {
@@ -1179,7 +903,12 @@ exports.dashboard = async (req, res) => {
     let totalSales = Object.keys(monthlySums).map((month) => {
       let currencies = Object.values(monthlySums[month]).map(
         ({ currency, amount, month }) => {
-          return { currency, amount, month };
+          return {
+            currency,
+            amount,
+            month,
+            monthName: common.getMonthName(month),
+          };
         }
       );
       return { [month]: currencies };
@@ -1189,6 +918,7 @@ exports.dashboard = async (req, res) => {
 
     Object.keys(monthlyPurchase).forEach((year) => {
       Object.keys(monthlyPurchase[year]).forEach((month) => {
+        monthlyPurchase[year][month].monthName = common.getMonthName(month);
         result.push(monthlyPurchase[year][month]);
       });
     });
@@ -1216,7 +946,6 @@ exports.dashboard = async (req, res) => {
 
     let volumePercentage = 0;
     let purchasePercentage = 0;
-
     if (result.length > 0) {
       let currentMonthVolume = result[result.length - 1].amount;
       let previousMonthVolume = 0;
@@ -1272,6 +1001,7 @@ exports.dashboard = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
 function getUniqueCustomersByMonth(data) {
   // Helper function to extract year and month from a date string
   function getYearMonth(dateStr) {

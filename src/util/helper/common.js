@@ -1,6 +1,7 @@
 /* This is a JavaScript library that provides a consistent API for multiple different cryptographic
 algorithms. */
 const CryptoTS = require("crypto-ts");
+const moment = require("moment");
 
 exports.generateRandomNumberWithDigits = (digits) => {
   const min = Math.pow(10, digits - 1);
@@ -50,4 +51,11 @@ exports.eventBridge = async (message, statusCode) => {
     console.log(error.toString());
     return false;
   }
+};
+
+exports.getMonthName = (monthNumber) => {
+  // Month in JavaScript is 0-indexed (0 for January, 1 for February, etc.),
+  // so subtract 1 from the given month number
+  let date = moment({ month: parseInt(monthNumber) - 1 });
+  return date.format("MMM"); // 'MMM' gives the abbreviated month name
 };
