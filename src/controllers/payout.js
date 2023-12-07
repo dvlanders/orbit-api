@@ -322,14 +322,12 @@ exports.payoutTransationOne = async (req, res) => {
       .eq(true)
       .exec();
 
-    // console.log(checkTxnCount);
-    // console.log(mTransactionList[0].payoutCount);
+    if (checkTxnCount.count > 1)
+      checkTxnCount.sort((a, b) => a.payoutCount - b.payoutCount);
 
-    let txnOne;
-    checkTxnCount.count > 1
-      ? (txnOne = checkTxnCount[checkTxnCount.count - 1])
-      : (txnOne = checkTxnCount[0]);
+    let txnOne = checkTxnCount[0];
     // console.log(txnOne.payoutCount);
+    // console.log(mTransactionList[0].payoutCount);
 
     if (
       checkTxnCount.count === 1 ||
@@ -353,13 +351,12 @@ exports.payoutTransationOne = async (req, res) => {
       payoutEndDate = txnOne.createDate;
     } else {
       let previousPayoutCount = mTransactionList[0].payoutCount - 1;
-      // console.log(previousPayoutCount);
 
       let mTransactionList1 = checkTxnCount.filter(
         (e) => e.payoutCount === previousPayoutCount
       );
 
-      // console.log(mTransactionList1);
+      console.log(mTransactionList1);
       finalTxnList = await TransactionLog.scan()
         .where("user_id")
         .eq(req.user["id"])
