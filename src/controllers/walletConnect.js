@@ -4,16 +4,15 @@ const Transfer = require("../models/transfer");
 const User = require("../models/userAuth");
 const Currency = require("../models/currency");
 let baseUrl = process.env.SFOX_BASE_URL;
-let token = process.env.SFOX_ENTERPRISE_API_KEY;
 const { currencyData, currencyPairs } = require("../util/helper/currency");
 const { responseCode, rs } = require("../util");
 const WalletAddress = require("../models/walletAddress");
-const CustomerWalletAddress = require("../models/customerWalletAddress");
 const CurrencyPair = require("../models/currencyPairs");
 const dynamoose = require("dynamoose");
 const TransactionLog = require("../models/transactionLog");
 const cron = require("node-cron");
-const web3 = require("web3");
+const { generatePdf } = require("../util/helper/generatePdf");
+const { sendEmail } = require("../util/helper");
 
 /**
  * @description Get Currency List which are available --  API
@@ -417,6 +416,8 @@ async function transactionHistory() {
       );
 
       console.log(scaledAmount);
+      console.log(etherScanList);
+      if (!etherScanList) return;
 
       let etherscanData = etherScanList?.filter(
         (e) =>
@@ -508,7 +509,7 @@ async function transactionHistory() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  transactionHistory();
+  if (process.env.ISCRON === "TRUE") transactionHistory();
 });
 
 async function marketOrderTransaction() {
@@ -579,7 +580,7 @@ async function marketOrderTransaction() {
         headers: {
           Authorization: "Bearer " + userToken.userToken,
         },
-        // change the limit formula based on teh side type
+        // change the limit formula based on the side type
         params: {
           types: side,
           limit: 10,
@@ -616,6 +617,33 @@ async function marketOrderTransaction() {
               withdrawStatus: true,
             }
           );
+
+          if (marketOrderData?.email) {
+            const purchaseDetails = {
+              orderId: marketOrderData?.orderId,
+              totalAmount: marketOrderData?.outwardBaseAmount,
+              recipientName: marketOrderData?.name,
+              productDescription: marketOrderData?.description,
+              paymentAddress: marketOrderData?.customerAddress,
+              paymentDate: marketOrderData?.createDate,
+            };
+
+            //  here topdf and then email service
+            let pdfData = await generatePdf(purchaseDetails);
+
+            console.log("pdfData");
+            console.log(pdfData);
+
+            let mailDetails = {
+              from: `${process.env.FROM_EMAIL}`,
+              to: marketOrderData?.email,
+              subject: "Test",
+              fileName: "customerPReceipt.ejs",
+              file: pdfData,
+              text: "Payment Receipt Attachment",
+            };
+            await sendEmail.generateEmail(mailDetails);
+          }
         } else if (txn.action == "withdraw") {
           marketOrderData = await TransactionLog.update(
             { id: txn.id },
@@ -669,7 +697,7 @@ async function marketOrderTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  marketOrderTransaction();
+  if (process.env.ISCRON === "TRUE") marketOrderTransaction();
 });
 
 async function withdrawTransaction() {
@@ -778,7 +806,7 @@ async function withdrawTransaction() {
 }
 
 cron.schedule("*/1 * * * *", () => {
-  withdrawTransaction();
+  if (process.env.ISCRON === "TRUE") withdrawTransaction();
 });
 
 /**
@@ -936,8 +964,3 @@ exports.addcurrencypair = async (req, res) => {
       .json(rs.errorResponse(error.toString()));
   }
 };
-
-// console.log(2112);
-// console.log(BigInt(2112 * 1e18));
-
-// console.log(web3.utils.toWei((0.022323).toString(), "ether"));

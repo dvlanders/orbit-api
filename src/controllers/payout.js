@@ -207,13 +207,12 @@ async function getPayoutTxn() {
     console.log(error.toString());
   }
 }
-
 cron.schedule("0 2 * * *", () => {
-  makeTranferPayout();
+  if (process.env.ISCRON === "TRUE") makeTranferPayout();
 });
 
 cron.schedule("5 2 * * *", () => {
-  getPayoutTxn();
+  if (process.env.ISCRON === "TRUE") getPayoutTxn();
 });
 
 exports.payoutTransations = async (req, res) => {

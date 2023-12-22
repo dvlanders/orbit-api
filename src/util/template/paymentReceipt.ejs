@@ -1,0 +1,77 @@
+<html>
+
+<head>
+    <style>
+    </style>
+</head>
+<body>
+    <div style="width: 50%;margin-left: auto;margin-right: auto;">
+        <div style="font-weight: 600; font-size: 23px; margin-top: 1rem; text-align: center;">
+            <h2>View Receipt</h2>
+        </div>
+        <div>
+            <div
+                style="color: rgb(14, 93, 51); background-color: rgba(14, 93, 51, 0.063); font-weight: 600; padding-top: 5px; padding-bottom: 5px;">
+                <img style="vertical-align: middle;" alt="" loading="lazy" width="20" height="21" decoding="async" data-nimg="1"
+                    src="https://staging-internal.d1nwfechdidmfz.amplifyapp.com/_next/static/media/greencheck.730ada57.svg">
+                <span style="vertical-align: middle;">Paid</span>
+            </div>
+            <div>
+                <p><%= paymentDate %></p>
+                <span>Order ID</span>
+                <span>
+                    <%= orderId %>
+                </span>
+            </div>
+            <p>
+                <span>You made a payment of</span>
+                <span style="font-weight: 500px;">$<%= totalAmount %> USD</span>
+                to
+                <span>
+                    <%= recipientName %>
+                </span>
+            </p>
+            <table style="border-collapse: collapse;">
+                <tr style="border-color: red;border-bottom-width: 1px; background-color: rgba(14, 93, 51, 0.063); ">
+                    <td>DESCRIPTION</td>
+                    <td>SUBTOTAL</td>
+                </tr>
+                <tr>
+                    <td style="padding-right: 10px;">
+                        <%= productDescription %>
+                    </td>
+                    <td>
+                        <div style="text-align: left; vertical-align: middle;">
+                            <p style="float:left;font-weight: 500px">$<%= totalAmount %>
+                            </p>
+
+                            <p style="float: right;">USD</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>TOTAL</td>
+                    <td>
+                        <div style="text-align: left; vertical-align: middle;">
+                            <p style="float:left; font-weight: 500px">$<%= totalAmount %>
+                            </p>
+
+                            <p style="float: right;">USD</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div>
+                <p>Paid with</p>
+                <div style="text-align: left; vertical-align: middle;">
+                    <img style="float:left;margin-right: 10px;" alt="crypto" loading="lazy" width="17" height="17" decoding="async" data-nimg="1"
+                        src="https://staging-internal.d1nwfechdidmfz.amplifyapp.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmetamask.74afdddd.png&w=32&q=75">
+                    <span style="float:left;">
+                        <%= paymentAddress %>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -4,7 +4,6 @@ const { responseCode, rs } = require("../util");
 const User = require("./../models/userAuth");
 const { sendEmail, common } = require("../util/helper");
 const registration = require("./registration");
-const CustomerWalletAddress = require("../models/customerWalletAddress");
 const bankAccountSchema = require("./../models/bankAccounts");
 const TransactionLog = require("../models/transactionLog");
 const moment = require("moment");

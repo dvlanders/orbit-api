@@ -2,14 +2,15 @@ const User = require("../../models/userAuth");
 const axios = require("axios");
 const dynamoose = require("dynamoose");
 const cron = require("node-cron");
+let { logger } = require("../logger/logger");
 
 /**
  * @description -- The function is set to trigger everyday 5 PM UTC
  * Question But from the sfox response we get it as it will expire from 24 hrs from when it is created
  */
 async function regeneration() {
-  console.log("test");
-  const userDetails = await User.scan()
+  try {
+    const userDetails = await User.scan()
     .where("isVerified")
     .eq(true)
     .where("isSfoxVerified")
@@ -70,7 +71,11 @@ async function regeneration() {
       });
 
       await dynamoose.transaction(transactionOperations);
+      logger.info("Token Updated",transactionOperations)
     }
+  }
+  } catch (error) {
+    logger.error("this is error", {error: error?.response?.data})
   }
 }
 cron.schedule("0 17 * * *", () => {

@@ -5,6 +5,9 @@ const path = require("path");
 
 const transport = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
+  from: process.env.FROM_EMAIL,
+  secure: false, // true for 465, false for other ports
+  port: 587,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -24,12 +27,24 @@ exports.generateEmail = async function (mailDetails, fullName) {
     password: mailDetails?.password,
   });
 
-  let email = transport.sendMail({
+  let emailOptions = {
     from: mailDetails.from,
     to: mailDetails.to,
     subject: mailDetails.subject,
     text: mailDetails.text,
     html: htmlContent,
-  });
+    attachments: [],
+  };
+
+  // Assuming 'file' is a boolean variable indicating whether to add an attachment
+  if (mailDetails?.file) {
+    emailOptions.attachments.push({
+      filename: Date.now() + "_Payment_Receipt",
+      content: mailDetails?.file,
+      encoding: "base64",
+    });
+  }
+
+  let email = transport.sendMail(emailOptions);
   return email;
 };

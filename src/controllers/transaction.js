@@ -3,7 +3,6 @@ const { v4: uuidv4 } = require("uuid");
 const { common } = require("../util/helper");
 const { responseCode, rs } = require("../util");
 const { success } = require("../util/Constants");
-const CustomerWalletAddress = require("../models/customerWalletAddress");
 const Currency = require("../models/currency");
 const moment = require("moment");
 const TransactionLog = require("../models/transactionLog");
@@ -367,7 +366,7 @@ exports.updateReceipt = async (req, res) => {
       { receiptTimestamp: Date.now() }
     );
 
-    // console.log(updateReciptDate);
+    console.log(updateReciptDate);
 
     return res
       .status(responseCode.success)
