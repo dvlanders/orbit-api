@@ -623,32 +623,32 @@ async function marketOrderTransaction() {
             }
           );
 
-          // if (marketOrderData?.email) {
-          //   const purchaseDetails = {
-          //     orderId: marketOrderData?.orderId,
-          //     totalAmount: marketOrderData?.outwardBaseAmount,
-          //     recipientName: marketOrderData?.name,
-          //     productDescription: marketOrderData?.description,
-          //     paymentAddress: marketOrderData?.customerAddress,
-          //     paymentDate: marketOrderData?.createDate,
-          //   };
+          if (marketOrderData?.email) {
+            const purchaseDetails = {
+              orderId: marketOrderData?.orderId,
+              totalAmount: marketOrderData?.outwardBaseAmount,
+              recipientName: marketOrderData?.name,
+              productDescription: marketOrderData?.description,
+              paymentAddress: marketOrderData?.customerAddress,
+              paymentDate: marketOrderData?.createDate,
+            };
 
-          //   //  here topdf and then email service
-          //   let pdfData = await generatePdf(purchaseDetails);
+            //  here topdf and then email service
+            let pdfData = await generatePdf(purchaseDetails);
 
-          //   console.log("pdfData");
-          //   console.log(pdfData);
+            console.log("pdfData");
+            console.log(pdfData);
 
-          //   let mailDetails = {
-          //     from: `${process.env.FROM_EMAIL}`,
-          //     to: marketOrderData?.email,
-          //     subject: "Test",
-          //     fileName: "customerPReceipt.ejs",
-          //     file: pdfData,
-          //     text: "Payment Receipt Attachment",
-          //   };
-          //   await sendEmail.generateEmail(mailDetails);
-          // }
+            let mailDetails = {
+              from: `${process.env.FROM_EMAIL}`,
+              to: marketOrderData?.email,
+              subject: "Test",
+              fileName: "customerPReceipt.ejs",
+              file: pdfData,
+              text: "Payment Receipt Attachment",
+            };
+            await sendEmail.generateEmail(mailDetails);
+          }
         } else if (txn.action == "withdraw") {
           marketOrderData = await TransactionLog.update(
             { id: txn.id },

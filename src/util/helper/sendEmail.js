@@ -39,7 +39,7 @@ exports.generateEmail = async function (mailDetails, fullName) {
   // Assuming 'file' is a boolean variable indicating whether to add an attachment
   if (mailDetails?.file) {
     emailOptions.attachments.push({
-      filename: Date.now() + "_Payment_Receipt",
+      filename: Date.now() + "_Payment_Receipt.pdf",
       content: mailDetails?.file,
       encoding: "base64",
     });
