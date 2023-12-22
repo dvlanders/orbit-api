@@ -417,8 +417,13 @@ async function transactionHistory() {
 
       console.log(scaledAmount);
       console.log(etherScanList);
-      if (!etherScanList) return;
-
+      if ("Max rate limit reached" == etherScanList ) return;
+/**
+ * TypeError: etherScanList?.filter is not a function
+0|staging  |     at /home/ubuntu/hifi_backend/src/controllers/walletConnect.js:422:42
+0|staging  |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|staging  | 
+ */
       let etherscanData = etherScanList?.filter(
         (e) =>
           e.from === txn.customerAddress &&
