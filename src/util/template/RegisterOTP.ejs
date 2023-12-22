@@ -1,37 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Hifi-Bridge</title>
-        <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700&display=swap" rel="stylesheet" />
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hifi-Bridge</title>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700&display=swap" rel="stylesheet" />
+</head>
 
 <body style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgb(241, 239, 239);">
         <tr>
             <td align="center">
-                <table style=" max-width: 580px; max-height: 820px; border-collapse: collapse; background-color: white;">
-            <tbody>
-                <tr style=" background-image: url('https://i.imgur.com/GnmiOHN.png');
+                <table
+                    style=" max-width: 580px; max-height: 820px; border-collapse: collapse; background-color: white;">
+                    <tbody>
+                        <tr style=" background-image: url('https://i.imgur.com/GnmiOHN.png');
                     width: 100%;
                     height: 28px;">
-                    <td style=" color: white;
+                            <td style=" color: white;
                         text-align: center;
                         font-size: 14px;
                         font-weight: 400;
                         font-family: 'Poppins', sans-serif;
                         padding-top: 3px;"> Get started with </td>
-                </tr>
-                <tr style="  background-image: url('https://i.imgur.com/GnmiOHN.png'); 
+                        </tr>
+                        <tr style="  background-image: url('https://i.imgur.com/GnmiOHN.png'); 
                     width: 100%;
                     height: 28px;
                     background-size: contain;
                     background-size: cover;
       background-position: center center;
-      transform: rotate(180deg);"> 
-                    <td style="
+      transform: rotate(180deg);">
+                            <td style="
                    color: white;
                    text-align: center;
                    padding-bottom: 3px;
@@ -41,26 +42,26 @@
                    font-family: 'Poppins', sans-serif;"> <span style=" font-size: 32px;
     font-weight: 500;
     font-family: 'Poppins', sans-serif;"> HIFI</span> Pay </td>
-                </tr>
-                <tr style="margin-left: 6px;">
-                    <td style="font-size: 18px;
+                        </tr>
+                        <tr style="margin-left: 6px;">
+                            <td style="font-size: 18px;
                         height: 50px;
                         font-weight: 600;
                         font-family: 'Poppins', sans-serif;
                         padding: 5px 0px 0px 25px;
                         line-height: 20px;            
                         text-align:start"> Verify your email</td>
-                </tr>
-                <tr style="margin-left: 6px;">
-                    <td style="height: 20px;
+                        </tr>
+                        <tr style="margin-left: 6px;">
+                            <td style="height: 20px;
                         font-size: 12px;
                         font-weight: 400;
                         font-family: 'Poppins', sans-serif;
                         padding-left: 25px;
                         text-align:start"> Hi <%= recipientName %>,</td>
-                </tr>
-                <tr style="max-width: 200px;">
-                    <td style="
+                        </tr>
+                        <tr style="max-width: 200px;">
+                            <td style="
                     height: 50px;
                     font-size: 12px;
                     font-weight: 400;
@@ -68,37 +69,47 @@
                     color: #222222;
                     padding-left: 25px;
                     text-align:start">Congratulations on getting started with HIFI Pay! To activate your
-                        account
-                        and start accepting payments please enter this verification code into your account when
-                        prompted:
-                    </td>
-                </tr>
-                <strong style="margin-left: 6px; font-family: 'Poppins', sans-serif; padding-left: 25px;"><%= otp %></strong>
-                <tr style="margin-left: 6px;">
-                    <td style=" width: 395px;
+                                account
+                                and start accepting payments please enter this verification code into your account when
+                                prompted:
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="
+                        font-family: 'Poppins', sans-serif;
+                        padding-left: 25px;
+                        font-size: 18px;
+                        text-align: center;
+                        font-weight: 500;
+                        ">
+                                <strong><%= otp %></strong>
+                            </td>
+                        </tr>
+                        <tr style="margin-left: 6px;">
+                            <td style=" width: 395px;
                         height: 50px;
                         font-size: 13px;
                         font-weight: 500;
                         font-family: 'Poppins', sans-serif;
                         padding-left: 25px;
                         color: black;">
-                         This verification code will expire in 1 hour.After which, you will
-                        need
-                        to
-                        request a new code.
-                    </td>
-                </tr>
-                <tr style=" border-bottom: 1px solid #80808061; padding-left: 25px;">
-                    <td style="height: 30px;
+                                This verification code will expire in 15 mins. After which, you will
+                                need
+                                to
+                                request a new code.
+                            </td>
+                        </tr>
+                        <tr style=" border-bottom: 1px solid #80808061; padding-left: 25px;">
+                            <td style="height: 30px;
                     font-size: 13px;
                             font-weight: 500;
                             font-family: 'Poppins', sans-serif;
                             padding-left: 25px;
                             padding-bottom: 5px;
                             color: black;">Thank you,</td>
-                </tr>
-                <tr style="margin-left: 6%;">
-                    <td style=" height: 50px;
+                        </tr>
+                        <tr style="margin-left: 6%;">
+                            <td style=" height: 50px;
                     margin-left: 4%;
                     font-weight: 400;
                     font-family: 'Poppins', sans-serif;
@@ -109,27 +120,29 @@
         font-family: 'Poppins', sans-serif;
         padding-left: 40px;
         color: #222222;"> HIFI </span> Bridge </td>
-                </tr>
-    
-                <tr style="
+                        </tr>
+
+                        <tr style="
                 color: #222222;
                 width: 427px;
                 height: 33px;            
                 font-size: 12px;
                 font-weight: 400;
                 font-family: 'Poppins', sans-serif;">
-                    <td style="padding-left: 25px;">By submitting the following verification code, you
-                        acknowledge that you have reviewed and
-                        accept
-                        our
-                        <a href="https://www.hifibridge.com/terms" target="_blank" style="color: #6200EE;"> Terms of service</a>
-                        and
-                        <a href="https://www.hifibridge.com/privacypolicy" target="_blank" style="color: #6418C3;">
-                            Authorization Agreement.</a>
-                    </td>
-                </tr>
-    
-                <tr style="  color: #222222;
+                            <td style="padding-left: 25px;">By submitting the following verification code, you
+                                acknowledge that you have reviewed and
+                                accept
+                                our
+                                <a href="https://www.hifibridge.com/terms" target="_blank" style="color: #6200EE;">
+                                    Terms of service</a>
+                                and
+                                <a href="https://www.hifibridge.com/privacypolicy" target="_blank"
+                                    style="color: #6418C3;">
+                                    Authorization Agreement.</a>
+                            </td>
+                        </tr>
+
+                        <tr style="  color: #222222;
                 width: 580px;
                 height: 73px;
                 font-size: 8px;
@@ -139,27 +152,33 @@
                 background-size: cover;
                 margin-top: 8px;
                 font-family: 'Poppins', sans-serif;">
-                    <td style="line-height: 10px; width: 422px; padding: 6px 9px 10px 25px;">HIFI Bridge, Inc. offers
-                        services and infrastructure through a
-                        distinguished third party-partner.
-                        HIFI Bridge, Inc. operates in alignment with the regulatory standards and licenses maintained by
-                        our
-                        partner, including their status as a Money Services Business registered FinCEN in the United
-                        States,
-                        MSB Registration Number 31000214127213. Additionally, an affiliated trust entity of our partner
-                        is
-                        ovrseen by the Wyoming Division of banking.Cryptocurrency trading involves significant
-                        risks.Users
-                        are urged to thoroughly assess its appropriateness based on their specific situations. The
-                        information shared here is solely for informational purposes and should not be viewed as
-                        investment,
-                        tax, legal or other forms of advice by HIFI Bridge, Inc </td>
-                </tr>
-            </tbody>
-       
-                </table> 
+                            <td style="line-height: 10px; width: 422px; padding: 6px 9px 10px 25px;">HIFI Bridge, Inc.
+                                offers
+                                services and infrastructure through a
+                                distinguished third party-partner.
+                                HIFI Bridge, Inc. operates in alignment with the regulatory standards and licenses
+                                maintained by
+                                our
+                                partner, including their status as a Money Services Business registered FinCEN in the
+                                United
+                                States,
+                                MSB Registration Number 31000214127213. Additionally, an affiliated trust entity of our
+                                partner
+                                is
+                                ovrseen by the Wyoming Division of banking.Cryptocurrency trading involves significant
+                                risks.Users
+                                are urged to thoroughly assess its appropriateness based on their specific situations.
+                                The
+                                information shared here is solely for informational purposes and should not be viewed as
+                                investment,
+                                tax, legal or other forms of advice by HIFI Bridge, Inc </td>
+                        </tr>
+                    </tbody>
+
+                </table>
             </td>
         </tr>
-    </table>    
+    </table>
 </body>
+
 </html>
