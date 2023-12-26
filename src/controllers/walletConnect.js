@@ -1,6 +1,5 @@
 const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
-const Transfer = require("../models/transfer");
 const User = require("../models/userAuth");
 const Currency = require("../models/currency");
 let baseUrl = process.env.SFOX_BASE_URL;
@@ -551,7 +550,7 @@ async function marketOrderTransaction() {
     );
 
     let userTokensList = await User.scan()
-      .attributes(["user_id", "userToken"])
+      .attributes(["user_id", "userToken", "email"])
       .where("user_id")
       .in(userIdList)
       .exec();
@@ -624,13 +623,15 @@ async function marketOrderTransaction() {
           );
 
           if (marketOrderData?.email) {
-            const purchaseDetails = {
+            let purchaseDetails = {
               orderId: marketOrderData?.orderId,
-              totalAmount: marketOrderData?.outwardBaseAmount,
+              totalAmount: marketOrderData?.inwardBaseAmount,
               recipientName: marketOrderData?.name,
               productDescription: marketOrderData?.description,
               paymentAddress: marketOrderData?.customerAddress,
               paymentDate: marketOrderData?.createDate,
+              currency: marketOrderData?.inwardCurrency,
+              walletType: marketOrderData?.walletType
             };
 
             //  here topdf and then email service
@@ -642,12 +643,22 @@ async function marketOrderTransaction() {
             let mailDetails = {
               from: `${process.env.FROM_EMAIL}`,
               to: marketOrderData?.email,
-              subject: "Test",
+              subject: "Payment Receipt",
               fileName: "customerPReceipt.ejs",
               file: pdfData,
               text: "Payment Receipt Attachment",
             };
             await sendEmail.generateEmail(mailDetails);
+
+            let mailDetailsMerchant = {
+              from: `${process.env.FROM_EMAIL}`,
+              to: userToken.email,
+              subject: "Payment By Customer",
+              fileName: "merchantDepositTemplate.ejs",
+              text: "Payment By Customer",
+            };
+          await sendEmail.generateEmail({ ...mailDetailsMerchant, ...purchaseDetails });
+
           }
         } else if (txn.action == "withdraw") {
           marketOrderData = await TransactionLog.update(

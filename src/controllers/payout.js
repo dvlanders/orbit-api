@@ -689,6 +689,7 @@ exports.withdrawalCalculation = async (req, res) => {
       .json(rs.errorResponse(error?.message.toString()));
   }
 };
+
 exports.withdrawal = async (req, res) => {
   try {
     const apiPath = `${baseUrl}/v1/user/withdraw/confirm`;

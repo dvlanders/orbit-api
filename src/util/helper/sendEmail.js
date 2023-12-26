@@ -18,13 +18,21 @@ exports.generateEmail = async function (mailDetails, fullName) {
   let emailPath = path.join(__dirname, `../template/${mailDetails.fileName}`);
 
   const ejsTemplate = fs.readFileSync(emailPath, "utf8"); // Read the EJS template file
-
+console.log(mailDetails)
   const htmlContent = ejs.render(ejsTemplate, {
     resetUrl: mailDetails?.resetLink,
     recipientName: mailDetails?.fullName || fullName,
     otp: mailDetails?.otp,
     link: mailDetails?.link,
     password: mailDetails?.password,
+    orderId: mailDetails?.orderId,
+    totalAmount: mailDetails?.totalAmount,
+    recipientName: mailDetails?.recipientName,
+    productDescription: mailDetails?.productDescription,
+    paymentAddress: mailDetails?.paymentAddress,
+    paymentDate: mailDetails?.paymentDate,
+    currency: mailDetails?.currency,
+    walletType: mailDetails?.walletType
   });
 
   let emailOptions = {

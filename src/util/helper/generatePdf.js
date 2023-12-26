@@ -21,9 +21,11 @@ exports.generatePdf = async (purchaseDetails) => {
       productDescription: purchaseDetails?.productDescription,
       paymentAddress: purchaseDetails?.paymentAddress,
       paymentDate: purchaseDetails?.paymentDate,
+      currency: purchaseDetails?.currency.toUpperCase(),
+      walletType: purchaseDetails?.walletType.toUpperCase(),
     });
     const browser = await puppeteer.launch({
-      headless: true, // or headless: "new" for the new headless mode
+      headless: "new", // or headless: "new" for the new headless mode
     });
     const page = await browser.newPage();
     // await page.setViewport({ width: 1920, height: 1080 });
