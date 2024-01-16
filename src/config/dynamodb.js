@@ -1,5 +1,5 @@
-const accessKeyId = "AKIAWTCFUVBIEYZJDCWM";
-const secretAccessKey = "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";
+const accessKeyId = "AKIAWTCFUVBIAGUM6VMA";
+const secretAccessKey = "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";
 const region = "us-east-1";
 
 const dynamoose = require("dynamoose");
