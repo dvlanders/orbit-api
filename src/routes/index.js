@@ -10,6 +10,7 @@ module.exports = (app, express) => {
 	const upload = require("./upload");
 	const transaction = require("./transaction");
 	const apiKey = require("./apiKey");
+	const mesh = require("./mesh");
 
 	registration(router);
 	user(router);
@@ -21,5 +22,6 @@ module.exports = (app, express) => {
 	upload(router);
 	transaction(router);
 	apiKey(router);
+	mesh(router);
 	app.use("/", router);
 };
