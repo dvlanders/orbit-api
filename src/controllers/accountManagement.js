@@ -12,84 +12,84 @@ const momentTZ = require("moment-timezone");
 let baseUrl = process.env.SFOX_BASE_URL;
 
 exports.linkBank = async (req, res) => {
-  try {
-    let data = {
-      accountnumber: req.body.accountnumber,
-      bankAccountType: req.body.bankAccountType,
-      bankCurrency: req.body.bankCurrency,
-      bankname: req.body.bankname,
-      enableWires: req.body.enableWires,
-      firstname: req.body.firstname,
-      isInternational: req.body.isInternational,
-      lastname: req.body.lastname,
-      name: req.body.name,
-      swiftnumber: req.body.swiftnumber,
-      type: req.body.type,
-      wireInstructions: req.body.wireInstructions,
-    };
+	try {
+		let data = {
+			accountnumber: req.body.accountnumber,
+			bankAccountType: req.body.bankAccountType,
+			bankCurrency: req.body.bankCurrency,
+			bankname: req.body.bankname,
+			enableWires: req.body.enableWires,
+			firstname: req.body.firstname,
+			isInternational: req.body.isInternational,
+			lastname: req.body.lastname,
+			name: req.body.name,
+			swiftnumber: req.body.swiftnumber,
+			type: req.body.type,
+			wireInstructions: req.body.wireInstructions,
+		};
 
-    let getBanks = await bankAccountSchema
-      .scan()
-      .where("user_id")
-      .eq(req.user["id"])
-      .exec();
+		let getBanks = await bankAccountSchema
+			.scan()
+			.where("user_id")
+			.eq(req.user["id"])
+			.exec();
 
-    if (getBanks?.count > 0) {
-      return res
-        .status(responseCode.conflict)
-        .json(rs.conflict("ONE BANK ACCOUNT LINKED - "));
-    }
+		if (getBanks?.count > 0) {
+			return res
+				.status(responseCode.conflict)
+				.json(rs.conflict("ONE BANK ACCOUNT LINKED - "));
+		}
 
-    const apiPath = `${baseUrl}/v1/user/bank`;
-    let response = await axios({
-      method: "post",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + req.user["userToken"],
-      },
-      data: data,
-    });
+		const apiPath = `${baseUrl}/v1/user/bank`;
+		let response = await axios({
+			method: "post",
+			url: apiPath,
+			headers: {
+				Authorization: "Bearer " + req.user["userToken"],
+			},
+			data: data,
+		});
 
-    let saveBank;
-    if (response.data.usd.length > 0) {
-      const myBank = new bankAccountSchema({
-        id: response.data.usd[0].id,
-        user_id: req.user["id"],
-        status: response.data.usd[0].status,
-        requires_verification: response.data.usd[0].requires_verification,
-        requires_support: response.data.usd[0].requires_support,
-        routing_number: response.data.usd[0].routing_number,
-        account_number: response.data.usd[0].account_number,
-        name1: response.data.usd[0].name1,
-        currency: response.data.usd[0].currency,
-        type: response.data.usd[0].type,
-        bank_name: response.data.usd[0].bank_name,
-        ach_enabled: response.data.usd[0].ach_enabled,
-        international_bank: response.data.usd[0].isInternational,
-        ref_id: response.data.usd[0].ref_id,
-        wire_withdrawal_fee: response.data.usd[0].wire_withdrawal_fee,
-        verifiedStatus: "Pending",
-        verificationSent: false,
-      });
-      saveBank = await myBank.save();
-    }
-    if (saveBank) {
-      let responses = saveBank;
+		let saveBank;
+		if (response.data.usd.length > 0) {
+			const myBank = new bankAccountSchema({
+				id: response.data.usd[0].id,
+				user_id: req.user["id"],
+				status: response.data.usd[0].status,
+				requires_verification: response.data.usd[0].requires_verification,
+				requires_support: response.data.usd[0].requires_support,
+				routing_number: response.data.usd[0].routing_number,
+				account_number: response.data.usd[0].account_number,
+				name1: response.data.usd[0].name1,
+				currency: response.data.usd[0].currency,
+				type: response.data.usd[0].type,
+				bank_name: response.data.usd[0].bank_name,
+				ach_enabled: response.data.usd[0].ach_enabled,
+				international_bank: response.data.usd[0].isInternational,
+				ref_id: response.data.usd[0].ref_id,
+				wire_withdrawal_fee: response.data.usd[0].wire_withdrawal_fee,
+				verifiedStatus: "Pending",
+				verificationSent: false,
+			});
+			saveBank = await myBank.save();
+		}
+		if (saveBank) {
+			let responses = saveBank;
 
-      return res
-        .status(responseCode.success)
-        .json(rs.successResponse("BANK LINKED", responses));
-    } else {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("BANK ACCOUNT NOT SAVED", {}));
-    }
-  } catch (err) {
-    console.log("error", err);
-    return res
-      .status(err?.response?.status || 500)
-      .json({ error: err?.response?.data?.error });
-  }
+			return res
+				.status(responseCode.success)
+				.json(rs.successResponse("BANK LINKED", responses));
+		} else {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("BANK ACCOUNT NOT SAVED", {}));
+		}
+	} catch (err) {
+		console.log("error", err);
+		return res
+			.status(err?.response?.status || 500)
+			.json({ error: err?.response?.data?.error });
+	}
 };
 
 /**
@@ -100,221 +100,221 @@ exports.linkBank = async (req, res) => {
  * @returns
  */
 exports.verifyBank = async (req, res) => {
-  try {
-    let getBanks = await bankAccountSchema
-      .scan()
-      .where("user_id")
-      .eq(req.user["id"])
-      .exec();
+	try {
+		let getBanks = await bankAccountSchema
+			.scan()
+			.where("user_id")
+			.eq(req.user["id"])
+			.exec();
 
-    if (getBanks.count === 0) {
-      return res
-        .status(responseCode.successNoRecords)
-        .json(rs.dataNotExist("BANK "));
-    }
+		if (getBanks.count === 0) {
+			return res
+				.status(responseCode.successNoRecords)
+				.json(rs.dataNotExist("BANK "));
+		}
 
-    if (process.env.NODE_ENV == "production") {
-      const { verifyAmount1, verifyAmount2 } = req.body;
+		if (process.env.NODE_ENV == "production") {
+			const { verifyAmount1, verifyAmount2 } = req.body;
 
-      let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/bank/verify`;
-      let response = await axios({
-        method: "post",
-        url: apiPath,
-        headers: {
-          Authorization: "Bearer " + req.user["userToken"],
-        },
-        data: {
-          verifyAmount1: verifyAmount1,
-          verifyAmount2: verifyAmount2,
-        },
-      });
-      console.log(response?.data);
-    }
+			let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/bank/verify`;
+			let response = await axios({
+				method: "post",
+				url: apiPath,
+				headers: {
+					Authorization: "Bearer " + req.user["userToken"],
+				},
+				data: {
+					verifyAmount1: verifyAmount1,
+					verifyAmount2: verifyAmount2,
+				},
+			});
+			console.log(response?.data);
+		}
 
-    let verifyBank;
-    verifyBank = await bankAccountSchema.update(
-      { id: getBanks[0].id },
-      { verificationSent: true, verifiedStatus: "Success" }
-    );
-    return res.status(200).json({ message: verifyBank });
-  } catch (err) {
-    console.log(err);
-    return res.status(err?.response?.status || 500).send(err.response?.data);
-  }
+		let verifyBank;
+		verifyBank = await bankAccountSchema.update(
+			{ id: getBanks[0].id },
+			{ verificationSent: true, verifiedStatus: "Success" }
+		);
+		return res.status(200).json({ message: verifyBank });
+	} catch (err) {
+		console.log(err);
+		return res.status(err?.response?.status || 500).send(err.response?.data);
+	}
 };
 
 exports.getBank = async (req, res) => {
-  try {
-    const { user_id, bank_id } = req.params;
+	try {
+		const { user_id, bank_id } = req.params;
 
-    if (!user_id || !bank_id) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
-    }
+		if (!user_id || !bank_id) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("PLEASE ENTER ALL THE DETAILS", {}));
+		}
 
-    const userDetails = await User.get(user_id);
-    // console.log(userDetails);
+		const userDetails = await User.get(user_id);
+		// console.log(userDetails);
 
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
+		if (userDetails == undefined) {
+			common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("USER NOT FOUND", {}));
+		}
 
-    let getABank = await bankAccountSchema
-      .scan()
-      .where("user_id")
-      .eq(user_id)
-      .where("id")
-      .eq(bank_id)
-      .exec();
+		let getABank = await bankAccountSchema
+			.scan()
+			.where("user_id")
+			.eq(user_id)
+			.where("id")
+			.eq(bank_id)
+			.exec();
 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("BANK DATA RETRIVED", getABank[0]));
-  } catch (err) {
-    return res
-      .status(responseCode.serverError)
-      .send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
-  }
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("BANK DATA RETRIVED", getABank[0]));
+	} catch (err) {
+		return res
+			.status(responseCode.serverError)
+			.send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
+	}
 };
 
 exports.getAllBank = async (req, res) => {
-  try {
-    const { user_id } = req.params;
+	try {
+		const { user_id } = req.params;
 
-    if (!user_id) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
-    }
+		if (!user_id) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+		}
 
-    const userDetails = await User.get(user_id);
-    // console.log(userDetails);
+		const userDetails = await User.get(user_id);
+		// console.log(userDetails);
 
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
+		if (userDetails == undefined) {
+			common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("USER NOT FOUND", {}));
+		}
 
-    let getAllBank = await bankAccountSchema
-      .scan()
-      .where("user_id")
-      .eq(user_id)
-      .exec();
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("ALL BANK DATA RETRIEVED", getAllBank));
-  } catch (err) {
-    return res
-      .status(responseCode.serverError)
-      .send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
-  }
+		let getAllBank = await bankAccountSchema
+			.scan()
+			.where("user_id")
+			.eq(user_id)
+			.exec();
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("ALL BANK DATA RETRIEVED", getAllBank));
+	} catch (err) {
+		return res
+			.status(responseCode.serverError)
+			.send(rs.serverError("BANK ACCOUNT NOT SAVED", err));
+	}
 };
 
 exports.deleteBank = async (req, res) => {
-  try {
-    const { user_id, bank_id } = req.params;
-    if (!user_id) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
-    }
+	try {
+		const { user_id, bank_id } = req.params;
+		if (!user_id) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("PLEASE ENTER THE USER ID", {}));
+		}
 
-    const userDetails = await User.get(user_id);
-    console.log(userDetails);
+		const userDetails = await User.get(user_id);
+		console.log(userDetails);
 
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let apiPath = `${baseUrl}/v1/user/bank`;
-    let response = await axios({
-      method: "delete",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + userDetails.userToken,
-      },
-    });
+		if (userDetails == undefined) {
+			common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("USER NOT FOUND", {}));
+		}
+		let apiPath = `${baseUrl}/v1/user/bank`;
+		let response = await axios({
+			method: "delete",
+			url: apiPath,
+			headers: {
+				Authorization: "Bearer " + userDetails.userToken,
+			},
+		});
 
-    if (response.status == 200) {
-      await bankAccountSchema.delete({ user_id: user_id, id: bank_id });
-      return res
-        .status(response.status)
-        .json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });
-    } else {
-      return res.status(500).json({ error: "ERROR IN DELETING BANK ACCOUNT" });
-    }
-  } catch (err) {
-    return res.status(err.response?.status).send(err.response?.data);
-  }
+		if (response.status == 200) {
+			await bankAccountSchema.delete({ user_id: user_id, id: bank_id });
+			return res
+				.status(response.status)
+				.json({ message: "BANK ACCOUNT DELTED SUCCESSFULLY" });
+		} else {
+			return res.status(500).json({ error: "ERROR IN DELETING BANK ACCOUNT" });
+		}
+	} catch (err) {
+		return res.status(err.response?.status).send(err.response?.data);
+	}
 };
 
 exports.wireInstructions = async (req, res) => {
-  try {
-    let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/wire-instructions`;
-    let response = await axios({
-      method: "get",
-      url: apiPath,
-      headers: {
-        Authorization: "Bearer " + req.user["userToken"],
-      },
-    });
-    if (response?.data?.data) {
-      return res
-        .status(response.status)
-        .json(
-          rs.successResponse(
-            "WIRE INSTRUCTIONS RETREIVED",
-            response?.data?.data
-          )
-        );
-    } else {
-      return res
-        .status(response.status)
-        .json(rs.successResponse("WIRE INSTRUCTIONS RETREIVED", {}));
-    }
-  } catch (err) {
-    return res.status(err.response?.status).send(err.response?.data);
-  }
+	try {
+		let apiPath = `${process.env.SFOX_BASE_URL}/v1/user/wire-instructions`;
+		let response = await axios({
+			method: "get",
+			url: apiPath,
+			headers: {
+				Authorization: "Bearer " + req.user["userToken"],
+			},
+		});
+		if (response?.data?.data) {
+			return res
+				.status(response.status)
+				.json(
+					rs.successResponse(
+						"WIRE INSTRUCTIONS RETREIVED",
+						response?.data?.data
+					)
+				);
+		} else {
+			return res
+				.status(response.status)
+				.json(rs.successResponse("WIRE INSTRUCTIONS RETREIVED", {}));
+		}
+	} catch (err) {
+		return res.status(err.response?.status).send(err.response?.data);
+	}
 };
 
 exports.myAccount = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
+	try {
+		const { user_id } = req.params;
+		const userDetails = await User.get(user_id);
+		if (userDetails == undefined) {
+			common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("USER NOT FOUND", {}));
+		}
 
-    let response = {
-      email: userDetails.email,
-      name: userDetails.fullName,
-      password: userDetails.password,
-      twoStepAuthentication: "Authenticator app",
-      accountName: userDetails.fullName,
-      bussinessName: userDetails.businessName,
-      timezone: userDetails.timezone
-        ? userDetails.timezone
-        : "America - New York",
-    };
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("DATA RETRIVED", response));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
+		let response = {
+			email: userDetails.email,
+			name: userDetails.fullName,
+			password: userDetails.password,
+			twoStepAuthentication: "Authenticator app",
+			accountName: userDetails.fullName,
+			bussinessName: userDetails.businessName,
+			timezone: userDetails.timezone
+				? userDetails.timezone
+				: "America - New York",
+		};
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("DATA RETRIVED", response));
+	} catch (error) {
+		return res
+			.status(responseCode.serverError)
+			.json(rs.errorResponse(error?.message.toString()));
+	}
 };
 
 // ADD SALES IN THE DASHBOARD API -- NIHAR
@@ -553,501 +553,501 @@ exports.myAccount = async (req, res) => {
 //   momentTZ("2023-10-16T23:59:23.803Z").tz("America/New_York").daysInMonth()
 // );
 exports.addTeam = async (req, res) => {
-  try {
-    const { email, role } = req.body;
-    // 1 for Admin 2 for Analyst
-    let roleList = [1, 2];
+	try {
+		const { email, role } = req.body;
+		// 1 for Admin 2 for Analyst
+		let roleList = [1, 2];
 
-    let isRole = roleList.includes(parseInt(role));
-    if (!isRole)
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("ROLE TYPE DOES NOT EXIST"));
+		let isRole = roleList.includes(parseInt(role));
+		if (!isRole)
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("ROLE TYPE DOES NOT EXIST"));
 
-    // Check if the email already exists in the database
-    const existingUser = await User.scan().where("email").eq(email).exec();
+		// Check if the email already exists in the database
+		const existingUser = await User.scan().where("email").eq(email).exec();
 
-    if (existingUser[0]?.isAccepted == false)
-      return res
-        .status(responseCode.success)
-        .json(rs.successResponse("REQUEST ALREADY SENT"));
+		if (existingUser[0]?.isAccepted == false)
+			return res
+				.status(responseCode.success)
+				.json(rs.successResponse("REQUEST ALREADY SENT"));
 
-    if (existingUser.count === 1) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER ALREADY EXISTS", {}));
-    }
+		if (existingUser.count === 1) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("USER ALREADY EXISTS", {}));
+		}
 
-    const inviteUser = uuidv4();
+		const inviteUser = uuidv4();
 
-    let mailDetails = {
-      from: `${process.env.FROM_EMAIL}`,
-      to: email,
-      subject: "HiFi Member Invitation",
-      text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
-      fileName: "InviteTemplate.ejs",
-      link: `${process.env.FRONTEND_URL}/auth/invite?invite_user=${inviteUser}`,
-      password: process.env.REGISTER_PASSWORD,
-    };
+		let mailDetails = {
+			from: `${process.env.FROM_EMAIL}`,
+			to: email,
+			subject: "HiFi Member Invitation",
+			text: `Please fill up the google form, \n ${process.env.REGISTER_FORM_LINK}`,
+			fileName: "InviteTemplate.ejs",
+			link: `${process.env.FRONTEND_URL}/auth/invite?invite_user=${inviteUser}`,
+			password: process.env.REGISTER_PASSWORD,
+		};
 
-    const generate = await sendEmail.generateEmail(mailDetails);
+		const generate = await sendEmail.generateEmail(mailDetails);
 
-    if (!generate.messageId) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("WRONG EMAIL ID", {}));
-    }
+		if (!generate.messageId) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("WRONG EMAIL ID", {}));
+		}
 
-    let cipherText = common.encryptText(process.env.REGISTER_PASSWORD);
+		let cipherText = common.encryptText(process.env.REGISTER_PASSWORD);
 
-    const myUser = new User({
-      user_id: inviteUser,
-      email: email,
-      password: cipherText,
-      phoneNumber: "",
-      fullName: "",
-      businessName: req.user["businessName"],
-      userToken: "",
-      secretkey: "",
-      timeZone: "",
-      invitedBy: req.user["id"],
-      role: parseInt(role),
-    });
+		const myUser = new User({
+			user_id: inviteUser,
+			email: email,
+			password: cipherText,
+			phoneNumber: "",
+			fullName: "",
+			businessName: req.user["businessName"],
+			userToken: "",
+			secretkey: "",
+			timeZone: "",
+			invitedBy: req.user["id"],
+			role: parseInt(role),
+		});
 
-    // Save user data to the database
-    let user = await myUser.save();
+		// Save user data to the database
+		let user = await myUser.save();
 
-    console.log("usernew", user);
+		console.log("usernew", user);
 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("INVITATION SENT"));
-  } catch (error) {
-    // Handle any other errors
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("INVITATION SENT"));
+	} catch (error) {
+		// Handle any other errors
+		return res
+			.status(responseCode.serverError)
+			.json(rs.errorResponse(error?.message.toString()));
+	}
 };
 
 exports.team = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-    const userDetails = await User.get(user_id);
-    if (userDetails == undefined) {
-      common.eventBridge("USER NOT FOUND", responseCode.badRequest);
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("USER NOT FOUND", {}));
-    }
-    let responseArr = [];
-    let user = await registration.getUser();
-    // userDetails.sfox_id == users.advisor_user_id
-    let clientAccount = user.filter(
-      (users) => users.account_type == "individual"
-    );
-    const count = await User.scan().exec();
-    for (let i = 0; i < clientAccount.length; i++) {
-      for (j = 0; j < count.length; j++) {
-        if (clientAccount[i].user_id == count[j].sfox_id) {
-          let response = {
-            customer_id: count[j].user_id,
-            name: count[j].fullName,
-            email: count[j].email,
-            created: count[j].createDate,
-          };
-          responseArr.push(response);
-        }
-      }
-    }
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("CUSTOMERS RETRIVED", responseArr));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
+	try {
+		const { user_id } = req.params;
+		const userDetails = await User.get(user_id);
+		if (userDetails == undefined) {
+			common.eventBridge("USER NOT FOUND", responseCode.badRequest);
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("USER NOT FOUND", {}));
+		}
+		let responseArr = [];
+		let user = await registration.getUser();
+		// userDetails.sfox_id == users.advisor_user_id
+		let clientAccount = user.filter(
+			(users) => users.account_type == "individual"
+		);
+		const count = await User.scan().exec();
+		for (let i = 0; i < clientAccount.length; i++) {
+			for (j = 0; j < count.length; j++) {
+				if (clientAccount[i].user_id == count[j].sfox_id) {
+					let response = {
+						customer_id: count[j].user_id,
+						name: count[j].fullName,
+						email: count[j].email,
+						created: count[j].createDate,
+					};
+					responseArr.push(response);
+				}
+			}
+		}
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("CUSTOMERS RETRIVED", responseArr));
+	} catch (error) {
+		return res
+			.status(responseCode.serverError)
+			.json(rs.errorResponse(error?.message.toString()));
+	}
 };
 
 exports.acceptInvite = async (req, res) => {
-  try {
-    const { user_id } = req.params;
+	try {
+		const { user_id } = req.params;
 
-    // Retrieve user details by user_id
-    const invitedUser = await User.get(user_id);
+		// Retrieve user details by user_id
+		const invitedUser = await User.get(user_id);
 
-    if (!invitedUser) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("INVALID INVITATION", {}));
-    }
+		if (!invitedUser) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("INVALID INVITATION", {}));
+		}
 
-    // Get the user who sent the invitation
-    const invitingUser = await User.get(invitedUser.invitedBy);
+		// Get the user who sent the invitation
+		const invitingUser = await User.get(invitedUser.invitedBy);
 
-    if (!invitingUser) {
-      return res
-        .status(responseCode.badRequest)
-        .json(rs.incorrectDetails("INVALID INVITING USER", {}));
-    }
-    // Update the invited user's status
-    invitedUser.isAccepted = true;
-    invitedUser.isOTPVerified = true;
-    invitedUser.isSfoxVerified = true;
-    invitedUser.sfox_id = invitingUser.sfox_id;
-    invitedUser.userToken = invitingUser.userToken;
+		if (!invitingUser) {
+			return res
+				.status(responseCode.badRequest)
+				.json(rs.incorrectDetails("INVALID INVITING USER", {}));
+		}
+		// Update the invited user's status
+		invitedUser.isAccepted = true;
+		invitedUser.isOTPVerified = true;
+		invitedUser.isSfoxVerified = true;
+		invitedUser.sfox_id = invitingUser.sfox_id;
+		invitedUser.userToken = invitingUser.userToken;
 
-    // Save the updated invited user details
-    await invitedUser.save();
+		// Save the updated invited user details
+		await invitedUser.save();
 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("INVITATION ACCEPTED", {}));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("INVITATION ACCEPTED", {}));
+	} catch (error) {
+		return res
+			.status(responseCode.serverError)
+			.json(rs.errorResponse(error?.message.toString()));
+	}
 };
 
 exports.teamList = async (req, res) => {
-  try {
-    let teamList = await User.scan()
-      .attributes([
-        "fullName",
-        "email",
-        "isVerified",
-        "createDate",
-        "role",
-        "isAccepted",
-      ])
-      .where("invitedBy")
-      .eq(req.user["id"])
-      .exec();
+	try {
+		let teamList = await User.scan()
+			.attributes([
+				"fullName",
+				"email",
+				"isVerified",
+				"createDate",
+				"role",
+				"isAccepted",
+			])
+			.where("invitedBy")
+			.eq(req.user["id"])
+			.exec();
 
-    let updatedTeamList = [];
-    const roleNames = {
-      0: "SUPER_ADMIN",
-      1: "ADMIN",
-      2: "ANALYST",
-    };
-    if (teamList.count > 0) {
-      updatedTeamList = teamList.map((user) => ({
-        ...user,
-        roleName: roleNames[user.role],
-      }));
-    }
+		let updatedTeamList = [];
+		const roleNames = {
+			0: "SUPER_ADMIN",
+			1: "ADMIN",
+			2: "ANALYST",
+		};
+		if (teamList.count > 0) {
+			updatedTeamList = teamList.map((user) => ({
+				...user,
+				roleName: roleNames[user.role],
+			}));
+		}
 
-    updatedTeamList.unshift({
-      createDate: moment().toISOString(),
-      role: 0,
-      isAccepted: true,
-      email: req.user["email"],
-      fullName: req.user["fullName"],
-      isVerified: true,
-      roleName: roleNames[0],
-    });
+		updatedTeamList.unshift({
+			createDate: moment().toISOString(),
+			role: 0,
+			isAccepted: true,
+			email: req.user["email"],
+			fullName: req.user["fullName"],
+			isVerified: true,
+			roleName: roleNames[0],
+		});
 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("RETRIVED TEAM LIST", updatedTeamList));
-  } catch (error) {}
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("RETRIVED TEAM LIST", updatedTeamList));
+	} catch (error) { }
 };
 
 exports.dashboard = async (req, res) => {
-  try {
-    let paymentData = await TransactionLog.scan()
-      .attributes([
-        "id",
-        "email",
-        "status",
-        "createDate",
-        "timestamp",
-        "txHash",
-        "outwardBaseAmount",
-        "outwardCurrency",
-        "inwardBaseAmount",
-        "inwardCurrency",
-        "inwardTotalAmount",
-        "customerAddress",
-        "action",
-      ])
-      .where("user_id")
-      .eq(req.user["id"])
-      .where("txnStatus")
-      .eq(true)
-      .where("marketOrderStatus")
-      .eq(true)
-      .where("withdrawStatus")
-      .eq(true)
-      .where("action")
-      .in(["deposit", "withdraw", "payout"])
-      .exec();
-    // console.log(paymentData);
-    let totalPurchase = 0; // The number of payments by the customer.
-    let totalVolume = 0; // The sum of the payment done by the customer.
-    const uniqueRecords = {};
-    let customerCount = 0;
-    let paymentArray = [];
-    let payoutArray = [];
-    let monthlyCalculationArray = [];
+	try {
+		let paymentData = await TransactionLog.scan()
+			.attributes([
+				"id",
+				"email",
+				"status",
+				"createDate",
+				"timestamp",
+				"txHash",
+				"outwardBaseAmount",
+				"outwardCurrency",
+				"inwardBaseAmount",
+				"inwardCurrency",
+				"inwardTotalAmount",
+				"customerAddress",
+				"action",
+			])
+			.where("user_id")
+			.eq(req.user["id"])
+			.where("txnStatus")
+			.eq(true)
+			.where("marketOrderStatus")
+			.eq(true)
+			.where("withdrawStatus")
+			.eq(true)
+			.where("action")
+			.in(["deposit", "withdraw", "payout"])
+			.exec();
+		// console.log(paymentData);
+		let totalPurchase = 0; // The number of payments by the customer.
+		let totalVolume = 0; // The sum of the payment done by the customer.
+		const uniqueRecords = {};
+		let customerCount = 0;
+		let paymentArray = [];
+		let payoutArray = [];
+		let monthlyCalculationArray = [];
 
-    let refundAmount = 0;
-    let monetization = 0;
-    let adjustments = 0;
-    let registeredYear = momentTZ(req.user["createDate"])
-      .tz(req.user["timeZone"])
-      .year();
-    console.log("registeredYear", registeredYear);
-    let currentYear = momentTZ(moment().toISOString())
-      .tz(req.user["timeZone"])
-      .year();
-    console.log("currentYear", currentYear);
+		let refundAmount = 0;
+		let monetization = 0;
+		let adjustments = 0;
+		let registeredYear = momentTZ(req.user["createDate"])
+			.tz(req.user["timeZone"])
+			.year();
+		console.log("registeredYear", registeredYear);
+		let currentYear = momentTZ(moment().toISOString())
+			.tz(req.user["timeZone"])
+			.year();
+		console.log("currentYear", currentYear);
 
-    let isRegisteredCurrentYear = registeredYear == currentYear ? true : false;
-    console.log(isRegisteredCurrentYear);
-    let startYear = currentYear;
+		let isRegisteredCurrentYear = registeredYear == currentYear ? true : false;
+		console.log(isRegisteredCurrentYear);
+		let startYear = currentYear;
 
-    let startMonth = 1;
-    if (isRegisteredCurrentYear) {
-      startYear = registeredYear;
-      // +1 as the numbering in the momentjs libary starts from 0 index
-      startMonth =
-        momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1;
-    }
-    let monthlySums = {};
-    let currencies = {};
+		let startMonth = 1;
+		if (isRegisteredCurrentYear) {
+			startYear = registeredYear;
+			// +1 as the numbering in the momentjs libary starts from 0 index
+			startMonth =
+				momentTZ(req.user["createDate"]).tz(req.user["timeZone"]).month() + 1;
+		}
+		let monthlySums = {};
+		let currencies = {};
 
-    let monthlyPurchase = {};
-    let monthlyCustomers;
+		let monthlyPurchase = {};
+		let monthlyCustomers;
 
-    if (paymentData.count !== 0) {
-      paymentData.map((txn) => {
-        if (txn.action == "deposit") {
-          monthlyCalculationArray.push(txn);
-          totalVolume += txn.outwardBaseAmount;
-          totalPurchase += +1;
-          if (paymentArray.length < 4) paymentArray.unshift(txn);
-          // Convert transaction date to the user's timezone
-          let txnDate = momentTZ(txn.createDate).tz(req.user["timeZone"]);
-          // Check if the transaction is in the start year and month is greater or equal to startMonth
-          let year = txnDate.year();
-          let theMonth = txnDate.month() + 1; // Month is 0-indexed in JavaScript, so adding 1
+		if (paymentData.count !== 0) {
+			paymentData.map((txn) => {
+				if (txn.action == "deposit") {
+					monthlyCalculationArray.push(txn);
+					totalVolume += txn.outwardBaseAmount;
+					totalPurchase += +1;
+					if (paymentArray.length < 4) paymentArray.unshift(txn);
+					// Convert transaction date to the user's timezone
+					let txnDate = momentTZ(txn.createDate).tz(req.user["timeZone"]);
+					// Check if the transaction is in the start year and month is greater or equal to startMonth
+					let year = txnDate.year();
+					let theMonth = txnDate.month() + 1; // Month is 0-indexed in JavaScript, so adding 1
 
-          if (!monthlyPurchase[year]) {
-            monthlyPurchase[year] = {};
-          }
+					if (!monthlyPurchase[year]) {
+						monthlyPurchase[year] = {};
+					}
 
-          if (!monthlyPurchase[year][theMonth]) {
-            monthlyPurchase[year][theMonth] = {
-              month: theMonth,
-              purchase: 0,
-              amount: 0,
-              year: year,
-            };
-          }
-          // Increment purchase count and add to the amount
-          monthlyPurchase[year][theMonth].purchase += 1;
-          monthlyPurchase[year][theMonth].amount += txn.outwardBaseAmount;
+					if (!monthlyPurchase[year][theMonth]) {
+						monthlyPurchase[year][theMonth] = {
+							month: theMonth,
+							purchase: 0,
+							amount: 0,
+							year: year,
+						};
+					}
+					// Increment purchase count and add to the amount
+					monthlyPurchase[year][theMonth].purchase += 1;
+					monthlyPurchase[year][theMonth].amount += txn.outwardBaseAmount;
 
-          if (
-            txnDate.year() === startYear &&
-            txnDate.month() + 1 >= startMonth
-          ) {
-            let month = txnDate.month() + 1; // Get month (1-12)
+					if (
+						txnDate.year() === startYear &&
+						txnDate.month() + 1 >= startMonth
+					) {
+						let month = txnDate.month() + 1; // Get month (1-12)
 
-            if (!currencies[txn.inwardCurrency]) {
-              currencies[txn.inwardCurrency] = {
-                name: txn.inwardCurrency,
-              };
-            }
+						if (!currencies[txn.inwardCurrency]) {
+							currencies[txn.inwardCurrency] = {
+								name: txn.inwardCurrency,
+							};
+						}
 
-            // Initialize the month in monthlySums if not already there
-            if (!monthlySums[month]) {
-              monthlySums[month] = {};
-            }
+						// Initialize the month in monthlySums if not already there
+						if (!monthlySums[month]) {
+							monthlySums[month] = {};
+						}
 
-            // Initialize the currency in the month if not already there
-            if (!monthlySums[month][txn.inwardCurrency]) {
-              monthlySums[month][txn.inwardCurrency] = {
-                month: month,
-                currency: txn.inwardCurrency,
-                amount: 0,
-              };
-            }
+						// Initialize the currency in the month if not already there
+						if (!monthlySums[month][txn.inwardCurrency]) {
+							monthlySums[month][txn.inwardCurrency] = {
+								month: month,
+								currency: txn.inwardCurrency,
+								amount: 0,
+							};
+						}
 
-            // Add the transaction amount to the sum for the month and currency
-            // Assuming txn.inwardBaseAmount is the amount of the transaction
-            monthlySums[month][txn.inwardCurrency].amount +=
-              txn.inwardBaseAmount;
-          }
-          if (!uniqueRecords.hasOwnProperty(txn.customerAddress)) {
-            uniqueRecords[txn.customerAddress] = txn;
-          }
-        }
+						// Add the transaction amount to the sum for the month and currency
+						// Assuming txn.inwardBaseAmount is the amount of the transaction
+						monthlySums[month][txn.inwardCurrency].amount +=
+							txn.inwardBaseAmount;
+					}
+					if (!uniqueRecords.hasOwnProperty(txn.customerAddress)) {
+						uniqueRecords[txn.customerAddress] = txn;
+					}
+				}
 
-        if (txn.action == "payout" && payoutArray.length < 4)
-          payoutArray.unshift(txn);
+				if (txn.action == "payout" && payoutArray.length < 4)
+					payoutArray.unshift(txn);
 
-        if (txn.action == "withdraw") {
-          // console.log( txn.inwardTotalAmount);
-          refundAmount += txn.inwardTotalAmount;
-        }
-      });
-      monthlyCustomers = getUniqueCustomersByMonth(monthlyCalculationArray);
-      customerCount = Object.keys(uniqueRecords).length;
-    }
+				if (txn.action == "withdraw") {
+					// console.log( txn.inwardTotalAmount);
+					refundAmount += txn.inwardTotalAmount;
+				}
+			});
+			monthlyCustomers = getUniqueCustomersByMonth(monthlyCalculationArray);
+			customerCount = Object.keys(uniqueRecords).length;
+		}
 
-    let totalSales = Object.keys(monthlySums).map((month) => {
-      let currencies = Object.values(monthlySums[month]).map(
-        ({ currency, amount, month }) => {
-          return {
-            currency,
-            amount,
-            month,
-            monthName: common.getMonthName(month),
-          };
-        }
-      );
-      return { [month]: currencies };
-    });
+		let totalSales = Object.keys(monthlySums).map((month) => {
+			let currencies = Object.values(monthlySums[month]).map(
+				({ currency, amount, month }) => {
+					return {
+						currency,
+						amount,
+						month,
+						monthName: common.getMonthName(month),
+					};
+				}
+			);
+			return { [month]: currencies };
+		});
 
-    let result = [];
+		let result = [];
 
-    Object.keys(monthlyPurchase).forEach((year) => {
-      Object.keys(monthlyPurchase[year]).forEach((month) => {
-        monthlyPurchase[year][month].monthName = common.getMonthName(month);
-        result.push(monthlyPurchase[year][month]);
-      });
-    });
-    //  - Monetization and Adjustments
-    totalRevenue = totalVolume - refundAmount;
+		Object.keys(monthlyPurchase).forEach((year) => {
+			Object.keys(monthlyPurchase[year]).forEach((month) => {
+				monthlyPurchase[year][month].monthName = common.getMonthName(month);
+				result.push(monthlyPurchase[year][month]);
+			});
+		});
+		//  - Monetization and Adjustments
+		totalRevenue = totalVolume - refundAmount;
 
-    let customersPercentage = 0;
-    if (monthlyCustomers.length > 0) {
-      let currentMonth =
-        monthlyCustomers[monthlyCustomers.length - 1].customerCount;
-      let previousMonth = 0;
-      if (monthlyCustomers.length > 1) {
-        previousMonth =
-          monthlyCustomers[monthlyCustomers.length - 2].customerCount;
-      }
-      if (previousMonth === 0 && currentMonth > 0) {
-        customersPercentage = 100;
-      } else if (currentMonth === 0 && previousMonth > 0) {
-        customersPercentage = -100; // From a positive number to 0
-      } else {
-        customersPercentage =
-          ((currentMonth - previousMonth) / previousMonth) * 100;
-      }
-    }
+		let customersPercentage = 0;
+		if (monthlyCustomers.length > 0) {
+			let currentMonth =
+				monthlyCustomers[monthlyCustomers.length - 1].customerCount;
+			let previousMonth = 0;
+			if (monthlyCustomers.length > 1) {
+				previousMonth =
+					monthlyCustomers[monthlyCustomers.length - 2].customerCount;
+			}
+			if (previousMonth === 0 && currentMonth > 0) {
+				customersPercentage = 100;
+			} else if (currentMonth === 0 && previousMonth > 0) {
+				customersPercentage = -100; // From a positive number to 0
+			} else {
+				customersPercentage =
+					((currentMonth - previousMonth) / previousMonth) * 100;
+			}
+		}
 
-    let volumePercentage = 0;
-    let purchasePercentage = 0;
-    if (result.length > 0) {
-      let currentMonthVolume = result[result.length - 1].amount;
-      let previousMonthVolume = 0;
+		let volumePercentage = 0;
+		let purchasePercentage = 0;
+		if (result.length > 0) {
+			let currentMonthVolume = result[result.length - 1].amount;
+			let previousMonthVolume = 0;
 
-      let currentMonthPurchase = result[result.length - 1].purchase;
-      let previousMonthPurchase = 0;
+			let currentMonthPurchase = result[result.length - 1].purchase;
+			let previousMonthPurchase = 0;
 
-      if (result.length > 1) {
-        previousMonthVolume = result[result.length - 2].amount;
-        previousMonthPurchase = result[result.length - 2].purchase;
-      }
+			if (result.length > 1) {
+				previousMonthVolume = result[result.length - 2].amount;
+				previousMonthPurchase = result[result.length - 2].purchase;
+			}
 
-      if (previousMonthVolume === 0 && currentMonthVolume > 0) {
-        volumePercentage = 100;
-        purchasePercentage = 100;
-      } else if (currentMonthVolume === 0 && previousMonthVolume > 0) {
-        volumePercentage = -100; // From a positive number to 0
-        purchasePercentage = -100;
-      } else {
-        volumePercentage =
-          ((currentMonthVolume - previousMonthVolume) / previousMonthVolume) *
-          100;
-        purchasePercentage =
-          ((currentMonthPurchase - previousMonthPurchase) /
-            previousMonthPurchase) *
-          100;
-      }
-    }
+			if (previousMonthVolume === 0 && currentMonthVolume > 0) {
+				volumePercentage = 100;
+				purchasePercentage = 100;
+			} else if (currentMonthVolume === 0 && previousMonthVolume > 0) {
+				volumePercentage = -100; // From a positive number to 0
+				purchasePercentage = -100;
+			} else {
+				volumePercentage =
+					((currentMonthVolume - previousMonthVolume) / previousMonthVolume) *
+					100;
+				purchasePercentage =
+					((currentMonthPurchase - previousMonthPurchase) /
+						previousMonthPurchase) *
+					100;
+			}
+		}
 
-    let responses = {
-      totalPurchaseVolume: result,
-      totalPurchase: totalPurchase,
-      totalVolume,
-      totalSales: totalSales,
-      currencies: Object.values(currencies),
-      paymentData: paymentArray,
-      payoutData: payoutArray,
-      totalCustomers: customerCount,
-      monthlyCustomers: monthlyCustomers,
-      totalRevenue: totalRevenue,
-      monthlyRevenue: 0,
-      volumePercentage,
-      customersPercentage: customersPercentage,
-      purchasePercentage,
-    };
+		let responses = {
+			totalPurchaseVolume: result,
+			totalPurchase: totalPurchase,
+			totalVolume,
+			totalSales: totalSales,
+			currencies: Object.values(currencies),
+			paymentData: paymentArray,
+			payoutData: payoutArray,
+			totalCustomers: customerCount,
+			monthlyCustomers: monthlyCustomers,
+			totalRevenue: totalRevenue,
+			monthlyRevenue: 0,
+			volumePercentage,
+			customersPercentage: customersPercentage,
+			purchasePercentage,
+		};
 
-    return res
-      .status(responseCode.success)
-      .json(rs.successResponse("DATA RETRIVED", responses));
-  } catch (error) {
-    return res
-      .status(responseCode.serverError)
-      .json(rs.errorResponse(error?.message.toString()));
-  }
+		return res
+			.status(responseCode.success)
+			.json(rs.successResponse("DATA RETRIVED", responses));
+	} catch (error) {
+		return res
+			.status(responseCode.serverError)
+			.json(rs.errorResponse(error?.message.toString()));
+	}
 };
 
 function getUniqueCustomersByMonth(data) {
-  // Helper function to extract year and month from a date string
-  function getYearMonth(dateStr) {
-    let date = new Date(dateStr);
-    return {
-      year: date.getFullYear(),
-      month: date.getMonth() + 1, // Month is 0-indexed in JavaScript, so adding 1
-    };
-  }
+	// Helper function to extract year and month from a date string
+	function getYearMonth(dateStr) {
+		let date = new Date(dateStr);
+		return {
+			year: date.getFullYear(),
+			month: date.getMonth() + 1, // Month is 0-indexed in JavaScript, so adding 1
+		};
+	}
 
-  let uniqueCustomers = new Map();
+	let uniqueCustomers = new Map();
 
-  // Sort data by createDate in ascending order
-  data.sort((a, b) => new Date(a.createDate) - new Date(b.createDate));
+	// Sort data by createDate in ascending order
+	data.sort((a, b) => new Date(a.createDate) - new Date(b.createDate));
 
-  for (let item of data) {
-    let { year, month } = getYearMonth(item.createDate);
-    let yearMonthKey = `${year}-${month}`; // Creating a combined key for year and month
-    let customer = item.customerAddress;
+	for (let item of data) {
+		let { year, month } = getYearMonth(item.createDate);
+		let yearMonthKey = `${year}-${month}`; // Creating a combined key for year and month
+		let customer = item.customerAddress;
 
-    // Check if this customer has already appeared in any previous month
-    let isNewCustomer = true;
-    for (let [key, value] of uniqueCustomers) {
-      if (key < yearMonthKey && value.has(customer)) {
-        isNewCustomer = false;
-        break;
-      }
-    }
+		// Check if this customer has already appeared in any previous month
+		let isNewCustomer = true;
+		for (let [key, value] of uniqueCustomers) {
+			if (key < yearMonthKey && value.has(customer)) {
+				isNewCustomer = false;
+				break;
+			}
+		}
 
-    // If this is a new customer for this month or earlier, add them
-    if (isNewCustomer) {
-      if (!uniqueCustomers.has(yearMonthKey)) {
-        uniqueCustomers.set(yearMonthKey, new Set());
-      }
-      uniqueCustomers.get(yearMonthKey).add(customer);
-    }
-  }
+		// If this is a new customer for this month or earlier, add them
+		if (isNewCustomer) {
+			if (!uniqueCustomers.has(yearMonthKey)) {
+				uniqueCustomers.set(yearMonthKey, new Set());
+			}
+			uniqueCustomers.get(yearMonthKey).add(customer);
+		}
+	}
 
-  // Convert the map to the desired array format with customer count
-  let result = Array.from(uniqueCustomers).map(([yearMonthKey, customers]) => {
-    let [year, month] = yearMonthKey.split("-").map(Number);
-    return {
-      year,
-      month,
-      customerCount: customers.size,
-    };
-  });
+	// Convert the map to the desired array format with customer count
+	let result = Array.from(uniqueCustomers).map(([yearMonthKey, customers]) => {
+		let [year, month] = yearMonthKey.split("-").map(Number);
+		return {
+			year,
+			month,
+			customerCount: customers.size,
+		};
+	});
 
-  return result;
+	return result;
 }
