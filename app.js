@@ -3,15 +3,17 @@ const app = express();
 const bodyParser = require("body-parser");
 
 const dotenv = require("dotenv");
-let env =
-	process.env.NODE_ENV === "production"
-		? "production"
-		: process.env.NODE_ENV === "staging"
-			? "staging"
-			: process.env.NODE_ENV === undefined
-				? "development"
-				: "false";
+// let env =
+// 	process.env.NODE_ENV === "production"
+// 		? "production"
+// 		: process.env.NODE_ENV === "staging"
+// 			? "staging"
+// 			: process.env.NODE_ENV === undefined
+// 				? "development"
+// 				: "false";
+let env = 'development';
 let filePath = "./src/config/" + env + ".env";
+
 let result = dotenv.config({ path: filePath, debug: true });
 if (result.error) {
 	console.log(result.error);
