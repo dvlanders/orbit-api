@@ -12,9 +12,13 @@ const generateApiKey = async (req, res) => {
 		const userId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Ideally, this would come from `req.user.merchantId`
 		const merchantId = '1234'; // Ideally, this would come from `req.user.id`
 
+		// Use a default description if none is provided
+		const defaultDescription = `API Key for merchant ${merchantId}`;
+		const description = req.params.description || defaultDescription;
+
 		const params = {
-			name: `apiKey-${userId}-${Date.now()}`,
-			description: `API Key for merchant ${merchantId}`,
+			name: `apiKey-${userId}-${Date.now()}`, // FIXME: req.params.name
+			description: description,
 			enabled: true,
 		};
 
@@ -26,7 +30,7 @@ const generateApiKey = async (req, res) => {
 			// user_id: userId,
 			name: params.name,
 			description: params.description,
-			// merchant_id: merchantId,
+			merchant_id: 1234,
 			// user_id: userId,
 			environment: "development", // FIXME: Adjust environment as needed
 			api_key_id: apiKeyResponse.id,
@@ -34,7 +38,7 @@ const generateApiKey = async (req, res) => {
 
 		// Save the record in Supabase
 		const { data, error } = await supabase
-			.from('api_keys') // Replace 'apiKeys' with your actual table name
+			.from('api_keys') // Replace 'apiKeys' with actual table name
 			.insert([apiKeyRecord]);
 
 		if (error) throw error;
@@ -53,4 +57,30 @@ const generateApiKey = async (req, res) => {
 	}
 };
 
-module.exports = { generateApiKey };
+const getApiKeys = async (req, res) => {
+	try {
+		const merchantId = '1234'; // Ideally, this would come from `req.user.merchantId`
+
+		// get all of the api keys that matche the merchand_id in supabase
+		const { data, error } = await supabase
+			.from('api_keys') // Replace 'apiKeys' with actual table name
+			.select('*')
+			.eq('merchant_id', merchantId);
+
+
+		if (error) throw error;
+
+		return res.status(200).json({
+			data: data
+
+		});
+	} catch (error) {
+		console.error('Error fetching API key:', error);
+		return res.status(500).json({
+			message: 'Failed to fetch API keys',
+			error: error.message,
+		});
+	}
+};
+
+module.exports = { generateApiKey, getApiKeys };
