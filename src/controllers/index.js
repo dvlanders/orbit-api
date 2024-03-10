@@ -9,3 +9,4 @@ exports.upload = require("./upload");
 exports.transaction = require("./transaction");
 exports.apiKey = require("./apiKey");
 exports.mesh = require("./mesh");
+exports.auth = require("./auth");

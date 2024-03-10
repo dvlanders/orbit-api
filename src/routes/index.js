@@ -11,6 +11,8 @@ module.exports = (app, express) => {
 	const transaction = require("./transaction");
 	const apiKey = require("./apiKey");
 	const mesh = require("./mesh");
+	const auth = require("./auth");
+
 
 	registration(router);
 	user(router);
@@ -23,5 +25,6 @@ module.exports = (app, express) => {
 	transaction(router);
 	apiKey(router);
 	mesh(router);
+	auth(router);
 	app.use("/", router);
 };
