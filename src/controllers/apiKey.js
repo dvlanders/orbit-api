@@ -9,15 +9,16 @@ const apigateway = new AWS.APIGateway();
 // Merchant dashboard will hit this endpoint to generate an API key
 const generateApiKey = async (req, res) => {
 	try {
+		console.log('req', req.body)
 		const userId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Ideally, this would come from `req.user.merchantId`
-		const merchantId = '1234'; // Ideally, this would come from `req.user.id`
+		const merchantId = req.body.merchantId; // Ideally, this would come from `req.user.id`
 
 		// Use a default description if none is provided
 		const defaultDescription = `API Key for merchant ${merchantId}`;
 		const description = req.params.description || defaultDescription;
 
 		const params = {
-			name: `apiKey-${userId}-${Date.now()}`, // FIXME: req.params.name
+			name: req.body.name,
 			description: description,
 			enabled: true,
 		};
