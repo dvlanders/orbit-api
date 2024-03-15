@@ -60,7 +60,9 @@ const generateApiKey = async (req, res) => {
 
 const getApiKeys = async (req, res) => {
 	try {
-		const merchantId = '1234'; // Ideally, this would come from `req.user.merchantId`
+		console.log(req.query)
+		const merchantId = req.query.userId
+		console.log('merchantId', merchantId)
 
 		// get all of the api keys that matche the merchand_id in supabase
 		const { data, error } = await supabase
