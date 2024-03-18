@@ -9,10 +9,8 @@ const apigateway = new AWS.APIGateway();
 // Merchant dashboard will hit this endpoint to generate an API key
 const generateApiKey = async (req, res) => {
 	try {
-		// const userId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Ideally, this would come from `req.user.merchantId`
-		const merchantId = req.body.merchantId; // Ideally, this would come from `req.user.id`
-
-		// Use a default description if none is provided
+		const merchantId = req.body.merchantId;
+		const userId = req.body.userId;
 		const defaultDescription = `API Key for merchant ${merchantId}`;
 		const description = req.params.description || defaultDescription;
 
@@ -22,23 +20,19 @@ const generateApiKey = async (req, res) => {
 			enabled: true,
 		};
 
-		// Create the API key using AWS API Gateway
 		const apiKeyResponse = await apigateway.createApiKey(params).promise();
 
-		// Prepare the record to save in Supabase
 		const apiKeyRecord = {
-			// user_id: userId,
 			name: params.name,
 			description: params.description,
 			merchant_id: merchantId,
-			// user_id: userId,
+			user_id: userId,
 			environment: "development", // FIXME: Adjust environment as needed
 			api_key_id: apiKeyResponse.id,
 		};
 
-		// Save the record in Supabase
 		const { data, error } = await supabase
-			.from('api_keys') // Replace 'apiKeys' with actual table name
+			.from('api_keys')
 			.insert([apiKeyRecord]);
 
 		if (error) throw error;
@@ -59,11 +53,10 @@ const generateApiKey = async (req, res) => {
 
 const getApiKeys = async (req, res) => {
 	try {
-		const merchantId = req.query.userId
+		const merchantId = req.query.merchantId
 
-		// get all of the api keys that matche the merchand_id in supabase
 		const { data, error } = await supabase
-			.from('api_keys') // Replace 'apiKeys' with actual table name
+			.from('api_keys')
 			.select('*')
 			.eq('merchant_id', merchantId);
 
