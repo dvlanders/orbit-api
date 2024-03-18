@@ -9,8 +9,7 @@ const apigateway = new AWS.APIGateway();
 // Merchant dashboard will hit this endpoint to generate an API key
 const generateApiKey = async (req, res) => {
 	try {
-		console.log('req', req.body)
-		const userId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Ideally, this would come from `req.user.merchantId`
+		// const userId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Ideally, this would come from `req.user.merchantId`
 		const merchantId = req.body.merchantId; // Ideally, this would come from `req.user.id`
 
 		// Use a default description if none is provided
@@ -31,7 +30,7 @@ const generateApiKey = async (req, res) => {
 			// user_id: userId,
 			name: params.name,
 			description: params.description,
-			merchant_id: 1234,
+			merchant_id: merchantId,
 			// user_id: userId,
 			environment: "development", // FIXME: Adjust environment as needed
 			api_key_id: apiKeyResponse.id,
@@ -60,9 +59,7 @@ const generateApiKey = async (req, res) => {
 
 const getApiKeys = async (req, res) => {
 	try {
-		console.log(req.query)
 		const merchantId = req.query.userId
-		console.log('merchantId', merchantId)
 
 		// get all of the api keys that matche the merchand_id in supabase
 		const { data, error } = await supabase

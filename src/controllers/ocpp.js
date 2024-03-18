@@ -21,14 +21,12 @@ exports.registerOperator = async (req, res) => {
 	}
 
 	const { chain, paymentAsset, requestId } = req.body;
-	console.log('req.body', req.body);
 
 	// Validate the input
 	if (!chain || !paymentAsset || !requestId) {
 		return res.status(400).json({ error: 'Missing required fields' });
 	}
 
-	console.log('requestId is: ', requestId);
 
 	// Set up the contract
 	const contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -46,7 +44,6 @@ exports.registerOperator = async (req, res) => {
 			gas: gasEstimate
 		});
 
-		console.log('Transaction:', tx);
 		return res.status(200).json({ message: 'Operator registered successfully', transaction: tx });
 	} catch (error) {
 		logger.error(`Error registering operator: ${error}`);
@@ -89,7 +86,6 @@ exports.createSwapAndTransferUniswapV3Native = async (req, res) => {
 		// Execute the swap transaction using the signed transaction data
 		const tx = await web3.eth.sendSignedTransaction(signedTransaction);
 
-		console.log('Transaction:', tx);
 		return res.status(200).json({ message: 'Swap and transfer executed successfully', transaction: tx });
 	} catch (error) {
 		console.error(`Error executing swap and transfer: ${error}`);
