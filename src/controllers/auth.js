@@ -1,40 +1,101 @@
+const supabase = require('../util/supabaseClient');
 const { v4: uuidv4 } = require('uuid');
 const { logger } = require('../util/logger/logger');
+const { validate: uuidValidate } = require('uuid');
 
-// This endpoint is called by the merchant's server to generate a HiFi Bridge redirect link which contains an auth token which our hosted page wil then use to get the transaction details
+
+// The merchant's backend should hit this endpoint to generate a link to our hosted checkout page
 exports.generatePageToken = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const merchantId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Example merchant ID
 
-	const itemBasket = [
-		{ productName: 'Trail Runner X', description: "High-traction trail running shoes with waterproof upper.", price: 120.00, quantity: 1 },
-		{ productName: 'Urban Comfort', description: "Sleek and comfortable shoes perfect for daily wear in the city.", price: 85.50, quantity: 2 },
-		{ productName: 'Gym Shark 2.0', description: "Lightweight and breathable gym shoes with extra cushioning.", price: 99.99, quantity: 1 }
-	];
+	// Basic presence checks
+	const requiredFields = ['transactionId', 'merchantId', 'customerId', 'amountInFiat', 'itemBasket'];
+	const missingField = requiredFields.find(field => req.body[field] === undefined);
+	if (missingField) {
+		return res.status(400).json({ error: `${missingField} is required` });
+	}
 
-	const transactionId = uuidv4();
-	const transactionFee = 0.01; // FIXME: Replace with the actual transaction fee
+	// Format validation
+	// salesTax, itemBasket are optional
+	// The transactionId must be a string, merchantId and customerId must be valid UUIDs, amountInFiat and salesTax (optional) must be numbers, and itemBasket should be an array of objects where each object includes a productName and description as strings, and price and quantity as numbers.
+	const { transactionId, merchantId, customerId, amountInFiat, salesTax, itemBasket } = req.body;
 
-	const allParams = {
-		itemBasket,
-		transactionId,
-		merchantId,
-		transactionFee
+	// Validate merchantId as UUID
+	const isMerchantUuidValid = uuidValidate(merchantId);
+	if (!isMerchantUuidValid) {
+		return res.status(400).json({ error: 'merchantId must be a valid UUID' });
+	}
+
+	// Validate transactionId and customerId as strings
+	const isTransactionIdString = typeof transactionId === 'string';
+	const isCustomerIdString = typeof customerId === 'string';
+	if (!isTransactionIdString || !isCustomerIdString) {
+		return res.status(400).json({ error: 'transactionId and customerId must be strings' });
+	}
+
+	// Validate amountInFiat as number and salesTax as number if it's defined
+	const isNumber = typeof amountInFiat === 'number' && (salesTax === undefined || typeof salesTax === 'number');
+	if (!isNumber) {
+		return res.status(400).json({ error: 'amountInFiat and salesTax must be numbers' });
+	}
+
+	const isValidItemBasket = Array.isArray(itemBasket) && itemBasket.every(item =>
+		typeof item === 'object' &&
+		typeof item.productName === 'string' &&
+		typeof item.description === 'string' &&
+		typeof item.price === 'number' &&
+		typeof item.quantity === 'number');
+
+	if (!isValidItemBasket) {
+		return res.status(400).json({ error: 'itemBasket format is invalid' });
+	}
+
+	// we use a separate internal transaction ID as the primary key in transactions table for internal tracking bc the merchant's transaction id could be anything
+	const internalTransactionId = uuidv4();
+
+	const transactionParams = {
+		id: internalTransactionId,
+		merchant_id: merchantId,
+		merchant_transaction_id: transactionId,
+		customer_id: customerId,
+		amount_fiat: amountInFiat,
+		...(salesTax && { sales_tax: salesTax }),
 	};
 
-	// make a call to supabase to store the transaction details
-	// 
+	const checkoutPageLink = `${process.env.FRONTEND_URL}/?transactionId=${internalTransactionId}` //FIXXME: for prod, change to actual domain
 
-	const serializedParams = encodeURIComponent(JSON.stringify(allParams));
-
-	// FIXME: Replace with the actual HiFi Bridge URL
-	// const hifiLink = `https://checkout.hifibridge.com?params=${serializedParams}`;
-	const hifiLink = `http://localhost:3000/?params=${serializedParams}`;
+	transactionParams.checkout_page_link = checkoutPageLink;
 
 	try {
-		return res.status(200).json({ hifiLink });
+		const { error: transactionError } = await supabase
+			.from('transactions')
+			.insert([transactionParams]);
+
+		if (transactionError) {
+			throw new Error(transactionError.message);
+		}
+
+		if (itemBasket && itemBasket.length) {
+			const itemRecords = itemBasket.map(item => ({
+				product_name: item.productName,
+				description: item.description,
+				price: item.price,
+				quantity: item.quantity,
+				transaction_id: internalTransactionId,
+			}));
+
+			const { error: itemsError } = await supabase
+				.from('items')
+				.insert(itemRecords);
+
+			if (itemsError) {
+				throw new Error(itemsError.message);
+			}
+		}
+
+		return res.status(200).json({ checkoutPageLink });
 	} catch (error) {
 		logger.error(`Something went wrong: ${error.message}`);
 		return res.status(500).json({
@@ -42,5 +103,3 @@ exports.generatePageToken = async (req, res) => {
 		});
 	}
 }
-
-
