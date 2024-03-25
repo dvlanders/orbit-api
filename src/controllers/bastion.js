@@ -17,7 +17,7 @@ exports.createUser = async (req, res) => {
 		chains: chains
 	};
 
-	const url = 'https://api.sandbox.bastion.io/v1/users';
+	const url = 'https://api.sandbox.bastion.io/v1/users';// FIXME: Change to prod url
 	const options = {
 		method: 'POST',
 		headers: {
