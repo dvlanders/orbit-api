@@ -13,6 +13,8 @@ module.exports = (app, express) => {
 	const mesh = require("./mesh");
 	const auth = require("./auth");
 	const ocpp = require("./ocpp");
+	const bastion = require("./bastion");
+
 
 
 	registration(router);
@@ -28,5 +30,6 @@ module.exports = (app, express) => {
 	mesh(router);
 	auth(router);
 	ocpp(router);
+	bastion(router);
 	app.use("/", router);
 };

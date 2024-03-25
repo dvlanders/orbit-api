@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require("uuid");
-const supabase = require('../util/supabaseClient'); // Import Supabase client
+const supabase = require('../util/supabaseClient');
 
 AWS.config.update({ region: 'us-east-1' });
 const apigateway = new AWS.APIGateway();
