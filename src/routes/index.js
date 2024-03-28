@@ -12,6 +12,9 @@ module.exports = (app, express) => {
 	const apiKey = require("./apiKey");
 	const mesh = require("./mesh");
 	const auth = require("./auth");
+	const ocpp = require("./ocpp");
+	const bastion = require("./bastion");
+
 
 
 	registration(router);
@@ -26,5 +29,7 @@ module.exports = (app, express) => {
 	apiKey(router);
 	mesh(router);
 	auth(router);
+	ocpp(router);
+	bastion(router);
 	app.use("/", router);
 };
