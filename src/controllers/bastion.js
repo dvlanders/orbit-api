@@ -3,6 +3,7 @@ const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
+const BASTION_URL = process.env.BASTION_URL;
 
 exports.createUser = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -10,14 +11,15 @@ exports.createUser = async (req, res) => {
 	}
 
 	const { merchantId } = req.body;
-	const chains = ["ETHEREUM_TESTNET", "POLYGON_TESTNET"]; // FIXME: Change to prod chains
+	const chains = ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET"]; // According to Alex @ Bastion, spinning up a single wallet will spin up wallets for all chains, but i am specifying all networks for clairty
 
 	const bodyObject = {
 		id: merchantId,
 		chains: chains
 	};
 
-	const url = 'https://api.sandbox.bastion.io/v1/users';// FIXME: Change to prod url
+	const url = `${BASTION_URL}/v1/users`;
+
 	const options = {
 		method: 'POST',
 		headers: {
@@ -83,7 +85,7 @@ exports.getUser = async (req, res) => {
 
 	const { merchantId } = req.body;
 
-	const url = `https://api.sandbox.bastion.io/v1/users/${merchantId}`; // FIXME: Change to prod URL
+	const url = `${BASTION_URL}/v1/users/${merchantId}`;
 	const options = {
 		method: 'GET',
 		headers: {
