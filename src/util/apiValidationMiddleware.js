@@ -1,49 +1,42 @@
-const AWS = require('aws-sdk');
+const { createClient } = require('@supabase/supabase-js');
 const { rs, responseCode } = require("./index"); // Assuming these are utility functions for response shaping
 
-// Configure AWS region
-AWS.config.update({ region: 'us-east-1' });
-const apigateway = new AWS.APIGateway();
+const supabase = require('./supabaseClient');
 
 /**
- * Middleware to validate an API key from the request header against AWS API Gateway.
+ * Middleware to validate an API key from the request header against Supabase.
  */
 exports.validateApiKey = async (req, res, next) => {
 	try {
-		// Extract API key from the request header. Assuming the header field is 'x-api-key'
-		const apiKey = req.headers['x-api-key'];
+		const apiKeyValue = req.headers['x-api-key'];
+		console.log('API key:', apiKeyValue);
 
-		if (!apiKey) {
-			// No API key provided in the request
+		if (!apiKeyValue) {
 			return res.status(400).json(rs.response(responseCode.badRequest, 'API key is required in the request header', {}));
 		}
 
-		// Parameters for getApiKey API call
-		const params = {
-			apiKey: apiKey,
-			includeValue: false // Set to true if you need to compare the value, but usually, the ID is sufficient
-		};
+		const { data, error } = await supabase
+			.from('external_api_keys')
+			.select('*')
+			.eq('value', apiKeyValue)
+			.single();
 
-		// Check API key validity with AWS API Gateway
-		const apiKeyDetails = await apigateway.getApiKey(params).promise();
-
-		if (!apiKeyDetails || !apiKeyDetails.enabled) {
-			// API key is invalid or not enabled
-			return res.status(401).json(rs.response(responseCode.unauthorized, 'Invalid or disabled API key', {}));
+		if (error) {
+			console.error('Error fetching API key from Supabase:', error);
+			return res.status(500).json(rs.errorResponse('Failed to validate API key', error.message));
 		}
 
-		// Optionally, implement further logic here (e.g., checking API key against a specific usage plan)
+		// FIXME: add logig for checking if data.environment is equal to the current env
 
-		// API key is valid, proceed with the request
+		if (!data || data.status !== 'active' || (data.expires_at && new Date(data.expires_at) < new Date())) {
+			return res.status(401).json(rs.response(responseCode.unauthorized, 'Invalid or expired API key', {}));
+		}
+
+		// API key is valid, you might want to attach relevant user or permissions info to the request here
+		req.apiKeyPermissions = data.permissions; // Example: attaching permissions to the request
 		next();
 	} catch (err) {
-		if (err.statusCode === 404) {
-			// API key not found in AWS API Gateway
-			return res.status(401).json(rs.response(responseCode.unauthorized, 'API key not found or unauthorized', {}));
-		} else {
-			// Other errors (e.g., AWS service issues)
-			console.error('Error validating API key:', err);
-			return res.status(500).json(rs.errorResponse('Failed to validate API key', err.toString()));
-		}
+		console.error('Error validating API key:', err);
+		return res.status(500).json(rs.errorResponse('Failed to validate API key', err.toString()));
 	}
 };

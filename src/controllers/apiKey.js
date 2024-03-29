@@ -1,46 +1,42 @@
-const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require("uuid");
 const supabase = require('../util/supabaseClient');
 
-AWS.config.update({ region: 'us-east-1' });
-const apigateway = new AWS.APIGateway();
 
-// TODO: Figure out api key environments
-// Merchant dashboard will hit this endpoint to generate an API key
+
+// Generate and save API key in Supabase
 const generateApiKey = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+
 	try {
-		const merchantId = req.body.merchantId;
-		const userId = req.body.userId;
-		const defaultDescription = `API Key for merchant ${merchantId}`;
-		const description = req.params.description || defaultDescription;
+		const { merchantId, userId, environment } = req.body;
 
-		const params = {
-			name: req.body.name,
-			description: description,
-			enabled: true,
-		};
-
-		const apiKeyResponse = await apigateway.createApiKey(params).promise();
 
 		const apiKeyRecord = {
-			name: params.name,
-			description: params.description,
+			value: uuidv4(),
 			merchant_id: merchantId,
-			user_id: userId,
-			environment: "development", // FIXME: Adjust environment as needed
-			api_key_id: apiKeyResponse.id,
+			environment: environment,
+			status: "active",
+			expires_at: null,
+			permissions: {
+				read: true,
+				write: true
+			},
+			created_by_user_id: userId,
 		};
 
 		const { data, error } = await supabase
-			.from('api_keys')
-			.insert([apiKeyRecord]);
+			.from('external_api_keys')
+			.insert([apiKeyRecord])
+			.select();
 
 		if (error) throw error;
 
 		return res.status(200).json({
 			message: 'API key generated and saved successfully',
-			apiKey: apiKeyResponse,
-
+			apiKey: data[0],
 		});
 	} catch (error) {
 		console.error('Error generating or saving API key:', error);
@@ -53,27 +49,28 @@ const generateApiKey = async (req, res) => {
 
 const getApiKeys = async (req, res) => {
 	try {
-		const merchantId = req.query.merchantId
+		const merchantId = req.query.merchantId;
+
+		const columns = 'id, created_at, expires_at, permissions, status, merchant_id, environment, created_by_user_id';
 
 		const { data, error } = await supabase
-			.from('api_keys')
-			.select('*')
+			.from('external_api_keys')
+			.select(columns)
 			.eq('merchant_id', merchantId);
-
 
 		if (error) throw error;
 
 		return res.status(200).json({
 			data: data
-
 		});
 	} catch (error) {
-		console.error('Error fetching API key:', error);
+		console.error('Error fetching API keys:', error);
 		return res.status(500).json({
 			message: 'Failed to fetch API keys',
 			error: error.message,
 		});
 	}
 };
+
 
 module.exports = { generateApiKey, getApiKeys };

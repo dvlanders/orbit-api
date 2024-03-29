@@ -10,6 +10,7 @@ const MESH_CLIENT_ID = process.env.MESH_CLIENT_ID;
 
 // hosted checkout page hits this to generate a linkToken object for the MeshModal
 exports.createTransaction = async (req, res) => {
+	console.log('****************createTransaction on mesh controller');
 	const { customerId, transactionId, merchantId, amountFiat } = req.body;
 
 	if (req.method !== 'POST') {
@@ -57,12 +58,12 @@ exports.createTransaction = async (req, res) => {
 		});
 
 		const toAddresses = [
-			// eth mainnet
-			{
-				networkId: "e3c7fdd8-b1fc-4e51-85ae-bb276e075611",
-				symbol: "ETH",
-				address: merchantEthAddress,
-			},
+			// // eth mainnet
+			// {
+			// 	networkId: "e3c7fdd8-b1fc-4e51-85ae-bb276e075611",
+			// 	symbol: "ETH",
+			// 	address: merchantEthAddress,
+			// },
 			{
 				networkId: "e3c7fdd8-b1fc-4e51-85ae-bb276e075611",
 				symbol: "USDC",
