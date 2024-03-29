@@ -1,7 +1,8 @@
 const { mesh } = require("../controllers");
 
-const { authorizeUser } = require("../util/middleware");
+const { validateApiKey } = require("../util//apiValidationMiddleware");
 
 module.exports = (router) => {
-	router.post("/mesh/v1/linktoken/create", mesh.createTransaction);
+	console.log('****************mesh routes')
+	router.post("/mesh/v1/linktoken/create", validateApiKey, mesh.createTransaction);
 };
