@@ -14,6 +14,7 @@ module.exports = (app, express) => {
 	const auth = require("./auth");
 	const ocpp = require("./ocpp");
 	const bastion = require("./bastion");
+	const transactions = require("./transactions");
 
 
 
@@ -31,5 +32,6 @@ module.exports = (app, express) => {
 	auth(router);
 	ocpp(router);
 	bastion(router);
+	transactions(router);
 	app.use("/", router);
 };

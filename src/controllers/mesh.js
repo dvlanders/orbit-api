@@ -44,7 +44,7 @@ exports.createTransaction = async (req, res) => {
 				case 'OPTIMISM_MAINNET':
 					merchantOptimismAddress = wallet.address;
 					break;
-				// FIXME: testnets dont exist for Mesh so comment this out in prod
+				// FIXME: testnets dont exist for Mesh so comment this out in prod. we opnly need this so the testwallet records in supabase will properly popoulate the toAddresses array
 				case 'ETHEREUM_TESTNET':
 					merchantEthAddress = wallet.address;
 					break;
@@ -133,6 +133,10 @@ exports.createTransaction = async (req, res) => {
 			},
 
 		]
+
+		console.log("toAddresses", toAddresses)
+
+
 		const bodyObject = {
 			userId: customerId,
 			restrictMultipleAccounts: true,
@@ -147,6 +151,8 @@ exports.createTransaction = async (req, res) => {
 			}
 		};
 
+		console.log("bodyObject", bodyObject)
+
 		const response = await fetch('https://integration-api.getfront.com/api/v1/linktoken', {
 			method: 'POST',
 			headers: {
@@ -160,6 +166,8 @@ exports.createTransaction = async (req, res) => {
 
 
 		const data = await response.json();
+
+		console.log('data on link token create response from mesh:', data);
 
 		if (!response.ok) {
 			throw new Error(`Failed to retrieve or generate linkToken. Status: ${response.status}. Message: ${data.message}`);

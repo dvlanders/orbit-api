@@ -12,5 +12,6 @@ exports.mesh = require("./mesh");
 exports.auth = require("./auth");
 exports.ocpp = require("./ocpp");
 exports.bastion = require("./bastion");
+exports.transactions = require("./transactions");
 
 
