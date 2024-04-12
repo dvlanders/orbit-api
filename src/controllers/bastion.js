@@ -11,7 +11,8 @@ exports.createUser = async (req, res) => {
 	}
 
 	const { merchantId } = req.body;
-	const chains = ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET"]; // According to Alex @ Bastion, spinning up a single wallet will spin up wallets for all chains, but i am specifying all networks for clairty
+	// const chains = ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET"]; // According to Alex @ Bastion, spinning up a single wallet will spin up wallets for all chains, but i am specifying all networks for clairty
+	const chains = ["ETHEREUM_TESTNET", "POLYGON_TESTNET", "OPTIMISM_SEPOLIA"]; // FIXME: DEV ONLY
 
 	const bodyObject = {
 		id: merchantId,
@@ -34,6 +35,8 @@ exports.createUser = async (req, res) => {
 	try {
 		const response = await fetch(url, options);
 		const data = await response.json();
+
+		console.log('data from bastion call', data);
 
 		if (response.status !== 201) {
 			const errorMessage = `Failed to create user. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
