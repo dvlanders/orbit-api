@@ -15,6 +15,7 @@ module.exports = (app, express) => {
 	const ocpp = require("./ocpp");
 	const bastion = require("./bastion");
 	const transactions = require("./transactions");
+	const bridge = require("./bridge");
 
 
 
@@ -33,5 +34,6 @@ module.exports = (app, express) => {
 	ocpp(router);
 	bastion(router);
 	transactions(router);
+	bridge(router);
 	app.use("/", router);
 };
