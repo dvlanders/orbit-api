@@ -39,7 +39,7 @@ exports.createTermsOfServiceLink = async (req, res) => {
 
 		const responseData = await response.json();
 		const sessionUrl = responseData.url;
-		const redirectUri = `https://portal.hifibridge.com/bridgetosredirect/${merchantId}`;
+		const redirectUri = `${process.env.FRONTEND_URL}/auth/tosredirect/${merchantId}`;
 		const encodedRedirectUri = querystring.escape(redirectUri);
 
 		const delimiter = sessionUrl.includes('?') ? '&' : '?';
