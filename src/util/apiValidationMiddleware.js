@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { rs, responseCode } = require("./index"); // Assuming these are utility functions for response shaping
+const { rs, responseCode } = require("./index");
 
 const supabase = require('./supabaseClient');
 
@@ -28,14 +28,13 @@ exports.validateApiKey = async (req, res, next) => {
 			return res.status(500).json(rs.errorResponse('Failed to validate API key', error.message));
 		}
 
-		// FIXME: add logig for checking if data.environment is equal to the current env
+		// FIXME: add logging for checking if data.environment is equal to the current env
 
 		if (!data || data.status !== 'active' || (data.expires_at && new Date(data.expires_at) < new Date())) {
 			return res.status(401).json(rs.response(responseCode.unauthorized, 'Invalid or expired API key', {}));
 		}
 
-		// API key is valid, you might want to attach relevant user or permissions info to the request here
-		req.apiKeyPermissions = data.permissions; // Example: attaching permissions to the request
+		req.apiKeyPermissions = data.permissions;
 		next();
 	} catch (err) {
 		console.error('Error validating API key:', err);

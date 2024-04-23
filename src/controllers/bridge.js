@@ -11,6 +11,8 @@ const fileToBase64 = require('../util/fileToBase64');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
+
+
 exports.createTermsOfServiceLink = async (req, res) => {
 
 	if (req.method !== 'POST') {
@@ -23,6 +25,8 @@ exports.createTermsOfServiceLink = async (req, res) => {
 	}
 
 	const idempotencyKey = uuidv4();
+
+	// TODO: Save each request in bridge_tos_links_requests table in the database
 
 	try {
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/tos_links`, {
@@ -54,7 +58,6 @@ exports.createTermsOfServiceLink = async (req, res) => {
 	}
 };
 
-// in the frontend, save the signed agreement id in a new table
 
 exports.createNewBridgeCustomer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -63,10 +66,9 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 	const { merchantId, signedAgreementId } = req.body;
 	if (!merchantId || !signedAgreementId) {
-		return res.status(400).json({ error: 'merchantId and signedAgreementId are required' });
+		return res.status(400).json({ error: 'MerchantId and signedAgreementId are required' });
 	}
 
-	// Query Supabase to get the merchant details
 	try {
 		const { data: complianceData, error: complianceError } = await supabase
 			.from('compliance')
@@ -82,10 +84,8 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			return res.status(404).json({ error: 'No compliance data found for the given merchant ID' });
 		}
 
-		// Format date of birth from timestampz to yyyy-mm-dd
 		const birthDate = new Date(complianceData.date_of_birth);
-		const formattedBirthDate = `${birthDate.getUTCFullYear()}-${(birthDate.getUTCMonth() + 1).toString().padStart(2, '0')}-${birthDate.getUTCDate().toString().padStart(2, '0')}`;
-
+		const formattedBirthDate = `${birthDate.getUTCFullYear()}-${(birthDate.getUTCMonth() + 1).toString().padStart(2, '0')}-${birthDate.getUTCDate().toString().padStart(2, '0')}`; 	// Format date of birth from timestampz to yyyy-mm-dd
 
 		const idempotencyKey = uuidv4();
 
@@ -106,72 +106,28 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			signed_agreement_id: signedAgreementId,
 			birth_date: formattedBirthDate,
 			tax_identification_number: complianceData.tin
-
 		};
 
-		if (complianceData.image_front_base64) {
-			requestBody.gov_id_image_front = complianceData.image_front_base64;
+		const paths = [`${merchantId}/Passport_front.png`, `${merchantId}/Passport_back.png`]; // FIXME: Hardcoded Passport support only. Awaiting Bridge instruction about KYB
+		const fileUrls = await Promise.all(paths.map(async (path) => {
+			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
+			if (error || !data) {
+				console.log(`No file found at ${path}`);
+				return null;
+			}
+			return data.signedUrl;
+		}));
+
+
+		// Conditionally adding images to the request body
+		if (fileUrls[0]) { // Checking for the front image
+			requestBody.gov_id_image_front = await fileToBase64(fileUrls[0]);
+
 		}
-		if (complianceData.image_back_base64) {
-			requestBody.gov_id_image_back = complianceData.image_back_base64;
+		if (fileUrls[1]) { // Checking for the back image
+			requestBody.gov_id_image_back = await fileToBase64(fileUrls[1]);
 		}
 
-		// get the image from supabase storage and convert it to base64 to be sent to bridge request body
-		// if (complianceData.id_type === 'passport') {
-		// 	try {
-		// 		const { data, error } = await supabase
-		// 			.storage
-		// 			.from('compliance_id')
-		// 			.createSignedUrl(`${merchantId}/Passport_front.png`, 1814400) // Signed url expires in 3 weeks
-
-
-		// 		if (error) {
-		// 			throw new Error(`Error fetching file from storage: ${fileError}`);
-		// 		}
-
-		// 		if (!data) {
-		// 			return res.status(404).json({ error: 'No storage data found for the given merchant ID' });
-		// 		}
-
-		// 		// convert the signed url to 
-		// 		requestBody.gov_id_image_front = await fileToBase64(data.signedUrl);
-
-		// 	} catch (error) {
-		// 		logger.error(`Error getting passport file: ${error.message}`);
-		// 		return res.status(500).json({
-		// 			error: `Something went wrong: ${error.message}`
-		// 		});
-		// 	}
-
-		// } else if (complianceData.id_type === 'drivers_license') { // FIXME: add all of the logic for each of the id types
-		// 	try {
-		// 		const { data: fileData, error: fileError } = await supabase
-		// 			.storage
-		// 			.from('compliance_id')
-		// 			.createSignedUrl(`${merchantId}/Drivers_license_front.png`, 1814400) // Signed url expires in 3 weeks
-
-		// 		if (fileError) {
-		// 			throw new Error(`Error fetching file from storage: ${fileError}`);
-		// 		}
-
-		// 		if (!fileData) {
-		// 			return res.status(404).json({ error: 'No storage data found for the given merchant ID' });
-		// 		}
-
-		// 	} catch (error) {
-		// 		logger.error(`Error getting drivers license file: ${error.message}`);
-		// 		return res.status(500).json({
-		// 			error: `Something went wrong: ${error.message}`
-		// 		});
-		// 	}
-
-		// 	requestBody.gov_id_image_front = complianceData.ssn;
-		// } else {
-		// 	return res.status(400).json({ error: 'Unrecognized ID type in compliance record' });
-		// }
-
-
-		console.log('request body that is about to be sent:', requestBody)
 		const response = await fetch(`${BRIDGE_URL}/v0/customers`, {
 			method: 'POST',
 			headers: {
@@ -182,11 +138,19 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			body: JSON.stringify(requestBody)
 		});
 
+		const responseBody = await response.json();
+
+
+		//TODO: Save the bridge_customer_approved_at timestamp in supabase compliance table
+
 		if (!response.ok) {
-			throw new Error(`HTTP status ${response.status}`);
+			console.error('HTTP error', response.status, responseBody.message);
+			return res.status(response.status).json({
+				error: responseBody.message || 'Error processing request',
+				source: responseBody.source || 'Not provided by Bridge API response. Reach out to Bridge for further debugging'
+			});
 		}
 
-		const responseBody = await response.json();
 		return res.status(200).json(responseBody);
 
 	} catch (error) {
