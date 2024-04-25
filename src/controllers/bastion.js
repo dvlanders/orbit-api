@@ -322,7 +322,7 @@ exports.transferUsdc = async (req, res) => {
 			.select();
 
 		logger.error(`Error in transferUsdc: ${error.message}`);
-		return res.status(500).json({ error: `Error during transfer: ${error.message}`, data: updateData });
+		return res.status(500).json({ message: "Error during transfer", error: error.message, data: updateData, status: error.status });
 	}
 
 };
