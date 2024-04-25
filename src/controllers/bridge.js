@@ -108,7 +108,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			tax_identification_number: complianceData.tin
 		};
 
-		const paths = [`${merchantId}/Passport_front.png`, `${merchantId}/Passport_back.png`]; // FIXME: Hardcoded Passport support only. Awaiting Bridge instruction about KYB
+		const paths = [`${merchantId}/${complianceData.id_type}_front.png`, `${merchantId}/${complianceData.id_type}_back.png`];
 		const fileUrls = await Promise.all(paths.map(async (path) => {
 			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
 			if (error || !data) {
@@ -141,13 +141,17 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		const responseBody = await response.json();
 
 
-		//TODO: Save the bridge_customer_approved_at timestamp in supabase compliance table
+		const { error: approveTimestampError } = await supabase
+			.from('compliance')
+			.insert([{ bridge_customer_approved_at: new Date() }]);
+
+		if (approveTimestampError) throw approveTimestampError;
 
 		if (!response.ok) {
 			console.error('HTTP error', response.status, responseBody.message);
 			return res.status(response.status).json({
 				error: responseBody.message || 'Error processing request',
-				source: responseBody.source || 'Not provided by Bridge API response. Reach out to Bridge for further debugging'
+				source: responseBody.source || 'response.source not provided by Bridge API. Reach out to Bridge for further debugging'
 			});
 		}
 
