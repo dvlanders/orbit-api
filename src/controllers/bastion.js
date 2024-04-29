@@ -5,14 +5,16 @@ const { v4: uuidv4 } = require("uuid");
 const { request } = require('express');
 
 
-const BASTION_API_KEY = process.env.BASTION_API_KEY;
-const BASTION_URL = process.env.BASTION_URL;
+// const BASTION_API_KEY = process.env.BASTION_API_KEY;
+// const BASTION_URL = process.env.BASTION_URL;
 
+const BASTION_API_KEY = '217l7eZyCrh4qlftA6BE2CWqkRlhtXav';
+const BASTION_URL = 'https://api.prod.bastion.com';
 
 // Core function to create user and insert wallet records
 async function createUserCore(merchantId) {
-	// const chains = ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET"]; // According to Alex @ Bastion, spinning up a single wallet will spin up wallets for all chains, but i am specifying all networks for clairty
-	const chains = ["ETHEREUM_TESTNET", "POLYGON_AMOY", "OPTIMISM_SEPOLIA", "BASE_SEPOLIA"]; // FIXME: DEV ONLY
+	const chains = ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET"]; // According to Alex @ Bastion, spinning up a single wallet will spin up wallets for all chains, but i am specifying all networks for clairty
+	// const chains = ["ETHEREUM_TESTNET", "POLYGON_AMOY", "OPTIMISM_SEPOLIA", "BASE_SEPOLIA"]; // FIXME: DEV ONLY
 	const bodyObject = { id: merchantId, chains };
 	const url = `${BASTION_URL}/v1/users`;
 	const options = {
@@ -104,6 +106,80 @@ exports.getUser = async (req, res) => {
 	}
 };
 
+exports.submitKyc = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, firstName, middleName, lastName, dateOfBirth, ipAddress } = req.body;
+
+	if (!dateOfBirth || !ipAddress || !merchantId) {
+		return res.status(400).json({ error: 'merchantId, dateOfBirth and ipAddress are required' });
+	}
+
+	const bodyObject = {
+		firstName: firstName,
+		middleName: middleName,
+		lastName: lastName,
+		dateOfBirth: dateOfBirth,
+		ipAddress: ipAddress
+	};
+
+	const url = `${BASTION_URL}/v1/users/${merchantId}/kyc`;
+	const options = {
+		method: 'POST',
+		headers: {
+			accept: 'application/json',
+			'content-type': 'application/json',
+			Authorization: `Bearer ${BASTION_API_KEY}`
+		},
+		body: JSON.stringify(bodyObject)
+	};
+
+	try {
+		const response = await fetch(url, options);
+		const data = await response.json();
+
+
+		if (response.ok !== true) {
+			const errorMessage = `Failed to submit KYC. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+			throw new Error(errorMessage);
+		}
+
+		const complianceBodyObject = {
+			bastion_kyc_response: data,
+			bastion_customer_approved_at: null,
+		};
+
+		if (data.kycPassed === true && data.jurisdictionCheckPassed === true) {
+			complianceBodyObject.bastion_customer_approved_at = new Date();
+		}
+
+
+		const { data: complianceUpdateData, error: complianceUpdateError } = await supabase
+			.from('compliance')
+			.update(complianceBodyObject)
+			.match({ merchant_id: merchantId })
+			.select();
+
+
+		res.status(201).json({ bastionResponse: data, complianceRecord: complianceUpdateData });
+	} catch (error) {
+		logger.error(`Something went wrong while submitting KYC: ${error.message}`);
+
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.message,
+				merchant_id: merchantId,
+				endpoint: '/bastion/submitKyc'
+			})
+
+		res.status(500).json({ error: `Something went wrong: ${error.message}` });
+	}
+
+};
+
 
 exports.transferUsdc = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -117,7 +193,7 @@ exports.transferUsdc = async (req, res) => {
 	}
 
 	const requestId = uuidv4();
-	const contractAddress = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" // FIXME: contract address for USDC on Base Sepolia
+	const contractAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" // FIXME: contract address for USDC on Polygon Mainnet
 
 	let transactionRecord = {
 		request_id: requestId,
@@ -150,9 +226,6 @@ exports.transferUsdc = async (req, res) => {
 			.select('*')
 			.eq('merchant_id', merchantId)
 			.eq('chain', chain);
-
-
-
 
 		if (sourceMerchantError || !sourceMerchantData || sourceMerchantData.length === 0) {
 			logger.error(`DB error while querying profiles table: ${recipientProfileError.message}`);
