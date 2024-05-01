@@ -143,7 +143,8 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 		const { error: approveTimestampError } = await supabase
 			.from('compliance')
-			.insert([{ bridge_customer_approved_at: new Date() }]);
+			.update([{ bridge_customer_approved_at: new Date() }])
+			.match({ merchant_id: merchantId })
 
 		if (approveTimestampError) throw approveTimestampError;
 
