@@ -204,7 +204,7 @@ exports.transferUsdc = async (req, res) => {
 		transaction_status: 'Initiated',
 		action_name: 'transfer',
 		contract_address: contractAddress,
-
+		status: 1
 	};
 
 	let toWalletAddress = '';
