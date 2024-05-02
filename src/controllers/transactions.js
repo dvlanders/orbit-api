@@ -70,7 +70,6 @@ exports.sendTransactionConfirmationEmail = async (req, res) => {
 	};
 
 	try {
-		// Assuming you have set your Mesh API key in your environment variables
 		const response = await axios.get('https://integration-api.getfront.com/api/v1/transfers/managed/mesh', {
 			headers: {
 				'accept': 'application/json',
