@@ -11,6 +11,66 @@ const fileToBase64 = require('../util/fileToBase64');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
+
+exports.getCustomer = async (req, res) => {
+
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId } = req.body;
+	if (!merchantId) {
+		return res.status(400).json({ error: 'merchantId is required' });
+	}
+
+	try {
+		const { data: merchantData, error: merchantError } = await supabase
+			.from('merchants')
+			.select('bridge_id')
+			.eq('id', merchantId)
+			.single();
+
+
+		if (merchantError) {
+			throw new Error(`Database error: ${merchantError.message}`);
+		}
+
+		if (!merchantData) {
+			return res.status(404).json({ error: 'No merchant found for the given merchant ID' });
+		}
+
+		const bridgeId = merchantData.bridge_id;
+
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}`, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY
+			}
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP status ${response.status}`);
+		}
+
+		const responseData = await response.json();
+		return res.status(200).json(responseData);
+	} catch (error) {
+		logger.error(`Something went wrong while creating the Terms of Service link: ${error.message}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.message,
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: 'GET /bridge/v0/customers/',
+			})
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`,
+		});
+	}
+};
+
+
 exports.createTermsOfServiceLink = async (req, res) => {
 
 	if (req.method !== 'POST') {
@@ -180,7 +240,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 				log: error.message,
 				status: error.status,
 				merchant_id: merchantId,
-				endpoint: '/bridge/v0/customers',
+				endpoint: 'POST /bridge/v0/customers',
 			})
 		return res.status(500).json({
 			error: `Something went wrong: ${error.message}`
@@ -294,8 +354,8 @@ exports.createExternalAccount = async (req, res) => {
 
 	const { merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, routingNumber, businessIdentifierCode, bankCountry, accountType, accountOwnerType, beneficiaryFirstName, beneficiaryLastName, beneficiaryBusinessName, beneficiaryStreetLine1, beneficiaryStreetLine2, beneficiaryCity, beneficiaryState, beneficiaryPostalCode, beneficiaryCountry } = req.body;
 
-	if (!merchantId || !bridgeId || !currency || !bankName || !accountOwnerName || !accountNumber || !accountType || !accountOwnerType) {
-		return res.status(400).json({ error: 'merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, accountType, and accountOwnerType are required' });
+	if (!merchantId || !bridgeId || !currency || !bankName || !accountOwnerName || !accountNumber || !accountType || !accountOwnerType || bankCountry) {
+		return res.status(400).json({ error: 'merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, accountType, bankCountry, and accountOwnerType are required' });
 	}
 
 	const idempotencyKey = uuidv4();
@@ -377,6 +437,7 @@ exports.createExternalAccount = async (req, res) => {
 				bank_name: bankName,
 				account_owner_name: accountOwnerName,
 				account_number: accountNumber,
+				routing_number: routingNumber,
 				account_type: accountType,
 				business_identifier_code: businessIdentifierCode,
 				bank_country: bankCountry,

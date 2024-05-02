@@ -111,16 +111,12 @@ exports.getUserAction = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, requestId } = req.body;
+	const { merchantId, requestId } = req.params;
 
 	if (!merchantId || !requestId) {
 		return res.status(400).json({ error: 'merchantId and requestId are required' });
 	}
 
-	console.log('merchantId', merchantId)
-	console.log('requestId', requestId)
-
-	// Include the requestId as a query parameter in the request URL
 	const url = `${BASTION_URL}/v1/user-actions/${requestId}?userId=${merchantId}`;
 	const options = {
 		method: 'GET',
@@ -236,7 +232,7 @@ exports.transferUsdc = async (req, res) => {
 	}
 
 	const requestId = uuidv4();
-	const contractAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" // FIXME: contract address for USDC on Polygon Mainnet
+	const contractAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" // FIXME: contract address for USDC on Polygon Mainnet. In the future, we should set an env var or a json lookup file.
 
 	let transactionRecord = {
 		request_id: requestId,
@@ -257,7 +253,8 @@ exports.transferUsdc = async (req, res) => {
 
 
 	// Step 1: Check if the destinationEmail is already associated with a merchant account
-	try {        // Initial log to database
+	try {
+		// Initial log to database
 		let { error: transactionError } = await supabase
 			.from('onchain_transactions')
 			.insert([transactionRecord]);
@@ -292,7 +289,6 @@ exports.transferUsdc = async (req, res) => {
 
 			// Sign in with OTP and create a new user, triggering on_auth_user_created which spins up the profiles and merchants table records
 			const { error: newRecipientUserError } =
-				// const { data: newRecipientUserData, error: newRecipientUserError } =
 				await supabase.auth.signInWithOtp({
 					email: destinationEmail,
 					options: {
@@ -407,12 +403,9 @@ exports.transferUsdc = async (req, res) => {
 
 		const response = await fetch(url, options);
 		const data = await response.json();
-		console.log('data from transferusdc', data)
 
 		if (data.status === 'SUBMITTED') {
 			const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
-				// transaction_status: 'Success',
-				// status: 2,
 				bastion_response: data,
 				from_wallet_id: fromWalletId,
 				to_wallet_id: toWalletId,
@@ -430,8 +423,6 @@ exports.transferUsdc = async (req, res) => {
 		}
 	} catch (error) {
 		const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
-			// transaction_status: 'Failed',
-			// status: 3,
 			error_message: error.message,
 			from_wallet_id: fromWalletId,
 			to_wallet_id: toWalletId,
