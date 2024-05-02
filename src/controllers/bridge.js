@@ -11,8 +11,6 @@ const fileToBase64 = require('../util/fileToBase64');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
-
-
 exports.createTermsOfServiceLink = async (req, res) => {
 
 	if (req.method !== 'POST') {
