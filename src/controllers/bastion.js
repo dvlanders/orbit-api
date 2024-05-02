@@ -106,6 +106,49 @@ exports.getUser = async (req, res) => {
 	}
 };
 
+exports.getUserAction = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, requestId } = req.body;
+
+	if (!merchantId || !requestId) {
+		return res.status(400).json({ error: 'merchantId and requestId are required' });
+	}
+
+	console.log('merchantId', merchantId)
+	console.log('requestId', requestId)
+
+	// Include the requestId as a query parameter in the request URL
+	const url = `${BASTION_URL}/v1/user-actions/${requestId}?userId=${merchantId}`;
+	const options = {
+		method: 'GET',
+		headers: {
+			accept: 'application/json',
+			Authorization: `Bearer ${BASTION_API_KEY}`
+		}
+	};
+
+	try {
+		const response = await fetch(url, options);
+		const data = await response.json();
+
+		if (response.status !== 200) {
+			const errorMessage = `Failed to get user action. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+			throw new Error(errorMessage);
+		}
+
+		return res.status(200).json(data);
+	} catch (error) {
+		logger.error(`Something went wrong while retrieving user action: ${error.message}`);
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`,
+		});
+	}
+};
+
+
 exports.submitKyc = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -366,7 +409,7 @@ exports.transferUsdc = async (req, res) => {
 		const data = await response.json();
 		console.log('data from transferusdc', data)
 
-		if (data.status === 'Success') {
+		if (data.status === 'SUBMITTED') {
 			const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
 				// transaction_status: 'Success',
 				// status: 2,
