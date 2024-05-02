@@ -77,7 +77,9 @@ exports.getUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId } = req.body;
+	const { merchantId } = req.query;
+
+	console.log('merchantId', merchantId);
 
 	const url = `${BASTION_URL}/v1/users/${merchantId}`;
 	const options = {
@@ -111,7 +113,7 @@ exports.getUserAction = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, requestId } = req.params;
+	const { merchantId, requestId } = req.query;
 
 	if (!merchantId || !requestId) {
 		return res.status(400).json({ error: 'merchantId and requestId are required' });
