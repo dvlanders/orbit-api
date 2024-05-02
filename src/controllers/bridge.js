@@ -174,7 +174,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			tax_identification_number: complianceData.tin
 		};
 
-		const paths = [`${merchantId}/${complianceData.id_type}_front.png`, `${merchantId}/${complianceData.id_type}_back.png`];
+		const paths = [complianceData.gov_id_front_path, complianceData.gov_id_back_path, complianceData.proof_of_address_path];
 		const fileUrls = await Promise.all(paths.map(async (path) => {
 			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
 			if (error || !data) {
@@ -192,6 +192,9 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		}
 		if (fileUrls[1]) { // Checking for the back image
 			requestBody.gov_id_image_back = await fileToBase64(fileUrls[1]);
+		}
+		if (fileUrls[2]) { // Checking for the proof of address image
+			requestBody.proof_of_address_document = await fileToBase64(fileUrls[2]);
 		}
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers`, {
@@ -214,12 +217,15 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 		if (merchantUpdateError) throw merchantUpdateError;
 
-		const { error: approveTimestampError } = await supabase
-			.from('compliance')
-			.update([{ bridge_customer_approved_at: new Date(), bridge_response: responseBody }])
-			.match({ merchant_id: merchantId })
+		if (responseBody.status === 'active') {
+			const { error: approveTimestampError } = await supabase
+				.from('compliance')
+				.update([{ bridge_customer_approved_at: new Date(), bridge_response: responseBody }])
+				.match({ merchant_id: merchantId })
 
-		if (approveTimestampError) throw approveTimestampError;
+			if (approveTimestampError) throw approveTimestampError;
+		}
+
 
 		if (!response.ok) {
 			console.error('HTTP error', response.status, responseBody.message);
