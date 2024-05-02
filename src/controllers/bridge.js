@@ -52,6 +52,14 @@ exports.createTermsOfServiceLink = async (req, res) => {
 		return res.status(201).json({ url: fullUrl });
 	} catch (error) {
 		logger.error(`Something went wrong while creating the Terms of Service link: ${error.message}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.message,
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: '/bridge/v0/customers/tos_links',
+			})
 		return res.status(500).json({
 			error: `Something went wrong: ${error.message}`,
 		});
@@ -66,7 +74,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 	const { merchantId, signedAgreementId } = req.body;
 	if (!merchantId || !signedAgreementId) {
-		return res.status(400).json({ error: 'MerchantId and signedAgreementId are required' });
+		return res.status(400).json({ error: 'merchantId and signedAgreementId are required' });
 	}
 
 	try {
@@ -141,9 +149,16 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		const responseBody = await response.json();
 
 
+		const { error: merchantUpdateError } = await supabase
+			.from('merchants')
+			.update([{ bridge_id: responseBody.id }])
+			.match({ merchant_id: merchantId })
+
+		if (merchantUpdateError) throw merchantUpdateError;
+
 		const { error: approveTimestampError } = await supabase
 			.from('compliance')
-			.update([{ bridge_customer_approved_at: new Date() }])
+			.update([{ bridge_customer_approved_at: new Date(), bridge_response: responseBody }])
 			.match({ merchant_id: merchantId })
 
 		if (approveTimestampError) throw approveTimestampError;
@@ -152,7 +167,8 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			console.error('HTTP error', response.status, responseBody.message);
 			return res.status(response.status).json({
 				error: responseBody.message || 'Error processing request',
-				source: responseBody.source || 'response.source not provided by Bridge API. Reach out to Bridge for further debugging'
+				source: responseBody.source || 'response.source not provided by Bridge API. Reach out to Bridge for further debugging',
+				bridgeResponse: responseBody
 			});
 		}
 
@@ -160,8 +176,264 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 	} catch (error) {
 		logger.error(`Error in createNewBridgeCustomer: ${error}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.message,
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: '/bridge/v0/customers',
+			})
 		return res.status(500).json({
 			error: `Something went wrong: ${error.message}`
+		});
+	}
+};
+
+exports.createVirtualAccount = async (req, res) => {
+
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, bridgeId, sourceCurrency, sourcePaymentRail, destinationCurrency, destinationPaymentRail, destinationWalletAddress, developerFeePercent, destinationBlockchainMemo } = req.body;
+	if (!merchantId || !bridgeId || !sourceCurrency || !sourcePaymentRail || !destinationCurrency || !destinationPaymentRail || !destinationWalletAddress) {
+		return res.status(400).json({ error: 'merchantId, bridgeId, sourceCurrency, sourcePaymentRail, destinationCurrency, destinationPaymentRail, and destinationWalletAddress are required' });
+	}
+
+	const idempotencyKey = uuidv4();
+
+	const bodyObject = JSON.stringify({
+		developer_fee_percent: developerFeePercent || '0',
+		source: {
+			currency: sourceCurrency,
+			payment_rail: sourcePaymentRail
+		},
+		destination: {
+			currency: destinationCurrency,
+			payment_rail: destinationPaymentRail,
+			address: destinationWalletAddress,
+			blockchain_memo: destinationBlockchainMemo || ''
+		},
+	});
+
+
+
+	try {
+
+
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts`, {
+			method: 'POST',
+			headers: {
+				'Idempotency-Key': idempotencyKey,
+				'Api-Key': BRIDGE_API_KEY,
+				'Content-Type': 'application/json'
+			},
+			body: bodyObject
+		});
+
+
+
+
+		const virtualAccountResponseData = await response.json();
+		if (!response.ok) {
+			const errorDetails = {
+				message: virtualAccountResponseData.message || `HTTP status ${response.status}`,
+				code: virtualAccountResponseData.code || 'Unknown_Error',
+				name: virtualAccountResponseData.name || 'Response_Error',
+				response: {
+					status: response.status,
+					statusText: response.statusText,
+					url: response.url,
+					body: virtualAccountResponseData
+				}
+			};
+
+			throw new Error(JSON.stringify(errorDetails));
+		}
+
+		const { error: virtualAccountError } = await supabase
+			.from('bridge_virtual_accounts')
+			.insert([{
+				merchant_id: merchantId,
+				source_currency: sourceCurrency,
+				source_payment_rail: sourcePaymentRail,
+				destination_currency: destinationCurrency,
+				destination_payment_rail: destinationPaymentRail,
+				destination_wallet_address: destinationWalletAddress,
+				bridge_virtual_account_id: virtualAccountResponseData.id,
+				developer_fee_percent: develeloperFeePercent || 0.0,
+				bank_name: virtualAccountResponseData.source_deposit_instructions.bank_name,
+				bank_address: virtualAccountResponseData.source_deposit_instructions.bank_address,
+				bank_routing_number: virtualAccountResponseData.source_deposit_instructions.bank_routing_number,
+				bank_account_number: virtualAccountResponseData.source_deposit_instructions.bank_account_number,
+				blockchain_memo: destinationBlockchainMemo || ''
+			}]);
+
+		return res.status(201).json(virtualAccountResponseData);
+
+	} catch (error) {
+		logger.error(`Something went wrong while creating the Bridge virtual account: ${error.message}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.message,
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: '/bridge/v0/customers/virtual_account',
+			})
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`,
+		});
+	}
+};
+
+
+exports.createExternalAccount = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, routingNumber, businessIdentifierCode, bankCountry, accountType, accountOwnerType, beneficiaryFirstName, beneficiaryLastName, beneficiaryBusinessName, beneficiaryStreetLine1, beneficiaryStreetLine2, beneficiaryCity, beneficiaryState, beneficiaryPostalCode, beneficiaryCountry } = req.body;
+
+	if (!merchantId || !bridgeId || !currency || !bankName || !accountOwnerName || !accountNumber || !accountType || !accountOwnerType) {
+		return res.status(400).json({ error: 'merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, accountType, and accountOwnerType are required' });
+	}
+
+	const idempotencyKey = uuidv4();
+	const bodyObject = {
+		currency: currency,
+		bank_name: bankName,
+		account_owner_name: accountOwnerName,
+		account_type: accountType,
+		account_owner_type: accountOwnerType,
+	};
+
+	if (accountType === 'iban') {
+		bodyObject.iban = {
+			account_number: accountNumber,
+			bic: businessIdentifierCode,
+			country: bankCountry
+		};
+	} else if (accountType === 'us') {
+		bodyObject.account = {
+			account_number: accountNumber,
+			routing_number: routingNumber
+		};
+		bodyObject.address = {
+			street_line_1: beneficiaryStreetLine1,
+			street_line_2: beneficiaryStreetLine2,
+			city: beneficiaryCity,
+			state: beneficiaryState,
+			postal_code: beneficiaryPostalCode,
+			country: beneficiaryCountry
+		};
+	}
+
+	if (accountOwnerType === 'individual') {
+		bodyObject.first_name = beneficiaryFirstName;
+		bodyObject.last_name = beneficiaryLastName;
+	} else if (accountOwnerType === 'business') {
+		bodyObject.business_name = beneficiaryBusinessName;
+
+	}
+
+	let response;
+
+	try {
+		response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/external_accounts`, {
+			method: 'POST',
+			headers: {
+				'Idempotency-Key': idempotencyKey,
+				'Api-Key': BRIDGE_API_KEY,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(bodyObject)
+		});
+
+		const externalAccountResponseData = await response.json();
+
+		if (!response.ok) {
+			const errorDetails = {
+				message: externalAccountResponseData.message || `HTTP status ${response.status}`,
+				code: externalAccountResponseData.code || 'Unknown_Error',
+				name: externalAccountResponseData.name || 'Response_Error',
+				response: {
+					status: response.status,
+					statusText: response.statusText,
+					url: response.url,
+					body: externalAccountResponseData
+				}
+			};
+
+			throw new Error(JSON.stringify(errorDetails));
+		}
+
+
+
+		await supabase
+			.from('bridge_external_accounts')
+			.insert([{
+				merchant_id: merchantId,
+				currency: currency,
+				bank_name: bankName,
+				account_owner_name: accountOwnerName,
+				account_number: accountNumber,
+				account_type: accountType,
+				business_identifier_code: businessIdentifierCode,
+				bank_country: bankCountry,
+				account_owner_type: accountOwnerType,
+				beneficiary_first_name: beneficiaryFirstName,
+				beneficiary_last_name: beneficiaryLastName,
+				beneficiary_business_name: beneficiaryBusinessName,
+				beneficiary_street_line_1: beneficiaryStreetLine1,
+				beneficiary_street_line_2: beneficiaryStreetLine2,
+				beneficiary_city: beneficiaryCity,
+				beneficiary_state: beneficiaryState,
+				beneficiary_postal_code: beneficiaryPostalCode,
+				beneficiary_country: beneficiaryCountry,
+				bridge_response: externalAccountResponseData
+			}]);
+
+		return res.status(201).json(externalAccountResponseData);
+
+	} catch (error) {
+		logger.error(`Something went wrong while creating the Bridge virtual account: ${error.message}`);
+
+		// Parse the error message back to an object to extract the structured data
+		let errorDetails;
+		try {
+			errorDetails = JSON.parse(error.message);
+		} catch (parseError) {
+			// Fallback if the error message is not JSON (shouldn't happen, but just in case)
+			errorDetails = {
+				message: error.message,
+				code: 'Error_Parsing_Failed',
+				name: 'Parse_Error',
+				response: {
+					status: 500,
+					statusText: 'Internal Server Error',
+					url: req.url,
+					body: { error: error.message }
+				}
+			};
+		}
+
+		// Log the detailed error to your database
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: JSON.stringify(errorDetails),
+				status: errorDetails.response.status || 500,
+				merchant_id: merchantId,
+				endpoint: '/bridge/v0/customers/virtual_account',
+			});
+
+		// Return a structured error response to the client
+		return res.status(errorDetails.response.status || 500).json({
+			error: errorDetails.message,
+			code: errorDetails.code,
+			details: errorDetails.response
 		});
 	}
 };

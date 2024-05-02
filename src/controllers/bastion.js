@@ -364,12 +364,12 @@ exports.transferUsdc = async (req, res) => {
 
 		const response = await fetch(url, options);
 		const data = await response.json();
+		console.log('data from transferusdc', data)
 
-
-		if (response.status === 202) {
+		if (data.status === 'Success') {
 			const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
-				transaction_status: 'Success',
-				status: 2,
+				// transaction_status: 'Success',
+				// status: 2,
 				bastion_response: data,
 				from_wallet_id: fromWalletId,
 				to_wallet_id: toWalletId,
@@ -381,14 +381,14 @@ exports.transferUsdc = async (req, res) => {
 				logger.error(`Error updating transaction record: ${updateError.message}`);
 				throw new Error(`Error updating transaction record: ${updateError.message}`);
 			}
-			return res.status(200).json({ message: 'Transfer successful', bastionResponse: data, data: updateData });
+			return res.status(200).json({ message: 'Transfer submitted', bastionResponse: data, data: updateData });
 		} else {
 			throw new Error(`Failed to execute transfer. Status: ${response.status}. Message: ${JSON.stringify(data)}`);
 		}
 	} catch (error) {
 		const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
-			transaction_status: 'Failed',
-			status: 3,
+			// transaction_status: 'Failed',
+			// status: 3,
 			error_message: error.message,
 			from_wallet_id: fromWalletId,
 			to_wallet_id: toWalletId,
