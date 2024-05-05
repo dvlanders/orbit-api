@@ -213,7 +213,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		const { error: merchantUpdateError } = await supabase
 			.from('merchants')
 			.update([{ bridge_id: responseBody.id }])
-			.match({ merchant_id: merchantId })
+			.match({ id: merchantId })
 
 		if (merchantUpdateError) throw merchantUpdateError;
 
