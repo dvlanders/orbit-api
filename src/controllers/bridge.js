@@ -174,7 +174,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			tax_identification_number: complianceData.tin
 		};
 
-		const paths = [`${merchantId}/${complianceData.id_type}_front.png`, `${merchantId}/${complianceData.id_type}_back.png`];
+		const paths = [complianceData.gov_id_front_path, complianceData.gov_id_back_path, complianceData.proof_of_address_path];
 		const fileUrls = await Promise.all(paths.map(async (path) => {
 			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
 			if (error || !data) {
@@ -192,6 +192,9 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		}
 		if (fileUrls[1]) { // Checking for the back image
 			requestBody.gov_id_image_back = await fileToBase64(fileUrls[1]);
+		}
+		if (fileUrls[2]) { // Checking for the proof of address image
+			requestBody.proof_of_address_document = await fileToBase64(fileUrls[2]);
 		}
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers`, {
@@ -214,12 +217,15 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 		if (merchantUpdateError) throw merchantUpdateError;
 
-		const { error: approveTimestampError } = await supabase
-			.from('compliance')
-			.update([{ bridge_customer_approved_at: new Date(), bridge_response: responseBody }])
-			.match({ merchant_id: merchantId })
+		if (responseBody.status === 'active') {
+			const { error: approveTimestampError } = await supabase
+				.from('compliance')
+				.update([{ bridge_customer_approved_at: new Date(), bridge_response: responseBody }])
+				.match({ merchant_id: merchantId })
 
-		if (approveTimestampError) throw approveTimestampError;
+			if (approveTimestampError) throw approveTimestampError;
+		}
+
 
 		if (!response.ok) {
 			console.error('HTTP error', response.status, responseBody.message);
@@ -262,7 +268,7 @@ exports.createVirtualAccount = async (req, res) => {
 	const idempotencyKey = uuidv4();
 
 	const bodyObject = JSON.stringify({
-		developer_fee_percent: developerFeePercent || '0',
+		developer_fee_percent: developerFeePercent || '0.0',
 		source: {
 			currency: sourceCurrency,
 			payment_rail: sourcePaymentRail
@@ -278,7 +284,7 @@ exports.createVirtualAccount = async (req, res) => {
 
 
 	try {
-
+		console.log('bodyObject for virtual account: ', bodyObject)
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts`, {
 			method: 'POST',
@@ -309,7 +315,7 @@ exports.createVirtualAccount = async (req, res) => {
 
 			throw new Error(JSON.stringify(errorDetails));
 		}
-
+		console.log('virtualAccountResponseData: ', virtualAccountResponseData)
 		const { error: virtualAccountError } = await supabase
 			.from('bridge_virtual_accounts')
 			.insert([{
@@ -320,13 +326,16 @@ exports.createVirtualAccount = async (req, res) => {
 				destination_payment_rail: destinationPaymentRail,
 				destination_wallet_address: destinationWalletAddress,
 				bridge_virtual_account_id: virtualAccountResponseData.id,
-				developer_fee_percent: develeloperFeePercent || 0.0,
-				bank_name: virtualAccountResponseData.source_deposit_instructions.bank_name,
-				bank_address: virtualAccountResponseData.source_deposit_instructions.bank_address,
-				bank_routing_number: virtualAccountResponseData.source_deposit_instructions.bank_routing_number,
-				bank_account_number: virtualAccountResponseData.source_deposit_instructions.bank_account_number,
-				blockchain_memo: destinationBlockchainMemo || ''
+				developer_fee_percent: developerFeePercent || '0.0',
+				deposit_instructions_bank_name: virtualAccountResponseData.source_deposit_instructions.bank_name,
+				deposit_instructions_bank_address: virtualAccountResponseData.source_deposit_instructions.bank_address,
+				deposit_instructions_bank_routing_number: virtualAccountResponseData.source_deposit_instructions.bank_routing_number,
+				deposit_instructions_bank_account_number: virtualAccountResponseData.source_deposit_instructions.bank_account_number,
+				destination_blockchain_memo: destinationBlockchainMemo || '',
+				bridge_response: virtualAccountResponseData
 			}]);
+
+		if (virtualAccountError) throw virtualAccountError;
 
 		return res.status(201).json(virtualAccountResponseData);
 
