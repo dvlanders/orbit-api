@@ -11,7 +11,7 @@ const dotenv = require("dotenv");
 // 			: process.env.NODE_ENV === undefined
 // 				? "development"
 // 				: "false";
-let env = 'production';
+let env = 'development';
 let filePath = "./src/config/" + env + ".env";
 
 let result = dotenv.config({ path: filePath, debug: true });

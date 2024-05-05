@@ -228,7 +228,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 
 		if (!response.ok) {
-			console.error('HTTP error', response.status, responseBody.message);
+			console.error('HTTP error', response.status, responseBody.message, responseBody.source, responseBody);
 			return res.status(response.status).json({
 				error: responseBody.message || 'Error processing request',
 				source: responseBody.source || 'response.source not provided by Bridge API. Reach out to Bridge for further debugging',
