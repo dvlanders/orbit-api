@@ -268,7 +268,7 @@ exports.createVirtualAccount = async (req, res) => {
 	const idempotencyKey = uuidv4();
 
 	const bodyObject = JSON.stringify({
-		developer_fee_percent: developerFeePercent || '0',
+		developer_fee_percent: developerFeePercent || '0.0',
 		source: {
 			currency: sourceCurrency,
 			payment_rail: sourcePaymentRail
@@ -284,7 +284,7 @@ exports.createVirtualAccount = async (req, res) => {
 
 
 	try {
-
+		console.log('bodyObject for virtual account: ', bodyObject)
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts`, {
 			method: 'POST',
@@ -315,7 +315,7 @@ exports.createVirtualAccount = async (req, res) => {
 
 			throw new Error(JSON.stringify(errorDetails));
 		}
-
+		console.log('virtualAccountResponseData: ', virtualAccountResponseData)
 		const { error: virtualAccountError } = await supabase
 			.from('bridge_virtual_accounts')
 			.insert([{
@@ -326,13 +326,16 @@ exports.createVirtualAccount = async (req, res) => {
 				destination_payment_rail: destinationPaymentRail,
 				destination_wallet_address: destinationWalletAddress,
 				bridge_virtual_account_id: virtualAccountResponseData.id,
-				developer_fee_percent: develeloperFeePercent || 0.0,
-				bank_name: virtualAccountResponseData.source_deposit_instructions.bank_name,
-				bank_address: virtualAccountResponseData.source_deposit_instructions.bank_address,
-				bank_routing_number: virtualAccountResponseData.source_deposit_instructions.bank_routing_number,
-				bank_account_number: virtualAccountResponseData.source_deposit_instructions.bank_account_number,
-				blockchain_memo: destinationBlockchainMemo || ''
+				developer_fee_percent: developerFeePercent || '0.0',
+				deposit_instructions_bank_name: virtualAccountResponseData.source_deposit_instructions.bank_name,
+				deposit_instructions_bank_address: virtualAccountResponseData.source_deposit_instructions.bank_address,
+				deposit_instructions_bank_routing_number: virtualAccountResponseData.source_deposit_instructions.bank_routing_number,
+				deposit_instructions_bank_account_number: virtualAccountResponseData.source_deposit_instructions.bank_account_number,
+				destination_blockchain_memo: destinationBlockchainMemo || '',
+				bridge_response: virtualAccountResponseData
 			}]);
+
+		if (virtualAccountError) throw virtualAccountError;
 
 		return res.status(201).json(virtualAccountResponseData);
 

@@ -8,66 +8,79 @@ const fetch = require('node-fetch');
 const MESH_API_KEY = process.env.MESH_API_KEY;
 const MESH_CLIENT_ID = process.env.MESH_CLIENT_ID;
 
-// exports.sendTransactionConfirmationEmail = async (req, res) => {
-// 	if (req.method !== 'POST') {
-// 		return res.status(405).json({ error: 'Method not allowed' });
-// 	}
+exports.sendTransactionConfirmationEmail = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
 
-// 	const { requestId } = req.body;
-// 	if (!requestId) {
-// 		return res.status(400).json({ error: 'requestId is required' });
-// 	}
+	const { requestId } = req.body;
+	if (!requestId) {
+		return res.status(400).json({ error: 'requestId is required' });
+	}
 
-// 	try {
-// 		const { data: transactionData, error: transactionError } = await supabase
-// 			.from('onchain_transactions')
-// 			.select(`*, from_merchant:from_merchant_id (*,profiles (*))`)
-// 			.eq('request_id', requestId)
-// 			.single();
+	try {
+		const { data: transactionData, error: transactionError } = await supabase
+			.from('onchain_transactions')
+			.select(`*, from_merchant:from_merchant_id (*,profiles (*))`)
+			.eq('request_id', requestId)
+			.single();
 
-// 		if (transactionError || !transactionData) {
-// 			return res.status(404).json({ error: 'No transaction data found for the given request ID' });
-// 		}
+		if (transactionError || !transactionData) {
+			return res.status(404).json({ error: 'No transaction data found for the given request ID' });
+		}
 
-// 		console.log('transactionData', transactionData)
+		console.log('transactionData', transactionData);
+		let fromName;
 
+		if (transactionData.from_merchant.business_name === '') {
+			const { data: profileData, error: profileError } = await supabase
+				.from('profiles')
+				.select(`*`)
+				.eq('merchant_id', transactionData.from_merchant_id);
 
-// 		const { data: transactionData, error: transactionError } = await supabase
-// 		.from('onchain_transactions')
-// 		.select(`*, from_merchant:from_merchant_id (*,profiles (*))`)
-// 		.eq('request_id', requestId)
-// 		.single();
+			if (profileError || !profileData || profileData.length === 0) {
+				return res.status(404).json({ error: 'No profile data found for the associated merchant id' });
+			}
 
+			console.log('profileData', profileData);
+			fromName = profileData[0].full_name;
+		} else {
+			fromName = transactionData.from_merchant.business_name;
+		}
 
-// 		const usdAmount = transactionData.amount / 1e6;
-// 		// if the transactionData.frommerchant.business_name is an empty string, then we should use the transactionData
+		const usdAmount = transactionData.amount / 1e6;
 
+		const form = new FormData();
+		form.append('from', `HIFI Notifications <noreply@${process.env.MAILGUN_DOMAIN}>`);
+		form.append('to', transactionData.destination_email);
+		form.append('template', 'onchain_transaction_confirmation_template');
+		form.append('v:transaction_id', `${transactionData.request_id}`);
+		form.append('v:from_name', `${fromName}`);
+		form.append('v:usd_amount', `${usdAmount.toFixed(2)}`);
 
-// 		// const form = new FormData();
-// 		// form.append('from', `Excited User <mailgun@${process.env.MAILGUN_DOMAIN}>`);
-// 		// form.append('to', transactionData.destination_email);  // Assuming 'email' is a field in transactionData
-// 		// form.append('subject', 'Transaction Confirmation');
-// 		// form.append('html', `Your transaction with ID ${transactionData.request_id} has been processed successfully!`);
+		const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
+		const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
+			method: 'POST',
+			headers: {
+				'Authorization': authHeader
+			},
+			body: form
+		});
 
-// 		// const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
-// 		// const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
-// 		//     method: 'POST',
-// 		//     headers: {
-// 		//         Authorization: authHeader
-// 		//     },
-// 		//     body: form
-// 		// });
+		if (!response.ok) {
+			const textResponse = await response.text();
+			console.error('Failed to send email:', textResponse);
+			return res.status(500).json({ error: 'Failed to send email, server responded with: ' + textResponse });
+		}
 
-// 		// const responseData = await response.json();
-// 		return res.json('blah blah blah');
+		const responseData = await response.json();
+		return res.json(responseData);
+	} catch (error) {
+		console.error('An error occurred:', error);
+		return res.status(500).json({ error: error.message });
+	}
+};
 
-// 	} catch (error) {
-// 		console.error(`Something went wrong: ${error.message}`);
-// 		return res.status(500).json({
-// 			error: `Something went wrong: ${error.message}`,
-// 		});
-// 	}
-// };
 
 
 exports.getTransaction = async (req, res) => {
