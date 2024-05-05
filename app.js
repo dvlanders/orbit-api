@@ -52,7 +52,7 @@ const { common } = require("./src/util/helper");
 
 require("./src/routes")(app, express);
 
-require("./src/util/helper/tokenRegeneration");
+// require("./src/util/helper/tokenRegeneration");
 
 let { logger } = require("./src/util/logger/logger");
 
