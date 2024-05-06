@@ -96,7 +96,7 @@ exports.createTermsOfServiceLink = async (req, res) => {
 		});
 
 		if (!response.ok) {
-			throw new Error(`HTTP status ${response.status}`);
+			throw new Error(`Bridge POST /customers/tos_links returned an error: ${response}`);
 		}
 
 		const responseData = await response.json();
