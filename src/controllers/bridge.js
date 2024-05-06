@@ -113,7 +113,7 @@ exports.createTermsOfServiceLink = async (req, res) => {
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
-				log: error.message,
+				log: error,
 				status: error.status,
 				merchant_id: merchantId,
 				endpoint: '/bridge/v0/customers/tos_links',
@@ -143,7 +143,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			.single();
 
 		if (complianceError) {
-			throw new Error(`Database error: ${complianceError.message}`);
+			throw new Error(`Database error: ${complianceError}`);
 		}
 
 		if (!complianceData) {
