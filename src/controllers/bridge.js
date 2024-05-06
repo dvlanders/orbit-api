@@ -18,7 +18,7 @@ exports.getCustomer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId } = req.body;
+	const { merchantId } = req.query;
 	if (!merchantId) {
 		return res.status(400).json({ error: 'merchantId is required' });
 	}
@@ -188,7 +188,6 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		// Conditionally adding images to the request body
 		if (fileUrls[0]) { // Checking for the front image
 			requestBody.gov_id_image_front = await fileToBase64(fileUrls[0]);
-
 		}
 		if (fileUrls[1]) { // Checking for the back image
 			requestBody.gov_id_image_back = await fileToBase64(fileUrls[1]);
@@ -220,7 +219,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		if (responseBody.status === 'active') {
 			const { error: approveTimestampError } = await supabase
 				.from('compliance')
-				.update([{ bridge_customer_approved_at: new Date(), bridge_response: responseBody }])
+				.update([{ bridge_status: responseBody.status, bridge_response: responseBody }])
 				.match({ merchant_id: merchantId })
 
 			if (approveTimestampError) throw approveTimestampError;
@@ -243,10 +242,146 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
-				log: error.message,
+				log: error,
 				status: error.status,
 				merchant_id: merchantId,
 				endpoint: 'POST /bridge/v0/customers',
+			})
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`
+		});
+	}
+};
+
+
+exports.updateBridgeCustomer = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId } = req.body;
+	if (!merchantId) {
+		return res.status(400).json({ error: 'merchantId is required' });
+	}
+
+
+	try {
+
+
+		const { data: complianceData, error: complianceError } = await supabase
+			.from('merchants')
+			.select(`
+                *,
+                compliance (
+                    *
+                )
+            `)
+			.eq('id', merchantId)
+			.single();
+
+
+		console.log('complianceData: ', complianceData)
+		console.log('complianceError', complianceError)
+
+		if (complianceError) {
+			throw new Error(`Database error: ${complianceError}`);
+		}
+
+		if (!complianceData) {
+			return res.status(404).json({ error: 'No compliance data found for the given merchant ID' });
+		}
+
+
+
+		const bridgeCustomerId = complianceData.bridge_id;
+		const birthDate = new Date(complianceData.compliance.date_of_birth);
+		const formattedBirthDate = `${birthDate.getUTCFullYear()}-${(birthDate.getUTCMonth() + 1).toString().padStart(2, '0')}-${birthDate.getUTCDate().toString().padStart(2, '0')}`; 	// Format date of birth from timestampz to yyyy-mm-dd
+
+		const idempotencyKey = uuidv4();
+
+		const requestBody = {
+			type: complianceData.compliance.type,
+			first_name: complianceData.compliance.legal_first_name,
+			last_name: complianceData.compliance.legal_last_name,
+			email: complianceData.compliance.compliance_email,
+			phone: complianceData.compliance.compliance_phone,
+			address: {
+				street_line_1: complianceData.compliance.address_line_1,
+				street_line_2: complianceData.compliance.address_line_2,
+				city: complianceData.compliance.city,
+				state: complianceData.compliance.state_province_region,
+				postal_code: complianceData.compliance.postal_code,
+				country: complianceData.compliance.country
+			},
+			birth_date: formattedBirthDate,
+			tax_identification_number: complianceData.compliance.tin
+		};
+
+		const paths = [complianceData.compliance.gov_id_front_path, complianceData.compliance.gov_id_back_path, complianceData.compliance.proof_of_address_path];
+		const fileUrls = await Promise.all(paths.map(async (path) => {
+			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
+			if (error || !data) {
+				console.log(`No file found at ${path}`);
+				return null;
+			}
+			return data.signedUrl;
+		}));
+
+
+		// Conditionally adding images to the request body
+		if (fileUrls[0]) { // Checking for the front image
+			requestBody.gov_id_image_front = await fileToBase64(fileUrls[0]);
+		}
+		if (fileUrls[1]) { // Checking for the back image
+			requestBody.gov_id_image_back = await fileToBase64(fileUrls[1]);
+		}
+		if (fileUrls[2]) { // Checking for the proof of address image
+			requestBody.proof_of_address_document = await fileToBase64(fileUrls[2]);
+		}
+
+		console.log('request body about to be sent: ', requestBody)
+		const response = await fetch(`${BRIDGE_URL}/v0/customers`, {
+			method: 'PUT',
+			headers: {
+				'Idempotency-Key': idempotencyKey,
+				'Api-Key': BRIDGE_API_KEY,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(requestBody)
+		});
+
+		const data = await response.json();
+		console.log('response from bridge: ', data)
+
+
+		if (!response.ok) {
+			console.error('HTTP error', response.status, response.message, data.source, data);
+			return res.status(response.status).json({
+				error: data.message || 'Error processing request',
+				source: data.source || 'response.source not provided by Bridge API. Reach out to Bridge for further debugging',
+				bridgeResponse: data
+			});
+		}
+
+
+		const { error: updateComplianceRecordError } = await supabase
+			.from('compliance')
+			.update([{ bridge_status: response.status, bridge_response: response }])
+			.match({ merchant_id: merchantId })
+
+		if (updateComplianceRecordError) throw updateComplianceRecordError;
+
+		return res.status(200).json(response);
+
+	} catch (error) {
+		logger.error(`Error in updateBridgeCustomer: ${error}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error,
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: 'PUT /bridge/v0/customers',
 			})
 		return res.status(500).json({
 			error: `Something went wrong: ${error.message}`
