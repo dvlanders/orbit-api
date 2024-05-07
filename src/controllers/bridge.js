@@ -299,6 +299,8 @@ exports.updateBridgeCustomer = async (req, res) => {
 			birth_date: formattedBirthDate,
 			tax_identification_number: complianceData.compliance.tin
 		};
+
+		console.log('bridge url', `${BRIDGE_URL}/v0/customers/${complianceData.bridge_id}`)
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${complianceData.bridge_id}`, {
 			method: 'PUT',
 			headers: {
@@ -308,9 +310,9 @@ exports.updateBridgeCustomer = async (req, res) => {
 			body: JSON.stringify(requestBody)
 		});
 
+
 		if (!response.ok) {
 			const errorResponse = await response.json();
-			console.log('about to log error to supabase')
 			await logErrorToDatabase(merchantId, { status: response.status, bridge_response: errorResponse }, 'PUT /bridge/v0/customers/update');
 			return res.status(response.status).json({
 				bridge_response: errorResponse
@@ -318,6 +320,7 @@ exports.updateBridgeCustomer = async (req, res) => {
 		}
 
 		const responseData = await response.json();
+
 		return res.status(200).json(responseData);
 	} catch (error) {
 		await logErrorToDatabase(merchantId, error, 'PUT /bridge/v0/customers/update');
