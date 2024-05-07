@@ -38,11 +38,14 @@ exports.sendTransactionConfirmationEmail = async (req, res) => {
 				.select(`*`)
 				.eq('merchant_id', transactionData.from_merchant_id);
 
-			if (profileError || !profileData || profileData.length === 0) {
+			console.log('profileData', profileData)
+
+			if (profileError || !profileData[0] || profileData.length === 0) {
+				console.error('No profile data found for the "from" merchant id ');
 				return res.status(404).json({ error: 'No profile data found for the associated merchant id' });
 			}
 
-			console.log('profileData', profileData);
+			// console.log('profileData', profileData);
 			fromName = profileData[0].full_name;
 		} else {
 			fromName = transactionData.from_merchant.business_name;
