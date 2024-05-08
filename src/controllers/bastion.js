@@ -216,7 +216,7 @@ exports.submitKyc = async (req, res) => {
 				endpoint: '/bastion/submitKyc'
 			})
 
-		res.status(500).json({ error: `Something went wrong: ${error.message}` });
+		res.status(500).json({ error: `${error}` });
 	}
 
 };
