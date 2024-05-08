@@ -297,10 +297,38 @@ exports.updateBridgeCustomer = async (req, res) => {
 				country: complianceData.compliance.country
 			},
 			birth_date: formattedBirthDate,
-			tax_identification_number: complianceData.compliance.tin
+			tax_identification_number: complianceData.compliance.tin,
+			signed_agreement_id: complianceData.compliance.bridge_signed_agreement_id,
+
 		};
 
+
+		const paths = [complianceData.compliance.gov_id_front_path, complianceData.compliance.gov_id_back_path, complianceData.compliance.proof_of_address_path];
+		console.log('paths', paths)
+		const fileUrls = await Promise.all(paths.map(async (path) => {
+			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
+			if (error || !data) {
+				console.log(`No file found at ${path}`);
+				return null;
+			}
+			return data.signedUrl;
+		}));
+
+
+		// Conditionally adding images to the request body
+		if (fileUrls[0]) { // Checking for the front image
+			requestBody.gov_id_image_front = await fileToBase64(fileUrls[0]);
+		}
+		if (fileUrls[1]) { // Checking for the back image
+			requestBody.gov_id_image_back = await fileToBase64(fileUrls[1]);
+		}
+		if (fileUrls[2]) { // Checking for the proof of address image
+			requestBody.proof_of_address_document = await fileToBase64(fileUrls[2]);
+		}
+
 		console.log('bridge url', `${BRIDGE_URL}/v0/customers/${complianceData.bridge_id}`)
+
+		console.log('requestBody about to be sent', requestBody)
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${complianceData.bridge_id}`, {
 			method: 'PUT',
 			headers: {
@@ -313,6 +341,8 @@ exports.updateBridgeCustomer = async (req, res) => {
 
 		if (!response.ok) {
 			const errorResponse = await response.json();
+			console.log('not okay response from bridge:', errorResponse)
+
 			await logErrorToDatabase(merchantId, { status: response.status, bridge_response: errorResponse }, 'PUT /bridge/v0/customers/update');
 			return res.status(response.status).json({
 				bridge_response: errorResponse
@@ -448,11 +478,52 @@ exports.createExternalAccount = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, routingNumber, businessIdentifierCode, bankCountry, accountType, accountOwnerType, beneficiaryFirstName, beneficiaryLastName, beneficiaryBusinessName, beneficiaryStreetLine1, beneficiaryStreetLine2, beneficiaryCity, beneficiaryState, beneficiaryPostalCode, beneficiaryCountry } = req.body;
+	const {
+		merchantId,
+		bridgeId,
+		currency,
+		bankName,
+		accountOwnerName,
+		accountNumber,
+		routingNumber,
+		businessIdentifierCode,
+		bankCountry,
+		accountType,
+		accountOwnerType,
+		beneficiaryFirstName,
+		beneficiaryLastName,
+		beneficiaryBusinessName,
+		beneficiaryStreetLine1,
+		beneficiaryStreetLine2,
+		beneficiaryCity,
+		beneficiaryState,
+		beneficiaryPostalCode,
+		beneficiaryCountry
+	} = req.body;
 
-	if (!merchantId || !bridgeId || !currency || !bankName || !accountOwnerName || !accountNumber || !accountType || !accountOwnerType || bankCountry) {
-		return res.status(400).json({ error: 'merchantId, bridgeId, currency, bankName, accountOwnerName, accountNumber, accountType, bankCountry, and accountOwnerType are required' });
+	console.log('req.body', req.body);
+
+	const requiredFields = [
+		'merchantId',
+		'bridgeId',
+		'currency',
+		'bankName',
+		'accountOwnerName',
+		'accountNumber',
+		'accountType',
+		'accountOwnerType',
+		// 'bankCountry'
+	];
+
+	const missingFields = requiredFields.filter(field => !req.body[field]);
+
+	if (missingFields.length > 0) {
+		console.log('Missing required fields:', missingFields.join(', '));
+		return res.status(400).json({
+			error: `Missing required fields: ${missingFields.join(', ')}`
+		});
 	}
+
 
 	const idempotencyKey = uuidv4();
 	const bodyObject = {
@@ -469,6 +540,7 @@ exports.createExternalAccount = async (req, res) => {
 			bic: businessIdentifierCode,
 			country: bankCountry
 		};
+		bodyObject.accountOwnerType = accountOwnerType;
 	} else if (accountType === 'us') {
 		bodyObject.account = {
 			account_number: accountNumber,
