@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "mocha",
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "start": "cross-env NODE_ENV=production node app.js",
+    "dev": "cross-env NODE_ENV=production nodemon app.js"
   },
   "author": "HIFI",
   "license": "ISC",
@@ -28,6 +28,7 @@
     "body-parser": "^1.20.1",
     "chai": "^4.3.10",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "crypto-ts": "^1.0.2",
     "dotenv": "^16.0.3",
     "dynamoose": "^3.2.1",
@@ -55,5 +56,6 @@
     "web3": "^1.10.4",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^4.7.1"
-  }
+  },
+  "packageManager": "yarn@4.1.1+sha256.f3cc0eda8e5560e529c7147565b30faa43b4e472d90e8634d7134a37c7f59781"
 }
