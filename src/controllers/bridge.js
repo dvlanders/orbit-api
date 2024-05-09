@@ -6,22 +6,16 @@ const querystring = require('querystring');
 const supabase = require('../util/supabaseClient');
 const fileToBase64 = require('../util/fileToBase64');
 
-
-
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
-
 exports.getCustomer = async (req, res) => {
-
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId } = req.query;
-	if (!merchantId) {
-		return res.status(400).json({ error: 'merchantId is required' });
-	}
+	const { merchant_id: merchantId } = req.user;
+	if (!merchantId) return res.status(400).json({ error: 'merchantId is required' });
 
 	try {
 		const { data: merchantData, error: merchantError } = await supabase
