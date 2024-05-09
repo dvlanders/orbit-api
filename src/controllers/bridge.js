@@ -14,7 +14,7 @@ exports.getCustomer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchant_id: merchantId } = req.user;
+	const { merchantId } = req.query;
 	if (!merchantId) return res.status(400).json({ error: 'merchantId is required' });
 
 	try {
@@ -43,13 +43,15 @@ exports.getCustomer = async (req, res) => {
 		});
 
 		if (!response.ok) {
-			throw new Error(`HTTP status ${response.status}`);
+			const data = await response.json()
+			console.error(data)
+			throw new Error(data);
 		}
 
 		const responseData = await response.json();
 		return res.status(200).json(responseData);
 	} catch (error) {
-		logger.error(`Something went wrong while creating the Terms of Service link: ${error.message}`);
+		logger.error(`Something went wrong while get bridge customer: ${error.message}`);
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
@@ -93,9 +95,14 @@ exports.createTermsOfServiceLink = async (req, res) => {
 			throw new Error(`Bridge POST /customers/tos_links returned an error: ${response}`);
 		}
 
+
 		const responseData = await response.json();
 		const sessionUrl = responseData.url;
-		const redirectUri = `${process.env.FRONTEND_URL}/auth/tosredirect/${merchantId}`;
+		// const redirectUri = `${process.env.FRONTEND_URL}/auth/tosredirect/${merchantId}`;
+		// FIXME 
+		const base_url = "http://localhost:3000"
+		const redirectUri = `${base_url}/auth/tosredirect/${merchantId}`;
+		
 		const encodedRedirectUri = querystring.escape(redirectUri);
 
 		const delimiter = sessionUrl.includes('?') ? '&' : '?';
@@ -322,7 +329,6 @@ exports.updateBridgeCustomer = async (req, res) => {
 
 		console.log('bridge url', `${BRIDGE_URL}/v0/customers/${complianceData.bridge_id}`)
 
-		console.log('requestBody about to be sent', requestBody)
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${complianceData.bridge_id}`, {
 			method: 'PUT',
 			headers: {
