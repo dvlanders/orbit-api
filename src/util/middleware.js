@@ -37,6 +37,10 @@ exports.authorizeUser = async (req, res, next) => {
 			return res.status(responseCode.ok).json({ message: "User has been deactivated" });
 		}
 
+		if (!userDetails.merchant_id) {
+			return res.status(responseCode.ok).json({ message: "Merchant id for this user could not be found" });
+		}
+		
 		req.user = {
 			id: userDetails?.user_id,
 			fullName: userDetails?.fullName,
