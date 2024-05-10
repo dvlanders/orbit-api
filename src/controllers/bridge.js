@@ -98,7 +98,7 @@ exports.createTermsOfServiceLink = async (req, res) => {
 
 		const responseData = await response.json();
 		const sessionUrl = responseData.url;
-		const base_url = process.env.FRONTEND_URL
+		const base_url = `${process.env.FRONTEND_URL}/auth/tosredirect/${merchantId}`;
 		// DEV ONLY
 		// const base_url = "http://localhost:3000"
 		const redirectUri = `${base_url}/auth/tosredirect/${merchantId}`;
