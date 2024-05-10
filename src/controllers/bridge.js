@@ -98,11 +98,11 @@ exports.createTermsOfServiceLink = async (req, res) => {
 
 		const responseData = await response.json();
 		const sessionUrl = responseData.url;
-		// const redirectUri = `${process.env.FRONTEND_URL}/auth/tosredirect/${merchantId}`;
-		// FIXME 
-		const base_url = "http://localhost:3000"
+		const base_url = `${process.env.FRONTEND_URL}/auth/tosredirect/${merchantId}`;
+		// DEV ONLY
+		// const base_url = "http://localhost:3000"
 		const redirectUri = `${base_url}/auth/tosredirect/${merchantId}`;
-		
+
 		const encodedRedirectUri = querystring.escape(redirectUri);
 
 		const delimiter = sessionUrl.includes('?') ? '&' : '?';
