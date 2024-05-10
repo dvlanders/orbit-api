@@ -52,10 +52,13 @@ exports.getCustomer = async (req, res) => {
 		return res.status(200).json(responseData);
 	} catch (error) {
 		logger.error(`Something went wrong while get bridge customer: ${error.message}`);
+
+		logger.error(`Error object: ${JSON.stringify(error, null, 2)}`);
+
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
-				log: error.message,
+				log: JSON.stringify(error, null, 2),
 				status: error.status,
 				merchant_id: merchantId,
 				endpoint: 'GET /bridge/v0/customers/',
