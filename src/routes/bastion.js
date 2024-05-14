@@ -9,5 +9,6 @@ module.exports = (router) => {
 	router.get("/bastion/v1/userAction/", bastion.getUserAction);
 	router.post("/bastion/transferUsdc/", bastion.transferUsdc);
 	router.post("/bastion/submitKyc/", bastion.submitKyc);
+	router.post("/bastion/initiateUsdcWithdrawal/", bastion.initiateUsdcWithdrawal);
 
 };

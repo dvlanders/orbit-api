@@ -9,4 +9,7 @@ module.exports = (router) => {
 	router.post("/bridge/v0/customers/external_account", bridge.createExternalAccount);
 	router.get("/bridge/v0/customers", bridge.getCustomer);
 	router.put("/bridge/v0/customers/update", bridge.updateBridgeCustomer);
+	router.post("/bridge/v0/customers/liquidation_addresses", bridge.createLiquidationAddress);
+	router.get("/bridge/v0/drain_history", bridge.getDrainHistory);
+
 };

@@ -6,8 +6,8 @@ const env = process.env.NODE_ENV ?? "production";
 const result = require("dotenv").config({ path: `.env.${env}`, debug: env === "production" });
 
 if (result.error) {
-  console.log(result.error);
-  process.exit(0);
+	console.log(result.error);
+	process.exit(0);
 }
 
 // parse application/x-www-form-urlencoded
