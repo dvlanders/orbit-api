@@ -11,6 +11,57 @@ const BRIDGE_URL = process.env.BRIDGE_URL;
 
 // const BRIDGE_API_KEY = 'sk-test-c9a27e4d4939ec14536eec55ab295b67';
 // const BRIDGE_URL = 'https://api.sandbox.bridge.xyz';
+exports.getVirtualAccountHistory = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { bridgeId, virtualAccountId, txHash, limit, startingAfter, endingBefore, eventType } = req.query;
+	if (!bridgeId || !virtualAccountId) return res.status(400).json({ error: 'bridgeId and virtualAccountId are required' });
+
+	try {
+		const queryParams = new URLSearchParams();
+		for (const [key, value] of Object.entries(req.query)) {
+			if (key !== 'bridgeId' && key !== 'virtualAccountId') {
+				queryParams.set(key, value);
+			}
+		}
+		const url = `${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts/${virtualAccountId}/history?${queryParams.toString()}`;
+		const response = await fetch(url, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY,
+				'accept': 'application/json'
+			}
+		});
+
+		if (!response.ok) {
+			const data = await response.json()
+			console.error(data)
+			throw new Error(JSON.stringify(data));
+		}
+
+		const responseData = await response.json();
+		return res.status(200).json(responseData);
+	} catch (error) {
+		logger.error(`Something went wrong while getting the bridge virtual account history: ${JSON.stringify(error)}`);
+
+		logger.error(`Error object: ${JSON.stringify(error, null, 2)}`);
+
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: JSON.stringify(error, null, 2),
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: 'GET /virtual_account/history',
+			})
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`,
+		});
+	}
+};
+
 
 exports.getCustomer = async (req, res) => {
 	if (req.method !== 'GET') {
