@@ -437,3 +437,124 @@ exports.transferUsdc = async (req, res) => {
 	}
 
 };
+
+exports.initiateUsdcWithdrawal = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, externalAccountId, amount } = req.body;
+
+	if (!merchantId || !externalAccountId || !amount) {
+		return res.status(400).json({ error: 'merchantId, externalAccountId, and amount are required' });
+	}
+
+	const requestId = uuidv4();
+	const contractAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"; // USDC contract on Polygon Mainnet
+	const actionName = 'transfer';
+	const chain = 'POLYGON_MAINNET';
+
+
+
+	try {
+		// get the bridge_liquidation_addresses record for the external account
+		const { data: liquidationAddresses, error: liquidationAddressesError } = await supabase
+			.from('bridge_liquidation_addresses')
+			.select()
+			.eq('external_account_id', externalAccountId);
+
+		if (liquidationAddressesError || !liquidationAddresses || liquidationAddresses.length === 0) {
+			return res.status(404).json({ error: 'Error getting a liquidation request with that externalAccountId' });
+		}
+		const toWalletAddress = liquidationAddresses[0].address;
+
+		// get the wallets table record where the merchant_id == merchantId and chain == chain
+		const { data: sourceWallets, error: sourceWalletsError } = await supabase
+			.from('wallets')
+			.select('address')
+			.eq('merchant_id', merchantId)
+			.eq('chain', chain);
+
+		if (sourceWalletsError || !sourceWallets || sourceWallets.length === 0) {
+			return res.status(404).json({ error: `No source wallet found for the merchant ${merchantId} on ${chain}` });
+		}
+
+		const fromWalletAddress = sourceWallets[0].address;
+
+		let withdrawalRecord = {
+			request_id: requestId,
+			merchant_id: merchantId,
+			external_account_id: externalAccountId,
+			liquidation_address_id: liquidationAddresses[0].id,
+			amount: amount,
+			status: 1, // Initiated
+			chain: chain,
+			from_wallet_address: fromWalletAddress,
+			action_name: actionName,
+			contract_address: contractAddress,
+		};
+
+		// Log the initial transaction
+		let { error: withdrawalError } = await supabase
+			.from('withdrawals')
+			.insert([withdrawalRecord]);
+
+		if (withdrawalError) throw withdrawalError;
+
+		// Step 2: Initiate the on-chain transfer via Bastion /user-actions endpoint
+		const bodyObject = {
+			requestId: requestId,
+			userId: merchantId,
+			contractAddress: contractAddress,
+			actionName: actionName,
+			chain: chain,
+			actionParams: [
+				{ name: "to", value: toWalletAddress },
+				{ name: "value", value: amount.toString() }
+			],
+		};
+
+		const url = `${BASTION_URL}/v1/user-actions`;
+		const options = {
+			method: 'POST',
+			headers: {
+				accept: 'application/json',
+				'content-type': 'application/json',
+				Authorization: `Bearer ${BASTION_API_KEY}`
+			},
+			body: JSON.stringify(bodyObject)
+		};
+
+		const response = await fetch(url, options);
+		const data = await response.json();
+
+		if (data.status === 'SUBMITTED') {
+			const { data: updateData, error: updateError } = await supabase
+				.from('withdrawals')
+				.update({
+					bastion_response: data,
+				})
+				.match({ request_id: requestId });
+
+			if (updateError) {
+				throw new Error(`Error updating withdrawals record: ${updateError.message}`);
+			}
+			return res.status(200).json({ message: 'withdrawal submitted', bastionResponse: data, data: updateData });
+		} else {
+			throw new Error(`Failed to execute transfer. Status: ${response.status}. Message: ${JSON.stringify(data)}`);
+		}
+	} catch (error) {
+		const { data: updateData, error: updateError } = await supabase
+			.from('withdrawals')
+			.update({
+				bastion_response: error,
+			})
+			.match({ request_id: requestId });
+
+		if (updateError) {
+			throw new Error(`Error updating withdrawals record: ${updateError.message}`);
+		}
+
+		return res.status(500).json({ message: "Error during transfer", error: error.message, data: updateData, status: error.status });
+	}
+};

@@ -9,6 +9,9 @@ const fileToBase64 = require('../util/fileToBase64');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
+// const BRIDGE_API_KEY = 'sk-test-c9a27e4d4939ec14536eec55ab295b67';
+// const BRIDGE_URL = 'https://api.sandbox.bridge.xyz';
+
 exports.getCustomer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -26,7 +29,7 @@ exports.getCustomer = async (req, res) => {
 
 
 		if (merchantError) {
-			throw new Error(`Database error: ${merchantError.message}`);
+			throw new Error(`Database error: ${JSON.stringify(merchantError)}`);
 		}
 
 		if (!merchantData) {
@@ -45,7 +48,7 @@ exports.getCustomer = async (req, res) => {
 		if (!response.ok) {
 			const data = await response.json()
 			console.error(data)
-			throw new Error(data);
+			throw new Error(JSON.stringify(data));
 		}
 
 		const responseData = await response.json();
@@ -62,6 +65,66 @@ exports.getCustomer = async (req, res) => {
 				status: error.status,
 				merchant_id: merchantId,
 				endpoint: 'GET /bridge/v0/customers/',
+			})
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`,
+		});
+	}
+};
+
+exports.getDrainHistory = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, bridgeId } = req.query;
+	if (!merchantId) return res.status(400).json({ error: 'merchantId is required' });
+
+	try {
+		const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
+			.from('bridge_liquidation_addresses')
+			.select('bridge_id, merchant_id')
+			.eq('merchant_id', merchantId)
+			.single();
+
+
+		if (liquidationAddressError) {
+			throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
+		}
+
+		if (!liquidationAddressData) {
+			return res.status(404).json({ error: 'No liquidationAddressData found for the given merchant ID' });
+		}
+
+		const bridgeId = liquidationAddressData.bridge_id;
+
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses/${liquidationAddressData[0].liquidation_address_id}/drains`, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY
+			}
+		});
+
+		if (!response.ok) {
+			const data = await response.json()
+			console.error(data)
+			throw new Error(JSON.stringify(data));
+		}
+
+		const responseData = await response.json();
+		return res.status(200).json(responseData);
+	} catch (error) {
+		logger.error(`Something went wrong while getting drain history: ${JSON.stringify(error)}`);
+
+		logger.error(`Error object: ${JSON.stringify(error, null, 2)}`);
+
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: JSON.stringify(error, null, 2),
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: 'GET /drains',
 			})
 		return res.status(500).json({
 			error: `Something went wrong: ${error.message}`,
@@ -95,7 +158,7 @@ exports.createTermsOfServiceLink = async (req, res) => {
 		});
 
 		if (!response.ok) {
-			throw new Error(`Bridge POST /customers/tos_links returned an error: ${response}`);
+			throw new Error(`Bridge POST /customers/tos_links returned an error: ${JSON.stringify(response)}`);
 		}
 
 
@@ -147,7 +210,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			.single();
 
 		if (complianceError) {
-			throw new Error(`Database error: ${complianceError}`);
+			throw new Error(`Database error: ${JSON.stringify(complianceError)}`);
 		}
 
 		if (!complianceData) {
@@ -277,7 +340,7 @@ exports.updateBridgeCustomer = async (req, res) => {
 
 		if (complianceError) {
 			await logErrorToDatabase(merchantId, 'Failed to fetch compliance data', complianceError);
-			throw new Error(`Database error: ${complianceError.message}`);
+			throw new Error(`Database error: ${JSON.stringify(complianceError)}`);
 		}
 
 		if (!complianceData) {
@@ -622,7 +685,8 @@ exports.createExternalAccount = async (req, res) => {
 				beneficiary_state: beneficiaryState,
 				beneficiary_postal_code: beneficiaryPostalCode,
 				beneficiary_country: beneficiaryCountry,
-				bridge_response: externalAccountResponseData
+				bridge_response: externalAccountResponseData,
+				bridge_external_account_id: externalAccountResponseData.id
 			}]);
 
 		return res.status(201).json(externalAccountResponseData);
@@ -664,6 +728,95 @@ exports.createExternalAccount = async (req, res) => {
 			error: errorDetails.message,
 			code: errorDetails.code,
 			details: errorDetails.response
+		});
+	}
+};
+
+
+exports.createLiquidationAddress = async (req, res) => {
+
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, externalAccountId, bridgeId, chain, currency, destinationSepaReference, destinationPaymentRail, destinationCurrency } = req.body;
+	if (!merchantId || !bridgeId || !chain || !currency || !externalAccountId || !destinationPaymentRail || !destinationCurrency) {
+		return res.status(400).json({ error: 'merchantId, bridgeId, chain, currency, externalAccountId, destinationPaymentRail, and destinationCurrency are required' });
+	}
+
+	const idempotencyKey = uuidv4();
+
+
+	const bodyObject = {
+		chain: chain,
+		currency: currency,
+		external_account_id: externalAccountId,
+		destination_sepa_reference: destinationSepaReference,
+		destination_payment_rail: destinationPaymentRail,
+		destination_currency: destinationCurrency
+	};
+
+	try {
+		console.log('idempotencyKey', idempotencyKey)
+		console.log('bodyObject about to be sent', bodyObject)
+		console.log('bridge url', `${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses`)
+
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses`, {
+			method: 'POST',
+			headers: {
+				'Idempotency-Key': idempotencyKey,
+				'Api-Key': BRIDGE_API_KEY,
+				'Content-Type': 'application/json'
+
+			},
+			body: JSON.stringify(bodyObject)
+		});
+
+
+		if (response.status !== 201) {
+			const responseData = await response.json();
+			console.error('Bridge POST /liquidation_addresses error:', responseData);
+
+			throw new Error(`Bridge POST /liquidation_addresses returned an error: ${JSON.stringify(responseData)}`);
+		}
+
+		const responseData = await response.json();
+
+		console.log('liquidation address create responseData', responseData);
+
+		const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
+			.from('bridge_liquidation_addresses')
+			.insert({
+				chain: chain,
+				currency: currency,
+				external_account_id: externalAccountId,
+				destination_sepa_reference: destinationSepaReference,
+				destination_payment_rail: destinationPaymentRail,
+				destination_currency: destinationCurrency,
+				merchant_id: merchantId,
+				address: responseData.address,
+				bridge_response: JSON.stringify(responseData),
+				liquidation_address_id: responseData.id
+			})
+			.select();
+
+		if (liquidationAddressError) {
+			throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
+		}
+
+		return res.status(201).json({ bridgeResponse: responseData, bridge_liquidation_address: liquidationAddressData });
+	} catch (error) {
+		logger.error(`Something went wrong while creating the liquidation address: ${JSON.stringify(error)}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error,
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: 'POST /liquidation_addresses',
+			})
+		return res.status(500).json({
+			error: `${error}`,
 		});
 	}
 };
