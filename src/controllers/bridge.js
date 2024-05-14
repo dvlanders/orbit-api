@@ -83,22 +83,19 @@ exports.getDrainHistory = async (req, res) => {
 	try {
 		const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
 			.from('bridge_liquidation_addresses')
-			.select('bridge_id, merchant_id')
+			.select('liquidation_address_id')
 			.eq('merchant_id', merchantId)
 			.single();
 
-
-		if (liquidationAddressError) {
-			throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
-		}
+			if (liquidationAddressError) {
+				throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
+			}
 
 		if (!liquidationAddressData) {
 			return res.status(404).json({ error: 'No liquidationAddressData found for the given merchant ID' });
 		}
 
-		const bridgeId = liquidationAddressData.bridge_id;
-
-		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses/${liquidationAddressData[0].liquidation_address_id}/drains`, {
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses/${liquidationAddressData.liquidation_address_id}/drains`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
