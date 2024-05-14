@@ -18,7 +18,6 @@ exports.getVirtualAccountHistory = async (req, res) => {
 
 	const { bridgeId, virtualAccountId, txHash, limit, startingAfter, endingBefore, eventType } = req.query;
 	if (!bridgeId || !virtualAccountId) return res.status(400).json({ error: 'bridgeId and virtualAccountId are required' });
-
 	try {
 		const queryParams = new URLSearchParams();
 		for (const [key, value] of Object.entries(req.query)) {
@@ -138,9 +137,9 @@ exports.getDrainHistory = async (req, res) => {
 			.eq('merchant_id', merchantId)
 			.single();
 
-			if (liquidationAddressError) {
-				throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
-			}
+		if (liquidationAddressError) {
+			throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
+		}
 
 		if (!liquidationAddressData) {
 			return res.status(404).json({ error: 'No liquidationAddressData found for the given merchant ID' });
