@@ -798,10 +798,13 @@ exports.createLiquidationAddress = async (req, res) => {
 		chain: chain,
 		currency: currency,
 		external_account_id: externalAccountId,
-		destination_sepa_reference: destinationSepaReference,
 		destination_payment_rail: destinationPaymentRail,
 		destination_currency: destinationCurrency
 	};
+
+	if (destinationSepaReference) {
+		bodyObject.destination_sepa_reference = destinationSepaReference;
+	}
 
 	try {
 		console.log('idempotencyKey', idempotencyKey)
