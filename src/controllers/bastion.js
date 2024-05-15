@@ -54,7 +54,7 @@ async function createUserCore(merchantId) {
 
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === 'POLYGON_MAINNET') {
-					const { error: fundError } = await fundMaticPolygon(addressEntry.address, '500000'); //0.05 MATIC
+					const { error: fundError } = await fundMaticPolygon(merchantId, addressEntry.address, '0.05');
 					if (fundError) {
 						logger.error(`Error funding wallet: ${fundError.message}`);
 					}
@@ -64,6 +64,12 @@ async function createUserCore(merchantId) {
 	} else {
 		throw new Error('No addresses found in Bastion response');
 	}
+	// DEV ONLY: Fund the wallet with 0.05 MATIC without creating user on bastion
+	// console.log('merchantId on create user core', merchantId);
+	// const { error: fundError } = await fundMaticPolygon(merchantId, "0x1d0f45c4808A99398Ca7FbD57817f03DA1ACAcF6", '0.05'); // 500000 / 10e6 == 0.05 MATIC
+	// if (fundError) {
+	// 	logger.error(`Error funding wallet: ${fundError.message}`);
+	// }
 
 	return data;
 }
@@ -73,15 +79,22 @@ exports.createUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	const { merchantId } = req.body;
+
+
+	if (!merchantId) {
+		return res.status(400).json({ error: 'merchantId is required' });
+	}
+
 	try {
-		const data = await createUserCore(req.body.merchantId);
+		const data = await createUserCore(merchantId);
 		res.status(201).json(data);
 	} catch (error) {
 		logger.error(`Something went wrong while creating user: ${JSON.stringify(error)}`);
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
-				log: JSON.stringify(error),
+				log: error.toString(),
 				merchant_id: merchantId,
 				endpoint: '/bastion/createUser'
 			})
@@ -228,7 +241,7 @@ exports.submitKyc = async (req, res) => {
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
-				log: JSON.stringify(error),
+				log: error.toString(),
 				merchant_id: merchantId,
 				endpoint: '/bastion/submitKyc'
 			})
@@ -426,6 +439,7 @@ exports.transferUsdc = async (req, res) => {
 		if (data.status === 'SUBMITTED' || `ACCEPTED` || `PENDING`) {
 			const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
 				bastion_response: data,
+				transaction_hash: data.transactionHash,
 				from_wallet_id: fromWalletId,
 				to_wallet_id: toWalletId,
 				to_merchant_id: recipientMerchantId,
@@ -450,6 +464,14 @@ exports.transferUsdc = async (req, res) => {
 			.select();
 
 		logger.error(`Error in transferUsdc: ${error.message}`);
+
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.toString(),
+				merchant_id: merchantId,
+				endpoint: '/bastion/transferUsdc'
+			})
 		return res.status(500).json({ message: "Error during transfer", error: error.message, data: updateData, status: error.status });
 	}
 
@@ -550,6 +572,7 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 				.from('withdrawals')
 				.update({
 					bastion_response: data,
+					transaction_hash: data.transactionHash,
 				})
 				.match({ request_id: requestId });
 
@@ -571,6 +594,14 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 		if (updateError) {
 			throw new Error(`Error updating withdrawals record: ${updateError.message}`);
 		}
+
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.toString(),
+				merchant_id: merchantId,
+				endpoint: '/bastion/initiateUsdcWithdrawal'
+			})
 
 		return res.status(500).json({ message: "Error during transfer", error: error.message, data: updateData, status: error.status });
 	}
