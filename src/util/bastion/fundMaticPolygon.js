@@ -15,26 +15,17 @@ async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
 
 	try {
 		const requestId = uuidv4();
-		const contractAddress = "0x0000000000000000000000000000000000001010"; // MATIC contract on Polygon Mainnet (dummy value)
-		const actionName = 'transfer'; // This action has been pre-configured in Bastion as a contract action
 		const chain = 'POLYGON_MAINNET';
-		const fromMerchantId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // Example merchantId which has been prefunded with MATIC
-
+		const fromMerchantId = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'; // samuelyoon0 merchantId which has been prefunded with MATIC to serve as gas station wallet
 		const bodyObject = {
 			requestId: requestId,
 			userId: fromMerchantId,
-			// contractAddress: contractAddress,
-			// actionName: actionName,
+
 			chain: chain,
-			currencySymbol: 'MATIC', // For some reason, this is not required when sending USDC. Transactions appear to be successful even if this param is not included in the Bastion request bodyObject
+			currencySymbol: 'MATIC',
 			amount: amount,
 			recipientAddress: toWalletAddress,
-			// actionParams: [
-			// 	{ name: "to", value: toWalletAddress },
-			// 	{ name: "value", value: "50000000000000000" } // FIXME: This is a dummy value. The actual amount should be passed in as a parameter
-			// 	// { name: "value", value: amount } 
 
-			// ],
 		};
 
 		const url = `${BASTION_URL}/v1/crypto/transfers`;
@@ -61,8 +52,6 @@ async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
 					to_merchant_wallet_address: toWalletAddress,
 					amount: amount,
 					chain: chain,
-					// contract_address: contractAddress,
-					// action_name: actionName,
 					bastion_response: data,
 					transaction_hash: data.transactionHash,
 					status: 1
@@ -78,10 +67,10 @@ async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
 				bastionResponse: gasData
 			};
 		} else {
-			throw new Error(`Bastion response: ${data.toString()}`);
+			throw new Error(`Bastion response: ${JSON.stringify(data)}`);
 		}
 	} catch (error) {
-		console.error("Error during MATIC transfer:", error);
+		console.error("Error during MATIC transfer:", JSON.stringify(error));
 
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
@@ -91,7 +80,7 @@ async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
 				endpoint: 'fundMaticPolygon util function'
 			});
 
-		throw error.toString();
+		throw JSON.stringify(error);
 	}
 }
 
