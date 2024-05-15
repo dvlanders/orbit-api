@@ -1,5 +1,5 @@
 const fetch = require('node-fetch'); // Ensure you have node-fetch if not already installed
-const supabase = require('./supabaseClient');
+const supabase = require('../supabaseClient');
 
 /**
  * Uses Bastion to send MATIC on Polygon Mainnet
@@ -10,8 +10,8 @@ const supabase = require('./supabaseClient');
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
+exports.fundMaticPolygon = async (req, res, next) => {
 
-async function fundMaticPolygon(toWalletAddress, amount) {
 	try {
 		const requestId = uuidv4();
 		const contractAddress = "0x0000000000000000000000000000000000001010"; //  MATIC contract on Polygon Mainnet (dummy value)
@@ -70,4 +70,3 @@ async function fundMaticPolygon(toWalletAddress, amount) {
 	}
 }
 
-module.exports = fundMaticPolygon;
