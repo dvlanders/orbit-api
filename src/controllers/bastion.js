@@ -78,6 +78,13 @@ exports.createUser = async (req, res) => {
 		res.status(201).json(data);
 	} catch (error) {
 		logger.error(`Something went wrong while creating user: ${JSON.stringify(error)}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: JSON.stringify(error),
+				merchant_id: merchantId,
+				endpoint: '/bastion/createUser'
+			})
 		res.status(500).json({ error: `Something went wrong: ${error}` });
 	}
 };
@@ -216,12 +223,12 @@ exports.submitKyc = async (req, res) => {
 
 		res.status(201).json({ bastionResponse: data, complianceRecord: complianceUpdateData });
 	} catch (error) {
-		logger.error(`Something went wrong while submitting KYC: ${error.message}`);
+		logger.error(`Something went wrong while submitting KYC: ${JSON.stringify(error)}`);
 
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
-				log: error.message,
+				log: JSON.stringify(error),
 				merchant_id: merchantId,
 				endpoint: '/bastion/submitKyc'
 			})

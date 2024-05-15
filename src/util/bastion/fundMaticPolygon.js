@@ -1,4 +1,5 @@
 const fetch = require('node-fetch'); // Ensure you have node-fetch if not already installed
+const supabase = require('./supabaseClient');
 
 /**
  * Uses Bastion to send MATIC on Polygon Mainnet
@@ -58,6 +59,13 @@ async function fundMaticPolygon(toWalletAddress, amount) {
 		}
 	} catch (error) {
 		console.error("Error during MATIC transfer:", error);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: JSON.stringify(error),
+				merchant_id: merchantId,
+				endpoint: '/bastion/submitKyc'
+			})
 		throw error;
 	}
 }
