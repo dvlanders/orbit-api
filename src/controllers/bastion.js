@@ -3,13 +3,13 @@ const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
 const { v4: uuidv4 } = require("uuid");
 const { request } = require('express');
+const fundMaticPolygon = require('../util/bastion/fundMaticPolygon');
 
 
-// const BASTION_API_KEY = process.env.BASTION_API_KEY;
-// const BASTION_URL = process.env.BASTION_URL;
 
-const BASTION_API_KEY = '217l7eZyCrh4qlftA6BE2CWqkRlhtXav';
-const BASTION_URL = 'https://api.prod.bastion.com';
+const BASTION_API_KEY = process.env.BASTION_API_KEY;
+const BASTION_URL = process.env.BASTION_URL;
+
 
 // Core function to create user and insert wallet records
 async function createUserCore(merchantId) {
@@ -29,7 +29,8 @@ async function createUserCore(merchantId) {
 
 	const response = await fetch(url, options);
 	if (response.status !== 201) {
-		throw new Error(`Failed to create user. Status: ${response.status}. Message: ${(await response.json()).message || 'Unknown error'}`);
+		const data = await response.json();
+		throw new Error(`Failed to create user. Bastion response: ${JSON.stringify(data)} - ${response.statusText}`);
 	}
 
 	const data = await response.json();
@@ -42,12 +43,21 @@ async function createUserCore(merchantId) {
 						merchant_id: merchantId,
 						chain: chain,
 						address: addressEntry.address
-					}]);
+					}])
+					.select();
 
 				if (error) {
-					throw new Error(`Supabase insert error: ${error.message}`);
+					throw new Error(`Supabase insert error: ${error}`);
 				} else if (!(insertData && insertData.length > 0)) {
 					logger.warn('Supabase insert resulted in no data or an empty response.');
+				}
+
+				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
+				if (chain === 'POLYGON_MAINNET') {
+					const { error: fundError } = await fundMaticPolygon(addressEntry.address, '500000'); //0.05 MATIC
+					if (fundError) {
+						logger.error(`Error funding wallet: ${fundError.message}`);
+					}
 				}
 			}
 		}
@@ -67,8 +77,8 @@ exports.createUser = async (req, res) => {
 		const data = await createUserCore(req.body.merchantId);
 		res.status(201).json(data);
 	} catch (error) {
-		logger.error(`Something went wrong while creating user: ${error.message}`);
-		res.status(500).json({ error: `Something went wrong: ${error.message}` });
+		logger.error(`Something went wrong while creating user: ${JSON.stringify(error)}`);
+		res.status(500).json({ error: `Something went wrong: ${error}` });
 	}
 };
 
@@ -406,7 +416,7 @@ exports.transferUsdc = async (req, res) => {
 		const response = await fetch(url, options);
 		const data = await response.json();
 
-		if (data.status === 'SUBMITTED') {
+		if (data.status === 'SUBMITTED' || `ACCEPTED` || `PENDING`) {
 			const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
 				bastion_response: data,
 				from_wallet_id: fromWalletId,
@@ -528,7 +538,7 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 		const response = await fetch(url, options);
 		const data = await response.json();
 
-		if (data.status === 'SUBMITTED') {
+		if (data.status === 'SUBMITTED' || `ACCEPTED` || `PENDING`) {
 			const { data: updateData, error: updateError } = await supabase
 				.from('withdrawals')
 				.update({
