@@ -16,7 +16,7 @@ exports.getVirtualAccountHistory = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { bridgeId, virtualAccountId, txHash, limit, startingAfter, endingBefore, eventType } = req.query;
+	const { bridgeId, virtualAccountId, transactionHash, limit, startingAfter, endingBefore, eventType } = req.query;
 	if (!bridgeId || !virtualAccountId) return res.status(400).json({ error: 'bridgeId and virtualAccountId are required' });
 	try {
 		const queryParams = new URLSearchParams();
@@ -41,6 +41,8 @@ exports.getVirtualAccountHistory = async (req, res) => {
 		}
 
 		const responseData = await response.json();
+
+
 		return res.status(200).json(responseData);
 	} catch (error) {
 		logger.error(`Something went wrong while getting the bridge virtual account history: ${JSON.stringify(error)}`);
@@ -127,25 +129,14 @@ exports.getDrainHistory = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, bridgeId, liquidationAddressId } = req.query;
-	if (!merchantId || !bridgeId || !liquidationAddressId) return res.status(400).json({ error: 'merchantId, bridgeId, liquidationAddressId is required' });
+	const { merchantId, bridgeId, liquidationAddressId, transactionHash } = req.query;
+
+	console.log('req.query', req.query);
+	if (!merchantId || !bridgeId || !liquidationAddressId || !transactionHash) {
+		return res.status(400).json({ error: 'merchantId, bridgeId, liquidationAddressId, and transactionHash are required' });
+	}
 
 	try {
-		// const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
-		// 	.from('bridge_liquidation_addresses')
-		// 	.select('liquidation_address_id')
-		// 	.eq('merchant_id', merchantId)
-		// 	.eq('external_account_id', externalAccountId)
-		// 	.single();
-
-		// if (liquidationAddressError) {
-		// 	throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
-		// }
-
-		// if (!liquidationAddressData) {
-		// 	return res.status(404).json({ error: 'No liquidationAddressData found for the given merchant ID' });
-		// }
-
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses/${liquidationAddressId}/drains`, {
 			method: 'GET',
 			headers: {
@@ -154,26 +145,65 @@ exports.getDrainHistory = async (req, res) => {
 		});
 
 		if (!response.ok) {
-			const data = await response.json()
-			console.error(data)
-			throw new Error(JSON.stringify(data));
+			const errorData = await response.json();
+			console.error('Error response:', errorData);
+			return res.status(response.status).json({ error: 'Failed to fetch drain history' });
 		}
 
 		const responseData = await response.json();
-		return res.status(200).json(responseData);
+
+		// console.log(responseData)
+		const items = Array.isArray(responseData.data) ? responseData.data : [];
+		// console.log('items', items)
+		const item = items.find(item => item.deposit_tx_hash === transactionHash);
+
+		if (!item) {
+			return res.status(404).json({ error: 'No transaction found with the specified transactionHash' });
+		}
+		console.log('found item', item)
+		const withdrawalStatus = item.state;
+		console.log('withdrawalStatus', withdrawalStatus)
+
+		// Update the bridge_withdraw_status in the withdrawals table
+		const { data: updateData, error: updateError } = await supabase
+			.from('withdrawals')
+			.update({ bridge_withdraw_status: withdrawalStatus })
+			.eq('transaction_hash', transactionHash)
+			.select();
+
+		if (updateError) {
+			console.error('Update error:', updateError);
+			throw new Error(`Failed to update withdrawal status: ${JSON.stringify(updateError)}`);
+		}
+
+		// Ensure updateData is properly handled
+		if (!updateData || !Array.isArray(updateData) || updateData.length === 0) {
+			console.log('No withdrawal found or no updates made for the specified transactionHash.');
+			return res.status(404).json({ error: 'No withdrawal found with the specified transactionHash' });
+		}
+
+		return res.status(200).json({ message: 'Withdrawal status updated successfully', withdrawalStatus: withdrawalStatus });
 	} catch (error) {
-		logger.error(`Something went wrong while getting drain history: ${JSON.stringify(error)}`);
+		console.error('Something went wrong while getting drain history:', error);
 
-		logger.error(`Error object: ${JSON.stringify(error, null, 2)}`);
+		// Log the error to the logs table, catching any potential logging errors
+		try {
+			const { data: logData, error: logError } = await supabase
+				.from('logs')
+				.insert({
+					log: error.toString(),
+					status: 'error',
+					merchant_id: merchantId,
+					endpoint: 'GET /drains',
+				});
 
-		const { data: logData, error: logError } = await supabase
-			.from('logs')
-			.insert({
-				log: JSON.stringify(error, null, 2),
-				status: error.status,
-				merchant_id: merchantId,
-				endpoint: 'GET /drains',
-			})
+			if (logError) {
+				console.error('Failed to log error:', logError);
+			}
+		} catch (logErr) {
+			console.error('Failed to log to database:', logErr);
+		}
+
 		return res.status(500).json({
 			error: `Something went wrong: ${error.message}`,
 		});
