@@ -131,7 +131,6 @@ exports.getDrainHistory = async (req, res) => {
 
 	const { merchantId, bridgeId, liquidationAddressId, transactionHash } = req.query;
 
-	console.log('req.query', req.query);
 	if (!merchantId || !bridgeId || !liquidationAddressId || !transactionHash) {
 		return res.status(400).json({ error: 'merchantId, bridgeId, liquidationAddressId, and transactionHash are required' });
 	}
@@ -160,9 +159,7 @@ exports.getDrainHistory = async (req, res) => {
 		if (!item) {
 			return res.status(404).json({ error: 'No transaction found with the specified transactionHash' });
 		}
-		console.log('found item', item)
 		const withdrawalStatus = item.state;
-		console.log('withdrawalStatus', withdrawalStatus)
 
 		// Update the bridge_withdraw_status in the withdrawals table
 		const { data: updateData, error: updateError } = await supabase
@@ -178,7 +175,7 @@ exports.getDrainHistory = async (req, res) => {
 
 		// Ensure updateData is properly handled
 		if (!updateData || !Array.isArray(updateData) || updateData.length === 0) {
-			console.log('No withdrawal found or no updates made for the specified transactionHash.');
+			console.error('No withdrawal found or no updates made for the specified transactionHash.');
 			return res.status(404).json({ error: 'No withdrawal found with the specified transactionHash' });
 		}
 
