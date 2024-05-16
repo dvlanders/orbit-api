@@ -10,5 +10,6 @@ module.exports = (router) => {
 	router.post("/bastion/transferUsdc/", bastion.transferUsdc);
 	router.post("/bastion/submitKyc/", bastion.submitKyc);
 	router.post("/bastion/initiateUsdcWithdrawal/", bastion.initiateUsdcWithdrawal);
+	router.post("/bastion/notify/userAction/update", bastion.updateOnchainTransactionStatus);
 
 };

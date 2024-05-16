@@ -4,6 +4,7 @@ const supabase = require('../util/supabaseClient');
 const { v4: uuidv4 } = require("uuid");
 const { request } = require('express');
 const fundMaticPolygon = require('../util/bastion/fundMaticPolygon');
+const { bastion } = require('.');
 
 
 
@@ -526,6 +527,7 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 			external_account_id: externalAccountId,
 			liquidation_address_id: liquidationAddresses[0].id,
 			amount: amount,
+
 			status: 1, // Initiated
 			chain: chain,
 			from_wallet_address: fromWalletAddress,
@@ -572,6 +574,7 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 				.from('withdrawals')
 				.update({
 					bastion_response: data,
+					bastion_withdraw_status: data.status,
 					transaction_hash: data.transactionHash,
 				})
 				.match({ request_id: requestId });
@@ -604,5 +607,97 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 			})
 
 		return res.status(500).json({ message: "Error during transfer", error: error.message, data: updateData, status: error.status });
+	}
+};
+
+exports.updateOnchainTransactionStatus = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const bastionRequestBody = req.body;
+	const requestId = req.body.data.requestId
+	const requestStatus = req.body.data.status
+	const merchantId = req.body.data.userId
+
+	console.log("requestId", requestId, "requesststatus", requestStatus)
+	try {
+		// Check if the record exists in the onchain_transactions table
+		const { data: transactionData, error: transactionError } = await supabase
+			.from('onchain_transactions')
+			.select('*')
+			.eq('request_id', requestId)
+		// .single();
+
+		if (transactionError) {
+			console.log('transaction error', transactionError)
+			console.log(`No onchain_transactions record to update status for requestId == ${bastionRequestBody.data.requestId}`)
+		}
+
+		if (transactionData) {
+			// If found, update the status in the onchain_transactions table
+			const { data: updateData, error: updateError } = await supabase
+				.from('onchain_transactions')
+				.update({ bastion_transaction_status: requestStatus })
+				.match({ request_id: requestId });
+
+			if (updateError) {
+				throw JSON.stringify(updateError);
+			}
+
+			return res.status(200).json({});
+		} else {
+			// If not found in onchain_transactions, check the withdrawals table
+			const { data: withdrawalData, error: withdrawalError } = await supabase
+				.from('withdrawals')
+				.select('*')
+				.eq('request_id', requestId)
+				.single();
+
+			if (withdrawalError) {
+				console.log('withdrawlal error', withdrawalError)
+				console.log(`No onchain_transactions record to update status for requestId == ${bastionRequestBody.data.requestId}`)
+			}
+
+
+			if (withdrawalData) {
+				// If found, update the status in the withdrawals table
+				const { data: updateWithdrawalData, error: updateWithdrawalError } = await supabase
+					.from('withdrawals')
+					.update({ bastion_withdraw_status: requestStatus })
+					.match({ request_id: requestId });
+
+				if (updateWithdrawalError) {
+					throw updateWithdrawalError;
+				}
+
+				return res.status(200).json({});
+			} else {
+				console.log('got here')
+				const { data: logData, error: logError } = await supabase
+					.from('logs')
+					.insert({
+						log: `No record found to update status for requestId == ${requestId}`,
+						merchant_id: merchantId,
+						endpoint: '/updateOnchainTransactionStatus'
+					});
+
+				console.log("logData", logData)
+				console.log("logError", logError)
+				return res.status(404).json({ error: 'requestId not found ' });
+			}
+		}
+	} catch (error) {
+		console.error(`Error updating transaction status: ${error}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: error.toString(),
+				merchant_id: merchantId,
+				endpoint: '/updateOnchainTransactionStatus'
+			});
+		console.log("logData", logData)
+		console.log("logError", logError)
+		return res.status(500).json({ error: `Something went wrong` });
 	}
 };
