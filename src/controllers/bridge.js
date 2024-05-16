@@ -127,14 +127,15 @@ exports.getDrainHistory = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, bridgeId } = req.query;
-	if (!merchantId) return res.status(400).json({ error: 'merchantId is required' });
+	const { merchantId, bridgeId, externalAccountId } = req.query;
+	if (!merchantId || !bridgeId || !externalAccountId) return res.status(400).json({ error: 'merchantId, bridgeId, externalAccountId is required' });
 
 	try {
 		const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
 			.from('bridge_liquidation_addresses')
 			.select('liquidation_address_id')
 			.eq('merchant_id', merchantId)
+			.eq('external_account_id', externalAccountId)
 			.single();
 
 		if (liquidationAddressError) {
