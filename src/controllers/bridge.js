@@ -127,26 +127,26 @@ exports.getDrainHistory = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, bridgeId, externalAccountId } = req.query;
-	if (!merchantId || !bridgeId || !externalAccountId) return res.status(400).json({ error: 'merchantId, bridgeId, externalAccountId is required' });
+	const { merchantId, bridgeId, liquidationAddressId } = req.query;
+	if (!merchantId || !bridgeId || !liquidationAddressId) return res.status(400).json({ error: 'merchantId, bridgeId, liquidationAddressId is required' });
 
 	try {
-		const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
-			.from('bridge_liquidation_addresses')
-			.select('liquidation_address_id')
-			.eq('merchant_id', merchantId)
-			.eq('external_account_id', externalAccountId)
-			.single();
+		// const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
+		// 	.from('bridge_liquidation_addresses')
+		// 	.select('liquidation_address_id')
+		// 	.eq('merchant_id', merchantId)
+		// 	.eq('external_account_id', externalAccountId)
+		// 	.single();
 
-		if (liquidationAddressError) {
-			throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
-		}
+		// if (liquidationAddressError) {
+		// 	throw new Error(`Database error: ${JSON.stringify(liquidationAddressError)}`);
+		// }
 
-		if (!liquidationAddressData) {
-			return res.status(404).json({ error: 'No liquidationAddressData found for the given merchant ID' });
-		}
+		// if (!liquidationAddressData) {
+		// 	return res.status(404).json({ error: 'No liquidationAddressData found for the given merchant ID' });
+		// }
 
-		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses/${liquidationAddressData.liquidation_address_id}/drains`, {
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/liquidation_addresses/${liquidationAddressId}/drains`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
