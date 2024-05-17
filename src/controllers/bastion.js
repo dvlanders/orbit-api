@@ -525,7 +525,7 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 			request_id: requestId,
 			merchant_id: merchantId,
 			external_account_id: externalAccountId,
-			liquidation_address_id: liquidationAddresses[0].id,
+			liquidation_address_id: liquidationAddresses[0].liquidation_address_id,
 			amount: amount,
 
 			status: 1, // Initiated
