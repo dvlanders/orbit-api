@@ -16,8 +16,27 @@ exports.getVirtualAccountHistory = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { bridgeId, virtualAccountId, transactionHash, limit, startingAfter, endingBefore, eventType } = req.query;
-	if (!bridgeId || !virtualAccountId) return res.status(400).json({ error: 'bridgeId and virtualAccountId are required' });
+	const { merchantId, virtualAccountId, transactionHash, limit, startingAfter, endingBefore, eventType } = req.query;
+	if (!merchantId || !virtualAccountId) return res.status(400).json({ error: 'merchantId and virtualAccountId are required' });
+
+	const { data: merchantData, error: merchantError } = await supabase
+		.from('merchants')
+		.select('bridge_id')
+		.eq('id', merchantId)
+		.single();
+
+
+	console.log('merchantData', merchantData)
+
+	if (merchantError) {
+		throw new Error(`Database error: ${JSON.stringify(merchantError)}`);
+	}
+	if (!merchantData) {
+		throw new Error('No merchant found for the given merchant ID');
+	}
+
+	const bridgeId = merchantData.bridge_id;
+
 	try {
 		const queryParams = new URLSearchParams();
 		for (const [key, value] of Object.entries(req.query)) {
@@ -41,7 +60,7 @@ exports.getVirtualAccountHistory = async (req, res) => {
 		}
 
 		const responseData = await response.json();
-
+		console.log('responseData microdeposts', responseData)
 
 		return res.status(200).json(responseData);
 	} catch (error) {
