@@ -620,22 +620,28 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 	const requestStatus = req.body.data.status
 	const merchantId = req.body.data.userId
 
-	console.log("requestId", requestId, "requesststatus", requestStatus)
+	const { data: logData, error: logError } = await supabase
+		.from('logs')
+		.insert({
+			log: bastionRequestBody,
+			merchant_id: merchantId,
+			endpoint: 'POST /updateOnchainTransactionStatus initial log'
+		});
+
+
 	try {
-		// Check if the record exists in the onchain_transactions table
 		const { data: transactionData, error: transactionError } = await supabase
 			.from('onchain_transactions')
 			.select('*')
 			.eq('request_id', requestId)
-		// .single();
+			.single();
 
 		if (transactionError) {
-			console.log('transaction error', transactionError)
-			console.log(`No onchain_transactions record to update status for requestId == ${bastionRequestBody.data.requestId}`)
+
+			throw JSON.stringify(transactionError);
 		}
 
-		if (transactionData) {
-			// If found, update the status in the onchain_transactions table
+		if (transactionData && transactionData.request_id === requestId) {
 			const { data: updateData, error: updateError } = await supabase
 				.from('onchain_transactions')
 				.update({ bastion_transaction_status: requestStatus })
@@ -647,7 +653,6 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 
 			return res.status(200).json({});
 		} else {
-			// If not found in onchain_transactions, check the withdrawals table
 			const { data: withdrawalData, error: withdrawalError } = await supabase
 				.from('withdrawals')
 				.select('*')
@@ -655,13 +660,13 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 				.single();
 
 			if (withdrawalError) {
-				console.log('withdrawlal error', withdrawalError)
+				console.log('withdrawal error', withdrawalError)
 				console.log(`No onchain_transactions record to update status for requestId == ${bastionRequestBody.data.requestId}`)
 			}
 
 
-			if (withdrawalData) {
-				// If found, update the status in the withdrawals table
+
+			if (withdrawalData && withdrawalData.request_id === requestId) {
 				const { data: updateWithdrawalData, error: updateWithdrawalError } = await supabase
 					.from('withdrawals')
 					.update({ bastion_withdraw_status: requestStatus })
@@ -673,7 +678,6 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 
 				return res.status(200).json({});
 			} else {
-				console.log('got here')
 				const { data: logData, error: logError } = await supabase
 					.from('logs')
 					.insert({
@@ -682,8 +686,7 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 						endpoint: '/updateOnchainTransactionStatus'
 					});
 
-				console.log("logData", logData)
-				console.log("logError", logError)
+
 				return res.status(404).json({ error: 'requestId not found ' });
 			}
 		}
@@ -696,8 +699,7 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 				merchant_id: merchantId,
 				endpoint: '/updateOnchainTransactionStatus'
 			});
-		console.log("logData", logData)
-		console.log("logError", logError)
+
 		return res.status(500).json({ error: `Something went wrong` });
 	}
 };
