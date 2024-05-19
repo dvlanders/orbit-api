@@ -16,6 +16,7 @@ module.exports = (app, express) => {
 	const bastion = require("./bastion");
 	const transactions = require("./transactions");
 	const bridge = require("./bridge");
+	const astra = require("./astra");
 
 
 
@@ -35,5 +36,6 @@ module.exports = (app, express) => {
 	bastion(router);
 	transactions(router);
 	bridge(router);
+	astra(router);
 	app.use("/", router);
 };
