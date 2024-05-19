@@ -66,7 +66,7 @@ exports.exchangePublicTokenForProcessorToken = async (req, res) => {
 			throw new Error(`Database update error: ${updateError.message}`);
 		}
 
-		return res.json(data);
+		return res.json("Processor token successfully exchanged.");
 	} catch (error) {
 		console.error(`Error while exchanging public token: ${error}`);
 
