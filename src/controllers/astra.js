@@ -2,8 +2,6 @@ const { logger } = require('../util/logger/logger');
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
 const { v4: uuidv4 } = require("uuid");
-const { request } = require('express');
-const fundMaticPolygon = require('../util/bastion/fundMaticPolygon');
 const { astra } = require('.');
 const cron = require('node-cron');
 
