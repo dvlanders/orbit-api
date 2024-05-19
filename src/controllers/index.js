@@ -14,5 +14,6 @@ exports.ocpp = require("./ocpp");
 exports.bastion = require("./bastion");
 exports.transactions = require("./transactions");
 exports.bridge = require("./bridge");
+exports.astra = require("./astra");
 
 
