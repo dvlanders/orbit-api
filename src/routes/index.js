@@ -17,6 +17,7 @@ module.exports = (app, express) => {
 	const transactions = require("./transactions");
 	const bridge = require("./bridge");
 	const astra = require("./astra");
+	const plaid = require("./plaid");
 
 
 
@@ -37,5 +38,6 @@ module.exports = (app, express) => {
 	transactions(router);
 	bridge(router);
 	astra(router);
+	plaid(router);
 	app.use("/", router);
 };
