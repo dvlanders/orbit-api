@@ -206,12 +206,13 @@ exports.createAccountByPlaidProcessorToken = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, processorToken, institutionId } = req.body;
+	const { merchantId, accountId } = req.body;
 
-	if (!merchantId || !processorToken) {
-		return res.status(400).json({ error: 'merchantId and processorToken are required' });
+	if (!merchantId || !accountId) {
+		return res.status(400).json({ error: 'merchantId and accountId are required' });
 	}
 
+	// get the astra user's access token
 	const { data: astraUserData, error: astraUserError } = await supabase
 		.from('astra_users')
 		.select("access_token")
@@ -222,7 +223,7 @@ exports.createAccountByPlaidProcessorToken = async (req, res) => {
 	console.log('astraUserError', astraUserError);
 
 	if (astraUserError) {
-		logger.error(`Error while fetching user data: ${astraUserError.message}`);
+		logger.error(`Error while fetching user data: ${astraUserError}`);
 		return res.status(500).json({
 			error: `astraUserError db error: ${JSON.stringify(astraUserError)}`,
 		});
@@ -232,14 +233,32 @@ exports.createAccountByPlaidProcessorToken = async (req, res) => {
 		return res.status(400).json({ error: 'No user found for merchantId' });
 	}
 
+		// get the merchant's plaid processor token
+		const { data: plaidAccountData, error: plaidAccountError } = await supabase
+		.from('plaid_accounts')
+		.select("processor_token, institution_id")
+		.eq('account_id', accountId)
+		.single();
+
+	console.log('plaidAccountData', plaidAccountData);
+	console.log('plaidAccountError', plaidAccountError);
+
+	if (plaidAccountError) {
+		logger.error(`Error while fetching plaid account data: ${plaidAccountError}`);
+		return res.status(500).json({
+			error: `plaidAccountError db error: ${JSON.stringify(plaidAccountError)}`,
+		});
+	}
+
+	if (!plaidAccountData) {
+		return res.status(400).json({ error: 'No plaid account record found for accountId' });
+	}
+
 	const url = `${ASTRA_URL}/v1/accounts/processor_token`;
 	const body = {
-		processor_token: processorToken
+		processor_token: plaidAccountData.processor_token,
+		institution_id: plaidAccountData.institution_id
 	};
-
-	if (institutionId) {
-		body.institution_id = institutionId;
-	}
 
 	const options = {
 		method: 'POST',
@@ -280,8 +299,8 @@ exports.createAccountByPlaidProcessorToken = async (req, res) => {
 			.insert({
 				merchant_id: merchantId,
 				type: "plaid_processor_token",
-				plaid_processor_token: processorToken,
-				institution_id: institutionId,
+				plaid_processor_token: plaidAccountData.processor_token,
+				institution_id: plaidAccountData.institution_id,
 				astra_account_id: data.id
 			});
 
