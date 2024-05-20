@@ -12,6 +12,7 @@ module.exports = (router) => {
 	// router.post("/bastion/initiateUsdcWithdrawal/", bastion.initiateUsdcWithdrawal);
 	// router.post("/bastion/notify/userAction/update", bastion.updateOnchainTransactionStatus);
 	router.post("/astra/oauth/token", astra.exchangeAuthCodeForAccessToken);
-	router.post("/astra/accounts/create", astra.createAccountByPlaidProcessorToken);
+	router.post("/astra/accounts/processor_token", astra.createAccountByPlaidProcessorToken);
+	router.post("/astra/accounts/create", astra.createAccountByRoutingAccountNumber);
 
 };
