@@ -3,13 +3,13 @@ const { bastion } = require("../controllers");
 const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
-	router.post("/bastion/v1/users/create", bastion.createUser);
-	router.get("/bastion/v1/users/", bastion.getUser);
+	router.post("/bastion/v1/users/create", authorizeUser, bastion.createUser);
+	router.get("/bastion/v1/users/", authorizeUser, bastion.getUser);
 
-	router.get("/bastion/v1/userAction/", bastion.getUserAction);
-	router.post("/bastion/transferUsdc/", bastion.transferUsdc);
-	router.post("/bastion/submitKyc/", bastion.submitKyc);
-	router.post("/bastion/initiateUsdcWithdrawal/", bastion.initiateUsdcWithdrawal);
-	router.post("/bastion/notify/userAction/update", bastion.updateOnchainTransactionStatus);
+	router.get("/bastion/v1/userAction/", authorizeUser, bastion.getUserAction);
+	router.post("/bastion/transferUsdc/", authorizeUser, bastion.transferUsdc);
+	router.post("/bastion/submitKyc/", authorizeUser, bastion.submitKyc);
+	router.post("/bastion/initiateUsdcWithdrawal/", authorizeUser, bastion.initiateUsdcWithdrawal);
+	router.post("/bastion/notify/userAction/update", authorizeUser, bastion.updateOnchainTransactionStatus);
 
 };

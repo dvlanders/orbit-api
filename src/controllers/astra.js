@@ -30,7 +30,8 @@ exports.exchangeAuthCodeForAccessToken = async (req, res) => {
 	const body = new URLSearchParams({
 		grant_type: 'authorization_code',
 		code: authCode,
-		redirect_uri: 'https://portal.hifibridge.com/auth/astraRedirect', // redirect uri seems to require https so localhost wont work
+		redirect_uri: 'http://localhost:3000/auth/astraRedirect'
+		// redirect_uri: 'https://portal.hifibridge.com/auth/astraRedirect', // redirect uri seems to require https so localhost wont work
 	});
 
 	const options = {

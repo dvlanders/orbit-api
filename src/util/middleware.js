@@ -12,7 +12,6 @@ const supabase = require('./supabaseClient');
 exports.authorizeUser = async (req, res, next) => {
 	try {
 		const token = req.headers.authorization?.split(" ")[1];
-	
 		if (!token) {
 			return res.status(responseCode.unauthenticated).json(rs.authErr());
 		};
@@ -40,6 +39,13 @@ exports.authorizeUser = async (req, res, next) => {
 		if (!userDetails.merchant_id) {
 			return res.status(responseCode.ok).json({ message: "Merchant id for this user could not be found" });
 		}
+		if (req.body.merchantId && req.body.merchantId != userDetails.merchant_id){
+			return res.status(responseCode.unauthorized).json({message: "We could not find user"});
+		}
+		if (req.query.merchantId && req.query.merchantId != userDetails.merchant_id){
+			return res.status(responseCode.unauthorized).json({message: "We could not find user"});
+		}
+
 		
 		req.user = {
 			id: userDetails?.user_id,
