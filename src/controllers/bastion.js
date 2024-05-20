@@ -620,6 +620,9 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 	const requestStatus = bastionRequestBody.data.status;
 	const merchantId = bastionRequestBody.data.userId;
 
+	console.log("updateOnchainTransactionStatus is called, requestId: ", requestId)
+
+
 	try {
 		// Check the 'onchain_transactions' table first
 		const { data: transactionData, error: transactionError } = await supabase
