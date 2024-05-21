@@ -620,6 +620,16 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 	const requestStatus = bastionRequestBody.data.status;
 	const merchantId = bastionRequestBody.data.userId;
 
+	// remove later
+	logger.info(`webhook recieved for for requestId == ${requestId} with request ${bastionRequestBody}`);
+	await supabase.from('logs').insert({
+		log: `webhook recieved for for requestId == ${requestId} with request ${bastionRequestBody}`,
+		merchant_id: merchantId,
+		endpoint: '/updateOnchainTransactionStatus'
+	});
+	// remove later
+
+
 	try {
 		// Check the 'onchain_transactions' table first
 		const { data: transactionData, error: transactionError } = await supabase
