@@ -15,7 +15,7 @@ exports.authorizeUser = async (req, res, next) => {
 		if (!token) {
 			return res.status(responseCode.unauthenticated).json(rs.authErr());
 		};
-	
+
 		const user = await verifyToken(token);
 
 		if (!user && !user?.sub) {
@@ -27,26 +27,46 @@ exports.authorizeUser = async (req, res, next) => {
 			.select('*')
 			.eq('user_id', user.sub)
 			.single();
-		
+
 		if (!userDetails && userDetailsError) {
+			await supabase.from('logs').insert({
+				log: 'could not find user',
+				merchant_id: userDetails.merchant_id,
+				endpoint: 'auhtorizeUser middleware',
+			});
 			return res.status(responseCode.unauthorized).json({ error: userDetailsError.message ?? "We could not find user" });
 		};
 
 		if (userDetails.deactivated_at) {
+			await supabase.from('logs').insert({
+				log: 'User has been deactivated',
+				merchant_id: userDetails.merchant_id,
+				endpoint: 'auhtorizeUser middleware',
+			});
 			return res.status(responseCode.ok).json({ message: "User has been deactivated" });
 		}
 
 		if (!userDetails.merchant_id) {
+			await supabase.from('logs').insert({
+				log: 'Merchant id for this user could not be found',
+				merchant_id: userDetails.merchant_id,
+				endpoint: 'auhtorizeUser middleware',
+			});
 			return res.status(responseCode.ok).json({ message: "Merchant id for this user could not be found" });
 		}
-		if (req.body.merchantId && req.body.merchantId != userDetails.merchant_id){
-			return res.status(responseCode.unauthorized).json({message: "We could not find user"});
+		if (req.body.merchantId && req.body.merchantId != userDetails.merchant_id) {
+			await supabase.from('logs').insert({
+				log: 'User merchant id in db does not match the merchantId passed in the request',
+				merchant_id: userDetails.merchant_id,
+				endpoint: 'auhtorizeUser middleware',
+			});
+			return res.status(responseCode.unauthorized).json({ message: "User's merchant id in db does not match the merchantId passed in the request" });
 		}
-		if (req.query.merchantId && req.query.merchantId != userDetails.merchant_id){
-			return res.status(responseCode.unauthorized).json({message: "We could not find user"});
+		if (req.query.merchantId && req.query.merchantId != userDetails.merchant_id) {
+			return res.status(responseCode.unauthorized).json({ message: "We could not find user" });
 		}
 
-		
+
 		req.user = {
 			id: userDetails?.user_id,
 			fullName: userDetails?.fullName,
