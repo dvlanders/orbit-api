@@ -627,7 +627,7 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 		merchant_id: merchantId,
 		endpoint: '/updateOnchainTransactionStatus'
 	});
-	// remove later
+
 
 
 	try {
@@ -678,7 +678,7 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 				return res.status(200).json({});
 			} else {
 				// Log an error if the request_id is not found in both tables
-				console.log(`No record found to update status for requestId == ${requestId}`);
+				console.error(`No record found to update status for requestId == ${requestId}`);
 				await supabase.from('logs').insert({
 					log: `No record found to update status for requestId == ${requestId}`,
 					merchant_id: merchantId,
