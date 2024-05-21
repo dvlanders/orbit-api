@@ -917,3 +917,69 @@ exports.createLiquidationAddress = async (req, res) => {
 		});
 	}
 };
+
+
+exports.getHostedKycLinkForSepaEndorsement = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId } = req.query;
+	if (!merchantId) return res.status(400).json({ error: 'merchantId is required' });
+
+	const { data: merchantData, error: merchantError } = await supabase
+		.from('merchants')
+		.select('bridge_id')
+		.eq('id', merchantId)
+		.single();
+
+
+	console.log('merchantData', merchantData)
+
+	if (merchantError) {
+		throw new Error(`Database error: ${JSON.stringify(merchantError)}`);
+	}
+	if (!merchantData) {
+		throw new Error('No merchant found for the given merchant ID');
+	}
+
+	const bridgeId = merchantData.bridge_id;
+
+	try {
+
+		const url = `${BRIDGE_URL}/v0/customers/${bridgeId}/kyc_link`;
+		const response = await fetch(url, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY,
+				'accept': 'application/json'
+			}
+		});
+
+		if (!response.ok) {
+			const data = await response.json()
+			console.error(data)
+			throw new Error(JSON.stringify(data));
+		}
+
+		const responseData = await response.json();
+
+		return res.status(200).json(responseData);
+	} catch (error) {
+		logger.error(`${JSON.stringify(error)}`);
+
+		logger.error(`${JSON.stringify(error, null, 2)}`);
+
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: JSON.stringify(error, null, 2),
+				status: error.status,
+				merchant_id: merchantId,
+				endpoint: 'GET /hosted_kyc_link',
+			})
+		return res.status(500).json({
+			error: `Something went wrong: ${error.message}`,
+		});
+	}
+};
