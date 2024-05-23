@@ -947,7 +947,7 @@ exports.getHostedKycLinkForSepaEndorsement = async (req, res) => {
 
 	try {
 
-		const url = `${BRIDGE_URL}/v0/customers/${bridgeId}/kyc_link`;
+		const url = `${BRIDGE_URL}/v0/customers/${bridgeId}/kyc_link?endorsement=sepa`;
 		const response = await fetch(url, {
 			method: 'GET',
 			headers: {
