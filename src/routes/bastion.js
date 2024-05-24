@@ -3,6 +3,7 @@ const { bastion } = require("../controllers");
 const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
+	console.log("bastion routes");
 	router.post("/bastion/v1/users/create", authorizeUser, bastion.createUser);
 	router.get("/bastion/v1/users/", authorizeUser, bastion.getUser);
 
@@ -11,5 +12,7 @@ module.exports = (router) => {
 	router.post("/bastion/submitKyc/", authorizeUser, bastion.submitKyc);
 	router.post("/bastion/initiateUsdcWithdrawal/", authorizeUser, bastion.initiateUsdcWithdrawal);
 	router.post("/bastion/notify/userAction/update", bastion.updateOnchainTransactionStatus);
+	router.post("/bastion/getAndUpdateTransactionStatus", bastion.getAndUpdateOnchainTransactionStatus);
+
 
 };
