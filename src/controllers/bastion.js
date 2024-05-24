@@ -743,7 +743,7 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 			const data = await response.json();
 
 			if (response.status !== 200) {
-				const errorMessage = `Failed to get crypto transfer from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
 				throw new Error(errorMessage);
 			}
 
