@@ -385,6 +385,7 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		if (approveTimestampError) throw approveTimestampError;
 
 
+
 		if (!response.ok) {
 			console.error('HTTP error', response.status, responseBody.message, responseBody.source, responseBody);
 			return res.status(response.status).json({

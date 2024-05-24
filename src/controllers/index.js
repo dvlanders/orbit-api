@@ -16,5 +16,6 @@ exports.transactions = require("./transactions");
 exports.bridge = require("./bridge");
 exports.astra = require("./astra");
 exports.plaid = require("./plaid");
+exports.request = require("./request");
 
 
