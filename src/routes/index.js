@@ -18,8 +18,8 @@ module.exports = (app, express) => {
 	const bridge = require("./bridge");
 	const astra = require("./astra");
 	const plaid = require("./plaid");
-	const utils = require("./utils")
-
+	const utils = require("./utils");
+	const request = require("./request");
 
 
 	registration(router);
@@ -40,6 +40,7 @@ module.exports = (app, express) => {
 	bridge(router);
 	astra(router);
 	plaid(router);
-	utils(router)
+	utils(router);
+	request(router);
 	app.use("/", router);
 };
