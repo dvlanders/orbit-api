@@ -276,7 +276,7 @@ exports.transferUsdc = async (req, res) => {
 		transaction_status: 'Initiated',
 		action_name: 'transfer',
 		contract_address: contractAddress,
-		status: 1
+		// status: 1
 	};
 
 	let toWalletAddress = '';
@@ -444,6 +444,7 @@ exports.transferUsdc = async (req, res) => {
 				from_wallet_id: fromWalletId,
 				to_wallet_id: toWalletId,
 				to_merchant_id: recipientMerchantId,
+				bastion_transaction_status: data.status,
 			}).match({ request_id: requestId })
 				.select();
 
@@ -697,5 +698,76 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 		});
 
 		return res.status(500).json({ error: `Something went wrong` });
+	}
+};
+
+exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
+
+
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { merchantId, requestId } = req.body;
+	console.log('got here with body:', req.body);
+	if (!merchantId || !requestId) {
+		return res.status(400).json({ error: 'merchantId and requestId are required' });
+	}
+
+	const { data: transactionData, error: transactionError } = await supabase
+		.from('onchain_transactions')
+		.select("bastion_transaction_status")
+		.match({ request_id: requestId })
+		.single();
+
+	console.log('transactionData', transactionData.bastion_transaction_status);
+	console.log('transactionError', transactionError);
+
+	if (transactionError) {
+		throw new Error(JSON.stringify(transactionError));
+	}
+
+	// if status is not confirmed or failed, hit the bastion user actions api to get the latest status
+	if (transactionData.bastion_transaction_status !== 'CONFIRMED' && transactionData.bastion_transaction_status !== 'FAILED') {
+		const url = `${BASTION_URL}/v1/user-actions/${requestId}?userId=${merchantId}`;
+		const options = {
+			method: 'GET',
+			headers: {
+				accept: 'application/json',
+				Authorization: `Bearer ${BASTION_API_KEY}`
+			}
+		};
+
+		try {
+			const response = await fetch(url, options);
+			const data = await response.json();
+
+			if (response.status !== 200) {
+				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+				throw new Error(errorMessage);
+			}
+
+			const { data: statusUpdateData, error: statusUpdateError } = await supabase
+				.from('onchain_transactions')
+				.update({ bastion_transaction_status: data.status })
+				.match({ request_id: requestId })
+				.select("bastion_transaction_status");
+
+
+			if (statusUpdateError) {
+				throw new Error(JSON.stringify(statusUpdateError));
+			}
+
+			return res.status(200).json(statusUpdateData);
+		} catch (error) {
+			logger.error(`Something went wrong while retrieving user action: ${error.message}`);
+			return res.status(500).json({
+				error: `Something went wrong: ${error.message}`,
+			});
+		}
+
+	} else { // if the transaction status is already confirmed or failed, return the status
+		console.log('transaction status is confirmed or failed')
+		return res.status(200).json(transactionData);
 	}
 };
