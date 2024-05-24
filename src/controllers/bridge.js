@@ -377,14 +377,12 @@ exports.createNewBridgeCustomer = async (req, res) => {
 
 		if (merchantUpdateError) throw merchantUpdateError;
 
-		if (responseBody.status === 'active') {
-			const { error: approveTimestampError } = await supabase
-				.from('compliance')
-				.update([{ bridge_status: responseBody.status, bridge_response: responseBody }])
-				.match({ merchant_id: merchantId })
+		const { error: approveTimestampError } = await supabase
+			.from('compliance')
+			.update([{ bridge_status: responseBody.status, bridge_response: responseBody }])
+			.match({ merchant_id: merchantId })
 
-			if (approveTimestampError) throw approveTimestampError;
-		}
+		if (approveTimestampError) throw approveTimestampError;
 
 
 		if (!response.ok) {
