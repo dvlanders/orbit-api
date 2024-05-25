@@ -337,7 +337,7 @@ exports.transferUsdc = async (req, res) => {
 
 			// Neccesary to poll for the new profile record to be created by the db trigger
 			const waitForProfile = async () => {
-				for (let i = 0; i < 10; i++) { // Try up to 10 times with a 5 second delay
+				for (let i = 0; i < 10; i++) {
 					const { data: profileData, error: profileError } = await supabase
 						.from('profiles')
 						.select('merchant_id')
@@ -349,7 +349,7 @@ exports.transferUsdc = async (req, res) => {
 					}
 
 					if (profileData.length > 0) return profileData[0].merchant_id;
-					await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds before the next poll
+					await new Promise(resolve => setTimeout(resolve, 5000));
 				}
 
 				throw new Error("Timeout waiting for profile creation.");
