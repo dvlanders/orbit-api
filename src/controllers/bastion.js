@@ -48,7 +48,7 @@ async function createUserCore(merchantId) {
 					.select();
 
 				if (error) {
-					throw new Error(`Supabase insert error: ${error}`);
+					throw new Error(`Supabase insert error: ${JSON.stringify(error)}`);
 				} else if (!(insertData && insertData.length > 0)) {
 					logger.warn('Supabase insert resulted in no data or an empty response.');
 				}
@@ -91,7 +91,7 @@ exports.createUser = async (req, res) => {
 		const data = await createUserCore(merchantId);
 		res.status(201).json(data);
 	} catch (error) {
-		logger.error(`Something went wrong while creating user: ${JSON.stringify(error)}`);
+		logger.error(`Something went wrong while creating user: ${error.toString()}`);
 		const { data: logData, error: logError } = await supabase
 			.from('logs')
 			.insert({
@@ -321,7 +321,7 @@ exports.transferUsdc = async (req, res) => {
 			logger.info(`No profiles record found for ${destinationEmail}, creating new merchant`);
 
 			// Sign in with OTP and create a new user, triggering on_auth_user_created which spins up the profiles and merchants table records
-			const { error: newRecipientUserError } =
+			const { data: newRecipientUserData, error: newRecipientUserError } =
 				await supabase.auth.signInWithOtp({
 					email: destinationEmail,
 					options: {
@@ -335,9 +335,15 @@ exports.transferUsdc = async (req, res) => {
 				throw new Error(`Error creating new user: ${newRecipientUserError.message}`);
 			}
 
+			console.log('newRecipientUserData', newRecipientUserData);
+
 			// Neccesary to poll for the new profile record to be created by the db trigger
 			const waitForProfile = async () => {
-				for (let i = 0; i < 10; i++) {
+				let attempts = 0;
+				const maxAttempts = 10;
+
+				while (attempts < maxAttempts) {
+					console.log(`Attempt ${attempts + 1} to poll profiles table for merchant_id`);
 					const { data: profileData, error: profileError } = await supabase
 						.from('profiles')
 						.select('merchant_id')
@@ -349,11 +355,15 @@ exports.transferUsdc = async (req, res) => {
 					}
 
 					if (profileData.length > 0) return profileData[0].merchant_id;
-					await new Promise(resolve => setTimeout(resolve, 5000));
+
+					const delay = Math.pow(2, attempts) * 1000; // Exponential backoff
+					await new Promise(resolve => setTimeout(resolve, delay));
+					attempts++;
 				}
 
 				throw new Error("Timeout waiting for profile creation.");
 			};
+
 
 			recipientMerchantId = await waitForProfile();
 

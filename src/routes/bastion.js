@@ -4,7 +4,7 @@ const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
 	console.log("bastion routes");
-	router.post("/bastion/v1/users/create", authorizeUser, bastion.createUser);
+	router.post("/bastion/v1/users/create", bastion.createUser);
 	router.get("/bastion/v1/users/", authorizeUser, bastion.getUser);
 
 	router.get("/bastion/v1/userAction/", authorizeUser, bastion.getUserAction);
