@@ -622,9 +622,9 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 	const merchantId = bastionRequestBody.data.userId;
 
 	// remove later
-	logger.info(`webhook recieved for for requestId == ${requestId} with request ${bastionRequestBody}`);
+	logger.info(`webhook recieved for for requestId == ${requestId} with request ${JSON.stringify(bastionRequestBody)}`);
 	await supabase.from('logs').insert({
-		log: `webhook recieved for for requestId == ${requestId} with request ${bastionRequestBody}`,
+		log: `webhook recieved for for requestId == ${requestId} with request ${JSON.stringify(bastionRequestBody)}`,
 		merchant_id: merchantId,
 		endpoint: '/updateOnchainTransactionStatus'
 	});
