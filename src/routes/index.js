@@ -20,6 +20,7 @@ module.exports = (app, express) => {
 	const plaid = require("./plaid");
 	const utils = require("./utils");
 	const request = require("./request");
+	const checkbook = require("./checkbook");
 
 
 	registration(router);
@@ -42,5 +43,6 @@ module.exports = (app, express) => {
 	plaid(router);
 	utils(router);
 	request(router);
+	checkbook(router);
 	app.use("/", router);
 };
