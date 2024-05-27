@@ -18,5 +18,6 @@ exports.astra = require("./astra");
 exports.plaid = require("./plaid");
 exports.utils = require("./utils");
 exports.request = require("./request");
+exports.checkbook = require("./checkbook");
 
 
