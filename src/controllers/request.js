@@ -15,7 +15,7 @@ exports.createRequest = async (req, res) => {
 
 	const { merchantId, requesteeEmail, amount, chain, fiatCurrency } = req.body;
 
-	if (!merchantId || !requesteeEmail || !amount || !chain, !fiatCurrency) {
+	if (!merchantId || !requesteeEmail || !amount || !chain || !fiatCurrency) {
 		return res.status(400).json({ error: 'merchantId, requesteeEmail, amount, chain, and fiatCurrency are required' });
 	}
 
