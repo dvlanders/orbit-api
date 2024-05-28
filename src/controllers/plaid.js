@@ -173,6 +173,7 @@ exports.exchangeAccessTokenForProcessorToken = async (req, res) => {
 			.update({
 				processor_token: data.processor_token,
 				plaid_processor_token_request_id: data.request_id,
+				processor: processor,
 			})
 			.eq('account_id', accountId);
 
