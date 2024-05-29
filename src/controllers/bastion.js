@@ -466,8 +466,14 @@ exports.transferUsdc = async (req, res) => {
 
 		// if the onchainRequestId is passed, indicating that there is a onchain requests record associated with this transaction, update the status in the onchain_transactions table
 		if (onchainRequestId) {
-			const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests').update({
-				status: data.status,
+			let onchainRequestStatus = "CREATED"
+			if (data.status == "ACCEPTED" || data.status == "PENDING" || data.status == "SUBMITTED") onchainRequestStatus = "PENDING"
+			if (data.status == "CONFIRMED") onchainRequestStatus = "FULFILLED"
+			if (data.status == "FAILED") onchainRequestStatus = "FAILED"
+			
+			const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests')
+			.update({
+				status: onchainRequestStatus,
 				onchain_transaction_request_id: requestId,
 			}).match({ id: onchainRequestId })
 				.select();
@@ -683,9 +689,18 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 				throw new Error(JSON.stringify(updateError));
 			}
 
-			const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests').update({
-				status: requestStatus,
-			}).match({ onchain_transaction_request_id: requestId })
+			// update onchain_request status
+			let onchainRequestStatus = "CREATED"
+			if (requestStatus == "ACCEPTED" || requestStatus == "PENDING" || requestStatus == "SUBMITTED") onchainRequestStatus = "PENDING"
+			if (requestStatus == "CONFIRMED") onchainRequestStatus = "FULFILLED"
+			if (requestStatus == "FAILED") onchainRequestStatus = "FAILED"
+
+			const { data: requestUpdateData, error: requestUpdateError } = await supabase
+			.from('onchain_requests')
+			.update({
+				status: onchainRequestStatus,
+			})
+			.match({ onchain_transaction_request_id: requestId })
 				.select();
 
 
@@ -795,8 +810,16 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 
 			// if the onchainRequestId is passed, indicating that there is a onchain requests record associated with this transaction, update the status in the onchain_transactions table
 			if (onchainRequestId) {
-				const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests').update({
-					status: data.status,
+				// update onchain_request status
+				let onchainRequestStatus = "CREATED"
+				if (data.status == "ACCEPTED" || data.status == "PENDING" || data.status == "SUBMITTED") onchainRequestStatus = "PENDING"
+				if (data.status == "CONFIRMED") onchainRequestStatus = "FULFILLED"
+				if (data.status == "FAILED") onchainRequestStatus = "FAILED"
+
+				const { data: requestUpdateData, error: requestUpdateError } = await supabase
+				.from('onchain_requests')
+				.update({
+					status: onchainRequestStatus,
 				}).match({ id: onchainRequestId })
 					.select();
 
