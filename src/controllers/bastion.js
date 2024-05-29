@@ -258,7 +258,7 @@ exports.transferUsdc = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, destinationEmail, amount, chain } = req.body;
+	const { merchantId, destinationEmail, amount, chain, onchainRequestId } = req.body;
 
 	if (!merchantId || !destinationEmail || !amount || !chain) {
 		return res.status(400).json({ error: 'merchantId, destinationEmail, amount, and chain are required' });
@@ -447,25 +447,45 @@ exports.transferUsdc = async (req, res) => {
 		const response = await fetch(url, options);
 		const data = await response.json();
 
-		if (data.status === 'SUBMITTED' || `ACCEPTED` || `PENDING`) {
-			const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
-				bastion_response: data,
-				transaction_hash: data.transactionHash,
-				from_wallet_id: fromWalletId,
-				to_wallet_id: toWalletId,
-				to_merchant_id: recipientMerchantId,
-				bastion_transaction_status: data.status,
-			}).match({ request_id: requestId })
+		if (!response.ok) {
+			throw new Error(`Failed to execute transfer. ${JSON.stringify(data)}`);
+		}
+
+
+		const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
+			bastion_response: data,
+			transaction_hash: data.transactionHash,
+			from_wallet_id: fromWalletId,
+			to_wallet_id: toWalletId,
+			to_merchant_id: recipientMerchantId,
+			bastion_transaction_status: data.status,
+		}).match({ request_id: requestId })
+			.select();
+
+
+
+		// if the onchainRequestId is passed, indicating that there is a onchain requests record associated with this transaction, update the status in the onchain_transactions table
+		if (onchainRequestId) {
+			const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests').update({
+				status: data.status,
+				onchain_transaction_request_id: requestId,
+			}).match({ id: onchainRequestId })
 				.select();
 
-			if (updateError) {
-				logger.error(`Error updating transaction record: ${updateError.message}`);
-				throw new Error(`Error updating transaction record: ${updateError.message}`);
+			if (requestUpdateError) {
+				throw new Error(`${requestUpdateError}`);
 			}
-			return res.status(200).json({ message: 'Transfer submitted', bastionResponse: data, data: updateData });
-		} else {
-			throw new Error(`Failed to execute transfer. Status: ${response.status}. Message: ${JSON.stringify(data)}`);
 		}
+
+
+
+
+		if (updateError) {
+			logger.error(`Error updating transaction record: ${updateError.message}`);
+			throw new Error(`Error updating transaction record: ${updateError.message}`);
+		}
+		return res.status(200).json({ message: 'Transfer submitted', bastionResponse: data, data: updateData });
+
 	} catch (error) {
 		const { data: updateData, error: updateError } = await supabase.from('onchain_transactions').update({
 			error_message: error.message,
@@ -663,6 +683,12 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 				throw new Error(JSON.stringify(updateError));
 			}
 
+			const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests').update({
+				status: requestStatus,
+			}).match({ onchain_transaction_request_id: requestId })
+				.select();
+
+
 			return res.status(200).json({});
 		} else {
 			// If not found, check the 'withdrawals' table
@@ -718,8 +744,7 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, requestId } = req.body;
-	console.log('got here with body:', req.body);
+	const { merchantId, requestId, onchainRequestId } = req.body;
 	if (!merchantId || !requestId) {
 		return res.status(400).json({ error: 'merchantId and requestId are required' });
 	}
@@ -766,6 +791,18 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 
 			if (statusUpdateError) {
 				throw new Error(JSON.stringify(statusUpdateError));
+			}
+
+			// if the onchainRequestId is passed, indicating that there is a onchain requests record associated with this transaction, update the status in the onchain_transactions table
+			if (onchainRequestId) {
+				const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests').update({
+					status: data.status,
+				}).match({ id: onchainRequestId })
+					.select();
+
+				if (requestUpdateError) {
+					throw new Error(`${requestUpdateError}`);
+				}
 			}
 
 			return res.status(200).json(statusUpdateData);
