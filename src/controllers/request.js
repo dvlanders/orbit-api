@@ -80,7 +80,9 @@ exports.createRequest = async (req, res) => {
 					fiat_currency: fiatCurrency
 
 				})
-				.select();
+				.select()
+				.single()
+				;
 
 
 			if (createRequestError) {
@@ -110,6 +112,7 @@ exports.createRequest = async (req, res) => {
 					fiat_currency: fiatCurrency
 				})
 				.select()
+				.single()
 				;
 
 			if (createRequestError) {
