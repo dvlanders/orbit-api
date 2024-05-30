@@ -258,10 +258,10 @@ exports.transferUsdc = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, destinationEmail, amount, chain, onchainRequestId } = req.body;
+	const { merchantId, destinationEmail, amount, chain, onchainRequestId, fiatCurrency, fiatCurrencyAmount } = req.body;
 
-	if (!merchantId || !destinationEmail || !amount || !chain) {
-		return res.status(400).json({ error: 'merchantId, destinationEmail, amount, and chain are required' });
+	if (!merchantId || !destinationEmail || !amount || !chain || !fiatCurrency || !fiatCurrencyAmount) {
+		return res.status(400).json({ error: 'merchantId, destinationEmail, amount chain, fiatCurrency, and fiatCurrencyAmount are required' });
 	}
 
 	const requestId = uuidv4();
@@ -276,6 +276,8 @@ exports.transferUsdc = async (req, res) => {
 		transaction_status: 'Initiated',
 		action_name: 'transfer',
 		contract_address: contractAddress,
+		fiat_currency: fiatCurrency,
+		fiat_currency_amount: fiatCurrencyAmount,
 		// status: 1
 	};
 
@@ -470,12 +472,12 @@ exports.transferUsdc = async (req, res) => {
 			if (data.status == "ACCEPTED" || data.status == "PENDING" || data.status == "SUBMITTED") onchainRequestStatus = "PENDING"
 			if (data.status == "CONFIRMED") onchainRequestStatus = "FULFILLED"
 			if (data.status == "FAILED") onchainRequestStatus = "FAILED"
-			
+
 			const { data: requestUpdateData, error: requestUpdateError } = await supabase.from('onchain_requests')
-			.update({
-				status: onchainRequestStatus,
-				onchain_transaction_request_id: requestId,
-			}).match({ id: onchainRequestId })
+				.update({
+					status: onchainRequestStatus,
+					onchain_transaction_request_id: requestId,
+				}).match({ id: onchainRequestId })
 				.select();
 
 			if (requestUpdateError) {
@@ -520,10 +522,10 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, externalAccountId, amount } = req.body;
+	const { merchantId, externalAccountId, amount, fiatCurrency, fiatCurrencyAmount } = req.body;
 
-	if (!merchantId || !externalAccountId || !amount) {
-		return res.status(400).json({ error: 'merchantId, externalAccountId, and amount are required' });
+	if (!merchantId || !externalAccountId || !amount || !fiatCurrency || !fiatCurrencyAmount) {
+		return res.status(400).json({ error: 'merchantId, externalAccountId, amount, fiatCurrency, and fiatCurrencyAmount are required' });
 	}
 
 	const requestId = uuidv4();
@@ -564,12 +566,13 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 			external_account_id: externalAccountId,
 			liquidation_address_id: liquidationAddresses[0].liquidation_address_id,
 			amount: amount,
-
 			status: 1, // Initiated
 			chain: chain,
 			from_wallet_address: fromWalletAddress,
 			action_name: actionName,
 			contract_address: contractAddress,
+			fiat_currency: fiatCurrency,
+			fiat_currency_amount: fiatCurrencyAmount,
 		};
 
 		// Log the initial transaction
@@ -696,11 +699,11 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 			if (requestStatus == "FAILED") onchainRequestStatus = "FAILED"
 
 			const { data: requestUpdateData, error: requestUpdateError } = await supabase
-			.from('onchain_requests')
-			.update({
-				status: onchainRequestStatus,
-			})
-			.match({ onchain_transaction_request_id: requestId })
+				.from('onchain_requests')
+				.update({
+					status: onchainRequestStatus,
+				})
+				.match({ onchain_transaction_request_id: requestId })
 				.select();
 
 
@@ -817,10 +820,10 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 				if (data.status == "FAILED") onchainRequestStatus = "FAILED"
 
 				const { data: requestUpdateData, error: requestUpdateError } = await supabase
-				.from('onchain_requests')
-				.update({
-					status: onchainRequestStatus,
-				}).match({ id: onchainRequestId })
+					.from('onchain_requests')
+					.update({
+						status: onchainRequestStatus,
+					}).match({ id: onchainRequestId })
 					.select();
 
 				if (requestUpdateError) {
