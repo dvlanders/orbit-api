@@ -14,20 +14,20 @@ exports.sendRequestCreateEmail = async (req, res) => {
 	}
 
 	try {
-        // get record
+		// get record
 		const { data: requestData, error: RequestError } = await supabase
-            .from('onchain_requests')
-            .select(`*, from_merchant:requester_merchant_id (*,profiles (*))`)
+			.from('onchain_requests')
+			.select(`*, from_merchant:requester_merchant_id (*,profiles (*))`)
 			.eq('id', onchainRequestId)
 			.maybeSingle();
 
-        console.log(requestData)
-        
-        
-        if (RequestError) throw RequestError
-        if (!requestData) return res.status(404).json({ error: 'No transaction data found for the given request ID' });
+		console.log(requestData)
 
-		let fromName = requestData.from_merchant.business_name || requestData.from_merchant.profiles.full_name || requestData.from_merchant.profiles.email
+
+		if (RequestError) throw RequestError
+		if (!requestData) return res.status(404).json({ error: 'No transaction data found for the given request ID' });
+
+		let fromName = requestData.from_merchant.business_name || requestData.from_merchant.profiles[0].full_name || requestData.from_merchant.profiles.email
 		const usdAmount = requestData.amount
 
 		const form = new FormData();
