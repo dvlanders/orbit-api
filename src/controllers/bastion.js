@@ -259,8 +259,8 @@ exports.transferUsdc = async (req, res) => {
 	}
 
 	const { merchantId, destinationEmail, amount, chain, onchainRequestId, fiatCurrency, fiatCurrencyAmount } = req.body;
-
-	if (!merchantId || !destinationEmail || !amount || !chain || !fiatCurrency || !fiatCurrencyAmount) {
+	if (!merchantId || !destinationEmail || !amount || !chain) {
+		// if (!merchantId || !destinationEmail || !amount || !chain || !fiatCurrency || !fiatCurrencyAmount) { // FIXME: uncomment this line
 		return res.status(400).json({ error: 'merchantId, destinationEmail, amount chain, fiatCurrency, and fiatCurrencyAmount are required' });
 	}
 
@@ -524,7 +524,8 @@ exports.initiateUsdcWithdrawal = async (req, res) => {
 
 	const { merchantId, externalAccountId, amount, fiatCurrency, fiatCurrencyAmount } = req.body;
 
-	if (!merchantId || !externalAccountId || !amount || !fiatCurrency || !fiatCurrencyAmount) {
+	if (!merchantId || !externalAccountId || !amount) {
+		// if (!merchantId || !externalAccountId || !amount || !fiatCurrency || !fiatCurrencyAmount) { // FIXME: uncomment this line
 		return res.status(400).json({ error: 'merchantId, externalAccountId, amount, fiatCurrency, and fiatCurrencyAmount are required' });
 	}
 
