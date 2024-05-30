@@ -19,6 +19,6 @@ exports.plaid = require("./plaid");
 exports.utils = require("./utils");
 exports.request = require("./request");
 exports.checkbook = require("./checkbook");
-exports.requests = require("./requests");
+exports.notification = require("./notification");
 
 
