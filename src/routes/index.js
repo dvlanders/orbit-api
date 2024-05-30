@@ -21,8 +21,7 @@ module.exports = (app, express) => {
 	const utils = require("./utils");
 	const request = require("./request");
 	const checkbook = require("./checkbook");
-	const requests = require("./requests");
-
+	const notification = require("./notification");
 
 
 	registration(router);
@@ -46,6 +45,6 @@ module.exports = (app, express) => {
 	utils(router);
 	request(router);
 	checkbook(router);
-	requests(router);
+	notification(router);
 	app.use("/", router);
 };
