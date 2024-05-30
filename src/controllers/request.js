@@ -155,4 +155,96 @@ exports.createRequest = async (req, res) => {
 
 };
 
+exports.rejectRequest = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	try {
+		const { merchantId, onchainRequestId } = req.body;
+
+		if (!merchantId || !onchainRequestId) {
+			return res.status(400).json({ error: 'merchantId, onchainRequestId are required' });
+		}
+
+		let { data: onchain_requests, error: onchain_requests_error } = await supabase
+			.from('onchain_requests')
+			.select('status')
+			.eq('requestee_merchant_id', merchantId)
+			.eq('id', onchainRequestId)
+			.maybeSingle()
+
+		if (onchain_requests_error) throw onchain_requests_error
+		if (!onchain_requests) return res.status(404).json({ error: 'record not found' });
+		if (onchain_requests.status != "CREATED") return res.status(400).json({ error: 'Reject not allowed' });
+
+
+		let { data: updated_onchain_requests, error: updated_onchain_requests_error } = await supabase
+			.from('onchain_requests')
+			.update({ status: 'REJECTED' })
+			.eq('requestee_merchant_id', merchantId)
+			.eq('id', onchainRequestId)
+			.select('*')
+			.maybeSingle()
+		
+		if (updated_onchain_requests_error) throw updated_onchain_requests_error
+		if (!updated_onchain_requests) return res.status(404).json({ error: 'record not found' });
+
+		return res.status(200).json({messgae: "Reject request success"})
+
+	}catch (error){
+		return res.status(500).json({
+			error: `Error: ${error.message || error.toString()}`})
+	}
+	
+			
+
+}
+
+exports.cancelRequest = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	try {
+		const { merchantId, onchainRequestId } = req.body;
+
+		if (!merchantId || !onchainRequestId) {
+			return res.status(400).json({ error: 'merchantId, onchainRequestId are required' });
+		}
+
+		let { data: onchain_requests, error: onchain_requests_error } = await supabase
+			.from('onchain_requests')
+			.select('status')
+			.eq('requester_merchant_id', merchantId)
+			.eq('id', onchainRequestId)
+			.maybeSingle()
+
+		if (onchain_requests_error) throw onchain_requests_error
+		if (!onchain_requests) return res.status(404).json({ error: 'record not found' });
+		if (onchain_requests.status != "CREATED") return res.status(400).json({ error: 'Cancel not allowed' });
+
+
+		let { data: updated_onchain_requests, error: updated_onchain_requests_error } = await supabase
+			.from('onchain_requests')
+			.update({ status: 'CANCELED' })
+			.eq('requester_merchant_id', merchantId)
+			.eq('id', onchainRequestId)
+			.select('*')
+			.maybeSingle()
+		
+		if (updated_onchain_requests_error) throw updated_onchain_requests_error
+		if (!updated_onchain_requests) return res.status(404).json({ error: 'record not found' });
+
+		return res.status(200).json({messgae: "Cancel request success"})
+
+	}catch (error){
+		return res.status(500).json({
+			error: `Error: ${error.message || error.toString()}`})
+	}
+	
+			
+
+}
+
 

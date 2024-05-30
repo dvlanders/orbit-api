@@ -4,6 +4,8 @@ const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
 
-	router.post("/request/create", request.createRequest);
+	router.post("/request/create", authorizeUser, request.createRequest);
+	router.put("/request/reject", authorizeUser, request.rejectRequest);
+	router.put("/request/cancel", authorizeUser, request.cancelRequest);
 
 };
