@@ -343,7 +343,7 @@ exports.transferUsdc = async (req, res) => {
 				const maxAttempts = 10;
 
 				while (attempts < maxAttempts) {
-					console.log(`Attempt ${attempts + 1} to poll profiles table for merchant_id`);
+					console.log(`Attempt ${attempts + 1} to poll profiles table for merchant id associated with ${destinationEmail}`);
 					const { data: profileData, error: profileError } = await supabase
 						.from('profiles')
 						.select('merchant_id')

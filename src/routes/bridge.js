@@ -3,8 +3,8 @@ const { bridge } = require("../controllers");
 const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
-	router.post("/bridge/v0/customers/tos_links", authorizeUser, bridge.createTermsOfServiceLink);
-	router.post("/bridge/v0/customers", authorizeUser, bridge.createNewBridgeCustomer);
+	router.post("/bridge/v0/customers/tos_links", bridge.createTermsOfServiceLink);
+	router.post("/bridge/v0/customers", bridge.createNewBridgeCustomer);
 	router.post("/bridge/v0/customers/virtual_account", authorizeUser, bridge.createVirtualAccount);
 	router.post("/bridge/v0/customers/external_account", authorizeUser, bridge.createExternalAccount);
 	router.get("/bridge/v0/customers", authorizeUser, bridge.getCustomer);

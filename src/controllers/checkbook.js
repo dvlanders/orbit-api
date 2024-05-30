@@ -69,7 +69,8 @@ exports.createCheckbookUser = async (req, res) => {
 		const { data: checkbookUserData, error: checkbookUserError } = await supabase
 			.from('checkbook_users')
 			.insert({
-				checkbook_id: merchantId,
+				checkbook_user_id: merchantId,
+				checkbook_id: data.id,
 				checkbook_key: data.key,
 				checkbook_secret: data.secret,
 				checkbook_name: name,
@@ -129,76 +130,72 @@ exports.createCheckbookBankAccountWithProcessorToken = async (req, res) => {
 	}
 
 	const { merchantId, plaidAccountId } = req.body;
-
 	if (!merchantId || !plaidAccountId) {
 		return res.status(400).json({ error: 'merchantId and plaidAccountId are required' });
 	}
 
-	const { data: checkbookUserData, error: checkbookUserError } = await supabase
-		.from('checkbook_users')
-		.select('*')
-		.eq('merchant_id', merchantId)
-		.single();
-
-	if (checkbookUserError) {
-		console.error(`Error while fetching Checkbook user data: ${JSON.stringify(checkbookUserError)}`);
-		throw new Error(`${JSON.stringify(checkbookUserError)}`);
-	}
-
-	console.log('checkbookUserData', checkbookUserData);
-
-
-	const { data: plaidAccountData, error: plaidAccountError } = await supabase
-		.from('plaid_accounts')
-		.select('*')
-		.eq('account_id', plaidAccountId)
-		.single();
-
-	if (plaidAccountError) {
-		throw new Error(`${JSON.stringify(plaidAccountError)}`);
-	}
-
-	console.log('plaidAccountData', plaidAccountData);
-
-	const url = `${CHECKBOOK_URL}/account/bank/iav/plaid`;
-	const body = {
-		"processor_token": plaidAccountData.processor_token,
-	}
-
-	const options = {
-		method: 'POST',
-		headers: {
-			'Accept': 'application/json',
-			'Authorization': `${checkbookUserData.checkbook_key}:${checkbookUserData.checkbook_secret}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(body)
-	};
-
-	console.log('options', options);
-
 	try {
-		const response = await fetch(url, options);
-		console.log('response', response);
-		const data = await response.json();
+		// Fetch user and Plaid account data from database
+		const { data: checkbookUserData, error: checkbookUserError } = await supabase
+			.from('checkbook_users')
+			.select('*')
+			.eq('merchant_id', merchantId)
+			.single();
+		if (checkbookUserError) {
+			throw new Error(`Error fetching Checkbook user data: ${JSON.stringify(checkbookUserError)}`);
+		}
 
-		console.log('data', data);
+		const { data: plaidAccountData, error: plaidAccountError } = await supabase
+			.from('plaid_accounts')
+			.select('*')
+			.eq('account_id', plaidAccountId)
+			.single();
+		if (plaidAccountError) {
+			throw new Error(`Error fetching Plaid account data: ${JSON.stringify(plaidAccountError)}`);
+		}
 
-		if (!response.ok) {
-			console.error(`Error while creating Checkbook bank account for mechantId ${merchantId}: ${JSON.stringify(data)}`);
-			const { data: logData, error: logError } = await supabase
-				.from('logs')
-				.insert({
-					log: `${JSON.stringify(data)}`,
-					status: response.status,
-					merchant_id: merchantId,
-					endpoint: 'POST /checkbook/account/plaid',
-				})
+		// Add Plaid processor token to Checkbook and receive account details
+		const plaidResponse = await fetch(`${CHECKBOOK_URL}/account/bank/iav/plaid`, {
+			method: 'POST',
+			headers: {
+				'Accept': 'application/json',
+				'Authorization': `${checkbookUserData.checkbook_key}:${checkbookUserData.checkbook_secret}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ "processor_token": plaidAccountData.processor_token })
+		});
+		const plaidData = await plaidResponse.json();
 
+		if (!plaidResponse.ok) {
+			throw new Error(`Error adding Plaid processor token: ${JSON.stringify(plaidData)}`);
+		}
+		console.log('plaidData', plaidData);
+		const { account, routing, name } = plaidData.accounts[0];
 
-			return res.status(response.status).json({
-				error: JSON.stringify(data),
-			});
+		if (!account || !routing) {
+			throw new Error(`Error adding Plaid processor token: the returned account's account or routing is null`);
+		}
+
+		const accountType = plaidAccountData.subtype === "checking" ? "CHECKING" : plaidAccountData.subtype === "savings" ? "SAVINGS" : plaidAccountData.subtype === "business" ? "BUSINESS" : "CHECKING";
+
+		const bankResponse = await fetch(`${CHECKBOOK_URL}/account/bank`, {
+			method: 'POST',
+			headers: {
+				'Accept': 'application/json',
+				'Authorization': `${checkbookUserData.checkbook_key}:${checkbookUserData.checkbook_secret}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				account: account,
+				name: name,
+				routing: routing,
+				type: accountType
+			})
+		});
+		const bankData = await bankResponse.json();
+
+		if (!bankResponse.ok) {
+			throw new Error(`Error adding bank account details: ${JSON.stringify(bankData)}`);
 		}
 
 		const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
@@ -207,49 +204,21 @@ exports.createCheckbookBankAccountWithProcessorToken = async (req, res) => {
 				plaid_processor_token: plaidAccountData.processor_token,
 				plaid_account_id: plaidAccountId,
 				merchant_id: merchantId,
-				checkbook_response: data,
+				checkbook_response: bankData,
+				account_type: accountType,
+				account_number: bankData.account,
+				routing_number: bankData.routing,
+				checkbook_id: bankData.id,
 			});
 
-		if (checkbookAccountError) {
-			console.error(`Error while creating Checkbook account record in db: ${checkbookAccountError}`);
-			const { data: logData, error: logError } = await supabase
-				.from('logs')
-				.insert({
-					log: `${checkbookAccountError}`,
-					status: 500,
-					merchant_id: merchantId,
-					endpoint: 'POST /checkbook/account/plaid',
-				})
 
-			return res.status(500).json({
-				error: JSON.stringify(checkbookAccountError),
-			});
-		}
-
-		return res.json(data);
+		// Response with the bank account creation data
+		return res.json(bankData);
 	} catch (error) {
-		console.error(`Error while creating Checkbook account: ${JSON.stringify(error)}`);
-
-		if (error instanceof Error) {
-			logger.error(`Error message: ${error.message}`);
-			logger.error(`Error stack: ${error.stack}`);
-		}
-
-		const { data: logData, error: logError } = await supabase
-			.from('logs')
-			.insert({
-				log: `Error while creating Checkbook account with plaid: ${error.toString()}`,
-				status: error.status,
-				merchant_id: merchantId,
-				endpoint: 'POST /checkbook/account/plaid',
-			})
-
-		console.log('logData', logData);
-		console.log('logError', logError);
-
+		console.error(`Error while creating Checkbook bank account with Plaid processor token: ${error}`);
 		return res.status(500).json({
-			error: `Error: ${error.message || error.toString()}`,
-			details: error.stack ? String(error.stack) : JSON.stringify(error, Object.getOwnPropertyNames(error)),
+			error: `Internal Server Error: ${error.message}`,
+			details: error.details || ''
 		});
 	}
 };
@@ -346,6 +315,7 @@ exports.createCheckbookAccountForBridgeVirtualAccount = async (req, res) => {
 				routing_number: bridgeVirtualAccountData.deposit_instructions_bank_routing_number,
 				bridge_virtual_account_id: bridgeVirtualAccountData.id,
 				checkbook_response: data,
+				checkbook_id: data.id,
 			});
 
 		if (checkbookAccountError) {
@@ -400,7 +370,7 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { merchantId, amount, sourceCheckbookAccountId, bridgeVirtualAccountId } = req.body;
+	const { merchantId, amount, sourceCheckbookAccountId, destinationCheckbookAccountId } = req.body;
 
 	if (!merchantId || !amount || !sourceCheckbookAccountId || !bridgeVirtualAccountId) {
 		return res.status(400).json({ error: 'merchantId, amount, bridgeVirtualAccountId, and sourceCheckbookAccountId are required' });
@@ -436,7 +406,7 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 	const { data: destintionAccountData, error: destintionAccountError } = await supabase
 		.from('checkbook_accounts')
 		.select('*')
-		.eq('bridge_virtual_account_id', bridgeVirtualAccountId)
+		.eq('id', destinationCheckbookAccountId)
 		.single();
 
 	if (destintionAccountError) {
@@ -444,11 +414,18 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 		throw new Error(`${JSON.stringify(destintionAccountError)}`);
 	}
 
-	const url = `${CHECKBOOK_URL}/check/digital`;
+	const createDigitalPaymentUrl = `${CHECKBOOK_URL}/check/digital`;
+
+	const recipientObject = {
+		"account": destintionAccountData.account_number,
+		"id": checkbookUserData.checkbook_id,
+	}
+
 	const body = {
-		"account": "CHECKING",
-		"amount": "CHECKING",
-		"name": "CHECKING",
+		"account": sourceAccountData.checkbook_id,
+		"amount": amount,
+		"name": `${merchantId} deposit account`,
+		"recipient": recipientObject
 	}
 
 	const options = {
@@ -464,13 +441,13 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 	console.log('options', options);
 
 	try {
-		const response = await fetch(url, options);
+		const response = await fetch(createDigitalPaymentUrl, options);
 		const data = await response.json();
 
 		console.log('data', data);
 
 		if (!response.ok) {
-			console.error(`Error while creating Checkbook bank account for mechantId ${merchantId}: ${JSON.stringify(data)}`);
+			console.error(`Error while creating digital check for ${merchantId}: ${JSON.stringify(data)}`);
 			const { data: logData, error: logError } = await supabase
 				.from('logs')
 				.insert({
