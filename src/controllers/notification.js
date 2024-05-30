@@ -27,7 +27,7 @@ exports.sendRequestCreateEmail = async (req, res) => {
         if (RequestError) throw RequestError
         if (!requestData) return res.status(404).json({ error: 'No transaction data found for the given request ID' });
 
-		let fromName = requestData.from_merchant.business_name || requestData.from_merchant.profiles.full_name || requestData.from_merchant.profiles.email
+		let fromName = requestData.from_merchant.business_name || requestData.from_merchant.profiles[0].full_name || requestData.from_merchant.profiles.email
 		const usdAmount = requestData.amount
 
 		const form = new FormData();
