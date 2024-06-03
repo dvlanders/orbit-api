@@ -4,7 +4,7 @@ const supabase = require('../util/supabaseClient');
 const { v4: uuidv4 } = require("uuid");
 const { astra } = require('.');
 const cron = require('node-cron');
-
+const getSignalEvaluate = require('../util/plaid/signalEvaluate')
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 const CHECKBOOK_CLIENT_ID = process.env.CHECKBOOK_CLIENT_ID;
@@ -227,140 +227,140 @@ exports.createCheckbookBankAccountWithProcessorToken = async (req, res) => {
 
 /**
  * Create a new Checkbook bank account for the user's bridge virtual account
- */
-exports.createCheckbookAccountForBridgeVirtualAccount = async (req, res) => {
-	if (req.method !== 'POST') {
-		return res.status(405).json({ error: 'Method not allowed' });
-	}
-	const { merchantId, bridgeVirtualAccountId } = req.body;
+//  */
+// exports.createCheckbookAccountForBridgeVirtualAccount = async (req, res) => {
+// 	if (req.method !== 'POST') {
+// 		return res.status(405).json({ error: 'Method not allowed' });
+// 	}
+// 	const { merchantId, bridgeVirtualAccountId } = req.body;
 
-	if (!merchantId || !bridgeVirtualAccountId) {
-		return res.status(400).json({ error: 'merchantId and bridgeVirtualAccountId are required' });
-	}
+// 	if (!merchantId || !bridgeVirtualAccountId) {
+// 		return res.status(400).json({ error: 'merchantId and bridgeVirtualAccountId are required' });
+// 	}
 
-	const { data: checkbookUserData, error: checkbookUserError } = await supabase
-		.from('checkbook_users')
-		.select('*')
-		.eq('merchant_id', merchantId)
-		.single();
+// 	const { data: checkbookUserData, error: checkbookUserError } = await supabase
+// 		.from('checkbook_users')
+// 		.select('*')
+// 		.eq('merchant_id', merchantId)
+// 		.single();
 
-	if (checkbookUserError) {
-		console.error(`Error while fetching Checkbook user data: ${JSON.stringify(checkbookUserError)}`);
-		throw new Error(`${JSON.stringify(checkbookUserError)}`);
-	}
+// 	if (checkbookUserError) {
+// 		console.error(`Error while fetching Checkbook user data: ${JSON.stringify(checkbookUserError)}`);
+// 		throw new Error(`${JSON.stringify(checkbookUserError)}`);
+// 	}
 
-	console.log('checkbookUserData', checkbookUserData);
+// 	console.log('checkbookUserData', checkbookUserData);
 
-	const { data: bridgeVirtualAccountData, error: bridgeVirtualAccountError } = await supabase
-		.from('bridge_virtual_accounts')
-		.select('*')
-		.eq('id', bridgeVirtualAccountId)
-		.single();
+// 	const { data: bridgeVirtualAccountData, error: bridgeVirtualAccountError } = await supabase
+// 		.from('bridge_virtual_accounts')
+// 		.select('*')
+// 		.eq('id', bridgeVirtualAccountId)
+// 		.single();
 
-	if (bridgeVirtualAccountError) {
-		console.error(`${JSON.stringify(bridgeVirtualAccountError)}`);
-		throw new Error(`${JSON.stringify(bridgeVirtualAccountError)}`);
-	}
+// 	if (bridgeVirtualAccountError) {
+// 		console.error(`${JSON.stringify(bridgeVirtualAccountError)}`);
+// 		throw new Error(`${JSON.stringify(bridgeVirtualAccountError)}`);
+// 	}
 
-	console.log('bridgeVirtualAccountData', bridgeVirtualAccountData);
+// 	console.log('bridgeVirtualAccountData', bridgeVirtualAccountData);
 
-	const url = `${CHECKBOOK_URL}/account/bank`;
-	const body = {
-		"account": bridgeVirtualAccountData.deposit_instructions_bank_account_number,
-		"routing": bridgeVirtualAccountData.deposit_instructions_bank_routing_number,
-		"type": "CHECKING",
-	}
+// 	const url = `${CHECKBOOK_URL}/account/bank`;
+// 	const body = {
+// 		"account": bridgeVirtualAccountData.deposit_instructions_bank_account_number,
+// 		"routing": bridgeVirtualAccountData.deposit_instructions_bank_routing_number,
+// 		"type": "CHECKING",
+// 	}
 
-	const options = {
-		method: 'POST',
-		headers: {
-			'Accept': 'application/json',
-			'Authorization': `${checkbookUserData.checkbook_key}:${checkbookUserData.checkbook_secret}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(body)
-	};
+// 	const options = {
+// 		method: 'POST',
+// 		headers: {
+// 			'Accept': 'application/json',
+// 			'Authorization': `${checkbookUserData.checkbook_key}:${checkbookUserData.checkbook_secret}`,
+// 			'Content-Type': 'application/json'
+// 		},
+// 		body: JSON.stringify(body)
+// 	};
 
-	console.log('options', options);
+// 	console.log('options', options);
 
-	try {
-		const response = await fetch(url, options);
-		const data = await response.json();
+// 	try {
+// 		const response = await fetch(url, options);
+// 		const data = await response.json();
 
-		console.log('data', data);
+// 		console.log('data', data);
 
-		if (!response.ok) {
-			console.error(`Error while creating Checkbook bank account for mechantId ${merchantId}: ${JSON.stringify(data)}`);
-			const { data: logData, error: logError } = await supabase
-				.from('logs')
-				.insert({
-					log: `${JSON.stringify(data)}`,
-					status: response.status,
-					merchant_id: merchantId,
-					endpoint: 'POST /checkbook/account/bridge_virtual_account',
-				})
+// 		if (!response.ok) {
+// 			console.error(`Error while creating Checkbook bank account for mechantId ${merchantId}: ${JSON.stringify(data)}`);
+// 			const { data: logData, error: logError } = await supabase
+// 				.from('logs')
+// 				.insert({
+// 					log: `${JSON.stringify(data)}`,
+// 					status: response.status,
+// 					merchant_id: merchantId,
+// 					endpoint: 'POST /checkbook/account/bridge_virtual_account',
+// 				})
 
 
-			return res.status(response.status).json({
-				error: JSON.stringify(data),
-			});
-		}
+// 			return res.status(response.status).json({
+// 				error: JSON.stringify(data),
+// 			});
+// 		}
 
-		const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
-			.from('checkbook_accounts')
-			.insert({
-				account_type: "CHECKING",
-				merchant_id: merchantId,
-				account_number: bridgeVirtualAccountData.deposit_instructions_bank_account_number,
-				routing_number: bridgeVirtualAccountData.deposit_instructions_bank_routing_number,
-				bridge_virtual_account_id: bridgeVirtualAccountData.id,
-				checkbook_response: data,
-				checkbook_id: data.id,
-			});
+// 		const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
+// 			.from('checkbook_accounts')
+// 			.insert({
+// 				account_type: "CHECKING",
+// 				merchant_id: merchantId,
+// 				account_number: bridgeVirtualAccountData.deposit_instructions_bank_account_number,
+// 				routing_number: bridgeVirtualAccountData.deposit_instructions_bank_routing_number,
+// 				bridge_virtual_account_id: bridgeVirtualAccountData.id,
+// 				checkbook_response: data,
+// 				checkbook_id: data.id,
+// 			});
 
-		if (checkbookAccountError) {
-			console.error(`Error while creating Checkbook account record in db: ${checkbookAccountError}`);
-			const { data: logData, error: logError } = await supabase
-				.from('logs')
-				.insert({
-					log: `${checkbookAccountError}`,
-					status: 500,
-					merchant_id: merchantId,
-					endpoint: 'POST /checkbook/account/bridge_virtual_account',
-				})
+// 		if (checkbookAccountError) {
+// 			console.error(`Error while creating Checkbook account record in db: ${checkbookAccountError}`);
+// 			const { data: logData, error: logError } = await supabase
+// 				.from('logs')
+// 				.insert({
+// 					log: `${checkbookAccountError}`,
+// 					status: 500,
+// 					merchant_id: merchantId,
+// 					endpoint: 'POST /checkbook/account/bridge_virtual_account',
+// 				})
 
-			return res.status(500).json({
-				error: JSON.stringify(checkbookAccountError),
-			});
-		}
+// 			return res.status(500).json({
+// 				error: JSON.stringify(checkbookAccountError),
+// 			});
+// 		}
 
-		return res.json(data);
-	} catch (error) {
-		console.error(`Error while creating Checkbook account: ${JSON.stringify(error)}`);
+// 		return res.json(data);
+// 	} catch (error) {
+// 		console.error(`Error while creating Checkbook account: ${JSON.stringify(error)}`);
 
-		if (error instanceof Error) {
-			logger.error(`Error message: ${error.message}`);
-			logger.error(`Error stack: ${error.stack}`);
-		}
+// 		if (error instanceof Error) {
+// 			logger.error(`Error message: ${error.message}`);
+// 			logger.error(`Error stack: ${error.stack}`);
+// 		}
 
-		const { data: logData, error: logError } = await supabase
-			.from('logs')
-			.insert({
-				log: `Error while creating Checkbook account with plaid: ${error.toString()}`,
-				status: error.status,
-				merchant_id: merchantId,
-				endpoint: 'POST /checkbook/account/bridge_virtual_account',
-			})
+// 		const { data: logData, error: logError } = await supabase
+// 			.from('logs')
+// 			.insert({
+// 				log: `Error while creating Checkbook account with plaid: ${error.toString()}`,
+// 				status: error.status,
+// 				merchant_id: merchantId,
+// 				endpoint: 'POST /checkbook/account/bridge_virtual_account',
+// 			})
 
-		console.log('logData', logData);
-		console.log('logError', logError);
+// 		console.log('logData', logData);
+// 		console.log('logError', logError);
 
-		return res.status(500).json({
-			error: `Error: ${error.message || error.toString()}`,
-			details: error.stack ? String(error.stack) : JSON.stringify(error, Object.getOwnPropertyNames(error)),
-		});
-	}
-};
+// 		return res.status(500).json({
+// 			error: `Error: ${error.message || error.toString()}`,
+// 			details: error.stack ? String(error.stack) : JSON.stringify(error, Object.getOwnPropertyNames(error)),
+// 		});
+// 	}
+// };
 
 /**
  * Create a new Checkbook digital payment and then deposit that payment (into the user's bridge virtual account)
@@ -372,8 +372,8 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 
 	const { merchantId, amount, sourceCheckbookAccountId, destinationCheckbookAccountId } = req.body;
 
-	if (!merchantId || !amount || !sourceCheckbookAccountId || !bridgeVirtualAccountId) {
-		return res.status(400).json({ error: 'merchantId, amount, bridgeVirtualAccountId, and sourceCheckbookAccountId are required' });
+	if (!merchantId || !amount || !sourceCheckbookAccountId || !destinationCheckbookAccountId) {
+		return res.status(400).json({ error: 'merchantId, amount, destinationCheckbookAccountId, and sourceCheckbookAccountId are required' });
 	}
 
 	// get the checkbook user for the key and secret to be passed in the future checkbook api request headers
@@ -414,19 +414,32 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 		throw new Error(`${JSON.stringify(destintionAccountError)}`);
 	}
 
-	const createDigitalPaymentUrl = `${CHECKBOOK_URL}/check/digital`;
+	// const createDigitalPaymentUrl = `${CHECKBOOK_URL}/check/digital`;
+	const createDigitalPaymentUrl = `${CHECKBOOK_URL}/check/direct`;
 
-	const recipientObject = {
-		"account": destintionAccountData.account_number,
-		"id": checkbookUserData.checkbook_id,
-	}
+	// const recipientObject = {
+	// 	"account": destintionAccountData.checkbook_id,
+	// 	"id": checkbookUserData.checkbook_user_id,
+	// }
+	console.log("checkbookUserData", checkbookUserData);
+	// const body = {
+	// 	"account": sourceAccountData.checkbook_id,
+	// 	"amount": amount,
+	// 	"name": `${merchantId} deposit account`,
+	// 	"recipient": checkbookUserData.checkbook_user_id,
+	// 	"deposit_options": ["BANK"]
+	// }
 
 	const body = {
-		"account": sourceAccountData.checkbook_id,
-		"amount": amount,
+		"recipient": "4fb4ef7b-5576-431b-8d88-ad0b962be1df", // This is the user_id of checkbook user "16564fd80f1b40dc8cd291e4f7898fa7". this user has all of the checkbook accounts under it for all users on the platform. This is because Checkbook does not allow the same user to send funds to themselves.
+		"account_type": "CHECKING", //FIXME: this should be dynamic and must convert the sourceAccountData.account_type to CHECKING, SAVINGS, or BUSINESS
+		"routing_number": destintionAccountData.routing_number,
+		"account_number": destintionAccountData.account_number,
 		"name": `${merchantId} deposit account`,
-		"recipient": recipientObject
+		"amount": Number(amount),
+		"account": sourceAccountData.checkbook_id,
 	}
+	console.log('*****************body', body);
 
 	const options = {
 		method: 'POST',
@@ -440,18 +453,59 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 
 	console.log('options', options);
 
+	const checkbookAchPullRecordUuid = uuidv4();
+	const { data: checkbookPullData, error: checkbookPullError } = await supabase
+		.from('checkbook_ach_pulls')
+		.insert({
+			id: checkbookAchPullRecordUuid,
+			source_merchant_id: merchantId,
+			source_checkbook_user_user_id: merchantId,
+			source_checkbook_account_id: merchantId,
+			"amount": Number(amount),
+			recipient_checkbook_account_id: merchantId,
+			source_merchant_id: merchantId,
+		});
+
+	if (checkbookPullError) {
+		console.error(` ${checkbookPullError}`);
+		const { data: logData, error: logError } = await supabase
+			.from('logs')
+			.insert({
+				log: `${checkbookPullError}`,
+				status: 500,
+				merchant_id: merchantId,
+				endpoint: 'POST /checkbook/execute_pull_transaction',
+			})
+
+		return res.status(500).json({
+			error: JSON.stringify(checkbookPullError),
+		});
+	}
+
 	try {
 		const response = await fetch(createDigitalPaymentUrl, options);
-		const data = await response.json();
-
-		console.log('data', data);
+		const createDigitalPaymentData = await response.json();
 
 		if (!response.ok) {
-			console.error(`Error while creating digital check for ${merchantId}: ${JSON.stringify(data)}`);
+			console.error(`Error while creating digital check for ${merchantId}: ${JSON.stringify(createDigitalPaymentData)}`);
 			const { data: logData, error: logError } = await supabase
 				.from('logs')
 				.insert({
-					log: `${JSON.stringify(data)}`,
+					log: `${JSON.stringify(createDigitalPaymentData)}`,
+					status: response.status,
+					merchant_id: merchantId,
+					endpoint: 'POST /checkbook/execute_pull_transaction',
+				})
+		}
+
+		console.log('data', createDigitalPaymentData);
+
+		if (!response.ok) {
+			console.error(`Error while creating digital check for ${merchantId}: ${JSON.stringify(createDigitalPaymentData)}`);
+			const { data: logData, error: logError } = await supabase
+				.from('logs')
+				.insert({
+					log: `${JSON.stringify(createDigitalPaymentData)}`,
 					status: response.status,
 					merchant_id: merchantId,
 					endpoint: 'POST /checkbook/execute_pull_transaction',
@@ -459,38 +513,76 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 
 
 			return res.status(response.status).json({
-				error: JSON.stringify(data),
+				error: JSON.stringify(createDigitalPaymentData),
 			});
 		}
 
-		const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
-			.from('checkbook_accounts')
-			.insert({
-				account_type: "CHECKING",
-				merchant_id: merchantId,
-				account_number: bridgeVirtualAccountData.deposit_instructions_bank_account_number,
-				routing_number: bridgeVirtualAccountData.deposit_instructions_bank_routing_number,
-				bridge_virtual_account_id: bridgeVirtualAccountData.id,
-				checkbook_response: data,
-			});
 
-		if (checkbookAccountError) {
-			console.error(`Error while creating Checkbook account record in db: ${checkbookAccountError}`);
+		const { data: checkbookPullData2, error: checkbookPullError2 } = await supabase
+			.from('checkbook_ach_pulls')
+			.update({
+				checkbook_check_direct_response: createDigitalPaymentData,
+				checkbook_payment_status: createDigitalPaymentData.status,
+				checkbook_payment_id: createDigitalPaymentData.id,
+			})
+			.match({ id: checkbookAchPullRecordUuid });
+
+		if (checkbookPullError2) {
+			console.error(` ${checkbookPullError2}`);
 			const { data: logData, error: logError } = await supabase
 				.from('logs')
 				.insert({
-					log: `${checkbookAccountError}`,
+					log: `${checkbookPullError2}`,
 					status: 500,
 					merchant_id: merchantId,
 					endpoint: 'POST /checkbook/execute_pull_transaction',
 				})
 
 			return res.status(500).json({
-				error: JSON.stringify(checkbookAccountError),
+				error: JSON.stringify(checkbookPullError2),
 			});
 		}
 
-		return res.json(data);
+		// const depositPaymentUrl = `${CHECKBOOK_URL}/check/deposit/${createDigitalPaymentData.id}`;
+
+		// const depositPaymentBody = {
+		// 	"account": sourceAccountData.checkbook_id
+		// }
+
+		// const depositPaymentOptions = {
+		// 	method: 'POST',
+		// 	headers: {
+		// 		'Accept': 'application/json',
+		// 		'Authorization': `${checkbookUserData.checkbook_key}:${checkbookUserData.checkbook_secret}`,
+		// 		'Content-Type': 'application/json'
+		// 	},
+		// 	body: JSON.stringify(depositPaymentBody)
+		// };
+
+		// const depositPaymentResponse = await fetch(depositPaymentUrl, depositPaymentOptions);
+		// const depositPaymentData = await depositPaymentResponse.json();
+
+		// if (!depositPaymentResponse.ok) {
+		// 	console.error(`Error while depositing digital check for ${merchantId}: ${JSON.stringify(depositPaymentData)}`);
+		// 	const { data: logData, error: logError } = await supabase
+		// 		.from('logs')
+		// 		.insert({
+		// 			log: `${JSON.stringify(depositPaymentData)}`,
+		// 			status: depositPaymentResponse.status,
+		// 			merchant_id: merchantId,
+		// 			endpoint: 'POST /checkbook/execute_pull_transaction',
+		// 		})
+
+		// }
+
+		// const { data: checkbookPullData3, error: checkbookPullError3 } = await supabase
+		// 	.from('checkbook_ach_pulls')
+		// 	.update({
+		// 		checkbook_deposit_digital_payment_response: depositPaymentData,
+		// 	})
+		// 	.match({ id: checkbookAchPullRecordUuid });
+
+		return res.json(createDigitalPaymentData);
 	} catch (error) {
 		console.error(`Error while creating Checkbook account: ${JSON.stringify(error)}`);
 
@@ -516,4 +608,39 @@ exports.executeCheckbookPullTransaction = async (req, res) => {
 			details: error.stack ? String(error.stack) : JSON.stringify(error, Object.getOwnPropertyNames(error)),
 		});
 	}
+};
+
+
+/**
+ * Create a new Checkbook digital payment and then deposit that payment (into the user's bridge virtual account)
+ */
+exports.executeCheckbookPullTransaction2 = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	// const { merchantId, amount, plaidAccountId, ipAddress, userAgent, userPresent } = req.body;
+	const { merchantId, amount, plaidAccountId } = req.body;
+
+	if (!merchantId || !amount || !plaidAccountId) {
+		return res.status(400).json({ error: 'merchantId, amount, destinationCheckbookAccountId, and sourceCheckbookAccountId are required' });
+	}
+
+
+	try {
+		const { error: signalEvaluationError } = await getSignalEvaluate(merchantId, plaidAccountId, amount)
+		if (signalEvaluationError) {
+			logger.error(`Error evaluating plaid account risk: ${signalEvaluationError}`);
+		}
+
+		return res.json("Plaid account risk evaluated successfully.");
+	} catch (error) {
+		logger.error(`Error evaluating plaid account risk: ${JSON.stringify(error)}`);
+		return res.status(500).json({
+			error: `Error: ${error.message || error.toString()}`,
+			// details: error.stack ? String(error.stack) : JSON.stringify(error, Object.getOwnPropertyNames(error)),
+		});
+	}
+
+
 };
