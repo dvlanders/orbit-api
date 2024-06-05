@@ -686,14 +686,14 @@ exports.updateOnchainTransactionStatus = async (req, res) => {
 			// Update the 'onchain_transactions' table if the request_id is found
 			const { data: updateData, error: updateError } = await supabase
 				.from('onchain_transactions')
-				.update({ bastion_transaction_status: requestStatus })
+				.update({ bastion_transaction_status: requestStatus, bastion_response: bastionRequestBody.data })
 				.match({ request_id: requestId });
 
 			if (updateError) {
 				throw new Error(JSON.stringify(updateError));
 			}
 
-			// update onchain_request status
+			// update onchain_request status if it's a request
 			let onchainRequestStatus = "CREATED"
 			if (requestStatus == "ACCEPTED" || requestStatus == "PENDING" || requestStatus == "SUBMITTED") onchainRequestStatus = "PENDING"
 			if (requestStatus == "CONFIRMED") onchainRequestStatus = "FULFILLED"
@@ -796,14 +796,19 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 			const response = await fetch(url, options);
 			const data = await response.json();
 
-			if (response.status !== 200) {
+			if (response.status == 404) {
 				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
-				throw new Error(errorMessage);
+				return res.status(404).json({
+					error: errorMessage,
+				});
+			}else if (!response.ok){
+				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+				throw new Error(errorMessage)
 			}
 
 			const { data: statusUpdateData, error: statusUpdateError } = await supabase
 				.from('onchain_transactions')
-				.update({ bastion_transaction_status: data.status })
+				.update({ bastion_transaction_status: data.status, bastion_response: data })
 				.match({ request_id: requestId })
 				.select("bastion_transaction_status");
 
