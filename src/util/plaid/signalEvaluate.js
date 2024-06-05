@@ -111,7 +111,7 @@ async function getSignalEvaluate(merchantId, plaidAccountId, amount) {
 
 		console.log("Plaid signal evaluate scores: ", scores);
 
-		const { data: plaid_evaluation_record, error: plaid_evaluation_record_error } = await supabase
+		const { data: plaidEvaluationData, error: plaidEvaluationError } = await supabase
 			.from('plaid_bank_account_evaluation')
 			.insert(
 				{
@@ -125,11 +125,24 @@ async function getSignalEvaluate(merchantId, plaidAccountId, amount) {
 					risk_profile: scores.risk_profile
 				},
 			)
-			.select()
+			.select();
 
-		if (plaid_evaluation_record_error) throw plaid_evaluation_record_error
+		if (plaidEvaluationError) {
+			console.log('in the erro bloc')
+			console.error("Error while inserting plaid bank account evaluation record: ", JSON.stringify(plaid_evaluation_record_error));
+			const { data: logData, error: logError } = await supabase
+				.from('logs')
+				.insert({
+					log: `Error while inserting plaid bank account evaluation record: ${JSON.stringify(plaidEvaluationError)}`,
+					merchant_id: merchantId,
+					endpoint: 'getPlaidEvaluate util function'
+				});
 
-		return plaid_evaluation_record;
+			throw JSON.stringify(plaidEvaluationError);
+		}
+		console.log('got heredeeee')
+
+		return { data: data };
 
 	} catch (error) {
 		console.error("Error during plaid signal evaluation:", JSON.stringify(error));
