@@ -291,6 +291,8 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	console.log('got here')
+
 	const { merchantId, signedAgreementId } = req.body;
 	if (!merchantId || !signedAgreementId) {
 		return res.status(400).json({ error: 'merchantId and signedAgreementId are required' });
@@ -335,15 +337,24 @@ exports.createNewBridgeCustomer = async (req, res) => {
 			tax_identification_number: complianceData.tin
 		};
 
-		const paths = [complianceData.gov_id_front_path, complianceData.gov_id_back_path, complianceData.proof_of_address_path];
-		const fileUrls = await Promise.all(paths.map(async (path) => {
-			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
+		console.log('compliance tin', complianceData.tin)
+
+		const paths = [
+			{ bucket: 'compliance_id', path: complianceData.compliance.gov_id_front_path },
+			{ bucket: 'compliance_id', path: complianceData.compliance.gov_id_back_path },
+			{ bucket: 'proof_of_address', path: complianceUtils.compliance.proof_of_address_path }
+		];
+		console.log('paths', paths.map(p => p.path));
+
+		const fileUrls = await Promise.all(paths.map(async ({ bucket, path }) => {
+			const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 200); // Signed URL expires in 200 seconds
 			if (error || !data) {
 				console.log(`No file found at ${path}`);
 				return null;
 			}
 			return data.signedUrl;
 		}));
+
 
 
 		// Conditionally adding images to the request body
@@ -356,6 +367,8 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		if (fileUrls[2]) { // Checking for the proof of address image
 			requestBody.proof_of_address_document = await fileToBase64(fileUrls[2]);
 		}
+
+		console.log('request body about to be sent', requestBody)
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers`, {
 			method: 'POST',
@@ -426,10 +439,12 @@ exports.updateBridgeCustomer = async (req, res) => {
 
 	try {
 		const { data: complianceData, error: complianceError } = await supabase
-			.from('merchants')
-			.select('*, compliance (*)')
-			.eq('id', merchantId)
+			.from('compliance')
+			.select('*')
+			.eq('merchant_id', merchantId)
 			.single();
+
+		console.log('complianceData', complianceData)
 
 		if (complianceError) {
 			await logErrorToDatabase(merchantId, 'Failed to fetch compliance data', complianceError);
@@ -441,38 +456,44 @@ exports.updateBridgeCustomer = async (req, res) => {
 		}
 
 
-		const formattedBirthDate = new Date(complianceData.compliance.date_of_birth).toISOString().split('T')[0]; // YYYY-MM-DD
+		const formattedBirthDate = new Date(complianceData.date_of_birth).toISOString().split('T')[0]; // YYYY-MM-DD
 		const requestBody = {
-			type: complianceData.compliance.type,
-			first_name: complianceData.compliance.legal_first_name,
-			last_name: complianceData.compliance.legal_last_name,
-			email: complianceData.compliance.compliance_email,
-			phone: complianceData.compliance.compliance_phone,
+			type: complianceData.type,
+			first_name: complianceData.legal_first_name,
+			last_name: complianceData.legal_last_name,
+			email: complianceData.compliance_email,
+			phone: complianceData.compliance_phone,
 			address: {
-				street_line_1: complianceData.compliance.address_line_1,
-				street_line_2: '',
-				city: complianceData.compliance.city,
-				state: complianceData.compliance.state_province_region,
-				postal_code: complianceData.compliance.postal_code,
-				country: complianceData.compliance.country
+				street_line_1: complianceData.address_line_1,
+				street_line_2: complianceData.address_line_2,
+				city: complianceData.city,
+				state: complianceData.state_province_region,
+				postal_code: complianceData.postal_code,
+				country: complianceData.country
 			},
 			birth_date: formattedBirthDate,
-			tax_identification_number: complianceData.compliance.tin,
-			signed_agreement_id: complianceData.compliance.bridge_signed_agreement_id,
+			tax_identification_number: complianceData.tin,
+			signed_agreement_id: complianceData.bridge_signed_agreement_id,
 
 		};
 
 
-		const paths = [complianceData.compliance.gov_id_front_path, complianceData.compliance.gov_id_back_path, complianceData.compliance.proof_of_address_path];
-		console.log('paths', paths)
-		const fileUrls = await Promise.all(paths.map(async (path) => {
-			const { data, error } = await supabase.storage.from('compliance_id').createSignedUrl(path, 200); // Signed URL expires in 200 seconds
+		const paths = [
+			{ bucket: 'compliance_id', path: complianceData.gov_id_front_path },
+			{ bucket: 'compliance_id', path: complianceData.gov_id_back_path },
+			{ bucket: 'proof_of_address', path: complianceData.proof_of_address_path }
+		];
+		console.log('paths', paths.map(p => p.path));
+
+		const fileUrls = await Promise.all(paths.map(async ({ bucket, path }) => {
+			const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 200); // Signed URL expires in 200 seconds
 			if (error || !data) {
-				console.log(`No file found at ${path}`);
+				console.log(`No file found at ${path}, error is ${error}`);
 				return null;
 			}
 			return data.signedUrl;
 		}));
+
 
 
 		// Conditionally adding images to the request body
