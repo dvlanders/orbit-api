@@ -340,21 +340,20 @@ exports.createNewBridgeCustomer = async (req, res) => {
 		console.log('compliance tin', complianceData.tin)
 
 		const paths = [
-			{ bucket: 'compliance_id', path: complianceData.compliance.gov_id_front_path },
-			{ bucket: 'compliance_id', path: complianceData.compliance.gov_id_back_path },
-			{ bucket: 'proof_of_address', path: complianceUtils.compliance.proof_of_address_path }
+			{ bucket: 'compliance_id', path: complianceData.gov_id_front_path },
+			{ bucket: 'compliance_id', path: complianceData.gov_id_back_path },
+			{ bucket: 'proof_of_address', path: complianceData.proof_of_address_path }
 		];
 		console.log('paths', paths.map(p => p.path));
 
 		const fileUrls = await Promise.all(paths.map(async ({ bucket, path }) => {
 			const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 200); // Signed URL expires in 200 seconds
 			if (error || !data) {
-				console.log(`No file found at ${path}`);
+				console.log(`No file found at ${path}, error is ${error}`);
 				return null;
 			}
 			return data.signedUrl;
 		}));
-
 
 
 		// Conditionally adding images to the request body
