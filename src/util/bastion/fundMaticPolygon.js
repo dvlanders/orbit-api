@@ -11,7 +11,14 @@ const supabase = require('../supabaseClient');
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
+async function fundMaticPolygon(userId, amount) {
+
+	const { data: walletData, error: walletError } = await supabase
+		.from('bastion_wallets')
+		.select('address')
+		.eq('userId', userId)
+		.eq('chain', 'POLYGON_MAINNET')
+		.single();
 
 	try {
 		const requestId = uuidv4();
@@ -24,7 +31,7 @@ async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
 			chain: chain,
 			currencySymbol: 'MATIC',
 			amount: amount,
-			recipientAddress: toWalletAddress,
+			recipientAddress: walletData.address,
 
 		};
 
@@ -42,33 +49,33 @@ async function fundMaticPolygon(toMerchantId, toWalletAddress, amount) {
 		const response = await fetch(url, options);
 		const data = await response.json();
 
-		if (data.status === 'SUBMITTED' || data.status === 'ACCEPTED' || data.status === 'PENDING') {
-			const { data: gasData, error: gasError } = await supabase
-				.from('gas_station_transactions')
-				.insert({
-					request_id: requestId,
-					from_merchant_id: fromMerchantId,
-					to_merchant_id: toMerchantId,
-					to_merchant_wallet_address: toWalletAddress,
-					amount: amount,
-					chain: chain,
-					bastion_response: data,
-					transaction_hash: data.transactionHash,
-					status: 1
-				});
-
-			if (gasError) {
-				console.error("Error inserting gas transaction into database:", gasError);
-				throw gasError;
-			}
-
-			return {
-				message: 'Gas transaction submitted successfully',
-				bastionResponse: gasData
-			};
-		} else {
-			throw new Error(`Bastion response: ${JSON.stringify(data)}`);
+		if (response.status !== 201) {
+			console.error("Error during MATIC transfer:", JSON.stringify(data));
+			throw JSON.stringify(data);
 		}
+
+		const { data: gasData, error: gasError } = await supabase
+			.from('gas_station_transactions')
+			.insert({
+				request_id: requestId,
+				source_user_id: fromMerchantId,
+				destination_user_id: toMerchantId,
+				source_wallet_address: toWalletAddress,
+				destination_wallet_address: walletData.address,
+				amount: amount,
+				chain: chain,
+				bastion_response: data,
+				transaction_hash: data.transactionHash,
+				status: data.status
+			});
+
+		if (gasError) {
+			console.error("Error inserting gas transaction into database:", gasError);
+			throw gasError;
+		}
+
+		return data;
+
 	} catch (error) {
 		console.error("Error during MATIC transfer:", JSON.stringify(error));
 

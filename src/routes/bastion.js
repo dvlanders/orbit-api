@@ -11,5 +11,4 @@ module.exports = (router) => {
 	router.post("/bastion/initiateUsdcWithdrawal/", authorizeUser, bastion.initiateUsdcWithdrawal);
 	router.post("/bastion/notify/userAction/update", bastion.updateOnchainTransactionStatus);
 	router.post("/bastion/getAndUpdateTransactionStatus", authorizeUser, bastion.getAndUpdateOnchainTransactionStatus);
-	router.get("/get_ping/", bastion.getPing);
 };

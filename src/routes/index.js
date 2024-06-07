@@ -1,13 +1,14 @@
 module.exports = (app, express) => {
 	const router = express.Router();
+
 	const bastion = require("./bastion");
-	const bridge = require("./bridge");
-	const plaid = require("./plaid");
-	const checkbook = require("./checkbook");
+	const user = require("./user");
+
+
+
 
 	bastion(router);
-	bridge(router);
-	plaid(router);
-	checkbook(router);
+	user(router);
+
 	app.use("/", router);
 };
