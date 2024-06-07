@@ -1,1 +1,0 @@
-exports.userSchema = require("./User");

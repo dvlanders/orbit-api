@@ -11,6 +11,13 @@ const { bastion } = require('.');
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
+exports.getPing = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	return res.status(200).json({ message: 'pong' });
+};
+
 
 // Core function to create user and insert wallet records
 async function createUserCore(merchantId) {
@@ -801,7 +808,7 @@ exports.getAndUpdateOnchainTransactionStatus = async (req, res) => {
 				return res.status(404).json({
 					error: errorMessage,
 				});
-			}else if (!response.ok){
+			} else if (!response.ok) {
 				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
 				throw new Error(errorMessage)
 			}

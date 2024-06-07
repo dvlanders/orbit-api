@@ -10,7 +10,3 @@ exports.messages = require("./Constants").messages;
 
 /* Validate Imports */
 exports.validate = require("./Validator");
-
-// responses
-
-exports.rs = require("./ResponseTemplate");
