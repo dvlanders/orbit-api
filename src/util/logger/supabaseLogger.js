@@ -2,15 +2,29 @@ const supabase = require("../supabaseClient")
 
 
 async function createLog(source, userId, log, response) {
-	const { userData, userError } = await supabase
-		.from('users')
+	console.log('in supabase logger')
+
+	console.log('userId', userId)
+	const { data: userData, error: userError } = await supabase
+		.from('userss')
 		.select('profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)')
-		.eq('user_id', userId)
+		.eq('id', userId)
 		.single()
 
-	if (userError) {
-		throw new Error('Failed to fetch user data for logging')
+	// const { data: userData, error: userError } = await supabase
+	// 	.from('users')
+	// 	.select()
+	// 	.eq('id', 'afd3e4dc-4754-45a6-8788-3202cc576abf')
+	// 	.single()
+	console.log('userData', userData)
+
+	console.log('userError', userError)
+
+	// if userError or userData is an {} object, throw an error
+	if (userError || !userData) {
+		throw new Error('Failed to fetch user data')
 	}
+
 
 	const { data, error } = await supabase
 		.from('logs')
@@ -23,3 +37,5 @@ async function createLog(source, userId, log, response) {
 			response: response
 		})
 }
+
+module.exports = createLog;
