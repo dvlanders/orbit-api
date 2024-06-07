@@ -2,7 +2,8 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 
-const env = process.env.NODE_ENV ?? "production";
+// const env = process.env.NODE_ENV ?? "production";
+const env = 'staging';
 const result = require("dotenv").config({ path: `.env.${env}`, debug: env === "production" });
 
 if (result.error) {
