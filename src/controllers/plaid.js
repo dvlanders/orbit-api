@@ -1,7 +1,7 @@
 const { logger } = require('../util/logger/logger');
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-// blah
+
 
 const PLAID_URL = process.env.PLAID_URL;
 const PLAID_CLIENT_ID = process.env.PLAID_CLIENT_ID;
