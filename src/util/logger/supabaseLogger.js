@@ -2,28 +2,19 @@ const supabase = require("../supabaseClient")
 
 
 async function createLog(source, userId, log, response) {
-	console.log('in supabase logger')
 
-	console.log('userId', userId)
 	const { data: userData, error: userError } = await supabase
-		.from('userss')
+		.from('users')
 		.select('profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)')
 		.eq('id', userId)
 		.single()
 
-	// const { data: userData, error: userError } = await supabase
-	// 	.from('users')
-	// 	.select()
-	// 	.eq('id', 'afd3e4dc-4754-45a6-8788-3202cc576abf')
-	// 	.single()
-	console.log('userData', userData)
 
-	console.log('userError', userError)
-
-	// if userError or userData is an {} object, throw an error
 	if (userError || !userData) {
 		throw new Error('Failed to fetch user data')
 	}
+
+
 
 
 	const { data, error } = await supabase
@@ -31,7 +22,7 @@ async function createLog(source, userId, log, response) {
 		.insert({
 			source: source,
 			user_id: userId,
-			user_identifier: `${userData.user_kyc.legal_first_name} ${userData.user_kyc.legal_last_name} ${userData.user_kyc.business_name} ${userData.user_kyc.compliance_email}`,
+			user_identifier: `${userData.user_kyc[0].legal_first_name} ${userData.user_kyc[0].legal_last_name} ${userData.user_kyc[0].business_name} ${userData.user_kyc[0].compliance_email}`,
 			log: log,
 			profile_id: userData.profile_id,
 			response: response

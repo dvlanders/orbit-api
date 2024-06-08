@@ -1,13 +1,9 @@
-const { logger } = require('../util/logger/logger');
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-const { v4: uuidv4 } = require("uuid");
-const { request } = require('express');
-const fundMaticPolygon = require('../util/bastion/fundMaticPolygon');
-const { bastion } = require('.');
-const createUser = require('../util/bastion/endpoints/createUser');
-const createLog = require('../util/logger/supabaseLogger');
 
+const createAndFundBastionUser = require('../util/bastion/endpoints/createAndFundBastionUser');
+const createLog = require('../util/logger/supabaseLogger');
+const { createIndividualBridgeCustomer } = require('../util/bridge/endpoint/createIndividualBridgeCustomer')
 
 exports.getPing = async (req, res) => {
 	if (req.method !== 'GET') {
@@ -23,28 +19,63 @@ exports.createHifiUser = async (req, res) => {
 
 	const { userId } = req.body;
 
-
-
-
 	if (!userId) {
 		return res.status(400).json({ error: 'userId is required' });
 	}
-	createLog('source here', userId, 'log here', 'response here');
 
-	// create bastion user (comes with wallets)
-	// try {
-	// 	createUser(userId)
-	// } catch (error) {
-	// 	res.status(500).json({
-	// 		error: `${JSON.stringify(error)}`
-	// 	});
-	// }
+	let createHifiUserResponse = {
+		status: 200,
+		walletStatus: "PENDING",
+		onrampStatus: "PENDING",
+		achPullStatus: "PENDING",
+		invalidFields: [],
+		message: [],
+		additionalDetails: []
+	}
 
-	// create checkbook user
+	/*
+		let invalidFields = []
+	*/
+	try {
+		const bastionResult = await createAndFundBastionUser(userId);
+		if (bastionResult.status !== 201) {
+			console.log('status not 201')
+			createHifiUserResponse.status = bastionResult.status;
+			createHifiUserResponse.walletStatus = 'FAILED';
+			createHifiUserResponse.message = bastionResult.message;
+			createHifiUserResponse.additionalDetails = bastionResult.additionalDetails;
+		}
 
-	// create bridge Customer via customers api
+		// Assuming similar functions exist for these tasks
+		// await createCheckbookUser(userId);
+		// await createBridgeCustomer(userId);
 
-	// bridge virtual account
+		// const createBridgeCustomerResult = await createBridgeCustomer(userId);
+		// if (createBridgeCustomerResult.status !== 200) {
+		// 	createHifiUserResponse.onrampStatus = 'FAILED';
+		// 	createHifiUserResponse.status = createBridgeCustomerResult.status;
+		// 	createHifiUserResponse.message = createBridgeCustomerResult.message;
+		// 	if (createBridgeCustomerResult.invalidFields.length > 0) {
+		// 		createHifiUserResponse.invalid_fields = [...createHifiUserResponse.invalid_fields, createBridgeCustomerResult.invalidFields]
+		// 	}
+		// }
 
-	return res.status(200).json({ message: 'user created' });
+
+		// determine the status code to return to the client
+		if (createHifiUserResponse.status === 200 || createHifiUserResponse.status === 201) {
+			createHifiUserResponse.message = "User created successfully";
+		} else if (createHifiUserResponse.invalidFields.length === 0) {
+			console.log('in 400 block')
+			createHifiUserResponse.status = 400;
+		} else {
+			createHifiUserResponse.status = 500;
+		}
+
+
+		return res.status(createHifiUserResponse.status).json(createHifiUserResponse);
+	} catch (error) {
+		createLog('createHifiUser', userId, 'Failed to create hifi user', JSON.stringify(error));
+
+		return res.status(500).json(createHifiUserResponse);
+	}
 };
