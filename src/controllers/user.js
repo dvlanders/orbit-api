@@ -17,6 +17,9 @@ exports.createHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	// TODO: add all of the variables required for this endpoint to work
+	// TODO: add variable rampRegions to the request body. if rampRegions includes EUR, then we collect the additional fields required by bridge
+
 	const { userId } = req.body;
 
 	if (!userId) {
@@ -25,12 +28,43 @@ exports.createHifiUser = async (req, res) => {
 
 	let createHifiUserResponse = {
 		status: 200,
-		walletStatus: "PENDING",
-		onrampStatus: "PENDING",
-		achPullStatus: "PENDING",
-		invalidFields: [],
-		message: [],
-		additionalDetails: []
+		wallet: {
+			walletStatus: "NOT INITIALIZED",
+			walletActionNeeded: [],
+			walletMessage: ""
+		},
+		ramps: {
+			usdAch: {
+				onramp: {
+					status: "NOT INITIALIZED",
+					actionNeeded: [],
+					message: '',
+					achPull: {
+						achPullStatus: "NOT INITIALIZED",
+						achPullActionNeeded: [],
+						achPullMessage: ""
+
+					},
+				},
+				offramp: {
+					status: "NOT INITIALIZED",
+					actionNeeded: [],
+					message: ''
+				},
+			},
+			euroSepa: {
+				onramp: "AVAILABLE_IN_FUTURE_RELEASE",
+				offramp: "NOT INITIALIZED",
+				actionNeeded: [],
+				message: ''
+
+			},
+		},
+
+		user: {
+			id: "asdf",
+			email: "",
+		}
 	}
 
 	/*
