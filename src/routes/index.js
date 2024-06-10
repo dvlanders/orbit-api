@@ -1,14 +1,11 @@
 module.exports = (app, express) => {
 	const router = express.Router();
-
-	const bastion = require("./bastion");
 	const user = require("./user");
+	const account = require("./account");
 
-
-
-
-	bastion(router);
 	user(router);
+	account(router);
+
 
 	app.use("/", router);
 };

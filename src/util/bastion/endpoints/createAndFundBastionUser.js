@@ -65,9 +65,9 @@ async function createUserCore(userId) {
 				}
 
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
-				if (chain === 'POLYGON_MAINNET') {
-					await fundMaticPolygon(userId, '0.15');
-				}
+				// if (chain === 'POLYGON_MAINNET') {
+				// 	await fundMaticPolygon(userId, '0.15');
+				// }
 			}
 		}
 	} else {
@@ -87,7 +87,7 @@ async function createAndFundBastionUser(userId) {
 		console.log('About to call createUserCore');
 		const data = await createUserCore(userId);
 		return {
-			status: data.status,
+			status: "CREATED",
 			InvalidFields: [],
 			message: "user and wallets created and funded",
 			additionalDetails: {}
