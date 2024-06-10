@@ -37,7 +37,9 @@ exports.createHifiUser = async (req, res) => {
 			usdAch: {
 				onramp: {
 					status: "NOT INITIALIZED",
-					actionNeeded: [],
+					actionNeeded: {
+						fieldsToResubmit: [],
+					},
 					message: '',
 					achPull: {
 						achPullStatus: "NOT INITIALIZED",
@@ -53,11 +55,18 @@ exports.createHifiUser = async (req, res) => {
 				},
 			},
 			euroSepa: {
-				onramp: "AVAILABLE_IN_FUTURE_RELEASE",
-				offramp: "NOT INITIALIZED",
-				actionNeeded: [],
-				message: ''
-
+				onramp: {
+					status: "NOT_AVAILABLE_IN_CURRENT_API_VERSION",
+					actionNeeded: {
+						fieldsToResubmit: [],
+					},
+					message: '',
+				},
+				offramp: {
+					status: "NOT INITIALIZED",
+					actionNeeded: [],
+					message: ''
+				},
 			},
 		},
 
