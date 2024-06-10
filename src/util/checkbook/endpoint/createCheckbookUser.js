@@ -26,7 +26,7 @@ class createCheckbookError extends Error {
 }
 
 
-exports.createCheckbbokUser = async (userId) => {
+exports.createCheckbookUser = async (userId) => {
 	let invalidFields = []
 	try {
 		const getUserInfo = () => supabase
@@ -65,12 +65,12 @@ exports.createCheckbbokUser = async (userId) => {
 			const { data: checkbook_user_data, error: checkbook_user_error } = await supabase
 				.from('checkbook_users')
 				.insert({
-					checkbook_user_id: merchantId,
-					checkbook_id: data.id,
-					checkbook_key: data.key,
-					checkbook_secret: data.secret,
-					checkbook_name: name,
-					merchant_id: merchantId,
+					checkbook_user_id: userId,
+					checkbook_id: responseBody.id,
+					checkbook_key: responseBody.key,
+					checkbook_secret: responseBody.secret,
+					checkbook_name: requestBody.name,
+					user_id: userId,
 				});
 
 			if (checkbook_user_error) {
@@ -96,33 +96,34 @@ exports.createCheckbbokUser = async (userId) => {
 
 
 	} catch (error) {
+		createLog("user/util/createCheckbookUser", userId, error.message, error)
 		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
 			return {
 				status: 400,
 				invalidFields: ["legal_first_name", "legal_last_name"],
 				message: error.message,
-				customerStatus: "failed"
+				customerStatus: "inactive"
 			}
 		} else if (error.type == createCheckbookErrorType.USER_ALREADY_EXISTS) {
 			return {
 				status: 400,
 				invalidFields: [],
 				message: error.message,
-				customerStatus: "failed"
+				customerStatus: "inactive"
 			}
 		} else if (error.type == createCheckbookErrorType.RECORD_NOT_FOUND) {
 			return {
 				status: 404,
 				invalidFields: [],
 				message: error.message,
-				customerStatus: "failed"
+				customerStatus: "inactive"
 			}
 		} else {
 			return {
 				status: 500,
 				invalidFields: [],
 				message: error.message,
-				customerStatus: "failed"
+				customerStatus: "inactive"
 			}
 		}
 	}
