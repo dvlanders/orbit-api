@@ -4,7 +4,7 @@ const supabase = require('../util/supabaseClient');
 const createAndFundBastionUser = require('../util/bastion/endpoints/createAndFundBastionUser');
 const createLog = require('../util/logger/supabaseLogger');
 const { createIndividualBridgeCustomer } = require('../util/bridge/endpoint/createIndividualBridgeCustomer')
-
+const {createToSLink} = require("../util/bridge/endpoint/createToSLink")
 exports.getPing = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -79,3 +79,28 @@ exports.createHifiUser = async (req, res) => {
 		return res.status(500).json(createHifiUserResponse);
 	}
 };
+
+exports.createBridgeToSLink = async (req, res) => {
+	try{
+		const { user_id, redirect_url } = req.body;
+		if (!user_id || !redirect_url) {
+			return res.status(400).json({message: "user_id or redirect_url is required"})
+		}
+
+		const url = await createToSLink(redirect_url, user_id)
+
+		return res.status(200).json({url});
+	}catch (error){
+		return res.status(500).json({message: error.message});
+	}
+}
+
+exports.updateHifiUser = async (req, res) => {
+
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	
+	const requestBody = req.body
+}

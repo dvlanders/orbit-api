@@ -1,8 +1,9 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToDatabaseFields } = require("../utils");
-const { createLog } = require("../../logger/supabaseLogger");
+const { bridgeFieldsToDatabaseFields, getEndorsementStatus } = require("../utils");
+const createLog = require("../../logger/supabaseLogger");
+const {supabaseCall} = require("../../supabaseWithRetry")
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -22,10 +23,13 @@ class createBridgeCustomerError extends Error {
 	}
 }
 
-const getEndorsementStatus = (endorsements, name) => {
-	const endorsement = endorsements.find(e => e.name === name);
-	return endorsement ? endorsement.status : undefined;
-}
+/**
+ * This util use to pass bridge customer kyc, return status 200 for successful crearion,
+ * status 400 for missing or invalid fields with invalidFields array,
+ * status 500 and 404 should be seen as server error 
+ * @param {*} userId 
+ * @returns 
+ */
 
 exports.createIndividualBridgeCustomer = async (userId) => {
 	let invalidFields = [];
@@ -33,11 +37,12 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 
 	try {
 		// check if user exist
-		let { data: user, error: user_error } = await supabase
+		let { data: user, error: user_error } = await supabaseCall( () => supabase
 			.from('users')
 			.select('profile_id, user_type')
 			.eq('id', userId)
-			.maybeSingle();
+			.maybeSingle()
+		)
 
 		if (user_error) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, user_error.message, user_error);
@@ -47,11 +52,13 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		}
 
 		// fetch user kyc data
-		const { data: user_kyc, error: user_kyc_error } = await supabase
+		const { data: user_kyc, error: user_kyc_error } = await supabaseCall( () =>  supabase
 			.from('user_kyc')
-			.select('*, bridge_customers (signed_agreement_id)')
+			.select('*')
 			.eq('user_id', userId)
-			.maybeSingle();
+			.maybeSingle()
+		)
+
 
 		if (user_kyc_error) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, user_kyc_error.message, user_kyc_error);
@@ -59,7 +66,20 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		if (!user_kyc) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.RECORD_NOT_FOUND, "User kyc information record not found");
 		}
-		if (!user_kyc.bridge_customers || !user_kyc.bridge_customers[0]) {
+
+		// fetch user kyc data
+		const { data: bridge_user, error: bridge_user_error } = await supabaseCall( () =>   supabase
+		.from('bridge_customers')
+		.select('signed_agreement_id')
+		.eq('user_id', userId)
+		.maybeSingle()
+		)
+
+		if (bridge_user_error) {
+			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, user_kyc_error.message, user_kyc_error);
+		}
+
+		if (!bridge_user || !bridge_user.signed_agreement_id) {
 			invalidFields = ["signed_agreement_id"];
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, "User signed_agreement_id information record not found");
 		}
@@ -87,7 +107,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 				postal_code: user_kyc.postal_code,
 				country: user_kyc.country
 			},
-			signed_agreement_id: user_kyc?.bridge_customers?.[0]?.signed_agreement_id,
+			signed_agreement_id: bridge_user.signed_agreement_id,
 			birth_date: formattedBirthDate,
 			tax_identification_number: user_kyc.tax_identification_number,
 			gov_id_country: user_kyc.gov_id_country
@@ -130,17 +150,21 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 					base_status: getEndorsementStatus(responseBody.endorsements, "base"),
 					sepa_status: getEndorsementStatus(responseBody.endorsements, "sepa"),
 				})
-				.eq("id", userId)
+				.eq("user_id", userId)
 				.single()
 
 			if (bridge_customers_error) {
 				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
 			}
 
+			let status
+
+
 			return {
 				status: 200,
 				InvalidFields: [],
-				message: "bridge customer created"
+				message: "bridge customer kyc submitted",
+				customerStatus: responseBody.status
 			}
 
 		} else if (response.status == 400) {
@@ -161,25 +185,29 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 			return {
 				status: 500,
 				invalidFields: [],
-				message: error.message
+				message: error.message,
+				customerStatus: "failed"
 			}
 		} else if (error.type == createBridgeCustomerErrorType.INVALID_FIELD) {
 			return {
 				status: 400,
 				invalidFields,
-				message: "Please resubmit the following parameters that are either missing or invalid"
+				message: "Please resubmit the following parameters that are either missing, invalid or used",
+				customerStatus: "failed"
 			}
 		} else if (error.type == createBridgeCustomerErrorType.RECORD_NOT_FOUND) {
 			return {
 				status: 404,
 				invalidFields: [],
-				message: error.message
+				message: error.message,
+				customerStatus: "failed"
 			}
 		} else {
 			return {
 				status: 500,
 				invalidFields: [],
-				message: "Something went wrong when creating bridge individual customer"
+				message: "Something went wrong when creating bridge individual customer",
+				customerStatus: "failed"
 			}
 		}
 	}

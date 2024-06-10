@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const { BridgeCustomerStatus, virtualAccountPaymentRailToChain } = require("../utils");
-const { createLog } = require("../../logger/supabaseLogger");
+const  createLog  = require("../../logger/supabaseLogger");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -18,7 +18,7 @@ class createBridgeVirtualAccountError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, createBridgeCustomerError.prototype);
+		Object.setPrototypeOf(this, createBridgeVirtualAccountError.prototype);
 	}
 }
 
@@ -53,7 +53,14 @@ const getUserWallet = async (chain, userId) => {
 
 }
 
-
+/**
+ * This util function use to create bridge virtual account, return status 200 for all success creation,
+ * virtual account could be partially created (some rails but not all), 
+ * return status 400 for missing or invalid fields with invalidFields array,
+ * status 404 for not found user, status 500 for internal server error
+ * @param {*} userId 
+ * @returns 
+ */
 
 exports.createBridgeVirtualAccount = async (userId) => {
 	let invalidFields = []
