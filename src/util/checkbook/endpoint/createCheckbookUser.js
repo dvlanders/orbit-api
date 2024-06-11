@@ -34,10 +34,10 @@ exports.createCheckbookUser = async (userId) => {
 			.eq('user_id', userId)
 			.maybeSingle()
 
-		const { data: user, error: user_error } = await supabaseCall(getUserInfo)
+		const { data: user, error: userError } = await supabaseCall(getUserInfo)
 
-		if (user_error) {
-			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, user_error.message, user_error)
+		if (userError) {
+			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, userError.message, userError)
 		}
 		if (!user) {
 			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found")
@@ -61,7 +61,7 @@ exports.createCheckbookUser = async (userId) => {
 		const responseBody = await response.json()
 
 		if (response.ok) {
-			const { data: checkbook_user_data, error: checkbook_user_error } = await supabase
+			const { error: checkbookUserError } = await supabase
 				.from('checkbook_users')
 				.insert({
 					checkbook_user_id: userId,
@@ -73,8 +73,8 @@ exports.createCheckbookUser = async (userId) => {
 					checkbook_response: responseBody
 				});
 
-			if (checkbook_user_error) {
-				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.message, checkbook_user_error)
+			if (checkbookUserError) {
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 			}
 
 			return {
