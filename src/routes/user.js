@@ -1,5 +1,5 @@
 const { user } = require("../controllers");
-
+const multer = require('multer');
 const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {

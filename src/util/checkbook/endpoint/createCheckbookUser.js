@@ -1,7 +1,6 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
-const { BridgeCustomerStatus, virtualAccountPaymentRailToChain } = require("../utils");
-const { createLog } = require("../../logger/supabaseLogger");
+const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
@@ -21,31 +20,31 @@ class createCheckbookError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, createBridgeCustomerError.prototype);
+		Object.setPrototypeOf(this, createCheckbookError.prototype);
 	}
 }
 
 
-exports.createCheckbbokUser = async (userId) => {
+exports.createCheckbookUser = async (userId) => {
 	let invalidFields = []
 	try {
 		const getUserInfo = () => supabase
 			.from('user_kyc')
-			.select('legal_first_name, legae_last_name')
+			.select('legal_first_name, legal_last_name')
 			.eq('user_id', userId)
 			.maybeSingle()
 
-		const { data, error } = await supabaseCall(getUserInfo)
+		const { data: user, error: user_error } = await supabaseCall(getUserInfo)
 
 		if (user_error) {
-			throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, user_error.message, user_error)
+			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, user_error.message, user_error)
 		}
 		if (!user) {
-			throw new createBridgeVirtualAccountError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found")
+			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found")
 		}
 
 		const requestBody = {
-			"name": `${user.legal_first_name} ${user.legae_last_name}`,
+			"name": `${user.legal_first_name} ${user.legal_last_name}`,
 			"user_id": userId
 		}
 
@@ -65,59 +64,78 @@ exports.createCheckbbokUser = async (userId) => {
 			const { data: checkbook_user_data, error: checkbook_user_error } = await supabase
 				.from('checkbook_users')
 				.insert({
-					checkbook_user_id: merchantId,
-					checkbook_id: data.id,
-					checkbook_key: data.key,
-					checkbook_secret: data.secret,
-					checkbook_name: name,
-					merchant_id: merchantId,
+					checkbook_user_id: userId,
+					checkbook_id: responseBody.id,
+					api_key: responseBody.key,
+					api_secret: responseBody.secret,
+					name: requestBody.name,
+					user_id: userId,
+					checkbook_response: responseBody
 				});
 
 			if (checkbook_user_error) {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.message, checkbook_user_error)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.message, checkbook_user_error)
 			}
 
 			return {
 				status: 200,
 				invalidFields: [],
-				message: "Checkbook user create successfully"
+				message: "Checkbook user create successfully",
+				customerStatus: "active"
 			}
 
 		} else {
 			if (response.status == 400 && responseBody.more_info.name) {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INVALID_FIELD, "Name is missing or invalid", responseBody)
+				throw new createCheckbookError(createCheckbookErrorType.INVALID_FIELD, "Name is missing or invalid", responseBody)
 			} else if (response.status == 400 && responseBody.error == "User already exists") {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.USER_ALREADY_EXISTS, "User is already exists", responseBody)
+				// fetch the created user
+				const response = await fetch(`${CHECKBOOK_URL}/user/list?page=1&per_page=10&q=${userId}`, {
+					headers:{
+						'Accept': 'application/json',
+						'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
+					}
+				})
+				// successfully getch record
+				const responseBody = await response.json()
+				if (response.ok && responseBody.total == 1){
+					// todo refetch user key and secret
+				}
+				throw new createCheckbookError(createCheckbookErrorType.USER_ALREADY_EXISTS, "User is already exists", responseBody)
 			} else {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", responseBody)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", responseBody)
 			}
 		}
 
 
 	} catch (error) {
+		createLog("user/util/createCheckbookUser", userId, error.message, error)
 		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
 			return {
 				status: 400,
 				invalidFields: ["legal_first_name", "legal_last_name"],
-				message: error.message
+				message: error.message,
+				customerStatus: "inactive"
 			}
 		} else if (error.type == createCheckbookErrorType.USER_ALREADY_EXISTS) {
 			return {
 				status: 400,
 				invalidFields: [],
-				message: error.message
+				message: error.message,
+				customerStatus: "inactive"
 			}
 		} else if (error.type == createCheckbookErrorType.RECORD_NOT_FOUND) {
 			return {
 				status: 404,
 				invalidFields: [],
-				message: error.message
+				message: error.message,
+				customerStatus: "inactive"
 			}
 		} else {
 			return {
 				status: 500,
 				invalidFields: [],
-				message: error.message
+				message: "Unexpected error happened, please contact HIFI for more information",
+				customerStatus: "inactive"
 			}
 		}
 	}

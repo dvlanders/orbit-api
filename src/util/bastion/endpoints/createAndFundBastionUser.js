@@ -1,6 +1,7 @@
 const supabase = require("../../supabaseClient");
 const fundMaticPolygon = require("../fundMaticPolygon");
 const createLog = require("../../logger/supabaseLogger");
+const submitBastionKyc = require("./submitBastionkyc");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -85,27 +86,27 @@ async function createUserCore(userId) {
 async function createAndFundBastionUser(userId) {
 	try {
 		console.log('About to call createUserCore');
+		// create user
 		const data = await createUserCore(userId);
-		return {
-			status: "CREATED",
-			InvalidFields: [],
-			message: "user and wallets created and funded",
-			additionalDetails: {}
-		};
+		// submit kyc
+		const bastionKycResult = await submitBastionKyc(userId)
+		return bastionKycResult;
 	} catch (error) {
 		if (error instanceof BastionError) {
 			return {
 				status: error.status,
 				invalidFields: [],
 				message: error.message,
-				additionalDetails: error.details
+				additionalDetails: error.details,
+				customerStatus: "inactive"
 			}
 		}
 		return {
 			status: 500,
 			invalidFields: [],
 			message: "Unexpected error",
-			additionalDetails: error
+			additionalDetails: error,
+			customerStatus: "inactive"
 		}
 	}
 }
