@@ -305,7 +305,7 @@ exports.getHifiUser = async (req, res) => {
 		getCheckbookUser(user_id) // TODO: implement this function in utils and import before using it here
 	])
 
-	// determine the status code to return to the client
+	// determine the status code to return to the client -- copied from createHifiUser, make sure this logic still holds true
 	let status
 	if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
 		status = 200
