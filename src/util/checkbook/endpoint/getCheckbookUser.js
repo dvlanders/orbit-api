@@ -90,7 +90,7 @@ const getCheckbookUser = async(userId) => {
             }
         }else if (error.type == GetCheckbookUserErrorType.INVALID_ACCOUNT){
             return {
-                status: 400,
+                status: 200,
                 usOnRamp:  {
                     status: CustomerStatus.INACTIVE,
                     actions: ["update"],
@@ -100,7 +100,7 @@ const getCheckbookUser = async(userId) => {
             }
         }else if (error.type == GetCheckbookUserErrorType.RECORD_NOT_FOUND){
             return {
-                status: 404,
+                status: 200,
                 usOnRamp:  {
                     status: CustomerStatus.INACTIVE,
                     actions: ["update"],

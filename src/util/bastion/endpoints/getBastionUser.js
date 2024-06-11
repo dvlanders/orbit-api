@@ -83,7 +83,7 @@ const getBastionUser = async(userId) => {
             }
         }else if (error.type == GetBastionErrorType.RECORD_NOT_FOUND){
             return {
-                status: 404,
+                status: 200,
                 walletStatus: CustomerStatus.INACTIVE,
                 invalidFileds: [],
                 actions: ["update"],

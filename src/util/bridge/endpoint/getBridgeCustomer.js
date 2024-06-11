@@ -60,7 +60,7 @@ const getBridgeCustomer = async(userId) => {
         if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
         if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
             return {
-                status: 404,
+                status: 200,
                 customerStatus: {
                     status: CustomerStatus.FAILED,
                     actions: ["update"],
@@ -151,7 +151,7 @@ const getBridgeCustomer = async(userId) => {
         
         if (customerStatus == CustomerStatus.INACTIVE){
             return {
-                status: 400,
+                status: 200,
                 customerStatus: {
                     status: CustomerStatus.INACTIVE,
                     actions: [...requiredActions, "update"],
@@ -257,7 +257,7 @@ const getBridgeCustomer = async(userId) => {
             }
         }else if (error.type == getBridgeCustomerErrorType.RECORD_NOT_FOUND){
             return {
-                status: 404,
+                status: 200,
                 customerStatus: {
                     status: CustomerStatus.INACTIVE,
                     actions: ["update"],
