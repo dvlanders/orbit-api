@@ -1,6 +1,6 @@
 # hifi_backend
 
-# Start Application uing command
+# Start Application using command
 
 npm i
 npm run start
