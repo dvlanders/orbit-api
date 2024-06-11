@@ -272,3 +272,36 @@ exports.createHifiUser = async (req, res) => {
 
 	return res.status(status).json(createHifiUserResponse);
 };
+
+
+exports.getHifiUser = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { user_id } = req.query
+
+	// base response
+	let getHifiUserResponse = {}
+
+
+	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
+		getBastionUser(user_id),
+		getBridgeCustomer(user_id),
+		getCheckbookUser(user_id)
+	])
+
+	// determine the status code to return to the client
+	let status
+	if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+		status = 200
+	} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+		status = 500;
+	} else {
+		status = 400;
+	}
+
+	// return the getHifiUserResponse
+
+	return res.status(status).json(getHifiUserResponse);
+};

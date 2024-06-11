@@ -7,5 +7,6 @@ module.exports = (router) => {
 	router.get("/get_ping", user.getPing);
 	// TODO: router.get("/wallet_address", user.getPing);
 	router.post("/user/create", user.createHifiUser);
+	router.get("/user", user.getHifiUser);
 
 };
