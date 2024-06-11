@@ -8,7 +8,7 @@ const { createToSLink } = require("../util/bridge/endpoint/createToSLink");
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
 const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided } = require("../util/user/createUser");
-const {uploadFileFromUrl, fileUploadErrorType} = require('../util/supabase/fileUpload');
+const { uploadFileFromUrl, fileUploadErrorType } = require('../util/supabase/fileUpload');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -177,8 +177,8 @@ exports.createHifiUser = async (req, res) => {
 	} catch (error) {
 		// TODO: return the correct error to the user regarding incorrect file type and or file siZe
 		createLog("user/create", userId, error.message, error)
-		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)){
-			return res.status(400).json({error: error.message})
+		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
+			return res.status(400).json({ error: error.message })
 		}
 		// internal server error
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -300,9 +300,9 @@ exports.getHifiUser = async (req, res) => {
 
 
 	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-		getBastionUser(user_id),
-		getBridgeCustomer(user_id),
-		getCheckbookUser(user_id)
+		getBastionUser(user_id), // TODO: implement this function in utils and import before using it here
+		getBridgeCustomer(user_id), // TODO: implement this function in utils and import before using it here
+		getCheckbookUser(user_id) // TODO: implement this function in utils and import before using it here
 	])
 
 	// determine the status code to return to the client
@@ -315,7 +315,6 @@ exports.getHifiUser = async (req, res) => {
 		status = 400;
 	}
 
-	// return the getHifiUserResponse
 
 	return res.status(status).json(getHifiUserResponse);
 };
