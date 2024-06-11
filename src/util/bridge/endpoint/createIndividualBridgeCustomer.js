@@ -52,7 +52,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		}
 
 		// fetch user kyc data
-		const { data: user_kyc, error: user_kyc_error } = await supabaseCall( () =>  supabase
+		const { data: userKyc, error: userKycError } = await supabaseCall( () =>  supabase
 			.from('user_kyc')
 			.select('*')
 			.eq('user_id', userId)
@@ -60,32 +60,32 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		)
 
 
-		if (user_kyc_error) {
-			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, user_kyc_error.message, user_kyc_error);
+		if (userKycError) {
+			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, userKycError.message, userKycError);
 		}
-		if (!user_kyc) {
+		if (!userKyc) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.RECORD_NOT_FOUND, "User kyc information record not found");
 		}
 
 		// fetch user kyc data
-		const { data: bridge_user, error: bridge_user_error } = await supabaseCall( () =>   supabase
+		const { data: bridgeUser, error: bridgeUserError } = await supabaseCall( () =>   supabase
 		.from('bridge_customers')
 		.select('signed_agreement_id')
 		.eq('user_id', userId)
 		.maybeSingle()
 		)
 
-		if (bridge_user_error) {
-			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, user_kyc_error.message, user_kyc_error);
+		if (bridgeUserError) {
+			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridgeUserError.message, bridgeUserError);
 		}
 
-		if (!bridge_user || !bridge_user.signed_agreement_id) {
+		if (!bridgeUser || !bridgeUser.signed_agreement_id) {
 			invalidFields = ["signed_agreement_id"];
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, "User signed_agreement_id information record not found");
 		}
 
 		// submit kyc information to bridge
-		const birthDate = user_kyc.date_of_birth ? new Date(user_kyc.date_of_birth) : undefined;
+		const birthDate = userKyc.date_of_birth ? new Date(userKyc.date_of_birth) : undefined;
 		if (!birthDate) {
 			invalidFields = ["date_of_birth"];
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, "Please resubmit the following parameters that are either missing or invalid");
@@ -95,30 +95,30 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		// pre fill info
 		const requestBody = {
 			type: "individual",
-			first_name: user_kyc.legal_first_name,
-			last_name: user_kyc.legal_last_name,
+			first_name: userKyc.legal_first_name,
+			last_name: userKyc.legal_last_name,
 			email: `${userId}@hifi.com`,
-			phone: user_kyc.compliance_phone,
+			phone: userKyc.compliance_phone,
 			address: {
-				street_line_1: user_kyc.address_line_1,
-				street_line_2: user_kyc.address_line_2,
-				city: user_kyc.city,
-				state: user_kyc.state_province_region,
-				postal_code: user_kyc.postal_code,
-				country: user_kyc.country
+				street_line_1: userKyc.address_line_1,
+				street_line_2: userKyc.address_line_2,
+				city: userKyc.city,
+				state: userKyc.state_province_region,
+				postal_code: userKyc.postal_code,
+				country: userKyc.country
 			},
-			signed_agreement_id: bridge_user.signed_agreement_id, //FIXME 
+			signed_agreement_id: bridgeUser.signed_agreement_id, //FIXME 
 			has_accepted_terms_of_service: true,
 			birth_date: formattedBirthDate,
-			tax_identification_number: user_kyc.tax_identification_number,
-			gov_id_country: user_kyc.gov_id_country
+			tax_identification_number: userKyc.tax_identification_number,
+			gov_id_country: userKyc.gov_id_country
 		};
 
 		// fill doc
 		const files = [
-			{ bucket: 'compliance_id', path: user_kyc.gov_id_front_path, field: "gov_id_image_front" },
-			{ bucket: 'compliance_id', path: user_kyc.gov_id_back_path, field: "gov_id_image_back" },
-			{ bucket: 'proof_of_residency', path: user_kyc.proof_of_residency_path, field: "proof_of_address_document" }
+			{ bucket: 'compliance_id', path: userKyc.gov_id_front_path, field: "gov_id_image_front" },
+			{ bucket: 'compliance_id', path: userKyc.gov_id_back_path, field: "gov_id_image_back" },
+			{ bucket: 'proof_of_residency', path: userKyc.proof_of_residency_path, field: "proof_of_address_document" }
 		];
 
 		await Promise.all(files.map(async ({ bucket, path, field }) => {
@@ -158,7 +158,6 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
 			}
 
-			let status
 
 
 			return {
