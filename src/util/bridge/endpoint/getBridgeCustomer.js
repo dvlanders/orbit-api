@@ -3,7 +3,7 @@ const {supabaseCall} = require("../../supabaseWithRetry")
 const { v4 } = require("uuid");
 const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
-
+const { CustomerStatus } = require("../../user/common");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -22,11 +22,7 @@ class getBridgeCustomerError extends Error {
 	}
 }
 
-const CustomerStatus = {
-    INACTIVE: "INACTIVE",
-    ACTIVE: "ACTIVE",
-    PENDING: "PENDING",
-}
+
 const BridgeEndorsementStatus = {
     APPROVED: "approved",
     INCOMPLETE: "incomplete",

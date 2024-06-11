@@ -1,13 +1,9 @@
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry");
+const { CustomerStatus } = require("../../user/common");
 const { createCheckbookUser } = require("./createCheckbookUser");
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
-
-const CustomerStatus = {
-    INACTIVE: "INACTIVE",
-    ACTIVE: "ACTIVE",
-}
 
 const GetCheckbookUserErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",

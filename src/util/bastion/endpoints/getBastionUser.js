@@ -1,7 +1,7 @@
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient")
-const { supabaseCall } = require("../../supabaseWithRetry")
-
+const { supabaseCall } = require("../../supabaseWithRetry");
+const { CustomerStatus } = require("../../user/common");
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
@@ -19,11 +19,7 @@ class GetBastionError extends Error {
 	}
 }
 
-const CustomerStatus = {
-    INACTIVE: "INACTIVE",
-    ACTIVE: "ACTIVE",
-    PENDING: "PENDING",
-}
+
 /**
  * return 
  * status: 200, 404, 500
