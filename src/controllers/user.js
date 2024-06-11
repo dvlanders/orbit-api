@@ -4,7 +4,7 @@ const supabase = require('../util/supabaseClient');
 const createAndFundBastionUser = require('../util/bastion/endpoints/createAndFundBastionUser');
 const createLog = require('../util/logger/supabaseLogger');
 const { createIndividualBridgeCustomer } = require('../util/bridge/endpoint/createIndividualBridgeCustomer')
-const {createToSLink} = require("../util/bridge/endpoint/createToSLink");
+const { createToSLink } = require("../util/bridge/endpoint/createToSLink");
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const uploadFile = require('../util/supabase/fileUpload');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
@@ -44,14 +44,14 @@ exports.createHifiUser = async (req, res) => {
 	}
 	// check if the body is valid
 	const invalidField = isFieldsForIndividualCustomerValid(fields)
-	if (invalidField){
+	if (invalidField) {
 		return res.status(400).json({ error: `${invalidField} is not accepted` });
 	}
 
 	// check if required fields are uploaded
 	const missingFields = isRequiredFieldsForIndividualCustomerProvided(fields)
 
-	if (missingFields && missingFields.length > 0){
+	if (missingFields && missingFields.length > 0) {
 		return res.status(400).json({ error: 'please provide required fields', missing_fields: missingFields });
 	}
 
@@ -61,34 +61,33 @@ exports.createHifiUser = async (req, res) => {
 		const { data: new_user, error: new_user_error } = await supabaseCall(() => supabase
 			.from('users')
 			.insert(
-				{ profile_id: profileId, user_type: fields.user_type},
+				{ profile_id: profileId, user_type: fields.user_type },
 			)
 			.select()
 			.single()
 		)
-		
+
 		if (new_user_error) throw new_user_error
 		userId = new_user.id
-	}catch (error){
+	} catch (error) {
 		createLog("user/create", "", error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
 	// create bridge record and input signed agreement id
 	try {
-		
 		const { data: new_bridge_record, error: new_bridge_record_error } = await supabase
-		.from('bridge_customers')
-		.insert(
-		{ user_id: userId, signed_agreement_id: fields.signed_agreement_id},
-		)
-		.select()
-		
+			.from('bridge_customers')
+			.insert(
+				{ user_id: userId, signed_agreement_id: fields.signed_agreement_id },
+			)
+			.select()
+
 		if (new_bridge_record_error) throw new_user_error
 
-	}catch (error){
+	} catch (error) {
 		createLog("user/create", "", error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
 	// base response
@@ -169,46 +168,49 @@ exports.createHifiUser = async (req, res) => {
 
 	]
 	const paths = {}
-	try{
-		await Promise.all(files.map(async(file) => {
-			if (fields[file.key]){
-				paths[file.key] =  await uploadFileFromUrl(fields[file.key], file.bucket, `${userId}/${file.key}`);
+	try {
+		await Promise.all(files.map(async (file) => {
+			if (fields[file.key]) {
+				paths[file.key] = await uploadFileFromUrl(fields[file.key], file.bucket, `${userId}/${file.key}`);
 			}
 		}))
 
-	}catch (error){
+	} catch (error) {
+		// TODO: return the correct error to the user regarding incorrect file type and or file siZe
 		createLog("user/create", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 	// insert info into database
 	try {
-		const tosubmit = {...fields}
+		//TODO: remove next lines. just enumerate all the inserted fields
+		const tosubmit = { ...fields }
 		const fieldsToRemove = ["signed_agreement_id", "user_type", "gov_id_front", "gov_id_back", "proof_of_residency", "formation_doc", "proof_of_residency"]
 		fieldsToRemove.map((field) => {
 			delete tosubmit[field]
 		})
 		console.log(tosubmit)
 		const { data, error } = await supabaseCall(() => supabase
-		.from('user_kyc')
-		.insert(
-			{
-				user_id: userId,
-				...tosubmit,
-				date_of_birth: new Date(fields.date_of_birth).toISOString(),
-				gov_id_front_path: paths.gov_id_front,
-				gov_id_back_path: paths.gov_id_back,
-				proof_of_residency_path: paths.proof_of_residency
-			}
-		)
-		.select()
+			.from('user_kyc')
+			.insert(
+				{
+					user_id: userId,
+					// actually have all the fields here
+					...tosubmit,
+					date_of_birth: new Date(fields.date_of_birth).toISOString(),
+					gov_id_front_path: paths.gov_id_front,
+					gov_id_back_path: paths.gov_id_back,
+					proof_of_residency_path: paths.proof_of_residency
+				}
+			)
+			.select()
 		)
 		if (error) throw error
-	}catch(error){
+	} catch (error) {
 		createLog("user/create", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
-	
-	
+
+
 	// create customer object for providers
 	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
 		createAndFundBastionUser(userId),
@@ -216,12 +218,16 @@ exports.createHifiUser = async (req, res) => {
 		createCheckbookUser(userId)
 	])
 
+	// TODO: remove the response code logic below and simply return a pending regardless of the response. 
+	// The dev will call our GET endpoint to get the latest status
+
+
 	// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.
 	// Submit Bastion kyc
 	// should only always be internal server error if we check the fields before hand
 	if (bastionResult.status == 200) {
 		createHifiUserResponse.wallet.walletStatus = Status.ACTIVE
-	}else{
+	} else {
 		createHifiUserResponse.wallet.walletStatus = Status.INACTIVE
 		createHifiUserResponse.wallet.walletMessage = bastionResult.message
 	}
@@ -230,7 +236,7 @@ exports.createHifiUser = async (req, res) => {
 	// create checkbook user
 	if (checkbookResult.status == 200) {
 		// createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.ACTIVE
-	}else{
+	} else {
 		const fieldsToResubmit = createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit
 		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.INACTIVE
 		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit = [...fieldsToResubmit, checkbookResult.invalidFields]
@@ -244,10 +250,10 @@ exports.createHifiUser = async (req, res) => {
 		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.PENDING
 		createHifiUserResponse.ramps.usdAch.offramp.status = Status.PENDING
 		createHifiUserResponse.ramps.euroSepa.offramp.status = Status.PENDING
-	}else if (bridgeResult.status == 400){
+	} else if (bridgeResult.status == 400) {
 		createHifiUserResponse.user_kyc.actionNeeded.fieldsToResubmit = bridgeResult.invalidFields
 		createHifiUserResponse.user_kyc.message = bridgeResult.message
-	}else {
+	} else {
 		createHifiUserResponse.user_kyc.message = bridgeResult.message
 	}
 
