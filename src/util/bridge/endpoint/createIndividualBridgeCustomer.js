@@ -97,7 +97,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 			type: "individual",
 			first_name: user_kyc.legal_first_name,
 			last_name: user_kyc.legal_last_name,
-			email: user_kyc.compliance_email,
+			email: `${userId}@hifi.com`,
 			phone: user_kyc.compliance_phone,
 			address: {
 				street_line_1: user_kyc.address_line_1,
@@ -107,7 +107,8 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 				postal_code: user_kyc.postal_code,
 				country: user_kyc.country
 			},
-			signed_agreement_id: bridge_user.signed_agreement_id,
+			signed_agreement_id: bridge_user.signed_agreement_id, //FIXME 
+			has_accepted_terms_of_service: true,
 			birth_date: formattedBirthDate,
 			tax_identification_number: user_kyc.tax_identification_number,
 			gov_id_country: user_kyc.gov_id_country
@@ -162,7 +163,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 
 			return {
 				status: 200,
-				InvalidFields: [],
+				invalidFields: [],
 				message: "bridge customer kyc submitted",
 				customerStatus: responseBody.status
 			}
