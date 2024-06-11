@@ -25,24 +25,24 @@ class submitBastionKycError extends Error {
 const submitBastionKyc = async(userId) => {
     try {
         // fetch user info
-        const {data: user_kyc, error: user_kyc_error} = await supabaseCall(() => supabase
+        const {data: userKyc, error: userKycError} = await supabaseCall(() => supabase
         .from("user_kyc")
         .select('legal_first_name, legal_last_name, ip_address, date_of_birth')
         .eq("user_id", userId)
         .maybeSingle()
         )
 
-        if (user_kyc_error) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, user_kyc_error.message, user_kyc_error)
-        if (!user_kyc) throw new submitBastionKycError(submitBastionKycErrorType.RECORD_NOT_FOUND, "user not found")
+        if (userKycError) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, userKycError.message, userKycError)
+        if (!userKyc) throw new submitBastionKycError(submitBastionKycErrorType.RECORD_NOT_FOUND, "user not found")
         
-        const birthDate = user_kyc.date_of_birth ? new Date(user_kyc.date_of_birth) : undefined;
+        const birthDate = userKyc.date_of_birth ? new Date(userKyc.date_of_birth) : undefined;
         const formattedBirthDate = `${birthDate.getUTCFullYear()}-${(birthDate.getUTCMonth() + 1).toString().padStart(2, '0')}-${birthDate.getUTCDate().toString().padStart(2, '0')}`;
 
         const requestBody = {
-            firstName: user_kyc.legal_first_name,
-            lastName: user_kyc.legal_last_name,
+            firstName: userKyc.legal_first_name,
+            lastName: userKyc.legal_last_name,
             dateOfBirth: formattedBirthDate,
-            ipAddress: user_kyc.ip_address
+            ipAddress: userKyc.ip_address
         };
 
         const url = `${BASTION_URL}/v1/users/${userId}/kyc`;
@@ -60,7 +60,7 @@ const submitBastionKyc = async(userId) => {
 		const responseBody = await response.json();
 
         if (response.ok) {
-            const { data, error } = await supabaseCall(() => supabase
+            const { error: newBastionUserError } = await supabaseCall(() => supabase
             .from('bastion_users')
             .upsert(
             { 
@@ -75,7 +75,7 @@ const submitBastionKyc = async(userId) => {
             .select()
         )
 
-        if (error) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, error.message, error) 
+        if (newBastionUserError) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, newBastionUserError.message, newBastionUserError) 
         return {
             status: 200,
             message: "wallet Kyc success",
@@ -103,7 +103,7 @@ const submitBastionKyc = async(userId) => {
                 customerStatus: "active"
             }
         }else{
-            throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, user_kyc_error.message, user_kyc_error)
+            throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, response.message, response)
         }
         
     }catch (error){
