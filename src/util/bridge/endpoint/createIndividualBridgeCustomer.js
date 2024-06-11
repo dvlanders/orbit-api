@@ -141,6 +141,8 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		});
 
 		const responseBody = await response.json();
+		const {status: baseStatus} = getEndorsementStatus(responseBody.endorsements, "base")
+		const {status: sepaStatus} = getEndorsementStatus(responseBody.endorsements, "sepa")
 		if (response.ok) {
 			const { error: bridge_customers_error } = await supabase
 				.from('bridge_customers')
@@ -148,8 +150,8 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 					bridge_id: responseBody.id,
 					bridge_response: responseBody,
 					status: responseBody.status,
-					base_status: getEndorsementStatus(responseBody.endorsements, "base"),
-					sepa_status: getEndorsementStatus(responseBody.endorsements, "sepa"),
+					base_status: baseStatus,
+					sepa_status: sepaStatus,
 				})
 				.eq("user_id", userId)
 				.single()

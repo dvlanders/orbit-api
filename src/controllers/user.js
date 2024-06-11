@@ -9,6 +9,9 @@ const { supabaseCall } = require('../util/supabaseWithRetry');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
 const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided } = require("../util/user/createUser");
 const { uploadFileFromUrl, fileUploadErrorType } = require('../util/supabase/fileUpload');
+const getBastionUser = require('../util/bastion/endpoints/getBastionUser');
+const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
+const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -295,8 +298,75 @@ exports.getHifiUser = async (req, res) => {
 
 	const { user_id } = req.query
 
-	// base response
-	let getHifiUserResponse = {}
+		// base response
+		let getHifiUserResponse = {
+			wallet: {
+				walletStatus: Status.INACTIVE,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: ""
+			},
+			user_kyc: {
+				status: Status.INACTIVE, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: Status.INACTIVE, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+							achPullMessage: ""
+	
+						},
+					},
+					offramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+			user: {
+				id: user_id
+			}
+		}
 
 
 	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
@@ -304,6 +374,90 @@ exports.getHifiUser = async (req, res) => {
 		getBridgeCustomer(user_id), // TODO: implement this function in utils and import before using it here
 		getCheckbookUser(user_id) // TODO: implement this function in utils and import before using it here
 	])
+
+	// Bastion status
+	const wallet = {
+		walletStatus: bastionResult.walletStatus,
+		walletMessage: bastionResult.message,
+		actionNeeded: {
+			actions: [...bastionResult.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
+			fieldsToResubmit: [...bastionResult.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+		}
+	}
+	getHifiUserResponse.wallet = wallet
+
+
+
+	//checkbook status
+	const achPull = {
+		achPullStatus: checkbookResult.usOnRamp.status,
+		achPullMessage: [...checkbookResult.message, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+		actionNeeded: {
+			actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
+			fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+		}
+	}
+	getHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+
+	// bridge status
+	// kyc
+	const userKyc = {
+		status: bridgeResult.customerStatus.status,
+		actionNeeded: {
+			actions: bridgeResult.customerStatus.actions,
+			fieldsToResubmit:  bridgeResult.customerStatus.fields,
+		}
+	}
+	getHifiUserResponse.user_kyc = userKyc
+	// usRamp
+	const usdAch = {
+		onramp: {
+			status: bridgeResult.customerStatus.status,
+			actionNeeded: {
+				actions: bridgeResult.customerStatus.actions,
+				fieldsToResubmit: bridgeResult.customerStatus.fields
+			},
+			message: bridgeResult.message,
+			achPull:{
+				achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
+				achPullMessage: [...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+				actionNeeded: {
+					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				}
+			}
+		},
+		offramp: {
+			status: bridgeResult.usRamp.status,
+			actionNeeded: {
+				actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
+				fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+			},
+		}
+	}
+	getHifiUserResponse.ramps.usdAch = usdAch
+	// euRamp
+	const euroSepa = {
+		onramp: {
+			status: Status.INACTIVE,
+			actionNeeded: {
+				actions: [],
+				fieldsToResubmit: [],
+			},
+			message: 'SEPA onRamp will be available in near future',
+		},
+		offramp: {
+			status: bridgeResult.euRamp.status,
+			actionNeeded: {
+				actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+				fieldsToResubmit: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+			},
+			message: ''
+		},
+	}
+	getHifiUserResponse.ramps.euroSepa = euroSepa
+
+
 
 	// determine the status code to return to the client -- copied from createHifiUser, make sure this logic still holds true
 	let status

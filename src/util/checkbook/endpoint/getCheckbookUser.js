@@ -24,6 +24,17 @@ class GetCheckbookUserError extends Error {
 	}
 }
 
+/**
+ * return 
+ * status: 200, 400, 500, 404   
+ * usOnRamp: object   
+ * status: 200 for created user
+ * status: 400 for invalid user (invalid key secret) 
+ * status: 404 for possibly unsubmit application  
+ * status: 500 for internal server error  
+ * @param {*} userId 
+ * @returns 
+ */
 const getCheckbookUser = async(userId) => {
     // get user spi key and secret
     try {
@@ -34,25 +45,7 @@ const getCheckbookUser = async(userId) => {
         .maybeSingle())
 
         if (checkcookUserError) throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, checkcookUserError.message, checkcookUserError)
-        if (!checkbookUser) {
-            // try to create one if no record found
-            const checkbookUserResult = await createCheckbookUser(userId)
-            if (checkbookUserResult.status == 200){
-                return {
-                    status: 200,
-                    invalidFields: [],
-                    usOnRamp: CustomerStatus.ACTIVE,
-                    message: ""
-                }
-            }else{
-                return {
-                    status: checkbookUserResult.status,
-                    invalidFields: checkbookUserResult.invalidFields,
-                    usOnRamp: CustomerStatus.INACTIVE,
-                    message: checkbookUserResult.message
-                }
-            }
-        }
+        if (!checkbookUser) throw new GetCheckbookUserError(GetCheckbookUserErrorType.RECORD_NOT_FOUND, "No checkbook user found")
 
         // check if the api key and api secret is valid
 		const response = await fetch(`${CHECKBOOK_URL}/user`, {
@@ -67,8 +60,11 @@ const getCheckbookUser = async(userId) => {
         if (response.ok){
             return {
                 status: 200,
-                invalidFields: [],
-                usOnRamp: CustomerStatus.ACTIVE,
+                usOnRamp:  {
+                    status: CustomerStatus.ACTIVE,
+                    actions: [],
+                    fields: []
+                },
                 message: ""
             }
         }else if (response.status == 400){
@@ -85,23 +81,42 @@ const getCheckbookUser = async(userId) => {
         if (error.type == GetCheckbookUserErrorType.INTERNAL_ERROR){
             return {
                 status: 500,
-                invalidFields: [],
-                usOnRamp: CustomerStatus.INACTIVE,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
                 message: "please contact HIFI for more information"
             }
         }else if (error.type == GetCheckbookUserErrorType.INVALID_ACCOUNT){
             return {
                 status: 400,
-                invalidFields: [],
-                usOnRamp: CustomerStatus.INACTIVE,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: []
+                },
+                message: "please call user/update to reactivate"
+            }
+        }else if (error.type == GetCheckbookUserErrorType.RECORD_NOT_FOUND){
+            return {
+                status: 404,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: []
+                },
                 message: "please call user/update to reactivate"
             }
         }
 
         return {
             status: 500,
-            invalidFields: [],
-            usOnRamp: CustomerStatus.INACTIVE,
+            usOnRamp:  {
+                status: CustomerStatus.INACTIVE,
+                actions: [],
+                fields: []
+            },
             message: "please contact HIFI for more information"
         }
 
@@ -110,3 +125,5 @@ const getCheckbookUser = async(userId) => {
 
 
 }
+
+module.exports = getCheckbookUser

@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const supabaseCall = require("../../supabaseWithRetry")
 const { v4 } = require("uuid");
-const { BridgeCustomerStatus, virtualAccountPaymentRailToChain, getEndorsementStatus } = require("../utils");
+const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -34,21 +34,19 @@ const BridgeEndorsementStatus = {
 }
 /**
  * return 
-    status: 200, 400, 500
-
-    customerStatus: PENDING, INACTIVE, ACTIVE
-
-    usOffRamp: PENDING, INACTIVE, ACTIVE
-
-    euOffRamp: PENDING, INACTIVE, ACTIVE
-
-    user try to call when bridge customer is not created status: 400
-    other should be internal server error
+ * status: 200, 400, 500, 404
+ * customerStatus: object  
+ * usOffRamp: object  
+ * euOffRamp: object  
+ * status: 200 for created bridge customer (pending or success)  
+ * status: 400 for rejected for not submitted customer  
+ * status: 404 for possibly unsubmit application    
+ * status: 500 for internal server error      
 
  * @param {*} userId 
  * @returns 
  */
-exports.getBridgeCustomer = async(userId) => {
+const getBridgeCustomer = async(userId) => {
 
     try{
         // check if the application is submitted
@@ -62,10 +60,22 @@ exports.getBridgeCustomer = async(userId) => {
         if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
         if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
             return {
-                status: 400,
-                customerStatus: CustomerStatus.FAILED,
-                usOffRamp: CustomerStatus.FAILED,
-                euOffRamp: CustomerStatus.FAILED,
+                status: 404,
+                customerStatus: {
+                    status: CustomerStatus.FAILED,
+                    actions: ["update"],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.FAILED,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.FAILED,
+                    actions: [],
+                    fields: []
+                },
                 message: "kyc aplication not submitted, please use user/update to resubmit application"
             }
         }
@@ -80,25 +90,32 @@ exports.getBridgeCustomer = async(userId) => {
         const responseBody = await response.json()
         if (response.status == 500) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, "Bridge internal server error", responseBody)
         if (!response.ok) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
+        // extract rejections
+        const reasons = responseBody.rejection_reasons.map((reason) => {
+            return reason.developer_reason
+        })
+        const {requiredActions, fieldsToResubmit} = extractActionsAndFields(reasons)
 
-        const base_status = getEndorsementStatus(responseBody.endorsements, "base")
-        const sepa_status = getEndorsementStatus(responseBody.endorsements, "sepa")
+        //extract base, sepa status
+        const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(responseBody.endorsements, "base")
+        const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(responseBody.endorsements, "sepa")
+
         // update to database
-        const { data: updated_bridge_customer, error: updated_bridge_customer_error } = await supabaseCall(() => supabase
+        const { data: updatedBridgeCustomer, error: updatedBridgeCustomerError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.update({
                 bridge_response: responseBody,
                 status: responseBody.status,
-                base_status,
-                sepa_status,
+                base_status: baseStatus,
+                sepa_status: sepaStatus,
             })
 			.eq('user_id', userId)
 			.maybeSingle()
         )
 
 
-        if (updated_bridge_customer_error) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customer_error.message, bridge_customer_error)
-        if (!updated_bridge_customer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
+        if (updatedBridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, updatedBridgeCustomerError.message, updatedBridgeCustomerError)
+        if (!updatedBridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
 
 
         let customerStatus = CustomerStatus.PENDING
@@ -115,9 +132,21 @@ exports.getBridgeCustomer = async(userId) => {
             createLog("user/utils/getBridgeCustomer", userId, `Unmatched bridge customer status ${responseBody.status}`, null)
             return {
                 status: 200,
-                customerStatus: CustomerStatus.PENDING,
-                usOffRamp: CustomerStatus.PENDING,
-                euOffRamp: CustomerStatus.PENDING,
+                customerStatus: {
+                    status: CustomerStatus.PENDING,
+                    actions: requiredActions,
+                    fields: fieldsToResubmit
+                },
+                usRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: baseActions,
+                    fields: baseFields
+                },
+                euRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: sepaActions,
+                    fields: sepaFields
+                },
                 message: "please reach out to HIFI for more details"
             }
         }
@@ -125,26 +154,82 @@ exports.getBridgeCustomer = async(userId) => {
         if (customerStatus == CustomerStatus.INACTIVE){
             return {
                 status: 400,
-                customerStatus: CustomerStatus.INACTIVE,
-                usOffRamp: CustomerStatus.INACTIVE,
-                euOffRamp: CustomerStatus.INACTIVE,
-                message: "kyc aplication not submitted, please use user/update to resubmit application"
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [...requiredActions, "update"],
+                    fields: fieldsToResubmit
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: baseActions,
+                    fields: baseFields
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: sepaActions,
+                    fields: sepaFields
+                },
+                message: "please use user/update to resubmit application with required fields"
             }
         }else if (customerStatus == CustomerStatus.PENDING){
             return {
                 status: 200,
-                customerStatus: CustomerStatus.PENDING,
-                usOffRamp: CustomerStatus.PENDING,
-                euOffRamp: CustomerStatus.PENDING,
+                customerStatus: {
+                    status: CustomerStatus.PENDING,
+                    actions: requiredActions,
+                    fields: fieldsToResubmit
+                },
+                usRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: baseActions,
+                    fields: baseFields
+                },
+                euRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: sepaActions,
+                    fields: sepaFields
+                },
                 message: "kyc aplication still under review"
             }
         }else if (customerStatus == CustomerStatus.ACTIVE){
             return {
                 status: 200,
-                customerStatus: CustomerStatus.ACTIVE,
-                usOffRamp: base_status == BridgeEndorsementStatus.APPROVED? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE,
-                euOffRamp: sepa_status == BridgeEndorsementStatus.APPROVED? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE,
+                customerStatus: {
+                    status: CustomerStatus.ACTIVE,
+                    actions: requiredActions,
+                    fields: fieldsToResubmit
+                },
+                usRamp: {
+                    status: baseStatus == BridgeEndorsementStatus.APPROVED? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE,
+                    actions: baseActions,
+                    fields: baseFields
+                },
+                euRamp: {
+                    status: sepaStatus == BridgeEndorsementStatus.APPROVED? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE,
+                    actions: sepaActions,
+                    fields: sepaFields
+                },
                 message: ""
+            }
+        }else{
+            return {
+                status: 200,
+                customerStatus: {
+                    status: CustomerStatus.PENDING,
+                    actions: [],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: [],
+                    fields: []
+                },
+                message: "Please contact HIFI for more information"
             }
         }
         
@@ -155,27 +240,65 @@ exports.getBridgeCustomer = async(userId) => {
         if (error.type == getBridgeCustomerErrorType.INTERNAL_ERROR){
             return {
                 status: 500,
-                customerStatus: CustomerStatus.INACTIVE,
-                usOffRamp: CustomerStatus.INACTIVE,
-                euOffRamp: CustomerStatus.INACTIVE,
-                message: error.message
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "Please contact HIFI for more information"
             }
         }else if (error.type == getBridgeCustomerErrorType.RECORD_NOT_FOUND){
             return {
                 status: 404,
-                customerStatus: CustomerStatus.INACTIVE,
-                usOffRamp: CustomerStatus.INACTIVE,
-                euOffRamp: CustomerStatus.INACTIVE,
-                message: error.message
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "Please call user/update to resubmit application"
             }
         }
         return {
             status: 500,
-            customerStatus: CustomerStatus.INACTIVE,
-            usOffRamp: CustomerStatus.INACTIVE,
-            euOffRamp: CustomerStatus.INACTIVE,
-            message: error.message
+            customerStatus: {
+                status: CustomerStatus.INACTIVE,
+                actions: [],
+                fields: []
+            },
+            usRamp: {
+                status: CustomerStatus.INACTIVE,
+                actions: [],
+                fields: []
+            },
+            euRamp: {
+                status: CustomerStatus.INACTIVE,
+                actions: [],
+                fields: []
+            },
+            message: "Please contact HIFI for more information"
         }
     }
 
 }
+
+module.exports = getBridgeCustomer
