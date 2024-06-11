@@ -32,15 +32,16 @@ const CustomerStatus = {
 exports.getBridgeCustomer = async(userId) => {
 
     try{
-        const { data: bridge_customer, error: bridge_customer_error } = await supabaseCall(() => supabase
+        // check if the application is submitted
+        const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
             .from('bridge_customers')
             .select('*')
             .eq('user_id', userId)
             .maybeSingle()
         )
-        if (bridge_customer_error) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customer_error.message, bridge_customer_error)
-        if (!bridge_customer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
-        if (!bridge_customer.status || !bridge_customer.bridge_id) {
+        if (bridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridgeCustomerError.message, bridgeCustomerError)
+        if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
+        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
             return {
                 status: 400,
                 customerStatus: CustomerStatus.FAILED,
