@@ -1,0 +1,123 @@
+const supabase = require("../../supabaseClient");
+const { v4 } = require("uuid");
+const { createLog } = require("../../logger/supabaseLogger");
+const { supabaseCall } = require("../../supabaseWithRetry")
+
+const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
+const CHECKBOOK_API_KEY = process.env.CHECKBOOK_API_KEY;
+const CHECKBOOK_API_SECRET = process.env.CHECKBOOK_API_SECRET;
+
+
+const createCheckbookErrorType = {
+	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
+	INVALID_FIELD: "INVALID_FIELD",
+	INTERNAL_ERROR: "INTERNAL_ERROR",
+	USER_ALREADY_EXISTS: "USER_ALREADY_EXISTS"
+};
+
+class createCheckbookError extends Error {
+	constructor(type, message, rawResponse) {
+		super(message);
+		this.type = type;
+		this.rawResponse = rawResponse;
+		Object.setPrototypeOf(this, createBridgeCustomerError.prototype);
+	}
+}
+
+
+exports.createCheckbookBankAccount = async (userId) => {
+	let invalidFields = []
+	try {
+		const getUserInfo = () => supabase
+			.from('user_kyc')
+			.select('legal_first_name, legal_last_name')
+			.eq('user_id', userId)
+			.maybeSingle()
+
+		const { data, error } = await supabaseCall(getUserInfo)
+
+		if (user_error) {
+			throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, user_error.message, user_error)
+		}
+		if (!user) {
+			throw new createBridgeVirtualAccountError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found")
+		}
+
+		const requestBody = {
+			"name": `${user.legal_first_name} ${user.legal}`,
+			"user_id": userId
+		}
+
+		const response = await fetch(`${CHECKBOOK_URL}/user`, {
+			method: 'POST',
+			headers: {
+				'Accept': 'application/json',
+				'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(requestBody)
+		});
+
+		const responseBody = await response.json()
+
+		if (response.ok) {
+			const { data: checkbook_user_data, error: checkbook_user_error } = await supabase
+				.from('checkbook_users')
+				.insert({
+					checkbook_user_id: merchantId,
+					checkbook_id: data.id,
+					checkbook_key: data.key,
+					checkbook_secret: data.secret,
+					checkbook_name: name,
+					merchant_id: merchantId,
+				});
+
+			if (checkbook_user_error) {
+				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.message, checkbook_user_error)
+			}
+
+			return {
+				status: 200,
+				invalidFields: [],
+				message: "Checkbook user create successfully"
+			}
+
+		} else {
+			if (response.status == 400 && responseBody.more_info.name) {
+				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INVALID_FIELD, "Name is missing or invalid", responseBody)
+			} else if (response.status == 400 && responseBody.error == "User already exists") {
+				throw new createBridgeVirtualAccountError(createCheckbookErrorType.USER_ALREADY_EXISTS, "User is already exists", responseBody)
+			} else {
+				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", responseBody)
+			}
+		}
+
+
+	} catch (error) {
+		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
+			return {
+				status: 400,
+				invalidFields: ["legal_first_name", "legal_last_name"],
+				message: error.message
+			}
+		} else if (error.type == createCheckbookErrorType.USER_ALREADY_EXISTS) {
+			return {
+				status: 400,
+				invalidFields: [],
+				message: error.message
+			}
+		} else if (error.type == createCheckbookErrorType.RECORD_NOT_FOUND) {
+			return {
+				status: 404,
+				invalidFields: [],
+				message: error.message
+			}
+		} else {
+			return {
+				status: 500,
+				invalidFields: [],
+				message: error.message
+			}
+		}
+	}
+}

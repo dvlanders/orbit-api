@@ -66,9 +66,9 @@ async function createUserCore(userId) {
 				}
 
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
-				if (chain === 'POLYGON_MAINNET') {
-					await fundMaticPolygon(userId, '0.15');
-				}
+				// if (chain === 'POLYGON_MAINNET') {
+				// 	await fundMaticPolygon(userId, '0.15');
+				// }
 			}
 		}
 	} else {
