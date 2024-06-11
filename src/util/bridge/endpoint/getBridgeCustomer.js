@@ -1,5 +1,5 @@
 const supabase = require("../../supabaseClient");
-const supabaseCall = require("../../supabaseWithRetry")
+const {supabaseCall} = require("../../supabaseWithRetry")
 const { v4 } = require("uuid");
 const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
@@ -81,7 +81,7 @@ const getBridgeCustomer = async(userId) => {
         }
 
         // fetch up-to-date infortmation
-        const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}`, {
+        const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomer.bridge_id}`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
@@ -91,17 +91,17 @@ const getBridgeCustomer = async(userId) => {
         if (response.status == 500) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, "Bridge internal server error", responseBody)
         if (!response.ok) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
         // extract rejections
+        
         const reasons = responseBody.rejection_reasons.map((reason) => {
             return reason.developer_reason
         })
         const {requiredActions, fieldsToResubmit} = extractActionsAndFields(reasons)
-
+        
         //extract base, sepa status
         const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(responseBody.endorsements, "base")
         const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(responseBody.endorsements, "sepa")
-
         // update to database
-        const { data: updatedBridgeCustomer, error: updatedBridgeCustomerError } = await supabaseCall(() => supabase
+        const { error: updatedBridgeCustomerError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.update({
                 bridge_response: responseBody,
@@ -115,8 +115,6 @@ const getBridgeCustomer = async(userId) => {
 
 
         if (updatedBridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, updatedBridgeCustomerError.message, updatedBridgeCustomerError)
-        if (!updatedBridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
-
 
         let customerStatus = CustomerStatus.PENDING
 

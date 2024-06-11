@@ -130,6 +130,7 @@ const extractActionsAndFields = (reasons) => {
     if (reasons){
       reasons.map((reason) => {
         const actions = RejectionReasons[reason]
+		console.log(actions)
         if (!actions){
 			requiredActions = [...requiredActions, ...AccountActions.MANUAL_REVIEW.actions]
 			fieldsToResubmit = [...fieldsToResubmit, ...AccountActions.MANUAL_REVIEW.fieldsToResubmit]
@@ -166,7 +167,7 @@ const getEndorsementStatus = (endorsements, name) => {
 	if (!endorsements) return {status:undefined, actions:[], fields:[]}
 	const endorsement = endorsements.find(e => e.name === name);
 	const status = endorsement ? endorsement.status : undefined;
-	const additionalRequirements = endorsement ? endorsement.additional_requirements : [];
+	const additionalRequirements = endorsement && endorsement.additional_requirements ? endorsement.additional_requirements : [];
 	const actions = []
 	const fields = []
 
