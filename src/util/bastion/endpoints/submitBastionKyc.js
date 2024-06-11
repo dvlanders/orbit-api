@@ -1,6 +1,7 @@
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient")
-const { supabaseCall } = require("../../supabaseWithRetry")
+const { supabaseCall } = require("../../supabaseWithRetry");
+const { CustomerStatus } = require("../../user/common");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -21,6 +22,7 @@ class submitBastionKycError extends Error {
 		Object.setPrototypeOf(this, submitBastionKycError.prototype);
 	}
 }
+
 
 const submitBastionKyc = async (userId) => {
 	try {
@@ -81,7 +83,7 @@ const submitBastionKyc = async (userId) => {
 			return {
 				status: 200,
 				message: "wallet Kyc success",
-				customerStatus: "active"
+				customerStatus: CustomerStatus.ACTIVE
 			}
 
 		} else if (response.status == 400 && response.message == "KYC data for this user has already been submitted") {
@@ -102,7 +104,7 @@ const submitBastionKyc = async (userId) => {
 			return {
 				status: 200,
 				message: "wallet Kyc success",
-				customerStatus: "active"
+				customerStatus: CustomerStatus.ACTIVE
 			}
 		} else {
 			throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, response.message, response)
@@ -113,7 +115,7 @@ const submitBastionKyc = async (userId) => {
 		return {
 			status: 500,
 			message: "unexpected error happened when creating user wallet",
-			customerStatus: "inactive"
+			customerStatus: CustomerStatus.INACTIVE
 		}
 	}
 
