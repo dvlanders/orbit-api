@@ -89,6 +89,7 @@ async function createAndFundBastionUser(userId) {
 		// create user
 		const data = await createUserCore(userId);
 		// submit kyc
+		// if called means createUserCore is success
 		const bastionKycResult = await submitBastionKyc(userId)
 		return bastionKycResult;
 	} catch (error) {
