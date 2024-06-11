@@ -318,3 +318,145 @@ exports.getHifiUser = async (req, res) => {
 
 	return res.status(status).json(getHifiUserResponse);
 };
+
+// Docs note: the user can pass any of the fields in the create user call in order to update that particular value. 
+exports.updateHifiUser = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	// const userId = req.user.id // TODO: make sure the middleware passes the user id
+	const userId = "4075c5ba-dfa3-4886-a693-6505728571d3" // dev only
+	const fields = req.body
+
+	if (!userId) {
+		return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
+	}
+
+	// check if the field that is passsed is a valid field that we allow updates on
+	const invalidField = isFieldsForIndividualCustomerValid(fields)
+	if (invalidField) {
+		return res.status(400).json({ error: `${invalidField} is not accepted` });
+	}
+
+	// STEP 1: Save the updated fields to the user_kyc table
+
+	// update the user_kyc table record
+	try {
+		const { data: newUser, error: newUserError } = await supabaseCall(() => supabase
+			.from('user_kyc')
+			.update({
+				...fields  // Spread the fields object to include all valid fields dynamically
+			})
+			.select()
+			.single()
+		)
+
+		if (newUserError) throw newUserError
+		userId = newUser.id
+	} catch (error) {
+		createLog("user/update", "", error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+	}
+
+	// upload file
+	const files = [
+		{
+			key: "gov_id_front",
+			bucket: "compliance_id"
+		},
+		{
+			key: "gov_id_back",
+			bucket: "compliance_id"
+		},
+		{
+			key: "proof_of_residency",
+			bucket: "proof_of_residency"
+		},
+
+	]
+	const paths = {}
+	try {
+		// Iterate over the files and upload only those that are present in the fields object
+		await Promise.all(files.map(async (file) => {
+			if (fields[file.key]) {
+				paths[file.key] = await uploadFileFromUrl(fields[file.key], file.bucket, `${userId}/${file.key}`);
+			}
+		}))
+
+	} catch (error) {
+		// TODO: return the correct error to the user regarding incorrect file type and or file siZe
+		createLog("user/update", userId, error.message, error)
+		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
+			return res.status(400).json({ error: error.message })
+		}
+		// internal server error
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+	}
+
+
+	// STEP 2: Update the 3rd party providers with the new information
+
+	// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
+	// create customer object for providers
+	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
+		updateBastionUser(userId), // TODO: implement this function in utils and import before using it here
+		updateIndividualBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
+		updateCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
+	])
+
+	// STEP 3: Update the bridge_customers, checkbook_users, and bastion_users tables with the new information
+
+	// STEP 4: Contruct the response object based on the responses from the 3rd party providers
+	let updateHifiUserResponse = {}
+
+
+	// TODO: contruct the response object
+
+	// Append the appropriate status codes and props to the response object
+	if (bastionResult.status == 200) {
+		createHifiUserResponse.wallet.walletStatus = Status.ACTIVE
+	} else {
+		createHifiUserResponse.wallet.walletStatus = Status.INACTIVE
+		createHifiUserResponse.wallet.walletMessage = bastionResult.message
+	}
+
+
+	// create checkbook user
+	if (checkbookResult.status == 200) {
+		// createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.ACTIVE
+	} else {
+		const fieldsToResubmit = createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit
+		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.INACTIVE
+		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit = [...fieldsToResubmit, checkbookResult.invalidFields]
+		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage = checkbookResult.message
+	}
+
+	// create bridge customer
+	if (bridgeResult.status == 200) {
+		createHifiUserResponse.user_kyc.status = Status.PENDING
+		createHifiUserResponse.ramps.usdAch.onramp.status = Status.PENDING
+		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.PENDING
+		createHifiUserResponse.ramps.usdAch.offramp.status = Status.PENDING
+		createHifiUserResponse.ramps.euroSepa.offramp.status = Status.PENDING
+	} else if (bridgeResult.status == 400) {
+		createHifiUserResponse.user_kyc.actionNeeded.fieldsToResubmit = bridgeResult.invalidFields
+		createHifiUserResponse.user_kyc.message = bridgeResult.message
+	} else {
+		createHifiUserResponse.user_kyc.message = bridgeResult.message
+	}
+
+
+
+	let status
+	// determine the status code to return to the client
+	if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+		status = 200
+	} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+		status = 500;
+	} else {
+		status = 400;
+	}
+
+
+	return res.status(status).json(createHifiUserResponse);
+};
