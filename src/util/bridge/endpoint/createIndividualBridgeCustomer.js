@@ -3,7 +3,8 @@ const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
 const { bridgeFieldsToDatabaseFields, getEndorsementStatus } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
-const {supabaseCall} = require("../../supabaseWithRetry")
+const {supabaseCall} = require("../../supabaseWithRetry");
+const { CustomerStatus } = require("../../user/common");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -164,7 +165,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 				status: 200,
 				invalidFields: [],
 				message: "bridge customer kyc submitted",
-				customerStatus: responseBody.status
+				customerStatus: CustomerStatus.PENDING
 			}
 
 		} else if (response.status == 400) {
@@ -186,28 +187,28 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 				status: 500,
 				invalidFields: [],
 				message: error.message,
-				customerStatus: "failed"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		} else if (error.type == createBridgeCustomerErrorType.INVALID_FIELD) {
 			return {
-				status: 400,
+				status: 200,
 				invalidFields,
 				message: "Please resubmit the following parameters that are either missing, invalid or used",
-				customerStatus: "failed"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		} else if (error.type == createBridgeCustomerErrorType.RECORD_NOT_FOUND) {
 			return {
 				status: 404,
 				invalidFields: [],
 				message: error.message,
-				customerStatus: "failed"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		} else {
 			return {
 				status: 500,
 				invalidFields: [],
 				message: "Something went wrong when creating bridge individual customer",
-				customerStatus: "failed"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		}
 	}
