@@ -91,14 +91,14 @@ exports.createCheckbookUser = async (userId) => {
 			} else if (response.status == 400 && responseBody.error == "User already exists") {
 				// fetch the created user
 				const response = await fetch(`${CHECKBOOK_URL}/user/list?page=1&per_page=10&q=${userId}`, {
-					headers:{
+					headers: {
 						'Accept': 'application/json',
 						'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
 					}
 				})
 				// successfully getch record
 				const responseBody = await response.json()
-				if (response.ok && responseBody.total == 1){
+				if (response.ok && responseBody.total == 1) {
 					// todo refetch user key and secret
 				}
 				throw new createCheckbookError(createCheckbookErrorType.USER_ALREADY_EXISTS, "User is already exists", responseBody)

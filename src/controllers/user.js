@@ -281,7 +281,19 @@ exports.getPing = async (req, res) => {
 exports.createHifiUser = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
+
+
 	}
+
+	const requiredFields = [user_id]
+	const allowableFields = {
+		"user_type": "string",
+		"legal_first_name": "string",
+		"legal_last_name": "string",
+
+	}
+
+	fieldValidatorFunction(requiredFields, allowableFields)
 
 	// TODO: add all of the variables required for this endpoint to work
 	// TODO: add variable rampRegions to the request body. if rampRegions includes EUR, then we collect the additional fields required by bridge
