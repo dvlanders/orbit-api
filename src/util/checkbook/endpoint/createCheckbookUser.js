@@ -1,7 +1,8 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const createLog = require("../../logger/supabaseLogger");
-const { supabaseCall } = require("../../supabaseWithRetry")
+const { supabaseCall } = require("../../supabaseWithRetry");
+const { CustomerStatus } = require("../../user/common");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 const CHECKBOOK_API_KEY = process.env.CHECKBOOK_API_KEY;
@@ -81,7 +82,7 @@ exports.createCheckbookUser = async (userId) => {
 				status: 200,
 				invalidFields: [],
 				message: "Checkbook user create successfully",
-				customerStatus: "active"
+				customerStatus: CustomerStatus.ACTIVE
 			}
 
 		} else {
@@ -111,31 +112,31 @@ exports.createCheckbookUser = async (userId) => {
 		createLog("user/util/createCheckbookUser", userId, error.message, error)
 		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
 			return {
-				status: 400,
+				status: 200,
 				invalidFields: ["legal_first_name", "legal_last_name"],
 				message: error.message,
-				customerStatus: "inactive"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		} else if (error.type == createCheckbookErrorType.USER_ALREADY_EXISTS) {
 			return {
 				status: 400,
 				invalidFields: [],
 				message: error.message,
-				customerStatus: "inactive"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		} else if (error.type == createCheckbookErrorType.RECORD_NOT_FOUND) {
 			return {
-				status: 404,
+				status: 500,
 				invalidFields: [],
-				message: error.message,
-				customerStatus: "inactive"
+				message: "Unexpected error happened, please contact HIFI for more information",
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		} else {
 			return {
 				status: 500,
 				invalidFields: [],
 				message: "Unexpected error happened, please contact HIFI for more information",
-				customerStatus: "inactive"
+				customerStatus: CustomerStatus.INACTIVE
 			}
 		}
 	}
