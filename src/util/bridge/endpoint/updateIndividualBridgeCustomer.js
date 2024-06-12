@@ -5,16 +5,16 @@ const { bridgeFieldsToDatabaseFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const {supabaseCall} = require("../../supabaseWithRetry")
 const {BridgeCustomerStatus} = require("../utils")
-const {createIndividualBridgeCustomer} = require("./createIndividualBridgeCustomer")
+const {createIndividualBridgeCustomer} = require("./submitIndividualBridgeCustomerApplication")
 
 
-const updateBridgeCustomerErrorType = {
+const UpdateBridgeCustomerErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
 	INVALID_FIELD: "INVALID_FIELD",
 	INTERNAL_ERROR: "INTERNAL_ERROR",
 };
 
-class updateBridgeCustomerError extends Error {
+class UpdateBridgeCustomerError extends Error {
 	constructor(type, message, rawResponse) {
 		super(message);
 		this.type = type;
@@ -26,40 +26,37 @@ class updateBridgeCustomerError extends Error {
 exports.updateIndividualBridgeCustomer = async(userId) => {
     try {
         // check user bridge kyc status 
-        let { data: bridge_customers, error:bridge_customers_error } = await supabaseCall(() => supabase
+        let { data: bridgeCustomer, error:bridgeCustomerError } = await supabaseCall(() => supabase
         .from('bridge_customers')
-        .select('status')
+        .select('*')
         .eq("user_id", userId)
         .maybeSingle()
     )
 
-        if (bridge_customers_error) throw new updateBridgeCustomerError(updateBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
-        if (!bridge_customers) throw new updateBridgeCustomerError(updateBridgeCustomerErrorType.RECORD_NOT_FOUND, "No user record found")
-
-        // user already passed kyc
-        if (bridge_customers.status == BridgeCustomerStatus.ACTIVE) {
-            return {
-                status: 200,
-                message: "Customer kyc already passed",
-                customerStatus: BridgeCustomerStatus.status
-
-            }
+        if (bridgeCustomerError) throw new UpdateBridgeCustomerError(UpdateBridgeCustomerErrorType.INTERNAL_ERROR, bridgeCustomerError.message, bridgeCustomerError)
+        if (!bridgeCustomer) throw new UpdateBridgeCustomerError(UpdateBridgeCustomerErrorType.INTERNAL_ERROR, "No user record found")
+        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
+            // resubmit application
+            return await createIndividualBridgeCustomer(userId)
         }
-        // resubmit
-        return await createIndividualBridgeCustomer(userId)
+        
+        // update application
+        return await createIndividualBridgeCustomer(userId, bridgeCustomer.bridge_id, true)
+
+
 
     }catch(error){
         //  log
 		createLog("user/update", userId, error.message, error.rawResponse)
 		console.error(`Error happens in update individual bridge user `, error)
 		// process error
-		if (error.type == updateBridgeCustomerErrorType.INTERNAL_ERROR) {
+		if (error.type == UpdateBridgeCustomerErrorType.INTERNAL_ERROR) {
 			return {
 				status: 500,
 				invalidFields: [],
 				message: error.message
 			}
-		} else if (error.type == updateBridgeCustomerErrorType.RECORD_NOT_FOUND) {
+		} else if (error.type == UpdateBridgeCustomerErrorType.RECORD_NOT_FOUND) {
 			return {
 				status: 404,
 				invalidFields: [],

@@ -1,10 +1,9 @@
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const createAndFundBastionUser = require("./createAndFundBastionUser");
+const getBastionUser = require("./getBastionUser");
 const submitBastionKyc = require("./submitBastionkyc");
-
-const BASTION_URL = process.env.BASTION_URL;
-const BASTION_API_KEY = process.env.BASTION_API_KEY;
+import createLog from "../../logger/supabaseLogger";
 
 const UpdateBastionUserErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
@@ -51,21 +50,21 @@ const updateBastionUser = async(userId) => {
             return await submitBastionKyc(userId)
         }
 
-        
-        return {
-            status: 200,
-            message: "wallet Kyc success",
-            customerStatus: "active"
-        }
+        return await getBastionUser(userId)
 
-
-
-    
-    
     }catch(error){
-
+        createLog("user/util/updateBastionUser", userId, error.message, error)
+		return {
+			status: 500,
+            walletStatus: "INACTIVE",
+			message: "unexpected error happened when creating user wallet",
+            invalidFileds: [],
+            actions: [],
+		}
     }   
     
-        
-    
+}
+
+module.exports = {
+    updateBastionUser
 }
