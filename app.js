@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 // const env = process.env.NODE_ENV ?? "production";
 const env = 'development';
@@ -10,6 +12,35 @@ if (result.error) {
 	console.log(result.error);
 	process.exit(0);
 }
+
+// Swagger definition
+const swaggerDefinition = {
+	openapi: '3.0.0',
+	info: {
+		title: 'Hifi API',
+		version: '1.0.0',
+		description: 'API documentation for Hifi',
+	},
+	servers: [
+		{
+			url: 'https://api.hifibridge.com',
+			description: 'Production server',
+		},
+		{
+			url: 'https://sandbox.hifibridge.com',
+			description: 'Sandbox server',
+		},
+	],
+};
+
+// Options for the swagger docs
+const options = {
+	swaggerDefinition,
+	apis: ['./src/routes/*.js'], // Adjust the path according to your project structure
+};
+
+// Initialize swagger-jsdoc
+const specs = swaggerJsdoc(options);
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -31,18 +62,11 @@ app.use(express.urlencoded({ extended: false }));
 
 const { common } = require("./src/util/helper");
 
-// app.use((req, res, next) => {
-//   const originalResJson = res.json;
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-//   res.json = function (data) {
-//     originalResJson.call(this, data);
-//   };
-//   next();
-// });
-
+// Import your routes
 require("./src/routes")(app, express);
-
-// require("./src/util/helper/tokenRegeneration");
 
 let { logger } = require("./src/util/logger/logger");
 

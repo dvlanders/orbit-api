@@ -10,9 +10,9 @@ const CHECKBOOK_API_SECRET = process.env.CHECKBOOK_API_SECRET;
 
 const createCheckbookErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
-	INVALID_FIELD: "INVALID_FIELD",
+	INVALID_PROCESSOR_TOKEN: "INVALID_PROCESSOR_TOKEN",
 	INTERNAL_ERROR: "INTERNAL_ERROR",
-	USER_ALREADY_EXISTS: "USER_ALREADY_EXISTS"
+	UNAUTHORIZED: "UNAUTHORIZED"
 };
 
 class createCheckbookError extends Error {
@@ -25,88 +25,107 @@ class createCheckbookError extends Error {
 }
 
 
-exports.createCheckbookBankAccount = async (userId) => {
+exports.createCheckbookBankAccount = async (userId, accountType, processorToken, bankName, accountNumber, routingNumber) => {
 	let invalidFields = []
 	try {
-		const getUserInfo = () => supabase
-			.from('user_kyc')
-			.select('legal_first_name, legal_last_name')
+		// get the user's api key and api secret from the checkbook_users table
+		const { data: checkbookUserData, error: checkbookUserError } = await await supabaseCall(() => supabase
+			.from('checkbook_users')
+			.select('api_key, api_secret')
 			.eq('user_id', userId)
 			.maybeSingle()
+		);
 
-		const { data, error } = await supabaseCall(getUserInfo)
-
-		if (user_error) {
-			throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, user_error.message, user_error)
+		if (checkbookUserError) {
+			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 		}
-		if (!user) {
-			throw new createBridgeVirtualAccountError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found")
+		if (!checkbookUserData.api_key || !checkbookUserData.api_secret) {
+			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found for ach pull. Please create a user first.")
 		}
 
+		// save the checkbook account details immediately
+		const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
+			.from('checkbook_accounts')
+			.insert({
+				user_id: userId,
+				account_type: accountType,
+				processor_token: processorToken,
+				bank_name: bankName,
+				routing_number: routingNumber,
+				account_number: accountNumber
+			})
+			.select();
+
+		if (checkbookAccountError) {
+			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
+		}
+
+		// make the call to the checkbook endpoint with the processor token
 		const requestBody = {
-			"name": `${user.legal_first_name} ${user.legal}`,
-			"user_id": userId
+			"processor_token": processorToken,
 		}
 
-		const response = await fetch(`${CHECKBOOK_URL}/user`, {
+		const response = await fetch(`${CHECKBOOK_URL}/account/bank/iav/plaid`, {
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
-				'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
+				'Authorization': `${checkbookUserData.api_key}:${checkbookUserData.api_secret}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
 		});
 
-		const responseBody = await response.json()
+		const checkbookData = await response.json()
 
+		// happy path
 		if (response.ok) {
-			const { data: checkbook_user_data, error: checkbook_user_error } = await supabase
-				.from('checkbook_users')
-				.insert({
-					checkbook_user_id: merchantId,
-					checkbook_id: data.id,
-					checkbook_key: data.key,
-					checkbook_secret: data.secret,
-					checkbook_name: name,
-					merchant_id: merchantId,
-				});
 
-			if (checkbook_user_error) {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.message, checkbook_user_error)
+
+			// store the response and checkbook_account_id in the checkbook_accounts table
+			const { error: checkbookAccountUpdateError } = await supabase
+				.from('checkbook_accounts')
+				.update({
+					checkbook_response: response,
+
+				})
+				.eq('user_id', userId);
+
+			if (checkbookAccountUpdateError) {
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountUpdateError.message, checkbookAccountUpdateError)
 			}
 
 			return {
 				status: 200,
 				invalidFields: [],
-				message: "Checkbook user create successfully"
+				message: "Bank account added successfully",
+				id: checkbookAccountData.id
 			}
 
 		} else {
-			if (response.status == 400 && responseBody.more_info.name) {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INVALID_FIELD, "Name is missing or invalid", responseBody)
-			} else if (response.status == 400 && responseBody.error == "User already exists") {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.USER_ALREADY_EXISTS, "User is already exists", responseBody)
+			if (checkbookData.error == "Unauthorized") {
+				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, checkbookData.message, checkbookData)
+			} else if (checkbookData.error == "Invalid processor token") {
+				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, checkbookData.message, checkbookData)
 			} else {
-				throw new createBridgeVirtualAccountError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", responseBody)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", checkbookData)
 			}
 		}
 
 
 	} catch (error) {
-		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
-			return {
-				status: 400,
-				invalidFields: ["legal_first_name", "legal_last_name"],
-				message: error.message
-			}
-		} else if (error.type == createCheckbookErrorType.USER_ALREADY_EXISTS) {
+		if (error.type == createCheckbookErrorType.UNAUTHORIZED) {
 			return {
 				status: 400,
 				invalidFields: [],
 				message: error.message
 			}
-		} else if (error.type == createCheckbookErrorType.RECORD_NOT_FOUND) {
+		} else if (error.type == createCheckbookErrorType.INVALID_PROCESSOR_TOKEN) {
+			return {
+				status: 400,
+				invalidFields: ["processor_token"],
+				message: error.message
+			}
+		} else if (error.type == createCheckbookErrorType.INTERNAL_ERROR) {
 			return {
 				status: 404,
 				invalidFields: [],

@@ -6,6 +6,13 @@ const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
 const { createCheckbookBankAccount } = require('../util/checkbook/endpoint/createCheckbookBankAccount')
 
+
+const Status = {
+	ACTIVE: "ACTIVE",
+	INACTIVE: "INACTIVE",
+	PENDING: "PENDING",
+}
+
 exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -13,9 +20,43 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 
 	const { user_id, plaid_processor_token } = req.body;
 
-	// TODO: implement createCheckbookBankAccount
+	const checkbookAccountResult = await createCheckbookBankAccount(user_id, plaid_processor_token);
 
-	return res.status(200).json({ message: 'success' });
+	let createUsdOnrampSourceWithPlaidResponse = {
+		status: null,
+		invalidFields: [],
+		message: null,
+	}
+
+
+	if (checkbookAccountResult.status == 200) {
+		createUsdOnrampSourceWithPlaidResponse.status = Status.ACTIVE
+		createUsdOnrampSourceWithPlaidResponse.id = checkbookAccountResult.id
+		createUsdOnrampSourceWithPlaidResponse.message = "Account created successfully"
+
+	} else if (checkbookAccountResult.status == 400) {
+		createUsdOnrampSourceWithPlaidResponse.status = Status.INACTIVE
+		createUsdOnrampSourceWithPlaidResponse.invalidFields = checkbookAccountResult.invalidFields
+		createUsdOnrampSourceWithPlaidResponse.message = checkbookAccountResult.message
+	} else {
+		createUsdOnrampSourceWithPlaidResponse.status = Status.INACTIVE
+		createUsdOnrampSourceWithPlaidResponse.invalidFields = checkbookAccountResult.invalidFields
+		createUsdOnrampSourceWithPlaidResponse.message = checkbookAccountResult.message
+	}
+
+	let status
+
+	if (checkbookAccountResult.status === 200) {
+		status = 200
+	} else if (checkbookAccountResult.status === 500) {
+		status = 500;
+	} else {
+		status = 400;
+	}
+
+
+
+	return res.status(status).json(createUsdOnrampSourceWithPlaidResponse);
 
 }
 exports.createUsdOfframpDestination = async (req, res) => {
