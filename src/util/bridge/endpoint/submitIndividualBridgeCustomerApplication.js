@@ -1,9 +1,10 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToDatabaseFields, getEndorsementStatus } = require("../utils");
+const { bridgeFieldsToDatabaseFields, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
-const {supabaseCall} = require("../../supabaseWithRetry")
+const {supabaseCall} = require("../../supabaseWithRetry");
+const { CustomerStatus } = require("../../user/common");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -155,18 +156,27 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 		}
 
 		// call bridge endpoint
-		const response = await fetch(`${BRIDGE_URL}/v0/customers`, opstions);
-
+		const response = await fetch(url, opstions);
 		const responseBody = await response.json();
 		if (response.ok) {
+			// extract rejections
+			const reasons = responseBody.rejection_reasons.map((reason) => {
+				return reason.developer_reason
+			})
+			const {requiredActions, fieldsToResubmit} = extractActionsAndFields(reasons)
+	
+			//extract base, sepa status
+			const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(responseBody.endorsements, "base")
+			const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(responseBody.endorsements, "sepa")
+
 			const { error: bridge_customers_error } = await supabase
 				.from('bridge_customers')
 				.update({
 					bridge_id: responseBody.id,
 					bridge_response: responseBody,
 					status: responseBody.status,
-					base_status: getEndorsementStatus(responseBody.endorsements, "base"),
-					sepa_status: getEndorsementStatus(responseBody.endorsements, "sepa"),
+					base_status: baseStatus,
+					sepa_status: sepaStatus,
 				})
 				.eq("user_id", userId)
 				.single()
@@ -175,14 +185,25 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
 			}
 
-
-
 			return {
-				status: 200,
-				invalidFields: [],
-				message: "bridge customer kyc submitted",
-				customerStatus: responseBody.status
-			}
+                status: 200,
+                customerStatus: {
+                    status: CustomerStatus.PENDING,
+                    actions: requiredActions,
+                    fields: fieldsToResubmit
+                },
+                usRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: baseActions,
+                    fields: baseFields
+                },
+                euRamp: {
+                    status: CustomerStatus.PENDING,
+                    actions: sepaActions,
+                    fields: sepaFields
+                },
+                message: "kyc aplication still under review"
+            }
 
 		} else if (response.status == 400) {
 			// supposed to be missing or invalid field
@@ -201,30 +222,82 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 		if (error.type == createBridgeCustomerErrorType.INTERNAL_ERROR) {
 			return {
 				status: 500,
-				invalidFields: [],
-				message: error.message,
-				customerStatus: "failed"
+				customerStatus: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				usRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				euRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				message: "Please contact HIFI for more information"
 			}
 		} else if (error.type == createBridgeCustomerErrorType.INVALID_FIELD) {
 			return {
-				status: 400,
-				invalidFields,
-				message: "Please resubmit the following parameters that are either missing, invalid or used",
-				customerStatus: "failed"
+				status: 200,
+				customerStatus: {
+					status: CustomerStatus.INACTIVE,
+					actions: ["update"],
+					fields: [...invalidFields]
+				},
+				usRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				euRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				message: "Please resubmit the following parameters that are either missing, invalid or used"
 			}
 		} else if (error.type == createBridgeCustomerErrorType.RECORD_NOT_FOUND) {
 			return {
 				status: 404,
-				invalidFields: [],
-				message: error.message,
-				customerStatus: "failed"
+				customerStatus: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				usRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				euRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				message: error.message
 			}
 		} else {
 			return {
 				status: 500,
-				invalidFields: [],
-				message: "Something went wrong when creating bridge individual customer",
-				customerStatus: "failed"
+				customerStatus: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				usRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				euRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				message: "Please contact HIFI for more information"
 			}
 		}
 	}

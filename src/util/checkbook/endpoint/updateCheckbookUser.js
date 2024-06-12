@@ -1,9 +1,8 @@
 const supabase = require("../../supabaseClient");
 const createLog = require("../../logger/supabaseLogger");
 const {supabaseCall} = require("../../supabaseWithRetry")
-const {createCheckbbokUser} = require("./createCheckbookUser")
-const {getCheckbookUser} = require("./getCheckbookUser")
 const { CustomerStatus } = require("../../user/common.js");
+const { createCheckbookUser } = require("./createCheckbookUser.js");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -34,7 +33,7 @@ const updateCheckbookUser = async(userId) => {
         if (checkcookUserError) throw new UpdateCheckbookUserError(UpdateCheckbookUserErrorType.INTERNAL_ERROR, checkcookUserError.message, checkcookUserError)
         if (!checkbookUser) {
             // create a new checkbook user
-            return await createCheckbbokUser(userId)
+            return await createCheckbookUser(userId)
         }
 
         // check if the api key and api secret is valid
@@ -60,7 +59,7 @@ const updateCheckbookUser = async(userId) => {
             }
         }else if (response.status == 400){
             // create a new checkbook user
-            return await createCheckbbokUser(userId)
+            return await createCheckbookUser(userId)
         }else{
             throw new UpdateCheckbookUserError(UpdateCheckbookUserErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
         }
@@ -90,5 +89,10 @@ const updateCheckbookUser = async(userId) => {
             message: "please contact HIFI for more information"
         }
     }
+}
+
+
+module.exports = {
+    updateCheckbookUser
 }
 

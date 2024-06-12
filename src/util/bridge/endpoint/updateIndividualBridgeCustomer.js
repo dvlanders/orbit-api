@@ -47,27 +47,68 @@ exports.updateIndividualBridgeCustomer = async(userId) => {
 
     }catch(error){
         //  log
-		createLog("user/update", userId, error.message, error.rawResponse)
-		console.error(`Error happens in update individual bridge user `, error)
+		createLog("user/util/updateIndividualBridgeCustomer", userId, error.message, error.rawResponse)
 		// process error
 		if (error.type == UpdateBridgeCustomerErrorType.INTERNAL_ERROR) {
 			return {
 				status: 500,
-				invalidFields: [],
-				message: error.message
+				customerStatus: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				usRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				euRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				message: "Please contact HIFI for more information"
 			}
 		} else if (error.type == UpdateBridgeCustomerErrorType.RECORD_NOT_FOUND) {
 			return {
-				status: 404,
-				invalidFields: [],
-				message: error.message
+				status: 500,
+				customerStatus: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				usRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				euRamp: {
+					status: CustomerStatus.INACTIVE,
+					actions: [],
+					fields: []
+				},
+				message: "Please contact HIFI for more information"
 			}
 		}
 
         return {
-            status: 500,
-            invalidFields: [],
-            message: "Internal server error"
-        }
+			status: 500,
+			customerStatus: {
+				status: CustomerStatus.INACTIVE,
+				actions: [],
+				fields: []
+			},
+			usRamp: {
+				status: CustomerStatus.INACTIVE,
+				actions: [],
+				fields: []
+			},
+			euRamp: {
+				status: CustomerStatus.INACTIVE,
+				actions: [],
+				fields: []
+			},
+			message: "Please contact HIFI for more information"
+		}
     }
 }

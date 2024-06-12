@@ -79,32 +79,33 @@ const submitBastionKyc = async (userId) => {
 
 			if (newBastionUserError) throw new submitBastionKycError(submitBastionKycErrorType.INVALID_FIELD, newBastionUserError.message, newBastionUserError)
 			if (responseBody.kycPassed === false) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, 'This region is not supported by HIFI at this time', "")
-
-			return {
-				status: 200,
-				message: "wallet Kyc success",
-				customerStatus: CustomerStatus.ACTIVE
+			
+			if (responseBody.jurisdictionCheckPassed){
+				return {
+					status: 200,
+					walletStatus:  CustomerStatus.ACTIVE,
+					invalidFileds: [],
+					actions: [],
+					message: ""
+				}
+			}else{
+				return {
+					status: 200,
+					walletStatus:  CustomerStatus.INACTIVE,
+					invalidFileds: ["ip_address"],
+					actions: ["update"],
+					message: "This region (ip address) is not supported by HIFI at this time"
+				}
 			}
 
 		} else if (response.status == 400 && response.message == "KYC data for this user has already been submitted") {
 			// FIXME need bastion to update endpoint
-			const { data, error } = await supabaseCall(() => supabase
-				.from('bastion_users')
-				.upsert(
-					{
-						user_id: userId,
-						kyc_response: null,
-						kyc_passed: true,
-						jurisdiction_check_passed: null,
-						kyc_level: null
-					},
-					{ onConflict: "user_id" }
-				)
-				.select())
 			return {
 				status: 200,
-				message: "wallet Kyc success",
-				customerStatus: CustomerStatus.ACTIVE
+				walletStatus:  CustomerStatus.ACTIVE,
+				invalidFileds: [],
+				actions: [],
+				message: ""
 			}
 		} else {
 			throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, response.message, response)
@@ -114,8 +115,10 @@ const submitBastionKyc = async (userId) => {
 		createLog("user/util/submitBastionKyc", userId, error.message, error)
 		return {
 			status: 500,
-			message: "unexpected error happened when creating user wallet",
-			customerStatus: CustomerStatus.INACTIVE
+			walletStatus:  CustomerStatus.INACTIVE,
+			invalidFileds: [],
+			actions: [],
+			message: "unexpected error happened when creating user wallet, please contact hifi for more information"
 		}
 	}
 

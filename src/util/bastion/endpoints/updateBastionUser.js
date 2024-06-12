@@ -1,9 +1,9 @@
+const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const createAndFundBastionUser = require("./createAndFundBastionUser");
 const getBastionUser = require("./getBastionUser");
 const submitBastionKyc = require("./submitBastionkyc");
-import createLog from "../../logger/supabaseLogger";
 
 const UpdateBastionUserErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
@@ -56,15 +56,13 @@ const updateBastionUser = async(userId) => {
         createLog("user/util/updateBastionUser", userId, error.message, error)
 		return {
 			status: 500,
-            walletStatus: "INACTIVE",
-			message: "unexpected error happened when creating user wallet",
-            invalidFileds: [],
-            actions: [],
+			walletStatus:  CustomerStatus.INACTIVE,
+			invalidFileds: [],
+			actions: [],
+			message: "unexpected error happened when creating user wallet, please contact hifi for more information"
 		}
     }   
     
 }
 
-module.exports = {
-    updateBastionUser
-}
+module.exports = updateBastionUser
