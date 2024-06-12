@@ -79,7 +79,7 @@ async function createUserCore(userId) {
 }
 
 /**
- * Public function to create and fund a Bastion user, handles errors.
+ * Public function to create and fund a Bastion user and passing kyc, handles errors.
  * @param {string} userId - The user's unique identifier.
  * @returns {Promise<Object>} A promise resolving to the API data or an error object.
  */
@@ -96,18 +96,18 @@ async function createAndFundBastionUser(userId) {
 		if (error instanceof BastionError) {
 			return {
 				status: error.status,
-				invalidFields: [],
-				message: error.message,
-				additionalDetails: error.details,
-				customerStatus: "inactive"
+				walletStatus: CustomerStatus.INACTIVE,
+				invalidFileds: [],
+				actions: [],
+				message: "Unexpected error happened, please contact HIFI for more information"
 			}
 		}
 		return {
 			status: 500,
-			invalidFields: [],
-			message: "Unexpected error",
-			additionalDetails: error,
-			customerStatus: "inactive"
+            walletStatus: CustomerStatus.INACTIVE,
+            invalidFileds: [],
+            actions: [],
+            message: "Unexpected error happened, please contact HIFI for more information"
 		}
 	}
 }

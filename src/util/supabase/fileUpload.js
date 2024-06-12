@@ -50,12 +50,14 @@ async function uploadFileFromUrl(fileUrl, bucketName, filePath, acceptedFileType
       // Upload the Blob to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, fileBlob, {
+        .upload(
+          filePath, fileBlob, {
           contentType: fileBlob.type, // Optional: set the content type
+          upsert: true
         });
   
       if (error) {
-        throw new Error(fileUploadErrorType.INTERNAL_ERROR, `Failed to upload file: ${error.message}`, error);
+        throw new fileUploadError(fileUploadErrorType.INTERNAL_ERROR, `Failed to upload file: ${error.message}`, error);
       }
   
       return data.path

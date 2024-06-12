@@ -79,11 +79,14 @@ exports.createCheckbookUser = async (userId) => {
 			}
 
 			return {
-				status: 200,
-				invalidFields: [],
-				message: "Checkbook user create successfully",
-				customerStatus: CustomerStatus.ACTIVE
-			}
+                status: 200,
+                usOnRamp:  {
+                    status: CustomerStatus.ACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: ""
+            }
 
 		} else {
 			if (response.status == 400 && responseBody.more_info.name) {
@@ -112,32 +115,44 @@ exports.createCheckbookUser = async (userId) => {
 		createLog("user/util/createCheckbookUser", userId, error.message, error)
 		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
 			return {
-				status: 200,
-				invalidFields: ["legal_first_name", "legal_last_name"],
-				message: error.message,
-				customerStatus: CustomerStatus.INACTIVE
-			}
+                status: 200,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: ["legal_first_name", "legal_last_name"]
+                },
+                message: "please update the information"
+            }
 		} else if (error.type == createCheckbookErrorType.USER_ALREADY_EXISTS) {
 			return {
-				status: 400,
-				invalidFields: [],
-				message: error.message,
-				customerStatus: CustomerStatus.INACTIVE
-			}
+                status: 500,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "please contact HIFI for more information"
+            }
 		} else if (error.type == createCheckbookErrorType.RECORD_NOT_FOUND) {
 			return {
-				status: 500,
-				invalidFields: [],
-				message: "Unexpected error happened, please contact HIFI for more information",
-				customerStatus: CustomerStatus.INACTIVE
-			}
+                status: 500,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "please contact HIFI for more information"
+            }
 		} else {
 			return {
-				status: 500,
-				invalidFields: [],
-				message: "Unexpected error happened, please contact HIFI for more information",
-				customerStatus: CustomerStatus.INACTIVE
-			}
+                status: 500,
+                usOnRamp:  {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "please contact HIFI for more information"
+            }
 		}
 	}
 }

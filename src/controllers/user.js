@@ -1,17 +1,20 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-
+const updateBastionUser = require("../util/bastion/endpoints/updateBastionUser")
 const createAndFundBastionUser = require('../util/bastion/endpoints/createAndFundBastionUser');
 const createLog = require('../util/logger/supabaseLogger');
-const { createIndividualBridgeCustomer } = require('../util/bridge/endpoint/createIndividualBridgeCustomer')
-const { createToSLink } = require("../util/bridge/endpoint/createToSLink");
+const { createIndividualBridgeCustomer } = require('../util/bridge/endpoint/submitIndividualBridgeCustomerApplication')
+const { createToSLink } = require("../util/bridge/endpoint/createToSLink_dep");
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
-const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided } = require("../util/user/createUser");
+const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided, informationUploadForUpdateUser, informationUploadForCreateUser, InformationUploadError, ipCheck } = require("../util/user/createUser");
 const { uploadFileFromUrl, fileUploadErrorType } = require('../util/supabase/fileUpload');
 const getBastionUser = require('../util/bastion/endpoints/getBastionUser');
 const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
 const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
+const { isUUID } = require('../util/common/fieldsValidation');
+const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
+const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -28,687 +31,232 @@ exports.getPing = async (req, res) => {
 	return res.status(200).json({ message: 'pong' });
 };
 
-/**
- * @swagger
- * /user/create:
- *   post:
- *     summary: Create user
- *     description: This endpoint creates a new user in Hifi.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *               email:
- *                 type: string
- *               user_type:
- *                 type: string
- *               signed_agreement_id:
- *                 type: string
- *               legal_first_name:
- *                 type: string
- *               legal_last_name:
- *                 type: string
- *               compliance_email:
- *                 type: string
- *               compliance_phone:
- *                 type: string
- *               address_line_1:
- *                 type: string
- *               address_line_2:
- *                 type: string
- *               city:
- *                 type: string
- *               state_province_region:
- *                 type: string
- *               postal_code:
- *                 type: string
- *               country:
- *                 type: string
- *               address_type:
- *                 type: string
- *               tax_identification_number:
- *                 type: string
- *               id_type:
- *                 type: string
- *               gov_id_country:
- *                 type: string
- *               business_name:
- *                 type: string
- *               business_description:
- *                 type: string
- *               business_type:
- *                 type: string
- *               website:
- *                 type: string
- *               source_of_funds:
- *                 type: string
- *               is_dao:
- *                 type: boolean
- *               transmits_customer_funds:
- *                 type: boolean
- *               compliance_screening_explanation:
- *                 type: string
- *               ip_address:
- *                 type: string
- *               date_of_birth:
- *                 type: string
- *                 format: date
- *               gov_id_front:
- *                 type: string
- *               gov_id_back:
- *                 type: string
- *               proof_of_residency:
- *                 type: string
- *     responses:
- *       200:
- *         description: User created successfully
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               wallet:
- *                 type: object
- *                 properties:
- *                   walletStatus: string
- *                   actionNeeded: 
- *                     type: object
- *                     properties:
- *                       actions: 
- *                         type: array
- *                         items:
- *                           type: string
- *                       fieldsToResubmit: 
- *                         type: array
- *                         items:
- *                           type: string
- *                   walletMessage: string
- *               user_kyc:
- *                 type: object
- *                 properties:
- *                   status: string
- *                   actionNeeded: 
- *                     type: object
- *                     properties:
- *                       actions: 
- *                         type: array
- *                         items:
- *                           type: string
- *                       fieldsToResubmit: 
- *                         type: array
- *                         items:
- *                           type: string
- *                   message: string
- *               ramps:
- *                 type: object
- *                 properties:
- *                   usdAch:
- *                     type: object
- *                     properties:
- *                       onramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *                           achPull:
- *                             type: object
- *                             properties:
- *                               achPullStatus: string
- *                               actionNeeded: 
- *                                 type: object
- *                                 properties:
- *                                   actions: 
- *                                     type: array
- *                                     items:
- *                                       type: string
- *                                   fieldsToResubmit: 
- *                                     type: array
- *                                     items:
- *                                       type: string
- *                               achPullMessage: string
- *                       offramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *                   euroSepa:
- *                     type: object
- *                     properties:
- *                       onramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *                       offramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *               user:
- *                 type: object
- *                 properties:
- *                   id: string
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                 missing_fields:
- *                   type: array
- *                   items:
- *                     type: string
- *       405:
- *         description: Method not allowed
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
 exports.createHifiUser = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
-
-
 	}
-
-	const requiredFields = [user_id]
-	const allowableFields = {
-		"user_type": "string",
-		"legal_first_name": "string",
-		"legal_last_name": "string",
-
-	}
-
-	fieldValidatorFunction(requiredFields, allowableFields)
-
-	// TODO: add all of the variables required for this endpoint to work
-	// TODO: add variable rampRegions to the request body. if rampRegions includes EUR, then we collect the additional fields required by bridge
-
-	// Customer profile id, passed from middleware after api key validation
-	// const profileId = req.profile.id
-	const profileId = "7cdf31e1-eb47-4b43-82f7-e368e3f6197b" // dev only
-	const fields = req.body
-
-	if (!profileId) {
-		return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
-	}
-	// check if the body is valid
-	const invalidField = isFieldsForIndividualCustomerValid(fields)
-	if (invalidField) {
-		return res.status(400).json({ error: `${invalidField} is not accepted` });
-	}
-
-	// check if required fields are uploaded
-	const missingFields = isRequiredFieldsForIndividualCustomerProvided(fields)
-
-	if (missingFields && missingFields.length > 0) {
-		return res.status(400).json({ error: 'please provide required fields', missing_fields: missingFields });
-	}
-
-	// create new user
-	let userId
 	try {
-		const { data: newUser, error: newUserError } = await supabaseCall(() => supabase
-			.from('users')
-			.insert(
-				{ profile_id: profileId, user_type: fields.user_type },
-			)
-			.select()
-			.single()
-		)
+		// TODO: add all of the variables required for this endpoint to work
+		// TODO: add variable rampRegions to the request body. if rampRegions includes EUR, then we collect the additional fields required by bridge
 
-		if (newUserError) throw newUserError
-		userId = newUser.id
-	} catch (error) {
-		createLog("user/create", "", error.message, error)
-		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-	}
+		// Customer profile id, passed from middleware after api key validation
+		// const profileId = req.profile.id
+		const profileId = "7cdf31e1-eb47-4b43-82f7-e368e3f6197b" // dev only
+		const fields = req.body
 
-	// create bridge record and input signed agreement id
-	try {
-		const { error: newBridgeRecordError } = await supabase
-			.from('bridge_customers')
-			.insert(
-				{ user_id: userId, signed_agreement_id: fields.signed_agreement_id },
-			)
-			.select()
+		if (!profileId) {
+			return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
+		}
 
-		if (newBridgeRecordError) throw newBridgeRecordError
+		// upload information and create new user
+		let userId
+		try{
+			userId = await informationUploadForCreateUser(profileId, fields)
+		}catch(error){
+			if (error instanceof InformationUploadError){
+				return res.status(error.status).json(error.rawResponse)
+			}
+			createLog("user/create", "", error.message, error)
+			return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		}
 
-	} catch (error) {
-		createLog("user/create", "", error.message, error)
-		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-	}
-
-	// base response
-	let createHifiUserResponse = {
-		wallet: {
-			walletStatus: Status.INACTIVE,
-			walletActionNeeded: [],
-			walletMessage: ""
-		},
-		user_kyc: {
-			status: Status.INACTIVE, // represent bridge
-			actionNeeded: {
-				fieldsToResubmit: [],
+		// base response
+		let createHifiUserResponse = {
+			wallet: {
+				walletStatus: Status.INACTIVE,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: ""
 			},
-			message: '',
-		},
-		ramps: {
-			usdAch: {
-				onramp: {
-					status: Status.INACTIVE, // represent bridge
-					actionNeeded: {
-						fieldsToResubmit: [],
-					},
-					message: '',
-					achPull: {
-						achPullStatus: Status.INACTIVE, //represent bridge + checkbook
-						achPullActionNeeded: {
+			user_kyc: {
+				status: Status.INACTIVE, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
 							fieldsToResubmit: [],
 						},
-						achPullMessage: ""
+						message: '',
+						achPull: {
+							achPullStatus: Status.INACTIVE, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+							achPullMessage: ""
 
+						},
+					},
+					offramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
 					},
 				},
-				offramp: {
-					status: Status.INACTIVE, // represent bridge
-					actionNeeded: {
-						fieldsToResubmit: [],
+				euroSepa: {
+					onramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
 					},
-					message: ''
+					offramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
 				},
 			},
-			euroSepa: {
-				onramp: {
-					status: Status.INACTIVE, // represent bridge
-					actionNeeded: {
-						fieldsToResubmit: [],
-					},
-					message: 'SEPA onRamp will be available in near future',
-				},
-				offramp: {
-					status: Status.INACTIVE, // represent bridge
-					actionNeeded: {
-						fieldsToResubmit: [],
-					},
-					message: ''
-				},
-			},
-		},
-		user: {
-			id: userId
-		}
-	}
-
-	// upload file
-	const files = [
-		{
-			key: "gov_id_front",
-			bucket: "compliance_id"
-		},
-		{
-			key: "gov_id_back",
-			bucket: "compliance_id"
-		},
-		{
-			key: "proof_of_residency",
-			bucket: "proof_of_residency"
-		},
-
-	]
-	const paths = {}
-	try {
-		await Promise.all(files.map(async (file) => {
-			if (fields[file.key]) {
-				paths[file.key] = await uploadFileFromUrl(fields[file.key], file.bucket, `${userId}/${file.key}`);
+			user: {
+				id: userId
 			}
-		}))
-
-	} catch (error) {
-		// TODO: return the correct error to the user regarding incorrect file type and or file siZe
-		createLog("user/create", userId, error.message, error)
-		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
-			return res.status(400).json({ error: error.message })
 		}
-		// internal server error
-		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-	}
 
-	// insert info into database
-	try {
-		//TODO: remove next lines. just enumerate all the inserted fields
-		const { data, error } = await supabaseCall(() => supabase
-			.from('user_kyc')
-			.insert(
-				{
-					user_id: userId,
-					legal_first_name: fields.legal_first_name,
-					legal_last_name: fields.legal_last_name,
-					compliance_email: fields.compliance_email,
-					compliance_phone: fields.compliance_phone,
-					address_line_1: fields.address_line_1,
-					address_line_2: fields.address_line_2,
-					city: fields.city,
-					state_province_region: fields.state_province_region,
-					postal_code: fields.postal_code,
-					country: fields.country,
-					address_type: fields.address_type,
-					tax_identification_number: fields.tax_identification_number,
-					id_type: fields.id_type,
-					gov_id_country: fields.gov_id_country,
-					business_name: fields.business_name,
-					business_description: fields.business_description,
-					business_type: fields.business_type,
-					website: fields.website,
-					source_of_funds: fields.source_of_funds,
-					is_dao: fields.is_dao,
-					transmits_customer_funds: fields.transmits_customer_funds,
-					compliance_screening_explanation: fields.compliance_screening_explanation,
-					ip_address: fields.ip_address,
-					date_of_birth: new Date(fields.date_of_birth).toISOString(),
-					gov_id_front_path: paths.gov_id_front,
-					gov_id_back_path: paths.gov_id_back,
-					proof_of_residency_path: paths.proof_of_residency
+		// create customer object for providers
+		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
+			createAndFundBastionUser(userId),
+			createIndividualBridgeCustomer(userId),
+			createCheckbookUser(userId)
+		])
+
+		// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.
+		// Submit Bastion kyc
+		// Bastion status
+		const wallet = {
+			walletStatus: bastionResult.walletStatus,
+			walletMessage: bastionResult.message,
+			actionNeeded: {
+				actions: [...bastionResult.actions, ...createHifiUserResponse.wallet.actionNeeded.actions],
+				fieldsToResubmit: [...bastionResult.invalidFileds, ...createHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+			}
+		}
+		createHifiUserResponse.wallet = wallet
+
+		//checkbook status
+		const achPull = {
+			achPullStatus: checkbookResult.usOnRamp.status,
+			achPullMessage: [...checkbookResult.message, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			actionNeeded: {
+				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+			}
+		}
+		createHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+
+		// bridge status
+		// kyc
+		const userKyc = {
+			status: bridgeResult.customerStatus.status,
+			actionNeeded: {
+				actions: bridgeResult.customerStatus.actions,
+				fieldsToResubmit:  bridgeResult.customerStatus.fields,
+			},
+			message: bridgeResult.message,
+		}
+		createHifiUserResponse.user_kyc = userKyc
+		// usRamp
+		const usdAch = {
+			onramp: {
+				status: bridgeResult.usRamp.status,
+				actionNeeded: {
+					actions: bridgeResult.customerStatus.actions,
+					fieldsToResubmit: bridgeResult.customerStatus.fields
+				},
+				achPull:{
+					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
+					achPullMessage: [...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					actionNeeded: {
+						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+					}
 				}
-			)
-			.select()
-		)
-		if (error) throw error
-	} catch (error) {
+			},
+			offramp: {
+				status: bridgeResult.usRamp.status,
+				actionNeeded: {
+					actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+				},
+			}
+		}
+		createHifiUserResponse.ramps.usdAch = usdAch
+		// euRamp
+		const euroSepa = {
+			onramp: {
+				status: Status.INACTIVE,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: 'SEPA onRamp will be available in near future',
+			},
+			offramp: {
+				status: bridgeResult.euRamp.status,
+				actionNeeded: {
+					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+				},
+				message: ''
+			},
+		}
+		createHifiUserResponse.ramps.euroSepa = euroSepa
+
+
+		let status
+		// determine the status code to return to the client
+		if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+			status = 200
+		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+			status = 500;
+		} else {
+			status = 400;
+		}
+
+
+		return res.status(status).json(createHifiUserResponse);
+	}catch (error){
 		createLog("user/create", userId, error.message, error)
-		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"});
 	}
-
-	// create customer object for providers
-	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-		createAndFundBastionUser(userId),
-		createIndividualBridgeCustomer(userId),
-		createCheckbookUser(userId)
-	])
-
-	// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.
-	// Submit Bastion kyc
-	// should only always be internal server error if we check the fields before hand
-	if (bastionResult.status == 200) {
-		createHifiUserResponse.wallet.walletStatus = Status.ACTIVE
-	} else {
-		createHifiUserResponse.wallet.walletStatus = Status.INACTIVE
-		createHifiUserResponse.wallet.walletMessage = bastionResult.message
-	}
-
-
-	// create checkbook user
-	if (checkbookResult.status == 200) {
-		// createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.ACTIVE
-	} else {
-		const fieldsToResubmit = createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.INACTIVE
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit = [...fieldsToResubmit, checkbookResult.invalidFields]
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage = checkbookResult.message
-	}
-
-	// create bridge customer
-	if (bridgeResult.status == 200) {
-		createHifiUserResponse.user_kyc.status = Status.PENDING
-		createHifiUserResponse.ramps.usdAch.onramp.status = Status.PENDING
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.PENDING
-		createHifiUserResponse.ramps.usdAch.offramp.status = Status.PENDING
-		createHifiUserResponse.ramps.euroSepa.offramp.status = Status.PENDING
-	} else if (bridgeResult.status == 400) {
-		createHifiUserResponse.user_kyc.actionNeeded.fieldsToResubmit = bridgeResult.invalidFields
-		createHifiUserResponse.user_kyc.message = bridgeResult.message
-	} else {
-		createHifiUserResponse.user_kyc.message = bridgeResult.message
-	}
-
-
-
-	let status
-	// determine the status code to return to the client
-	if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
-		status = 200
-	} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
-		status = 500;
-	} else {
-		status = 400;
-	}
-
-
-	return res.status(status).json(createHifiUserResponse);
 };
 
-/**
- * /user
- * get:
- *   summary: Get user status
- *   description: Get all user status including KYC, ramp, wallet transfer
- *   queryParams:
- *     user_id: string
- *   responses:
- *     200, 400, 500:
- *       description: User status retrieved successfully
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               wallet:
- *                 type: object
- *                 properties:
- *                   walletStatus: string
- *                   actionNeeded: 
- *                     type: object
- *                     properties:
- *                       actions: 
- *                         type: array
- *                         items:
- *                           type: string
- *                       fieldsToResubmit: 
- *                         type: array
- *                         items:
- *                           type: string
- *                   walletMessage: string
- *               user_kyc:
- *                 type: object
- *                 properties:
- *                   status: string
- *                   actionNeeded: 
- *                     type: object
- *                     properties:
- *                       actions: 
- *                         type: array
- *                         items:
- *                           type: string
- *                       fieldsToResubmit: 
- *                         type: array
- *                         items:
- *                           type: string
- *                   message: string
- *               ramps:
- *                 type: object
- *                 properties:
- *                   usdAch:
- *                     type: object
- *                     properties:
- *                       onramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *                           achPull:
- *                             type: object
- *                             properties:
- *                               achPullStatus: string
- *                               actionNeeded: 
- *                                 type: object
- *                                 properties:
- *                                   actions: 
- *                                     type: array
- *                                     items:
- *                                       type: string
- *                                   fieldsToResubmit: 
- *                                     type: array
- *                                     items:
- *                                       type: string
- *                               achPullMessage: string
- *                       offramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *                   euroSepa:
- *                     type: object
- *                     properties:
- *                       onramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *                       offramp:
- *                         type: object
- *                         properties:
- *                           status: string
- *                           actionNeeded: 
- *                             type: object
- *                             properties:
- *                               actions: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                               fieldsToResubmit: 
- *                                 type: array
- *                                 items:
- *                                   type: string
- *                           message: string
- *               user:
- *                 type: object
- *                 properties:
- *                   id: string
- *     500:
- *       description: Internal server error
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               error:
- *                 type: string
- *                 example: "Unexpected error happened, please contact HIFI for more information"
- */
 exports.getHifiUser = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	try{
-		const { user_id } = req.query
+		const { user_id: userId } = req.query
+		//invalid user_id
+		if (!isUUID(userId)) return res.status(404).json({error: "User not found for provided user_id"})
+		// check if user is created
+		let { data: user, error: userError } = await supabaseCall(()=> supabase
+			.from('users')
+			.select('*')
+			.eq("id", userId)
+			.maybeSingle()
+		)
+
+		if (userError) return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		if (!user) return res.status(404).json({error: "User not found for provided user_id"})
+		
 
 		// base response
 		let getHifiUserResponse = {
@@ -776,15 +324,15 @@ exports.getHifiUser = async (req, res) => {
 				},
 			},
 			user: {
-				id: user_id
+				id: userId
 			}
 		}
 
 
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			getBastionUser(user_id), // TODO: implement this function in utils and import before using it here
-			getBridgeCustomer(user_id), // TODO: implement this function in utils and import before using it here
-			getCheckbookUser(user_id) // TODO: implement this function in utils and import before using it here
+			getBastionUser(userId), // TODO: implement this function in utils and import before using it here
+			getBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
+			getCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
 		])
 
 		// Bastion status
@@ -797,8 +345,6 @@ exports.getHifiUser = async (req, res) => {
 			}
 		}
 		getHifiUserResponse.wallet = wallet
-
-
 
 		//checkbook status
 		const achPull = {
@@ -824,7 +370,7 @@ exports.getHifiUser = async (req, res) => {
 		// usRamp
 		const usdAch = {
 			onramp: {
-				status: bridgeResult.customerStatus.status,
+				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
 					fieldsToResubmit: bridgeResult.customerStatus.fields
@@ -884,148 +430,218 @@ exports.getHifiUser = async (req, res) => {
 
 		return res.status(status).json(getHifiUserResponse);
 	}catch(error){
+		createLog("user/get", userId, error.message, error)
 		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"});
 	}
 };
 
-// Docs note: the user can pass any of the fields in the create user call in order to update that particular value. 
 exports.updateHifiUser = async (req, res) => {
 	if (req.method !== 'PUT') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	// const userId = req.user.id // TODO: make sure the middleware passes the user id
-	const userId = "4075c5ba-dfa3-4886-a693-6505728571d3" // dev only
-	const fields = req.body
 
-	if (!userId) {
-		return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
-	}
+	try{
+	
+		const {user_id: userId} = req.query
+		const fields = req.body
 
-	// check if the field that is passsed is a valid field that we allow updates on
-	const invalidField = isFieldsForIndividualCustomerValid(fields)
-	if (invalidField) {
-		return res.status(400).json({ error: `${invalidField} is not accepted` });
-	}
+		//invalid user_id
+		if (!isUUID(userId)) return res.status(404).json({error: "User not found for provided user_id"})
+			// check if user is created
+			let { data: user, error: userError } = await supabaseCall(()=> supabase
+				.from('users')
+				.select('*')
+				.eq("id", userId)
+				.maybeSingle()
+			)
 
-	// STEP 1: Save the updated fields to the user_kyc table
+		if (userError) return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+		if (!user) return res.status(404).json({error: "User not found for provided user_id"})
 
-	// update the user_kyc table record
-	try {
-		const { data: newUser, error: newUserError } = await supabaseCall(() => supabase
-			.from('user_kyc')
-			.update({
-				...fields  // Spread the fields object to include all valid fields dynamically
-			})
-			.select()
-			.single()
-		)
-
-		if (newUserError) throw newUserError
-		userId = newUser.id
-	} catch (error) {
-		createLog("user/update", "", error.message, error)
-		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-	}
-
-	// upload file
-	const files = [
-		{
-			key: "gov_id_front",
-			bucket: "compliance_id"
-		},
-		{
-			key: "gov_id_back",
-			bucket: "compliance_id"
-		},
-		{
-			key: "proof_of_residency",
-			bucket: "proof_of_residency"
-		},
-
-	]
-	const paths = {}
-	try {
-		// Iterate over the files and upload only those that are present in the fields object
-		await Promise.all(files.map(async (file) => {
-			if (fields[file.key]) {
-				paths[file.key] = await uploadFileFromUrl(fields[file.key], file.bucket, `${userId}/${file.key}`);
-			}
-		}))
-
-	} catch (error) {
-		// TODO: return the correct error to the user regarding incorrect file type and or file siZe
-		createLog("user/update", userId, error.message, error)
-		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
-			return res.status(400).json({ error: error.message })
+		// upload all the information
+		try{
+			await informationUploadForUpdateUser(userId, fields)
+		}catch (error){
+			return res.status(error.status).json(error.rawResponse)
 		}
-		// internal server error
-		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		
+		// STEP 2: Update the 3rd party providers with the new information
+
+		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
+		// update customer object for providers
+		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
+			updateBastionUser(userId), // TODO: implement this function in utils and import before using it here
+			updateIndividualBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
+			updateCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
+		])
+
+		// STEP 3: Update the bridge_customers, checkbook_users, and bastion_users tables with the new information
+
+		// STEP 4: Contruct the response object based on the responses from the 3rd party providers
+		let updateHifiUserResponse = {
+			wallet: {
+				walletStatus: Status.INACTIVE,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: ""
+			},
+			user_kyc: {
+				status: Status.INACTIVE, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: Status.INACTIVE, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+							achPullMessage: ""
+
+						},
+					},
+					offramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offramp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+			user: {
+				id: userId
+			}
+		}
+
+		// Bastion status
+		const wallet = {
+			walletStatus: bastionResult.walletStatus,
+			walletMessage: bastionResult.message,
+			actionNeeded: {
+				actions: [...bastionResult.actions, ...updateHifiUserResponse.wallet.actionNeeded.actions],
+				fieldsToResubmit: [...bastionResult.invalidFileds, ...updateHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+			}
+		}
+		updateHifiUserResponse.wallet = wallet
+
+		//checkbook status
+		const achPull = {
+			achPullStatus: checkbookResult.usOnRamp.status,
+			achPullMessage: [...checkbookResult.message, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			actionNeeded: {
+				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+			}
+		}
+		updateHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+
+		// bridge status
+		// kyc
+		const userKyc = {
+			status: bridgeResult.customerStatus.status,
+			actionNeeded: {
+				actions: bridgeResult.customerStatus.actions,
+				fieldsToResubmit:  bridgeResult.customerStatus.fields,
+			},
+			message: bridgeResult.message,
+		}
+		updateHifiUserResponse.user_kyc = userKyc
+		// usRamp
+		const usdAch = {
+			onramp: {
+				status: bridgeResult.usRamp.status,
+				actionNeeded: {
+					actions: bridgeResult.customerStatus.actions,
+					fieldsToResubmit: bridgeResult.customerStatus.fields
+				},
+				achPull:{
+					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
+					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					actionNeeded: {
+						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+					}
+				}
+			},
+			offramp: {
+				status: bridgeResult.usRamp.status,
+				actionNeeded: {
+					actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+				},
+			}
+		}
+		updateHifiUserResponse.ramps.usdAch = usdAch
+		// euRamp
+		const euroSepa = {
+			onramp: {
+				status: Status.INACTIVE,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: 'SEPA onRamp will be available in near future',
+			},
+			offramp: {
+				status: bridgeResult.euRamp.status,
+				actionNeeded: {
+					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+				},
+				message: ''
+			},
+		}
+		updateHifiUserResponse.ramps.euroSepa = euroSepa
+
+		let status
+		// determine the status code to return to the client
+		if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+			status = 200
+		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+			status = 500;
+		} else {
+			status = 400;
+		}
+
+
+		return res.status(status).json(updateHifiUserResponse);
+	}catch (error){
+		const {user_id: userId} = req.query
+		createLog("user/update", userId, error.message, error)
+		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"});
 	}
-
-
-	// STEP 2: Update the 3rd party providers with the new information
-
-	// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
-	// create customer object for providers
-	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-		updateBastionUser(userId), // TODO: implement this function in utils and import before using it here
-		updateIndividualBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
-		updateCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
-	])
-
-	// STEP 3: Update the bridge_customers, checkbook_users, and bastion_users tables with the new information
-
-	// STEP 4: Contruct the response object based on the responses from the 3rd party providers
-	let updateHifiUserResponse = {}
-
-
-	// TODO: contruct the response object
-
-	// Append the appropriate status codes and props to the response object
-	if (bastionResult.status == 200) {
-		createHifiUserResponse.wallet.walletStatus = Status.ACTIVE
-	} else {
-		createHifiUserResponse.wallet.walletStatus = Status.INACTIVE
-		createHifiUserResponse.wallet.walletMessage = bastionResult.message
-	}
-
-
-	// create checkbook user
-	if (checkbookResult.status == 200) {
-		// createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.ACTIVE
-	} else {
-		const fieldsToResubmit = createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.INACTIVE
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullActionNeeded.fieldsToResubmit = [...fieldsToResubmit, checkbookResult.invalidFields]
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage = checkbookResult.message
-	}
-
-	// create bridge customer
-	if (bridgeResult.status == 200) {
-		createHifiUserResponse.user_kyc.status = Status.PENDING
-		createHifiUserResponse.ramps.usdAch.onramp.status = Status.PENDING
-		createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullStatus = Status.PENDING
-		createHifiUserResponse.ramps.usdAch.offramp.status = Status.PENDING
-		createHifiUserResponse.ramps.euroSepa.offramp.status = Status.PENDING
-	} else if (bridgeResult.status == 400) {
-		createHifiUserResponse.user_kyc.actionNeeded.fieldsToResubmit = bridgeResult.invalidFields
-		createHifiUserResponse.user_kyc.message = bridgeResult.message
-	} else {
-		createHifiUserResponse.user_kyc.message = bridgeResult.message
-	}
-
-
-
-	let status
-	// determine the status code to return to the client
-	if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
-		status = 200
-	} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
-		status = 500;
-	} else {
-		status = 400;
-	}
-
-
-	return res.status(status).json(createHifiUserResponse);
 };
