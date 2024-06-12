@@ -79,7 +79,7 @@ async function createUserCore(userId) {
 }
 
 /**
- * Public function to create and fund a Bastion user, handles errors.
+ * Public function to create and fund a Bastion user and passing kyc, handles errors.
  * @param {string} userId - The user's unique identifier.
  * @returns {Promise<Object>} A promise resolving to the API data or an error object.
  */
