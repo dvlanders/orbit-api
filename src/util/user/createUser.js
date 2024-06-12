@@ -284,7 +284,7 @@ const informationUploadForUpdateUser = async(userId, fields) => {
 		}))
 
 	} catch (error) {
-		createLog("user/update", userId, error.message, error)
+		createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
 		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
@@ -301,7 +301,8 @@ const informationUploadForUpdateUser = async(userId, fields) => {
 	)
 
 	if (error) {
-		createLog("user/update", userId, error.message, error)
+		console.error(error)
+		createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 

@@ -842,6 +842,8 @@ exports.getHifiUser = async (req, res) => {
  *   put:
  *     summary: update user
  *     description: This endpoint update user information and kyc in Hifi.
+ *     queryParams:
+ *       user_id: string
  *     requestBody:
  *       required: true
  *       content:
