@@ -26,10 +26,9 @@ class createCheckbookError extends Error {
 
 
 exports.createCheckbookBankAccount = async (userId, accountType, processorToken, bankName, accountNumber, routingNumber) => {
-	let invalidFields = []
 	try {
 		// get the user's api key and api secret from the checkbook_users table
-		const { data: checkbookUserData, error: checkbookUserError } = await await supabaseCall(() => supabase
+		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
 			.from('checkbook_users')
 			.select('api_key, api_secret')
 			.eq('user_id', userId)
