@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
 const { fieldsValidation } = require("../util/common/fieldsValidation");
-const createAndFundBastionUser = require('../util/bastion/endpoints/createAndFundBastionUser');
+const createAndFundBastionUser = require('../util/bastion/main/createAndFundBastionUser');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
 const { createCheckbookBankAccount } = require('../util/checkbook/endpoint/createCheckbookBankAccount')
