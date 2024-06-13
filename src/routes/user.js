@@ -42,64 +42,64 @@ module.exports = (router) => {
  *                 type: string
  *               email:
  *                 type: string
- *               user_type:
+ *               userType:
  *                 type: string
- *               signed_agreement_id:
+ *               signedAgreementId:
  *                 type: string
- *               legal_first_name:
+ *               legalFirstName:
  *                 type: string
- *               legal_last_name:
+ *               legalLastName:
  *                 type: string
- *               compliance_email:
+ *               complianceEmail:
  *                 type: string
- *               compliance_phone:
+ *               compliancePhone:
  *                 type: string
- *               address_line_1:
+ *               addressLine1:
  *                 type: string
- *               address_line_2:
+ *               addressLine2:
  *                 type: string
  *               city:
  *                 type: string
- *               state_province_region:
+ *               stateProvinceRegion:
  *                 type: string
- *               postal_code:
+ *               postalCode:
  *                 type: string
  *               country:
  *                 type: string
- *               address_type:
+ *               addressType:
  *                 type: string
- *               tax_identification_number:
+ *               taxIdentificationNumber:
  *                 type: string
- *               id_type:
+ *               idType:
  *                 type: string
- *               gov_id_country:
+ *               govIdCountry:
  *                 type: string
- *               business_name:
+ *               businessName:
  *                 type: string
- *               business_description:
+ *               businessDescription:
  *                 type: string
- *               business_type:
+ *               businessType:
  *                 type: string
  *               website:
  *                 type: string
- *               source_of_funds:
+ *               sourceOfFunds:
  *                 type: string
- *               is_dao:
+ *               isDao:
  *                 type: boolean
- *               transmits_customer_funds:
+ *               transmitsCustomerFunds:
  *                 type: boolean
- *               compliance_screening_explanation:
+ *               complianceScreeningExplanation:
  *                 type: string
- *               ip_address:
+ *               ipAddress:
  *                 type: string
- *               date_of_birth:
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               gov_id_front:
+ *               govIdFront:
  *                 type: string
- *               gov_id_back:
+ *               govIdBack:
  *                 type: string
- *               proof_of_residency:
+ *               proofOfResidency:
  *                 type: string
  *     responses:
  *       200:
@@ -444,69 +444,69 @@ module.exports = (router) => {
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
+ *              *             properties:
  *               username:
  *                 type: string
  *               email:
  *                 type: string
- *               user_type:
+ *               userType:
  *                 type: string
- *               signed_agreement_id:
+ *               signedAgreementId:
  *                 type: string
- *               legal_first_name:
+ *               legalFirstName:
  *                 type: string
- *               legal_last_name:
+ *               legalLastName:
  *                 type: string
- *               compliance_email:
+ *               complianceEmail:
  *                 type: string
- *               compliance_phone:
+ *               compliancePhone:
  *                 type: string
- *               address_line_1:
+ *               addressLine1:
  *                 type: string
- *               address_line_2:
+ *               addressLine2:
  *                 type: string
  *               city:
  *                 type: string
- *               state_province_region:
+ *               stateProvinceRegion:
  *                 type: string
- *               postal_code:
+ *               postalCode:
  *                 type: string
  *               country:
  *                 type: string
- *               address_type:
+ *               addressType:
  *                 type: string
- *               tax_identification_number:
+ *               taxIdentificationNumber:
  *                 type: string
- *               id_type:
+ *               idType:
  *                 type: string
- *               gov_id_country:
+ *               govIdCountry:
  *                 type: string
- *               business_name:
+ *               businessName:
  *                 type: string
- *               business_description:
+ *               businessDescription:
  *                 type: string
- *               business_type:
+ *               businessType:
  *                 type: string
  *               website:
  *                 type: string
- *               source_of_funds:
+ *               sourceOfFunds:
  *                 type: string
- *               is_dao:
+ *               isDao:
  *                 type: boolean
- *               transmits_customer_funds:
+ *               transmitsCustomerFunds:
  *                 type: boolean
- *               compliance_screening_explanation:
+ *               complianceScreeningExplanation:
  *                 type: string
- *               ip_address:
+ *               ipAddress:
  *                 type: string
- *               date_of_birth:
+ *               dateOfBirth:
  *                 type: string
  *                 format: date
- *               gov_id_front:
+ *               govIdFront:
  *                 type: string
- *               gov_id_back:
+ *               govIdBack:
  *                 type: string
- *               proof_of_residency:
+ *               proofOfResidency:
  *                 type: string
  *     responses:
  *       200:
