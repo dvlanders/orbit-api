@@ -1,11 +1,13 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
 const { fieldsValidation } = require("../util/common/fieldsValidation");
-const createAndFundBastionUser = require('../util/bastion/main/createAndFundBastionUser');
+const createAndFundBastionUser = require('../util/bastion/fundMaticPolygon');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
 const { createCheckbookBankAccount } = require('../util/checkbook/endpoint/createCheckbookBankAccount')
-
+const { getBridgeExternalAccount } = require('../util/bridge/endpoint/getBridgeExternalAccount');
+const { supabaseCall } = require('../util/supabaseWithRetry');
+const { v4 } = require('uuid');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -109,6 +111,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 
 	try {
 
+
 		const bridgeAccountResult = await createBridgeExternalAccount(
 			userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
 			null, null, null,
@@ -118,18 +121,53 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		);
 
 
+
+
 		if (bridgeAccountResult.status !== 200) {
 			return res.status(bridgeAccountResult.status).json({
 				error: bridgeAccountResult.type,
 				message: bridgeAccountResult.message,
-				source: bridgeAccountResult.source
+				source: bridgeAccountResult.source,
+
 			});
+		}
+
+
+		console.log('raw result', bridgeAccountResult.rawResponse)
+
+		const recordId = v4();
+
+		const { error: bridgeAccountInserterror } = await supabase
+			.from('bridge_external_accounts')
+			.insert({
+				id: recordId,
+				user_id: userId,
+				currency: currency,
+				bank_name: bankName,
+				account_owner_name: accountOwnerName,
+				account_owner_type: accountOwnerType,
+				account_type: 'us',
+				beneficiary_street_line_1: streetLine1,
+				beneficiary_street_line_2: streetLine2,
+				beneficiary_city: city,
+				beneficiary_state: state,
+				beneficiary_postal_code: postalCode,
+				beneficiary_country: country,
+				account_number: accountNumber,
+				routing_number: routingNumber,
+				bridge_response: bridgeAccountResult.rawResponse,
+				bridge_external_account_id: bridgeAccountResult.rawResponse.id,
+			})
+
+		if (bridgeAccountInserterror) {
+			return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 		}
 
 		let createUsdOfframpDestinationResponse = {
 			status: "ACTIVE",
 			invalidFields: [],
-			message: "Account created successfully"
+			message: "Account created successfully",
+			id: recordId
 		};
 
 		return res.status(200).json(createUsdOfframpDestinationResponse);
@@ -209,15 +247,119 @@ exports.createEuroOfframpDestination = async (req, res) => {
 			});
 		}
 
+		console.log('raw result', bridgeAccountResult.rawResponse)
+
+		const recordId = v4();
+
+		const { error: bridgeAccountInserterror } = await supabase
+			.from('bridge_external_accounts')
+			.insert({
+				id: recordId,
+				user_id: userId,
+				currency: currency,
+				bank_name: bankName,
+				account_owner_name: accountOwnerName,
+				account_owner_type: accountOwnerType,
+				account_type: 'iban',
+				beneficiary_first_name: firstName,
+				beneficiary_last_name: lastName,
+				beneficiary_business_name: businessName,
+				iban: ibanAccountNumber,
+				business_identifier_code: businessIdentifierCode,
+				bank_country: ibanCountryCode,
+				bridge_response: bridgeAccountResult.rawResponse,
+				bridge_external_account_id: bridgeAccountResult.rawResponse.id,
+			})
+
+		if (bridgeAccountInserterror) {
+			return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
+		}
+
 		let createEuroOfframpDestinationResponse = {
 			status: "ACTIVE",
 			invalidFields: [],
-			message: "Account created successfully"
+			message: "Account created successfully",
+			id: recordId
 		};
 
 		return res.status(200).json(createEuroOfframpDestinationResponse);
 	} catch (error) {
 		console.error('Error in createEuroOfframpDestination', error);
-		return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+		return res.status(500).json({ error: 'Internal Server Error' });
 	}
 };
+
+
+exports.getAccount = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	// get user id from path parameter
+	const { userId, accountId, accountType } = req.query;
+
+
+	if (!['usOnramp', 'usOfframp', 'euOfframp'].includes(accountType)) {
+		return res.status(400).json({ error: 'Invalid accountType' });
+	}
+
+
+
+
+	// if the account type is usOfframp or euOfframp, get the account from the bridge_external_accounts table
+	if (accountType === 'usOfframp' || accountType === 'euOfframp') {
+		try {
+			// const bridgeExternalAccountResult = await getBridgeExternalAccount(userId, accountId);
+
+
+			// console.log('bridgeExternalAccountResult', bridgeExternalAccountResult);
+
+			// if (bridgeExternalAccountResult.error) {
+			// 	return res.status(500).json({ error: 'Internal Server Error', message: bridgeExternalAccountResult.error.message });
+			// }
+
+			console.log('accountid', accountId)
+
+			const { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
+				.from('bridge_external_accounts')
+				.select('id, created_at, currency, bank_name, account_owner_name, account_owner_type, account_type, beneficiary_street_line_1, beneficiary_street_line_2, beneficiary_city, beneficiary_state, beneficiary_postal_code, beneficiary_country, iban, business_identifier_code, bank_country, account_number, routing_number')
+				.eq('id', accountId)
+				.maybeSingle()
+			)
+
+			console.log('bridgeExternalAccountData', bridgeExternalAccountData)
+			console.log('bridgeExternalAccountError', bridgeExternalAccountError)
+
+			if (bridgeExternalAccountError) {
+				return res.status(400).json({ error: 'Could not find this account in the database. Please make sure that the account has been created for this user.' });
+			}
+
+
+			return res.status(200).json({
+				data: bridgeExternalAccountData
+
+			});
+		} catch (error) {
+			console.error('Error in getAccount', error);
+
+		}
+	}
+
+	// if the account type is usOnramp, get the account from the checkbook_bank_accounts table
+	if (accountType === 'usOnramp') {
+		try {
+			// TODO: implement getCheckbookBankAccount function
+			// const checkbookBankAccountResult = await getCheckbookBankAccount(userId);
+
+
+			console.log('TODO: getCheckbookBankAccount function not implemented yet.');
+			return res.status(200).json(checkbookBankAccountResult);
+		} catch (error) {
+			console.error('Error in getAccount', error);
+
+		}
+	}
+
+	// return error if the account id with that account type is not recognized
+	return res.status(400).json({ error: `An account with accountId == ${accountId} of type == ${accountType} could not be found. Please make sure that the this account has indeed been created for userId == ${userId}` });
+}
