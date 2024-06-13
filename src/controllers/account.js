@@ -4,6 +4,7 @@ const { fieldsValidation } = require("../util/common/fieldsValidation");
 const createAndFundBastionUser = require('../util/bastion/fundMaticPolygon');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
+const { createBridgeLiquidationAddress } = require('../util/bridge/endpoint/createBridgeLiquidationAddress')
 const { createCheckbookBankAccount } = require('../util/checkbook/endpoint/createCheckbookBankAccount')
 const { getBridgeExternalAccount } = require('../util/bridge/endpoint/getBridgeExternalAccount');
 const { supabaseCall } = require('../util/supabaseWithRetry');
@@ -132,7 +133,6 @@ exports.createUsdOfframpDestination = async (req, res) => {
 			});
 		}
 
-
 		console.log('raw result', bridgeAccountResult.rawResponse)
 
 		const recordId = v4();
@@ -162,6 +162,20 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		if (bridgeAccountInserterror) {
 			return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 		}
+
+		console.log('got here3')
+		// now create the liquidation address for the external account
+		const liquidationAddressResult = await createBridgeLiquidationAddress(userId, recordId, 'ach', 'usd');
+
+		if (liquidationAddressResult.status !== 200) {
+			return res.status(liquidationAddressResult.status).json({
+				error: liquidationAddressResult.type,
+				message: liquidationAddressResult.message,
+				source: liquidationAddressResult.source
+			});
+		}
+
+		// create a record in the bridge_liquidation_addresses table
 
 		let createUsdOfframpDestinationResponse = {
 			status: "ACTIVE",
