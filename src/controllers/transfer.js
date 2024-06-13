@@ -3,6 +3,8 @@ const { supabaseCall } = require("../util/supabaseWithRetry");
 const {fieldsValidation} = require("../util/common/fieldsValidation");
 const { requiredFields, acceptedFields } = require("../util/transfer/cryptoToCrypto/createTransfer");
 const createLog = require("../util/logger/supabaseLogger");
+const { hifiSupportedChain } = require("../util/common/blockchain");
+const { fetchUserWalletInformation } = require("../util/transfer/cryptoToCrypto/fetchUserWalletInformation");
 
 exports.createCryptoToCryptoTransfer = async(req, res) => {
     if (req.method !== 'POST') {
@@ -14,6 +16,8 @@ exports.createCryptoToCryptoTransfer = async(req, res) => {
     const fields = req.body
     const {senderUserId, amount, requestId, recipientUserId, recipientAddress, chain} = fields
     const {missingFields, invalidFields} = fieldsValidation(fields, requiredFields, acceptedFields)
+
+    // check if required fileds provided
     if (missingFields.length > 0 || invalidFields.length > 0) {
         return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
@@ -22,14 +26,19 @@ exports.createCryptoToCryptoTransfer = async(req, res) => {
         return res.status(500).json({ error: "Unexpected error happened" })
     }
 
-    // check if required fileds provided
-
-
     // check if provide either recipientUserId, recipientAddress
-
-
-
-    // fetch information Bastion transfer needed
+    if (!recipientUserId && !recipientAddress) return res.status(400).json({ error: `Should provide either recipientUserId or recipientAddress`})
+    if (recipientUserId && recipientAddress) return res.status(400).json({ error: `Should only provide either recipientUserId or recipientAddress`})
+    // check if chain is supported
+    if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Chain ${chain} is not supported`})
+    // fetch Bastion information
+    if (recipientUserId) {
+        const senderBastionInformation = await fetchUserWalletInformation(userId, chain)
+        if (! senderBastionInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)`})
+    }
+    // check privilege
+    // bastion kyc
+    
 
 
 
