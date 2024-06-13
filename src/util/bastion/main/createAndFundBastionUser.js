@@ -2,6 +2,7 @@ const supabase = require("../../supabaseClient");
 const fundMaticPolygon = require("../fundMaticPolygon");
 const createLog = require("../../logger/supabaseLogger");
 const submitBastionKyc = require("./submitBastionkyc");
+const { createUser } = require("../endpoints/createUser");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -25,23 +26,9 @@ class BastionError extends Error {
  * @returns {Promise<Object>} The response data from Bastion.
  */
 async function createUserCore(userId) {
-	const url = `${BASTION_URL}/v1/users`;
-	const bodyObject = { id: userId, chains: ["ETHEREUM_TESTNET"] };
-
-	// const bodyObject = { id: userId, chains: ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET", "BASE_MAINNET"] };
-	const options = {
-		method: "POST",
-		headers: {
-			'Accept': 'application/json',
-			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${BASTION_API_KEY}`
-		},
-		body: JSON.stringify(bodyObject),
-	};
-
-	const response = await fetch(url, options);
+	
+	const response = await createUser(userId)
 	const data = await response.json();
-
 
 	if (response.status !== 201) {
 		throw new BastionError(data.message, data.details, response.status);
