@@ -12,8 +12,8 @@ exports.transfer = async(requestRecord) => {
 		actionName: "transfer",
 		chain: requestRecord.chain,
 		actionParams: [
-			{ name: "_to", value: requestRecord.recipientAddress },
-			{ name: "_value", value: requestRecord.unitsAmount }
+			{ name: "to", value: requestRecord.recipientAddress },
+			{ name: "value", value: requestRecord.unitsAmount }
 		],
 	};
 

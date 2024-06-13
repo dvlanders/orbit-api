@@ -28,9 +28,9 @@ exports.transfer = async(fields) => {
 
     // update to database
     toUpdate = {
-        bastionResponse: responseBody,
+        bastion_response: responseBody,
         status: responseBody.status,
-        transactionHash: responseBody.transactionHash,
+        transaction_hash: responseBody.transactionHash,
     }
     const record = await updateRequestRecord(fields.requestId, toUpdate)
 
@@ -46,6 +46,7 @@ exports.transfer = async(fields) => {
             currency: fields.currency,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
+            updatedAt: record.updatedAt,
             status: record.status,
             contractAddress: contractAddress,
         }

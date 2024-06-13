@@ -5,11 +5,12 @@ const { requiredFields, acceptedFields } = require("../util/transfer/cryptoToCry
 const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal } = require("../util/common/blockchain");
 const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privilegeCheck");
-const { fetchRequestInfortmaion } = require("../util/transfer/cryptoToCrypto/main/fetchRequestInformation");
+const { fetchRequestInfortmaion } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
 const { insertRequestRecord } = require("../util/transfer/cryptoToCrypto/main/insertRequestRecord");
 const { toUnitsString } = require("../util/transfer/cryptoToCrypto/utils/toUnits");
 const { transfer } = require("../util/transfer/cryptoToCrypto/main/transfer");
-const { fetchUserWalletInformation} = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation")
+const { fetchUserWalletInformation} = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
+const { getRequestRecord } = require("../util/transfer/cryptoToCrypto/main/getRequestRecord");
 
 exports.createCryptoToCryptoTransfer = async(req, res) => {
     if (req.method !== 'POST') {
@@ -65,4 +66,29 @@ exports.createCryptoToCryptoTransfer = async(req, res) => {
         createLog("transfer/create", fields.senderUserId, error.message, error)
         return res.status(500).json({ error: `Unexpected error happened`})
     }
+}
+
+exports.getCryptoToCryptoTransfer = async(req, res) => {
+    if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+    const {requestId} = req.query
+
+    try{
+        // check if requestRecord exist
+        const requestRecord = await fetchRequestInfortmaion(requestId)
+        if (!requestRecord) return res.status(404).json({error: "request not found"})
+        // fetch up to date record
+        const receipt = await getRequestRecord(requestRecord)
+        return res.status(200).json(receipt)
+
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Unexpected error happened"})
+    }
+
+
+
+
+
 }

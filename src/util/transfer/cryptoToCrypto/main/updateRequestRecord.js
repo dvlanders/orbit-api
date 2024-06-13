@@ -6,10 +6,8 @@ exports.updateRequestRecord = async(requestId, requestInfo) => {
     const { data, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
     .update({ 
+        ...requestInfo,
         updated_at: new Date().toISOString(),
-        bastion_response: requestInfo.bastionResponse,
-        status: requestInfo.status,
-        transaction_hash: requestInfo.transactionHash
     },)
     .eq('request_id', requestId)
     .select("*")

@@ -9,6 +9,8 @@ const fetchRequestInfortmaion = async(requestId) => {
     .maybeSingle())
 
     if (error) throw error
+    if (!request) return null
+
     return request
 }
 
