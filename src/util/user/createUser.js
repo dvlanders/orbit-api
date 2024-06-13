@@ -5,62 +5,105 @@ const { uploadFileFromUrl } = require("../supabase/fileUpload");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 
-
 const requiredFields = [
-	"user_type",
-	"legal_first_name",
-	"legal_last_name",
-	"compliance_email",
-	"compliance_phone",
-	"date_of_birth",
-	"tax_identification_number",
-	"gov_id_country",
+	"userType",
+	"legalFirstName",
+	"legalLastName",
+	"complianceEmail",
+	"compliancePhone",
+	"dateOfBirth",
+	"taxIdentificationNumber",
+	"govIdCountry",
 	"country",
-	"address_line_1",
+	"addressLine1",
 	"city",
-	"postal_code",
-	"state_province_region",
-	"signed_agreement_id",
-	"ip_address"
+	"postalCode",
+	"stateProvinceRegion",
+	"signedAgreementId",
+	"ipAddress"
 ];
 
 const acceptedFields = {
 	"id": "string",
-	"created_at": "string",
-	"user_id": "string",
-	"legal_first_name": "string",
-	"legal_last_name": "string",
-	"date_of_birth": "string",
-	"compliance_email": "string",
-	"compliance_phone": "string",
-	"address_line_1": "string",
-	"address_line_2": "string",
-	"city": "string",
-	"state_province_region": "string",
-	"postal_code": "string",
-	"country": "string",
-	"address_type": "string",
-	"tax_identification_number": "string",
-	"id_type": "string",
-	"proof_of_residency": "string",
-	"gov_id_front": "string",
-	"gov_id_back": "string",
-	"gov_id_country": "string",
-	"proof_of_ownership": "string",
-	"formation_doc": "string",
-	"business_name": "string",
-	"business_description": "string",
-	"business_type": "string",
-	"website": "string",
-	"source_of_funds": "string",
-	"is_dao": "string",
-	"transmits_customer_funds": "string",
-	"compliance_screening_explanation": "string",
-	"ip_address": "string",
-	"signed_agreement_id": "string",
-	"user_type": "string"
+    "createdAt": "string",
+    "legalFirstName": "string",
+    "legalLastName": "string",
+    "dateOfBirth": "string",
+    "complianceEmail": "string",
+    "compliancePhone": "string",
+    "addressLine1": "string",
+    "addressLine2": "string",
+    "city": "string",
+    "stateProvinceRegion": "string",
+    "postalCode": "string",
+    "country": "string",
+    "addressType": "string",
+    "taxIdentificationNumber": "string",
+    "idType": "string",
+    "proofOfResidency": "string",
+    "govIdFront": "string",
+    "govIdBack": "string",
+    "govIdCountry": "string",
+    "proofOfOwnership": "string",
+    "formationDoc": "string",
+    "businessName": "string",
+    "businessDescription": "string",
+    "businessType": "string",
+    "website": "string",
+    "sourceOfFunds": "string",
+    "isDao": "string",
+    "transmitsCustomerFunds": "string",
+    "complianceScreeningExplanation": "string",
+    "ipAddress": "string",
+    "signedAgreementId": "string",
+    "userType": "string"
+};
+
+const userKycColumnsMap = {
+	userId: "user_id",
+	legalFirstName: "legal_first_name",
+	legalLastName: "legal_last_name",
+	complianceEmail: "compliance_email",
+	compliancePhone: "compliance_phone",
+	addressLine1: "address_line_1",
+	addressLine2: "address_line_2",
+	city: "city",
+	stateProvinceRegion: "state_province_region",
+	postalCode: "postal_code",
+	country: "country",
+	addressType: "address_type",
+	taxIdentificationNumber: "tax_identification_number",
+	idType: "id_type",
+	govIdCountry: "gov_id_country",
+	businessName: "business_name",
+	businessDescription: "business_description",
+	businessType: "business_type",
+	website: "website",
+	sourceOfFunds: "source_of_funds",
+	isDao: "is_dao",
+	transmitsCustomerFunds: "transmits_customer_funds",
+	complianceScreeningExplanation: "compliance_screening_explanation",
+	ipAddress: "ip_address",
+	dateOfBirth: "date_of_birth",
+	govIdFrontPath: "gov_id_front_path",
+	govIdBackPath: "gov_id_back_path",
+	proofOfResidencyPath: "proof_of_residency_path",
+	proofOfOwnershipPath: "proof_of_ownership_path",
+	formationDocPath: "formation_doc_path"
 }
 
+
+const fieldsToColumnsMap = (fields, map) => {
+	const mapped = {}
+
+	Object.keys(fields).map((key) => {
+		mapped[map[key]] = fields[key]
+	})
+
+	return mapped
+}
+
+	
 
 // Function to upload information
 const InformationUploadErrorType = {
@@ -83,9 +126,9 @@ class InformationUploadError extends Error {
 
 const informationUploadForCreateUser = async (profileId, fields) => {
 	// check ip address
-	const isIpAllowed = await ipCheck(fields.ip_address)
-	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FEILD, 400, "", { error: "Unsupported area (ip_address)" })
-
+	const isIpAllowed = await ipCheck(fields.ipAddress)
+	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: "Unsupported area (ipAddress)"})
+	
 	// check if required fields are uploaded
 	// check if the field that is passsed is a valid field that we allow updates on
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
@@ -100,7 +143,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		const { data: newUser, error: newUserError } = await supabaseCall(() => supabase
 			.from('users')
 			.insert(
-				{ profile_id: profileId, user_type: fields.user_type },
+				{ profile_id: profileId, user_type: fields.userType },
 			)
 			.select()
 			.single()
@@ -118,7 +161,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		const { error: newBridgeRecordError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.insert(
-				{ user_id: userId, signed_agreement_id: fields.signed_agreement_id },
+				{ user_id: userId, signed_agreement_id: fields.signedAgreementId },
 			)
 			.select())
 
@@ -133,29 +176,29 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	// upload file
 	const files = [
 		{
-			key: "gov_id_front",
+			key: "govIdFront",
 			bucket: "compliance_id",
-			columnName: "gov_id_front_path"
+			columnName: "govIdFrontPath"
 		},
 		{
-			key: "gov_id_back",
+			key: "govIdBack",
 			bucket: "compliance_id",
-			columnName: "gov_id_back_path"
+			columnName: "govIdBackPath"
 		},
 		{
-			key: "proof_of_residency",
+			key: "proofOfResidency",
 			bucket: "proof_of_residency",
-			columnName: "proof_of_residency_path"
+			columnName: "proofOfResidencyPath"
 		},
 		{
-			key: "proof_of_ownership",
+			key: "proofOfOwnership",
 			bucket: "proof_of_ownership",
-			columnName: "proof_of_ownership_path"
+			columnName: "proofOfOwnershipPath"
 		},
 		{
-			key: "formation_doc",
+			key: "formationDoc",
 			bucket: "formation_doc",
-			columnName: "formation_doc_path"
+			columnName: "formationDocPath"
 		},
 
 	]
@@ -185,36 +228,36 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		.insert(
 			{
 				user_id: userId,
-				legal_first_name: fields.legal_first_name,
-				legal_last_name: fields.legal_last_name,
-				compliance_email: fields.compliance_email,
-				compliance_phone: fields.compliance_phone,
-				address_line_1: fields.address_line_1,
-				address_line_2: fields.address_line_2,
+				legal_first_name: fields.legalFirstName,
+				legal_last_name: fields.legalLastName,
+				compliance_email: fields.complianceEmail,
+				compliance_phone: fields.compliancePhone,
+				address_line_1: fields.addressLine1,
+				address_line_2: fields.addressLine2,
 				city: fields.city,
-				state_province_region: fields.state_province_region,
-				postal_code: fields.postal_code,
+				state_province_region: fields.stateProvinceRegion,
+				postal_code: fields.postalCode,
 				country: fields.country,
-				address_type: fields.address_type,
-				tax_identification_number: fields.tax_identification_number,
-				id_type: fields.id_type,
-				gov_id_country: fields.gov_id_country,
-				business_name: fields.business_name,
-				business_description: fields.business_description,
-				business_type: fields.business_type,
+				address_type: fields.addressType,
+				tax_identification_number: fields.taxIdentificationNumber,
+				id_type: fields.idType,
+				gov_id_country: fields.govIdCountry,
+				business_name: fields.businessName,
+				business_description: fields.businessDescription,
+				business_type: fields.businessType,
 				website: fields.website,
-				source_of_funds: fields.source_of_funds,
-				is_dao: fields.is_dao,
-				transmits_customer_funds: fields.transmits_customer_funds,
-				compliance_screening_explanation: fields.compliance_screening_explanation,
-				ip_address: fields.ip_address,
-				date_of_birth: new Date(fields.date_of_birth).toISOString(),
-				gov_id_front_path: fields.gov_id_front_path,
-				gov_id_back_path: fields.gov_id_back_path,
-				proof_of_residency_path: fields.proof_of_residency_path,
-				proof_of_ownership_path: fields.proof_of_ownership_path,
-				formation_doc_path: fields.formation_doc_path
-			}
+				source_of_funds: fields.sourceOfFunds,
+				is_dao: fields.isDao,
+				transmits_customer_funds: fields.transmitsCustomerFunds,
+				compliance_screening_explanation: fields.complianceScreeningExplanation,
+				ip_address: fields.ipAddress,
+				date_of_birth: new Date(fields.dateOfBirth).toISOString(),
+				gov_id_front_path: fields.govIdFrontPath,
+				gov_id_back_path: fields.govIdBackPath,
+				proof_of_residency_path: fields.proofOfResidencyPath,
+				proof_of_ownership_path: fields.proofOfOwnershipPath,
+				formation_doc_path: fields.formationDocPath
+			}			
 		)
 		.select()
 	)
@@ -231,9 +274,9 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 const informationUploadForUpdateUser = async (userId, fields) => {
 
 	// check ip address
-	if (fields.ip_address) {
-		const isIpAllowed = await ipCheck(fields.ip_address)
-		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FEILD, 400, "", { error: "Unsupported area (ip_address)" })
+	if (fields.ipAddress){
+		const isIpAllowed = await ipCheck(fields.ipAddress)
+		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: "Unsupported area (ipAddress)"})
 	}
 
 	// check if required fields are uploaded
@@ -247,29 +290,29 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 	// upload file
 	const files = [
 		{
-			key: "gov_id_front",
+			key: "govIdFront",
 			bucket: "compliance_id",
-			columnName: "gov_id_front_path"
+			columnName: "govIdFrontPath"
 		},
 		{
-			key: "gov_id_back",
+			key: "govIdBack",
 			bucket: "compliance_id",
-			columnName: "gov_id_back_path"
+			columnName: "govIdBackPath"
 		},
 		{
-			key: "proof_of_residency",
+			key: "proofOfResidency",
 			bucket: "proof_of_residency",
-			columnName: "proof_of_residency_path"
+			columnName: "proofOfResidencyPath"
 		},
 		{
-			key: "proof_of_ownership",
+			key: "proofOfOwnership",
 			bucket: "proof_of_ownership",
-			columnName: "proof_of_ownership_path"
+			columnName: "proofOfOwnershipPath"
 		},
 		{
-			key: "formation_doc",
+			key: "formationDoc",
 			bucket: "formation_doc",
-			columnName: "formation_doc_path"
+			columnName: "formationDocPath"
 		},
 
 	]
@@ -296,7 +339,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 	// update the user_kyc table record	
 	const { data, error } = await supabaseCall(() => supabase
 		.from('user_kyc')
-		.update(fields)
+		.update(fieldsToColumnsMap(fields, userKycColumnsMap))
 		.eq("user_id", userId)
 	)
 
@@ -334,4 +377,5 @@ module.exports = {
 	ipCheck,
 	informationUploadForCreateUser,
 	informationUploadForUpdateUser,
+	fieldsToColumnsMap
 }

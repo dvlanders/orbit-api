@@ -22,8 +22,6 @@ const Status = {
 	PENDING: "PENDING",
 }
 
-
-
 exports.getPing = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -242,8 +240,8 @@ exports.getHifiUser = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	try {
-		const { user_id: userId } = req.query
+	try{
+		const { userId } = req.query
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
 		// check if user is created
@@ -440,9 +438,9 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	try {
-
-		const { user_id: userId } = req.query
+	try{
+	
+		const {userId} = req.query
 		const fields = req.body
 
 		//invalid user_id
@@ -643,3 +641,9 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
+
+exports.getAllHifiUser = async(req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+}
