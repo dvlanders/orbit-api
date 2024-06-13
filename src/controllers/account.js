@@ -163,7 +163,6 @@ exports.createUsdOfframpDestination = async (req, res) => {
 			return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 		}
 
-		console.log('got here3')
 		// now create the liquidation address for the external account
 		const liquidationAddressResult = await createBridgeLiquidationAddress(userId, recordId, 'ach', 'usd');
 
@@ -287,6 +286,17 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 		if (bridgeAccountInserterror) {
 			return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
+		}
+
+		// now create the liquidation address for the external account
+		const liquidationAddressResult = await createBridgeLiquidationAddress(userId, recordId, 'sepa', 'eur');
+
+		if (liquidationAddressResult.status !== 200) {
+			return res.status(liquidationAddressResult.status).json({
+				error: liquidationAddressResult.type,
+				message: liquidationAddressResult.message,
+				source: liquidationAddressResult.source
+			});
 		}
 
 		let createEuroOfframpDestinationResponse = {
