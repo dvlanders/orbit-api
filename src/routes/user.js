@@ -4,26 +4,25 @@ const { authorizeUser } = require("../util/middleware");
 
 module.exports = (router) => {
 
-	/**
-	 * @swagger
-	 * /get_ping:
-	 *   get:
-	 *     summary: Ping endpoint
-	 *     description: This endpoint returns a ping response.
-	 *     responses:
-	 *       200:
-	 *         description: Successful response
-	 *         content:
-	 *           application/json:
-	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 message:
-	 *                   type: string
-	 *                   example: 'pong'
-	 */
-	router.get("/get_ping", user.getPing);
-	// TODO: router.get("/wallet_address", user.getPing);
+/**
+ * @swagger
+ * /get_ping:
+ *   get:
+ *     summary: Ping endpoint
+ *     description: This endpoint returns a ping response.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'pong'
+ */
+router.get("/get_ping", user.getPing);
 
 /**
  * @swagger
@@ -275,7 +274,7 @@ module.exports = (router) => {
  *                 error:
  *                   type: string
  */
-	router.post("/user/create", user.createHifiUser);
+router.post("/user/create", user.createHifiUser);
 
 /**
  * /user
@@ -428,7 +427,7 @@ module.exports = (router) => {
  *                 type: string
  *                 example: "Unexpected error happened, please contact HIFI for more information"
  */
-	router.get("/user", user.getHifiUser);
+router.get("/user", user.getHifiUser);
 
 /**
  * @swagger
@@ -682,5 +681,5 @@ module.exports = (router) => {
  *                 error:
  *                   type: string
  */
-	router.put("/user", user.updateHifiUser);
+router.put("/user", user.updateHifiUser);
 };

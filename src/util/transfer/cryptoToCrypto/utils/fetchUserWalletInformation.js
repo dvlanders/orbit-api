@@ -1,5 +1,5 @@
-const supabase = require("../../supabaseClient");
-const { supabaseCall } = require("../../supabaseWithRetry");
+const supabase = require("../../../supabaseClient");
+const { supabaseCall } = require("../../../supabaseWithRetry");
 
 const fetchUserWalletInformation = async(userId, chain) => {
     const {data: userWallet, error: userWalletError} = await supabaseCall(() => supabase

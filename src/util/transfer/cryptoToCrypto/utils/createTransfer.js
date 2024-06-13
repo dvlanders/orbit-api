@@ -1,5 +1,5 @@
 const requiredFields = [
-    "senderUserId", "amount", "requestId", "chain"
+    "senderUserId", "amount", "requestId", "chain", "currency"
 ]
 
 const acceptedFields = {
@@ -9,7 +9,8 @@ const acceptedFields = {
     "requestId": "string",
     "recipientUserId": "string",
     "recipientAddress": "string",
-    "chain": "string"
+    "chain": "string",
+    "currency": "string"
 };
 
 module.exports = {
