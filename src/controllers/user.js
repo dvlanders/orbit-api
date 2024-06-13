@@ -50,14 +50,14 @@ exports.createHifiUser = async (req, res) => {
 
 		// upload information and create new user
 		let userId
-		try{
+		try {
 			userId = await informationUploadForCreateUser(profileId, fields)
-		}catch(error){
-			if (error instanceof InformationUploadError){
+		} catch (error) {
+			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
 			createLog("user/create", "", error.message, error)
-			return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
 		// base response
@@ -167,7 +167,7 @@ exports.createHifiUser = async (req, res) => {
 			status: bridgeResult.customerStatus.status,
 			actionNeeded: {
 				actions: bridgeResult.customerStatus.actions,
-				fieldsToResubmit:  bridgeResult.customerStatus.fields,
+				fieldsToResubmit: bridgeResult.customerStatus.fields,
 			},
 			message: bridgeResult.message,
 		}
@@ -180,7 +180,7 @@ exports.createHifiUser = async (req, res) => {
 					actions: bridgeResult.customerStatus.actions,
 					fieldsToResubmit: bridgeResult.customerStatus.fields
 				},
-				achPull:{
+				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
 					achPullMessage: [...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
 					actionNeeded: {
@@ -232,9 +232,9 @@ exports.createHifiUser = async (req, res) => {
 
 
 		return res.status(status).json(createHifiUserResponse);
-	}catch (error){
+	} catch (error) {
 		createLog("user/create", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"});
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
 
@@ -242,21 +242,21 @@ exports.getHifiUser = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	try{
+	try {
 		const { user_id: userId } = req.query
 		//invalid user_id
-		if (!isUUID(userId)) return res.status(404).json({error: "User not found for provided user_id"})
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
 		// check if user is created
-		let { data: user, error: userError } = await supabaseCall(()=> supabase
+		let { data: user, error: userError } = await supabaseCall(() => supabase
 			.from('users')
 			.select('*')
 			.eq("id", userId)
 			.maybeSingle()
 		)
 
-		if (userError) return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
-		if (!user) return res.status(404).json({error: "User not found for provided user_id"})
-		
+		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		if (!user) return res.status(404).json({ error: "User not found for provided user_id" })
+
 
 		// base response
 		let getHifiUserResponse = {
@@ -363,7 +363,7 @@ exports.getHifiUser = async (req, res) => {
 			status: bridgeResult.customerStatus.status,
 			actionNeeded: {
 				actions: bridgeResult.customerStatus.actions,
-				fieldsToResubmit:  bridgeResult.customerStatus.fields,
+				fieldsToResubmit: bridgeResult.customerStatus.fields,
 			}
 		}
 		getHifiUserResponse.user_kyc = userKyc
@@ -376,7 +376,7 @@ exports.getHifiUser = async (req, res) => {
 					fieldsToResubmit: bridgeResult.customerStatus.fields
 				},
 				message: bridgeResult.message,
-				achPull:{
+				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
 					achPullMessage: [...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
 					actionNeeded: {
@@ -429,9 +429,9 @@ exports.getHifiUser = async (req, res) => {
 
 
 		return res.status(status).json(getHifiUserResponse);
-	}catch(error){
+	} catch (error) {
 		createLog("user/get", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"});
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
 
@@ -440,31 +440,31 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	try{
-	
-		const {user_id: userId} = req.query
+	try {
+
+		const { user_id: userId } = req.query
 		const fields = req.body
 
 		//invalid user_id
-		if (!isUUID(userId)) return res.status(404).json({error: "User not found for provided user_id"})
-			// check if user is created
-			let { data: user, error: userError } = await supabaseCall(()=> supabase
-				.from('users')
-				.select('*')
-				.eq("id", userId)
-				.maybeSingle()
-			)
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
+		// check if user is created
+		let { data: user, error: userError } = await supabaseCall(() => supabase
+			.from('users')
+			.select('*')
+			.eq("id", userId)
+			.maybeSingle()
+		)
 
-		if (userError) return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"})
-		if (!user) return res.status(404).json({error: "User not found for provided user_id"})
+		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		if (!user) return res.status(404).json({ error: "User not found for provided user_id" })
 
 		// upload all the information
-		try{
+		try {
 			await informationUploadForUpdateUser(userId, fields)
-		}catch (error){
+		} catch (error) {
 			return res.status(error.status).json(error.rawResponse)
 		}
-		
+
 		// STEP 2: Update the 3rd party providers with the new information
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
@@ -479,6 +479,7 @@ exports.updateHifiUser = async (req, res) => {
 
 		// STEP 4: Contruct the response object based on the responses from the 3rd party providers
 		let updateHifiUserResponse = {
+			userID: userId,
 			wallet: {
 				walletStatus: Status.INACTIVE,
 				actionNeeded: {
@@ -542,9 +543,6 @@ exports.updateHifiUser = async (req, res) => {
 					},
 				},
 			},
-			user: {
-				id: userId
-			}
 		}
 
 		// Bastion status
@@ -575,7 +573,7 @@ exports.updateHifiUser = async (req, res) => {
 			status: bridgeResult.customerStatus.status,
 			actionNeeded: {
 				actions: bridgeResult.customerStatus.actions,
-				fieldsToResubmit:  bridgeResult.customerStatus.fields,
+				fieldsToResubmit: bridgeResult.customerStatus.fields,
 			},
 			message: bridgeResult.message,
 		}
@@ -588,7 +586,7 @@ exports.updateHifiUser = async (req, res) => {
 					actions: bridgeResult.customerStatus.actions,
 					fieldsToResubmit: bridgeResult.customerStatus.fields
 				},
-				achPull:{
+				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
 					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
 					actionNeeded: {
@@ -639,9 +637,9 @@ exports.updateHifiUser = async (req, res) => {
 
 
 		return res.status(status).json(updateHifiUserResponse);
-	}catch (error){
-		const {user_id: userId} = req.query
+	} catch (error) {
+		const { user_id: userId } = req.query
 		createLog("user/update", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened, please contact HIFI for more information"});
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
