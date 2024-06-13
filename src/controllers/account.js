@@ -309,16 +309,8 @@ exports.getAccount = async (req, res) => {
 	// if the account type is usOfframp or euOfframp, get the account from the bridge_external_accounts table
 	if (accountType === 'usOfframp' || accountType === 'euOfframp') {
 		try {
-			// const bridgeExternalAccountResult = await getBridgeExternalAccount(userId, accountId);
 
 
-			// console.log('bridgeExternalAccountResult', bridgeExternalAccountResult);
-
-			// if (bridgeExternalAccountResult.error) {
-			// 	return res.status(500).json({ error: 'Internal Server Error', message: bridgeExternalAccountResult.error.message });
-			// }
-
-			console.log('accountid', accountId)
 
 			const { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
 				.from('bridge_external_accounts')
@@ -327,8 +319,6 @@ exports.getAccount = async (req, res) => {
 				.maybeSingle()
 			)
 
-			console.log('bridgeExternalAccountData', bridgeExternalAccountData)
-			console.log('bridgeExternalAccountError', bridgeExternalAccountError)
 
 			if (bridgeExternalAccountError) {
 				return res.status(400).json({ error: 'Could not find this account in the database. Please make sure that the account has been created for this user.' });
