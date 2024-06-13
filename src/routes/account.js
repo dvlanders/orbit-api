@@ -8,5 +8,6 @@ module.exports = (router) => {
 
 	// router.post("/account/euro/onramp", account.createBankAccount); // not possible currently
 	router.post("/account/euro/offramp", account.createEuroOfframpDestination);// bridge external account
+	router.get("/account", account.getAccount);// bridge external account
 
 };

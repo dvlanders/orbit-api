@@ -129,7 +129,8 @@ exports.createBridgeExternalAccount = async (
 			return {
 				status: 200,
 				invalidFields: [],
-				message: "Bank account created successfully"
+				message: "Bank account created successfully",
+				rawResponse: bridgeData
 			};
 		} else {
 			return {
