@@ -26,48 +26,48 @@ const requiredFields = [
 
 const acceptedFields = {
 	"id": "string",
-    "created_at": "string",
-    "user_id": "string",
-    "legal_first_name": "string",
-    "legal_last_name": "string",
-    "date_of_birth": "string",
-    "compliance_email": "string",
-    "compliance_phone": "string",
-    "address_line_1": "string",
-    "address_line_2": "string",
-    "city": "string",
-    "state_province_region": "string",
-    "postal_code": "string",
-    "country": "string",
-    "address_type": "string",
-    "tax_identification_number": "string",
-    "id_type": "string",
-    "proof_of_residency": "string",
-    "gov_id_front": "string",
-    "gov_id_back": "string",
-    "gov_id_country": "string",
-    "proof_of_ownership": "string",
-    "formation_doc": "string",
-    "business_name": "string",
-    "business_description": "string",
-    "business_type": "string",
-    "website": "string",
-    "source_of_funds": "string",
-    "is_dao": "string",
-    "transmits_customer_funds": "string",
-    "compliance_screening_explanation": "string",
-    "ip_address": "string",
-    "signed_agreement_id": "string",
-    "user_type": "string"
+	"created_at": "string",
+	"user_id": "string",
+	"legal_first_name": "string",
+	"legal_last_name": "string",
+	"date_of_birth": "string",
+	"compliance_email": "string",
+	"compliance_phone": "string",
+	"address_line_1": "string",
+	"address_line_2": "string",
+	"city": "string",
+	"state_province_region": "string",
+	"postal_code": "string",
+	"country": "string",
+	"address_type": "string",
+	"tax_identification_number": "string",
+	"id_type": "string",
+	"proof_of_residency": "string",
+	"gov_id_front": "string",
+	"gov_id_back": "string",
+	"gov_id_country": "string",
+	"proof_of_ownership": "string",
+	"formation_doc": "string",
+	"business_name": "string",
+	"business_description": "string",
+	"business_type": "string",
+	"website": "string",
+	"source_of_funds": "string",
+	"is_dao": "string",
+	"transmits_customer_funds": "string",
+	"compliance_screening_explanation": "string",
+	"ip_address": "string",
+	"signed_agreement_id": "string",
+	"user_type": "string"
 }
-	
+
 
 // Function to upload information
 const InformationUploadErrorType = {
 	INVALID_FILE_TYPE: "INVALID_FILE_TYPE",
 	INTERNAL_ERROR: "INTERNAL_ERROR",
 	INVALID_FIELD: "INVALID_FIELD",
-	FIELD_MISSING:  "FIELD_MISSING",
+	FIELD_MISSING: "FIELD_MISSING",
 	FILE_TOO_LARGE: "FILE_TOO_LARGE"
 };
 
@@ -81,19 +81,19 @@ class InformationUploadError extends Error {
 	}
 }
 
-const informationUploadForCreateUser = async(profileId, fields) => {
+const informationUploadForCreateUser = async (profileId, fields) => {
 	// check ip address
 	const isIpAllowed = await ipCheck(fields.ip_address)
-	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: "Unsupported area (ip_address)"})
-	
+	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FEILD, 400, "", { error: "Unsupported area (ip_address)" })
+
 	// check if required fields are uploaded
 	// check if the field that is passsed is a valid field that we allow updates on
-	const {missingFields, invalidFields} = fieldsValidation(fields, requiredFields, acceptedFields)
-	if (missingFields.length > 0 || invalidFields.length > 0){
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields})
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FEILD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
-	
-	
+
+
 	// create new user
 	let userId
 	try {
@@ -228,19 +228,19 @@ const informationUploadForCreateUser = async(profileId, fields) => {
 
 }
 
-const informationUploadForUpdateUser = async(userId, fields) => {
+const informationUploadForUpdateUser = async (userId, fields) => {
 
 	// check ip address
-	if (fields.ip_address){
+	if (fields.ip_address) {
 		const isIpAllowed = await ipCheck(fields.ip_address)
-		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: "Unsupported area (ip_address)"})
+		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FEILD, 400, "", { error: "Unsupported area (ip_address)" })
 	}
-	
+
 	// check if required fields are uploaded
 	// check if the field that is passsed is a valid field that we allow updates on
-	const {missingFields, invalidFields} = fieldsValidation(fields, [], acceptedFields)
-	if (missingFields.length > 0 || invalidFields.length > 0){
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields})
+	const { missingFields, invalidFields } = fieldsValidation(fields, [], acceptedFields)
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
 
 	// STEP 1: Save the updated fields to the user_kyc table
@@ -309,24 +309,24 @@ const informationUploadForUpdateUser = async(userId, fields) => {
 }
 
 const ipCheck = async (ip) => {
-  
+
 	const locationRes = await fetch(`https://ipapi.co/${ip}/json/`);
 	if (locationRes.ok) {
 		const locaionData = await locationRes.json();
 		if (sanctionedCountries.includes(locaionData.country_code_iso3)) {
 			return false
 		}
-		if (locaionData.country_code_iso3 == "USA" && !allowedUsState.includes(locaionData.region_code)){
+		if (locaionData.country_code_iso3 == "USA" && !allowedUsState.includes(locaionData.region_code)) {
 			console.log("not supported")
 			return false
 		}
 	} else {
 		createLog("user/util/ipCheck", "", "failed to get ip information")
-		throw new Error("failed to get ip information") 
+		throw new Error("failed to get ip information")
 	}
-  
+
 	return true
-  };
+};
 
 
 module.exports = {
