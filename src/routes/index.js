@@ -7,8 +7,8 @@ module.exports = (app, express) => {
 	const auth = require("./auth")
 
 	user(router);
-	dev(router)
-	transfer(router)
+	dev(router);
+	transfer(router);
 	account(router);
 	auth(router)
 

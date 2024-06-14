@@ -4,26 +4,25 @@ const { authorize } = require("../util/middleware");
 
 module.exports = (router) => {
 
-	/**
-	 * @swagger
-	 * /get_ping:
-	 *   get:
-	 *     summary: Ping endpoint
-	 *     description: This endpoint returns a ping response.
-	 *     responses:
-	 *       200:
-	 *         description: Successful response
-	 *         content:
-	 *           application/json:
-	 *             schema:
-	 *               type: object
-	 *               properties:
-	 *                 message:
-	 *                   type: string
-	 *                   example: 'pong'
-	 */
-	router.get("/get_ping", user.getPing);
-	// TODO: router.get("/wallet_address", user.getPing);
+/**
+ * @swagger
+ * /get_ping:
+ *   get:
+ *     summary: Ping endpoint
+ *     description: This endpoint returns a ping response.
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'pong'
+ */
+router.get("/get_ping", user.getPing);
 
 	/**
 	 * @swagger
