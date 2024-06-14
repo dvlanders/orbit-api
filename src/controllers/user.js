@@ -66,7 +66,8 @@ exports.createHifiUser = async (req, res) => {
 					actions: [],
 					fieldsToResubmit: [],
 				},
-				walletMessage: ""
+				walletMessage: "",
+				walletAddress: {}
 			},
 			user_kyc: {
 				status: Status.INACTIVE, // represent bridge
@@ -124,7 +125,7 @@ exports.createHifiUser = async (req, res) => {
 				},
 			},
 			user: {
-				id: userId
+				id: userId,
 			}
 		}
 
@@ -144,7 +145,8 @@ exports.createHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...bastionResult.actions, ...createHifiUserResponse.wallet.actionNeeded.actions],
 				fieldsToResubmit: [...bastionResult.invalidFileds, ...createHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			}
+			},
+			walletAddress: bastionResult.walletAddress
 		}
 		createHifiUserResponse.wallet = wallet
 
@@ -264,7 +266,8 @@ exports.getHifiUser = async (req, res) => {
 					actions: [],
 					fieldsToResubmit: [],
 				},
-				walletMessage: ""
+				walletMessage: "",
+				walletAddress: {}
 			},
 			user_kyc: {
 				status: Status.INACTIVE, // represent bridge
@@ -340,7 +343,8 @@ exports.getHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...bastionResult.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
 				fieldsToResubmit: [...bastionResult.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			}
+			},
+			walletAddress: bastionResult.walletAddress
 		}
 		getHifiUserResponse.wallet = wallet
 
@@ -484,7 +488,8 @@ exports.updateHifiUser = async (req, res) => {
 					actions: [],
 					fieldsToResubmit: [],
 				},
-				walletMessage: ""
+				walletMessage: "",
+				walletAddress: {}
 			},
 			user_kyc: {
 				status: Status.INACTIVE, // represent bridge
@@ -550,7 +555,8 @@ exports.updateHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...bastionResult.actions, ...updateHifiUserResponse.wallet.actionNeeded.actions],
 				fieldsToResubmit: [...bastionResult.invalidFileds, ...updateHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			}
+			},
+			walletAddress: bastionResult.walletAddress
 		}
 		updateHifiUserResponse.wallet = wallet
 
@@ -647,3 +653,4 @@ exports.getAllHifiUser = async(req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 }
+
