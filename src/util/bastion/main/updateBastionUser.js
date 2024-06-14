@@ -47,7 +47,7 @@ const updateBastionUser = async(userId) => {
             .maybeSingle())
         if (bastionKycError) throw new UpdateBastionUserError(UpdateBastionUserErrorType.INTERNAL_ERROR, bastionKycError.message, bastionKycError)
         if (!bastionKyc){
-            return await submitBastionKyc(userId)
+            await submitBastionKyc(userId)
         }
 
         return await getBastionUser(userId)

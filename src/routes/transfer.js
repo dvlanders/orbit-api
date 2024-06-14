@@ -1,4 +1,5 @@
-const { transfer } = require("../controllers")
+const { transfer } = require("../controllers");
+const { authorize } = require("../util/middleware");
 
 module.exports = (router) => {
     router.post("/transfer/crypto_to_crypto", transfer.createCryptoToCryptoTransfer);

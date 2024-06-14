@@ -34,12 +34,7 @@ exports.createHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	try {
-		// TODO: add all of the variables required for this endpoint to work
-		// TODO: add variable rampRegions to the request body. if rampRegions includes EUR, then we collect the additional fields required by bridge
-
-		// Customer profile id, passed from middleware after api key validation
-		// const profileId = req.profile.id
-		const profileId = "7cdf31e1-eb47-4b43-82f7-e368e3f6197b" // dev only
+		const profileId = req.query.profileId 
 		const fields = req.body
 
 		if (!profileId) {
@@ -66,7 +61,8 @@ exports.createHifiUser = async (req, res) => {
 					actions: [],
 					fieldsToResubmit: [],
 				},
-				walletMessage: ""
+				walletMessage: "",
+				walletAddress: {}
 			},
 			user_kyc: {
 				status: Status.INACTIVE, // represent bridge
@@ -124,7 +120,7 @@ exports.createHifiUser = async (req, res) => {
 				},
 			},
 			user: {
-				id: userId
+				id: userId,
 			}
 		}
 
@@ -144,7 +140,8 @@ exports.createHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...bastionResult.actions, ...createHifiUserResponse.wallet.actionNeeded.actions],
 				fieldsToResubmit: [...bastionResult.invalidFileds, ...createHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			}
+			},
+			walletAddress: bastionResult.walletAddress
 		}
 		createHifiUserResponse.wallet = wallet
 
@@ -264,7 +261,8 @@ exports.getHifiUser = async (req, res) => {
 					actions: [],
 					fieldsToResubmit: [],
 				},
-				walletMessage: ""
+				walletMessage: "",
+				walletAddress: {}
 			},
 			user_kyc: {
 				status: Status.INACTIVE, // represent bridge
@@ -340,7 +338,8 @@ exports.getHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...bastionResult.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
 				fieldsToResubmit: [...bastionResult.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			}
+			},
+			walletAddress: bastionResult.walletAddress
 		}
 		getHifiUserResponse.wallet = wallet
 
@@ -484,7 +483,8 @@ exports.updateHifiUser = async (req, res) => {
 					actions: [],
 					fieldsToResubmit: [],
 				},
-				walletMessage: ""
+				walletMessage: "",
+				walletAddress: {}
 			},
 			user_kyc: {
 				status: Status.INACTIVE, // represent bridge
@@ -550,7 +550,8 @@ exports.updateHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...bastionResult.actions, ...updateHifiUserResponse.wallet.actionNeeded.actions],
 				fieldsToResubmit: [...bastionResult.invalidFileds, ...updateHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			}
+			},
+			walletAddress: bastionResult.walletAddress
 		}
 		updateHifiUserResponse.wallet = wallet
 
@@ -647,3 +648,4 @@ exports.getAllHifiUser = async(req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 }
+

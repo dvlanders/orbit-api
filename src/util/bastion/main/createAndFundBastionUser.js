@@ -3,6 +3,7 @@ const fundMaticPolygon = require("../fundMaticPolygon");
 const createLog = require("../../logger/supabaseLogger");
 const submitBastionKyc = require("./submitBastionkyc");
 const { createUser } = require("../endpoints/createUser");
+const { getAllUserWallets } = require("../utils/getAllUserWallets");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -62,7 +63,9 @@ async function createUserCore(userId) {
 		throw new BastionError("Could not parse addresses", "", 400, response.status, data);
 	}
 
-	return data; // Successfully created and possibly funded the user
+	const userWallets = await getAllUserWallets(userId)
+
+	return userWallets; // Successfully created and possibly funded the user
 }
 
 /**
@@ -74,11 +77,11 @@ async function createAndFundBastionUser(userId) {
 	try {
 		console.log('About to call createUserCore');
 		// create user
-		const data = await createUserCore(userId);
+		const walletAddress = await createUserCore(userId);
 		// submit kyc
 		// if called means createUserCore is success
 		const bastionKycResult = await submitBastionKyc(userId)
-		return bastionKycResult;
+		return {...bastionKycResult, walletAddress};
 	} catch (error) {
 		if (error instanceof BastionError) {
 			return {
@@ -86,6 +89,7 @@ async function createAndFundBastionUser(userId) {
 				walletStatus: CustomerStatus.INACTIVE,
 				invalidFileds: [],
 				actions: [],
+				walletAddress: {},
 				message: "Unexpected error happened, please contact HIFI for more information"
 			}
 		}
@@ -94,6 +98,7 @@ async function createAndFundBastionUser(userId) {
             walletStatus: CustomerStatus.INACTIVE,
             invalidFileds: [],
             actions: [],
+			walletAddress: {},
             message: "Unexpected error happened, please contact HIFI for more information"
 		}
 	}
