@@ -1,6 +1,6 @@
 const { user } = require("../controllers");
 const multer = require('multer');
-const { authorizeUser } = require("../util/middleware");
+const { authorize } = require("../util/middleware");
 
 module.exports = (router) => {
 
@@ -290,7 +290,7 @@ module.exports = (router) => {
 	 *                 error:
 	 *                   type: string
 	 */
-	router.post("/user/create", user.createHifiUser);
+	router.post("/user/create", authorize, user.createHifiUser);
 
 	/**
 	 * @swagger
@@ -462,7 +462,7 @@ module.exports = (router) => {
 	 *                   type: string
 	 *                   example: "Unexpected error happened, please contact HIFI for more information"
 	 */
-	router.get("/user", user.getHifiUser);
+	router.get("/user", authorize, user.getHifiUser);
 
 	/**
 	 * @swagger
@@ -734,5 +734,5 @@ module.exports = (router) => {
 	 *                 error:
 	 *                   type: string
 	 */
-	router.put("/user", user.updateHifiUser);
+	router.put("/user", authorize, user.updateHifiUser);
 };

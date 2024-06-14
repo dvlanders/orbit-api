@@ -1,6 +1,6 @@
 const { account } = require("../controllers");
 
-const { authorizeUser } = require("../util/middleware");
+const { authorize } = require("../util/middleware");
 
 module.exports = (router) => {
 	router.post("/account/usd/onramp/plaid", account.createUsdOnrampSourceWithPlaid); // checkbook

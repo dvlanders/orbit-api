@@ -1,7 +1,10 @@
 const { rs, responseCode } = require("./index");
 const { verifyToken } = require("../util/helper/verifyToken");
 const supabase = require('./supabaseClient');
-
+const { verifyUser } = require("./helper/verifyUser");
+const { isUUID } = require("./common/fieldsValidation");
+const { verifyApiKey } = require("./helper/verifyApiKey");
+const SECRET = process.env.ZUPLO_SECRET
 // /**
 //  * @description Middleware to protect routes by verifying JWT token.
 //  * @param {Object} req - Express request object.
@@ -9,77 +12,26 @@ const supabase = require('./supabaseClient');
 //  * @param {Function} next - Express next function.
 //  * @returns
 //  */
-exports.authorizeUser = async (req, res, next) => {
+exports.authorize = async (req, res, next) => {
 	try {
-		const token = req.headers.authorization?.split(" ")[1];
-		if (!token) {
-			return res.status(responseCode.unauthenticated).json(rs.authErr());
-		};
+		const { userId, apiKeyId } = req.query
+		// check api key provider secret
+		const token = req.headers['zuplo-secret'];
+		if (!token) return res.status(401).json({error: "Not authorized"});
+		if (token !== SECRET) return res.status(401).json({error: "Not authorized"});
+		// check api key id
+		if (!apiKeyId) return res.status(401).json({error: "Not authorized"});
+		// get keyInfo
+		const keyInfo = await verifyApiKey(apiKeyId)
+		if (!keyInfo) return res.status(401).json({error: "Invalid api key"});
+		// check userId
+		if (userId && (!isUUID(userId) || !(await verifyUser(userId, keyInfo.profile_id)))) return res.status(401).json({error: "Not authorized"});	
 
-		const user = await verifyToken(token);
-
-		if (!user && !user?.sub) {
-			return res.status(responseCode.unauthorized).json({ error: "We could not find user" });
-		};
-
-		const { data: userDetails, error: userDetailsError } = await supabase
-			.from('profiles')
-			.select('*')
-			.eq('user_id', user.sub)
-			.single();
-
-		if (!userDetails && userDetailsError) {
-			await supabase.from('logs').insert({
-				log: 'could not find user',
-				merchant_id: userDetails.merchant_id,
-				endpoint: 'auhtorizeUser middleware',
-			});
-			return res.status(responseCode.unauthorized).json({ error: userDetailsError.message ?? "We could not find user" });
-		};
-
-		if (userDetails.deactivated_at) {
-			await supabase.from('logs').insert({
-				log: 'User has been deactivated',
-				merchant_id: userDetails.merchant_id,
-				endpoint: 'auhtorizeUser middleware',
-			});
-			return res.status(responseCode.ok).json({ message: "User has been deactivated" });
-		}
-
-		if (!userDetails.merchant_id) {
-			await supabase.from('logs').insert({
-				log: 'Merchant id for this user could not be found',
-				merchant_id: userDetails.merchant_id,
-				endpoint: 'auhtorizeUser middleware',
-			});
-			return res.status(responseCode.ok).json({ message: "Merchant id for this user could not be found" });
-		}
-		if (req.body.merchantId && req.body.merchantId != userDetails.merchant_id) {
-			await supabase.from('logs').insert({
-				log: 'User merchant id in db does not match the merchantId passed in the request',
-				merchant_id: userDetails.merchant_id,
-				endpoint: 'auhtorizeUser middleware',
-			});
-			return res.status(responseCode.unauthorized).json({ message: "User's merchant id in db does not match the merchantId passed in the request" });
-		}
-		if (req.query.merchantId && req.query.merchantId != userDetails.merchant_id) {
-			return res.status(responseCode.unauthorized).json({ message: "We could not find user" });
-		}
-
-
-		req.user = {
-			id: userDetails?.user_id,
-			fullName: userDetails?.fullName,
-			email: userDetails?.email,
-			phoneNumber: userDetails?.phoneNumber,
-			merchant_id: userDetails?.merchant_id,
-			created_at: userDetails?.created_at,
-		};
-
+		
+		req.query.profileId = keyInfo.profile_id
 		next();
 	} catch (err) {
-		return res
-			.status(responseCode.serverError)
-			.json(rs.errorResponse(err.toString()));
+		console.error(err)
+		return res.status(500).json({error : "Unexpected error happened"});
 	}
 };

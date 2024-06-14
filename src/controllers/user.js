@@ -34,12 +34,7 @@ exports.createHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	try {
-		// TODO: add all of the variables required for this endpoint to work
-		// TODO: add variable rampRegions to the request body. if rampRegions includes EUR, then we collect the additional fields required by bridge
-
-		// Customer profile id, passed from middleware after api key validation
-		// const profileId = req.profile.id
-		const profileId = "7cdf31e1-eb47-4b43-82f7-e368e3f6197b" // dev only
+		const profileId = req.query.profileId 
 		const fields = req.body
 
 		if (!profileId) {
