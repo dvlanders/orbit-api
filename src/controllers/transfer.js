@@ -9,9 +9,7 @@ const { transfer } = require("../util/transfer/cryptoToCrypto/main/transfer");
 const { fetchUserWalletInformation} = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
 const { getRequestRecord } = require("../util/transfer/cryptoToCrypto/main/getRequestRecord");
 const fetch = require('node-fetch');
-const supabase = require('../util/supabaseClient');
 // const { fieldsValidation } = require("../util/common/fieldsValidation");
-const createLog = require('../util/logger/supabaseLogger');
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
 
