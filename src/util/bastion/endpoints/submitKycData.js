@@ -5,6 +5,22 @@ const { supabaseCall } = require("../../supabaseWithRetry");
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 
+const submitBastionKycErrorType = {
+	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
+	INVALID_FIELD: "INVALID_FIELD",
+	INTERNAL_ERROR: "INTERNAL_ERROR",
+	USER_ALREADY_EXISTS: "USER_ALREADY_EXISTS"
+};
+
+class submitBastionKycError extends Error {
+	constructor(type, message, rawResponse) {
+		super(message);
+		this.type = type;
+		this.rawResponse = rawResponse;
+		Object.setPrototypeOf(this, submitBastionKycError.prototype);
+	}
+}
+
 const submitKycData = async(userId) => {
     // fetch user info
     const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase

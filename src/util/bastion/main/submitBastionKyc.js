@@ -48,19 +48,19 @@ const submitBastionKyc = async (userId) => {
 
 			if (newBastionUserError) throw new submitBastionKycError(submitBastionKycErrorType.INVALID_FIELD, newBastionUserError.message, newBastionUserError)
 			if (responseBody.kycPassed === false) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, 'This region is not supported by HIFI at this time', "")
-			
-			if (responseBody.jurisdictionCheckPassed){
+
+			if (responseBody.jurisdictionCheckPassed) {
 				return {
 					status: 200,
-					walletStatus:  CustomerStatus.ACTIVE,
+					walletStatus: CustomerStatus.ACTIVE,
 					invalidFileds: [],
 					actions: [],
 					message: ""
 				}
-			}else{
+			} else {
 				return {
 					status: 200,
-					walletStatus:  CustomerStatus.INACTIVE,
+					walletStatus: CustomerStatus.INACTIVE,
 					invalidFileds: ["ip_address"],
 					actions: ["update"],
 					message: "This region (ip address) is not supported by HIFI at this time"
@@ -71,7 +71,7 @@ const submitBastionKyc = async (userId) => {
 			// FIXME need bastion to update endpoint
 			return {
 				status: 200,
-				walletStatus:  CustomerStatus.ACTIVE,
+				walletStatus: CustomerStatus.ACTIVE,
 				invalidFileds: [],
 				actions: [],
 				message: ""
@@ -84,7 +84,7 @@ const submitBastionKyc = async (userId) => {
 		createLog("user/util/submitBastionKyc", userId, error.message, error)
 		return {
 			status: 500,
-			walletStatus:  CustomerStatus.INACTIVE,
+			walletStatus: CustomerStatus.INACTIVE,
 			invalidFileds: [],
 			actions: [],
 			message: "unexpected error happened when creating user wallet, please contact hifi for more information"
