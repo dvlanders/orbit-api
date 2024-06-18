@@ -1,8 +1,13 @@
 const path = require('path');
+const { v4 } = require('uuid');
 const env = 'development';
 const result = require("dotenv").config({ path: path.resolve(__dirname, `../../.env.${env}`), debug: env === "development" });
-const userId = "f8642d58-182d-42df-99d5-036315f2c27a"
+const userId = "86cfe494-b1b9-4509-af13-1a3744efccc5"
 const apiKeyId = "ec8d5ce6-7e70-473f-97f7-9ca02d8c61b5"
+const BASE_URL = "http://localhost:5001"
+const ZUPLO_SECRET = process.env.ZUPLO_SECRET
+let usOffRampAccountId
+
 
 async function createUsdOffRamp() {
     try{
@@ -17,7 +22,7 @@ async function createUsdOffRamp() {
                 "currency": "usd",
                 "bankName": "Chase",
                 "accountOwnerName": "John Doe",
-                "accountNumber": "1234567876",
+                "accountNumber": v4(), // not sure if works in prod
                 "routingNumber": "000000017",
                 "accountOwnerType": "individual",
                 "streetLine1": "123 Main St",
@@ -29,10 +34,12 @@ async function createUsdOffRamp() {
         }
 
         const response = await fetch(url, options)
+        const responseBody = await response.json()
+        console.log(responseBody)
         if (!response.ok){
             return undefined
         }
-        const responseBody = await response.json()
+        usOffRampAccountId = responseBody.id
         return responseBody
     }catch (error){
         console.error(error)
@@ -92,7 +99,7 @@ async function createEuOffRamp() {
 describe('POST /account/euro/offramp', () => {
     it('create usd off ramp destination', async () => {
         if (env == "development"){
-            return it.skip("skipping test in sandbox")
+            return
         }
         const accountInfo = await createEuOffRamp();
         expect(accountInfo).toBeDefined();
@@ -101,3 +108,42 @@ describe('POST /account/euro/offramp', () => {
     });
   
   });
+
+
+async function getUsOffRampAccount() {
+    try{
+        url = `${BASE_URL}/account?userId=${userId}&apiKeyId=${apiKeyId}&accountId=${usOffRampAccountId}&accountType=usOfframp`
+        options = {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "zuplo-secret": ZUPLO_SECRET,
+            },
+        }
+
+        const response = await fetch(url, options)
+            if (!response.ok){
+                return undefined
+            }
+        const responseBody = await response.json()
+        return responseBody
+    }catch (error){
+        console.error(error)
+        throw(error)
+    }
+}
+
+
+
+// create usd off ramp destination
+describe('GET /account', () => {
+    it('get usd off ramp destination', async () => {
+      const accountInfo = await getUsOffRampAccount();
+      expect(accountInfo).toBeDefined();
+      expect(accountInfo.data.id).toBe(usOffRampAccountId);
+    });
+  
+  });
+
+
+  
