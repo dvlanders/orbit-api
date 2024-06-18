@@ -71,21 +71,21 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 		}
 
 		// fetch user kyc data
-		const { data: bridgeUser, error: bridgeUserError } = await supabaseCall( () =>   supabase
-		.from('bridge_customers')
-		.select('signed_agreement_id')
-		.eq('user_id', userId)
-		.maybeSingle()
-		)
+		// const { data: bridgeUser, error: bridgeUserError } = await supabaseCall( () =>   supabase
+		// .from('bridge_customers')
+		// .select('signed_agreement_id')
+		// .eq('user_id', userId)
+		// .maybeSingle()
+		// )
 
-		if (bridgeUserError) {
-			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridgeUserError.message, bridgeUserError);
-		}
+		// if (bridgeUserError) {
+		// 	throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridgeUserError.message, bridgeUserError);
+		// }
 
-		if (!bridgeUser || !bridgeUser.signed_agreement_id) {
-			invalidFields = ["signed_agreement_id"];
-			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, "User signed_agreement_id information record not found");
-		}
+		// if (!bridgeUser || !bridgeUser.signed_agreement_id) {
+		// 	invalidFields = ["signed_agreement_id"];
+		// 	throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, "User signed_agreement_id information record not found");
+		// }
 
 		// submit kyc information to bridge
 		const birthDate = userKyc.date_of_birth ? new Date(userKyc.date_of_birth) : undefined;

@@ -77,7 +77,7 @@ exports.createHifiUser = async (req, res) => {
 			},
 			ramps: {
 				usdAch: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -104,7 +104,7 @@ exports.createHifiUser = async (req, res) => {
 					},
 				},
 				euroSepa: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -151,13 +151,13 @@ exports.createHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			achPullMessage: [...checkbookResult.message, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 			}
 		}
-		createHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+		createHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
 		// bridge status
 		// kyc
@@ -172,7 +172,7 @@ exports.createHifiUser = async (req, res) => {
 		createHifiUserResponse.user_kyc = userKyc
 		// usRamp
 		const usdAch = {
-			onramp: {
+			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
@@ -180,10 +180,10 @@ exports.createHifiUser = async (req, res) => {
 				},
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					achPullMessage: [...createHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 					}
 				}
 			},
@@ -198,7 +198,7 @@ exports.createHifiUser = async (req, res) => {
 		createHifiUserResponse.ramps.usdAch = usdAch
 		// euRamp
 		const euroSepa = {
-			onramp: {
+			onRamp: {
 				status: Status.INACTIVE,
 				actionNeeded: {
 					actions: [],
@@ -277,7 +277,7 @@ exports.getHifiUser = async (req, res) => {
 			},
 			ramps: {
 				usdAch: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -304,7 +304,7 @@ exports.getHifiUser = async (req, res) => {
 					},
 				},
 				euroSepa: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -349,13 +349,13 @@ exports.getHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			achPullMessage: [...checkbookResult.message, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 			}
 		}
-		getHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+		getHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
 		// bridge status
 		// kyc
@@ -369,7 +369,7 @@ exports.getHifiUser = async (req, res) => {
 		getHifiUserResponse.user_kyc = userKyc
 		// usRamp
 		const usdAch = {
-			onramp: {
+			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
@@ -378,10 +378,10 @@ exports.getHifiUser = async (req, res) => {
 				message: bridgeResult.message,
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					achPullMessage: [...getHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+						actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 					}
 				}
 			},
@@ -680,7 +680,7 @@ exports.generateToSLink = async(req, res) => {
 		// generate hosted tos page
 		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}&templateId=${templateId}`
 
-		return res.status(200).json({url: tosLink})
+		return res.status(200).json({url: tosLink, sessionToken: signedAgreementInfo.session_token})
 	} catch(error){
 		createLog("user/generateToSLink", "", error.message, error)
 		return res.status(500).json({error: "Unexpected error happened"})
