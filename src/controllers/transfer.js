@@ -2,7 +2,7 @@ const supabase = require("../util/supabaseClient");
 const { fieldsValidation, isUUID } = require("../util/common/fieldsValidation");
 const { requiredFields, acceptedFields } = require("../util/transfer/cryptoToCrypto/utils/createTransfer");
 const createLog = require("../util/logger/supabaseLogger");
-const { hifiSupportedChain, currencyDecimal } = require("../util/common/blockchain");
+const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
 const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privilegeCheck");
 const { fetchRequestInfortmaion } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
 const { transfer } = require("../util/transfer/cryptoToCrypto/main/transfer");
@@ -118,13 +118,13 @@ exports.transferUsdcFromWalletToBankAccount = async (req, res) => {
 	// const contractAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"; // USDC contract on Polygon Mainnet
 
 	// DEV
-	const contractAddress = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"; // USDC contract on Ethereum Testnet
+	const contractAddress = "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582"; // USDC contract on Polygon Amoy
 
 	// PROD
 	// const chain = 'POLYGON_MAINNET';
 
 	// DEV
-	const chain = 'ETHEREUM_TESTNET';
+	const chain = Chain.POLYGON_AMOY
 
 	// get the external account record
 	const { data: liquidationAddressData, error: liquidationAddressError } = await supabase
@@ -188,8 +188,8 @@ exports.transferUsdcFromWalletToBankAccount = async (req, res) => {
 			actionName: "transfer",
 			chain: chain,
 			actionParams: [
-				// { name: "to", value: liquidationAddressData.address },
-				{ name: "to", value: '0xeDEa02367558FBF0387dD6c17A85A6b57A8Ce0Ad' },
+				{ name: "to", value: liquidationAddressData.address },
+				// { name: "to", value: '0xeDEa02367558FBF0387dD6c17A85A6b57A8Ce0Ad' },
 				{ name: "value", value: amountInSmallestUnit }
 			],
 		};

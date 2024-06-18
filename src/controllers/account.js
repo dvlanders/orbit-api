@@ -104,7 +104,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	};
 
 	// Validate fields
-	const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, bridgeRequestStructureTyping);
+	const { missingFields, invalidFields } = fieldsValidation({...req.body, userId}, requiredFields, bridgeRequestStructureTyping);
 
 	if (missingFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields });
@@ -231,7 +231,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 	};
 
 	// Validate fields
-	const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, bridgeRequestStructureTyping);
+	const { missingFields, invalidFields } = fieldsValidation({...req.body, userId}, requiredFields, bridgeRequestStructureTyping);
 
 	if (missingFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields });

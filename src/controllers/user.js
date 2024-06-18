@@ -15,6 +15,9 @@ const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID } = require('../util/common/fieldsValidation');
 const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
+const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
+const { v4: uuidv4 } = require("uuid");
+
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -33,6 +36,7 @@ exports.createHifiUser = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+	let userId
 	try {
 		const profileId = req.query.profileId 
 		const fields = req.body
@@ -42,7 +46,6 @@ exports.createHifiUser = async (req, res) => {
 		}
 
 		// upload information and create new user
-		let userId
 		try {
 			userId = await informationUploadForCreateUser(profileId, fields)
 		} catch (error) {
@@ -74,7 +77,7 @@ exports.createHifiUser = async (req, res) => {
 			},
 			ramps: {
 				usdAch: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -91,7 +94,7 @@ exports.createHifiUser = async (req, res) => {
 
 						},
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -101,7 +104,7 @@ exports.createHifiUser = async (req, res) => {
 					},
 				},
 				euroSepa: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -109,7 +112,7 @@ exports.createHifiUser = async (req, res) => {
 						},
 						message: 'SEPA onRamp will be available in near future',
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -148,13 +151,13 @@ exports.createHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			achPullMessage: [...checkbookResult.message, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 			}
 		}
-		createHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+		createHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
 		// bridge status
 		// kyc
@@ -169,7 +172,7 @@ exports.createHifiUser = async (req, res) => {
 		createHifiUserResponse.user_kyc = userKyc
 		// usRamp
 		const usdAch = {
-			onramp: {
+			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
@@ -177,25 +180,25 @@ exports.createHifiUser = async (req, res) => {
 				},
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...createHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					achPullMessage: [...createHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 					}
 				}
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+					actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
 				},
 			}
 		}
 		createHifiUserResponse.ramps.usdAch = usdAch
 		// euRamp
 		const euroSepa = {
-			onramp: {
+			onRamp: {
 				status: Status.INACTIVE,
 				actionNeeded: {
 					actions: [],
@@ -203,11 +206,11 @@ exports.createHifiUser = async (req, res) => {
 				},
 				message: 'SEPA onRamp will be available in near future',
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
 				},
 				message: ''
 			},
@@ -274,7 +277,7 @@ exports.getHifiUser = async (req, res) => {
 			},
 			ramps: {
 				usdAch: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -291,7 +294,7 @@ exports.getHifiUser = async (req, res) => {
 
 						},
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -301,7 +304,7 @@ exports.getHifiUser = async (req, res) => {
 					},
 				},
 				euroSepa: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -309,7 +312,7 @@ exports.getHifiUser = async (req, res) => {
 						},
 						message: 'SEPA onRamp will be available in near future',
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -346,13 +349,13 @@ exports.getHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			achPullMessage: [...checkbookResult.message, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 			}
 		}
-		getHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+		getHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
 		// bridge status
 		// kyc
@@ -366,7 +369,7 @@ exports.getHifiUser = async (req, res) => {
 		getHifiUserResponse.user_kyc = userKyc
 		// usRamp
 		const usdAch = {
-			onramp: {
+			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
@@ -375,25 +378,25 @@ exports.getHifiUser = async (req, res) => {
 				message: bridgeResult.message,
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...getHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					achPullMessage: [...getHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+						actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 					}
 				}
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
 				},
 			}
 		}
 		getHifiUserResponse.ramps.usdAch = usdAch
 		// euRamp
 		const euroSepa = {
-			onramp: {
+			onRamp: {
 				status: Status.INACTIVE,
 				actionNeeded: {
 					actions: [],
@@ -401,11 +404,11 @@ exports.getHifiUser = async (req, res) => {
 				},
 				message: 'SEPA onRamp will be available in near future',
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
 				},
 				message: ''
 			},
@@ -496,7 +499,7 @@ exports.updateHifiUser = async (req, res) => {
 			},
 			ramps: {
 				usdAch: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -513,7 +516,7 @@ exports.updateHifiUser = async (req, res) => {
 
 						},
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -523,7 +526,7 @@ exports.updateHifiUser = async (req, res) => {
 					},
 				},
 				euroSepa: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -531,7 +534,7 @@ exports.updateHifiUser = async (req, res) => {
 						},
 						message: 'SEPA onRamp will be available in near future',
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -558,13 +561,13 @@ exports.updateHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			achPullMessage: [...checkbookResult.message, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 			}
 		}
-		updateHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+		updateHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
 		// bridge status
 		// kyc
@@ -579,7 +582,7 @@ exports.updateHifiUser = async (req, res) => {
 		updateHifiUserResponse.user_kyc = userKyc
 		// usRamp
 		const usdAch = {
-			onramp: {
+			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
@@ -587,25 +590,25 @@ exports.updateHifiUser = async (req, res) => {
 				},
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 					}
 				}
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+					actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
 				},
 			}
 		}
 		updateHifiUserResponse.ramps.usdAch = usdAch
 		// euRamp
 		const euroSepa = {
-			onramp: {
+			onRamp: {
 				status: Status.INACTIVE,
 				actionNeeded: {
 					actions: [],
@@ -613,11 +616,11 @@ exports.updateHifiUser = async (req, res) => {
 				},
 				message: 'SEPA onRamp will be available in near future',
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
 				},
 				message: ''
 			},
@@ -647,5 +650,64 @@ exports.getAllHifiUser = async(req, res) => {
 	if (req.method !== 'PUT') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+}
+
+exports.generateToSLink = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	try {
+		const DASHBOARD_URL = process.env.DASHBOARD_URL
+		const {profileId} = req.query
+		const {redirectUrl, idempotencyKey, templateId} = req.body
+		if (!templateId) return res.status(400).json({error: "templateId is required"})
+		if (!idempotencyKey) return res.status(400).json({error: "idempotencyKey is required"})
+		// check is template exist
+		if (!(await checkToSTemplate(templateId))) return res.status(400).json({error: "templateId is not exist"})
+		const encodedUrl = encodeURIComponent(redirectUrl)
+		// check is idempotencyKey already exist
+		const {isValid, isExpired, data} = await checkSignedAgreementId(idempotencyKey)
+		if (isExpired) return res.status(400).json({error: "Session expired, please generate with new idempotencyKey"})
+		if (!isValid) return res.status(400).json({error: "Invalid or used idempotencyKey"})
+		// valid and unexpired record
+		if (data) {
+			const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}`
+			return res.status(200).json({url: tosLink})
+		}
+		
+		// insert signed agreement record 
+		const signedAgreementInfo = await generateNewSignedAgreementRecord(idempotencyKey, templateId)
+		// generate hosted tos page
+		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}&templateId=${templateId}`
+
+		return res.status(200).json({url: tosLink, sessionToken: signedAgreementInfo.session_token})
+	} catch(error){
+		createLog("user/generateToSLink", "", error.message, error)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+	
+}
+
+exports.acceptToSLink = async(req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	try{
+		const {profileId} = req.query
+		const {sessionToken} = req.body
+		if (!sessionToken) return res.status(400).json({error: "Session token is required"})
+		const signedAgreementId = await updateSignedAgreementRecord(sessionToken)
+		if (!signedAgreementId) return res.status(400).json({error: "Session token is invalid"})
+		
+		
+		return res.status(200).json({signedAgreementId})
+
+
+	}catch (error){
+		createLog("user/acceptToSLink", "", error.message, error)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 }
 

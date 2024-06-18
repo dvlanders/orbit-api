@@ -150,7 +150,7 @@ router.get("/get_ping", user.getPing);
 	 *                     usdAch:
 	 *                       type: object
 	 *                       properties:
-	 *                         onramp:
+	 *                         onRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -186,7 +186,7 @@ router.get("/get_ping", user.getPing);
 	 *                                     type: string
 	 *                             achPullMessage: 
 	 *                               type: string
-	 *                         offramp:
+	 *                         offRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -207,7 +207,7 @@ router.get("/get_ping", user.getPing);
 	 *                     euroSepa:
 	 *                       type: object
 	 *                       properties:
-	 *                         onramp:
+	 *                         onRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -225,7 +225,7 @@ router.get("/get_ping", user.getPing);
 	 *                                     type: string
 	 *                             message: 
 	 *                               type: string
-	 *                         offramp:
+	 *                         offRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -352,7 +352,7 @@ router.get("/get_ping", user.getPing);
 	 *                     usdAch:
 	 *                       type: object
 	 *                       properties:
-	 *                         onramp:
+	 *                         onRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -388,7 +388,7 @@ router.get("/get_ping", user.getPing);
 	 *                                     type: string
 	 *                             achPullMessage: 
 	 *                               type: string
-	 *                         offramp:
+	 *                         offRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -409,7 +409,7 @@ router.get("/get_ping", user.getPing);
 	 *                     euroSepa:
 	 *                       type: object
 	 *                       properties:
-	 *                         onramp:
+	 *                         onRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -427,7 +427,7 @@ router.get("/get_ping", user.getPing);
 	 *                                     type: string
 	 *                             message: 
 	 *                               type: string
-	 *                         offramp:
+	 *                         offRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -594,7 +594,7 @@ router.get("/get_ping", user.getPing);
 	 *                     usdAch:
 	 *                       type: object
 	 *                       properties:
-	 *                         onramp:
+	 *                         onRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -630,7 +630,7 @@ router.get("/get_ping", user.getPing);
 	 *                                     type: string
 	 *                             achPullMessage: 
 	 *                               type: string
-	 *                         offramp:
+	 *                         offRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -651,7 +651,7 @@ router.get("/get_ping", user.getPing);
 	 *                     euroSepa:
 	 *                       type: object
 	 *                       properties:
-	 *                         onramp:
+	 *                         onRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -669,7 +669,7 @@ router.get("/get_ping", user.getPing);
 	 *                                     type: string
 	 *                             message: 
 	 *                               type: string
-	 *                         offramp:
+	 *                         offRamp:
 	 *                           type: object
 	 *                           properties:
 	 *                             status: 
@@ -734,4 +734,7 @@ router.get("/get_ping", user.getPing);
 	 *                   type: string
 	 */
 	router.put("/user", authorize, user.updateHifiUser);
+
+	router.post("/tos-link", user.generateToSLink)
+	router.put("/tos-link", user.acceptToSLink)
 };
