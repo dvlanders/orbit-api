@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const fundMaticPolygon = require("../fundMaticPolygon");
 const createLog = require("../../logger/supabaseLogger");
-const submitBastionKyc = require("./submitBastionkyc");
+const submitBastionKyc = require("../main/submitBastionKyc");
 const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
 
@@ -27,7 +27,7 @@ class BastionError extends Error {
  * @returns {Promise<Object>} The response data from Bastion.
  */
 async function createUserCore(userId) {
-	
+
 	const response = await createUser(userId)
 	const data = await response.json();
 
@@ -81,7 +81,7 @@ async function createAndFundBastionUser(userId) {
 		// submit kyc
 		// if called means createUserCore is success
 		const bastionKycResult = await submitBastionKyc(userId)
-		return {...bastionKycResult, walletAddress};
+		return { ...bastionKycResult, walletAddress };
 	} catch (error) {
 		if (error instanceof BastionError) {
 			return {
@@ -95,11 +95,11 @@ async function createAndFundBastionUser(userId) {
 		}
 		return {
 			status: 500,
-            walletStatus: CustomerStatus.INACTIVE,
-            invalidFileds: [],
-            actions: [],
+			walletStatus: CustomerStatus.INACTIVE,
+			invalidFileds: [],
+			actions: [],
 			walletAddress: {},
-            message: "Unexpected error happened, please contact HIFI for more information"
+			message: "Unexpected error happened, please contact HIFI for more information"
 		}
 	}
 }
