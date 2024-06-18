@@ -70,6 +70,8 @@ require("./src/routes")(app, express);
 
 let { logger } = require("./src/util/logger/logger");
 
+require('./cron');
+
 app.listen(port, () => {
 	logger.info(`Server Listening On Port ${port}`);
 	console.log(`Environment : ${env}`);
