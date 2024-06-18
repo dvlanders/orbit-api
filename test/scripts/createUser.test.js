@@ -88,7 +88,7 @@ describe('PUT /tos-link', () => {
   
   });
 
-async function createCustomer() {
+async function createUser() {
     try{
         url = `${BASE_URL}/user/create?apiKeyId=${apiKeyId}`
         options = {
@@ -134,9 +134,10 @@ async function createCustomer() {
 //  create user
 describe('POST /user/create', () => {
     it('create user', async () => {
-      const user = await createCustomer();
+      const user = await createUser();
       expect(user).toBeDefined();
       expect(user.user.id).toBeDefined();
+      userId = user.user.id
       expect(user.wallet).toBeDefined();
       expect(user.wallet.walletStatus).toBe("ACTIVE");
       expect(user.wallet.walletAddress.ETHEREUM_TESTNET).toBeDefined();
@@ -146,9 +147,42 @@ describe('POST /user/create', () => {
       expect(user.ramps).toBeDefined()
       expect(user.ramps.usdAch.onRamp.status).toBe("PENDING")
       expect(user.ramps.usdAch.onRamp.achPull.achPullStatus).toBe("PENDING")
-      expect(user.ramps.usdAch.offRamp).toBe("PENDING")
+      expect(user.ramps.usdAch.offRamp.status).toBe("PENDING")
       expect(user.ramps.euroSepa.offRamp.status).toBe("PENDING")
     }, 10000);
   
   });
+
+async function getUser(){
+    url = `${BASE_URL}/user?userId=${userId}&apiKeyId=${apiKeyId}`
+    options = {
+        headers: {
+            "Content-Type": "application/json",
+            "zuplo-secret": ZUPLO_SECRET,
+        },
+    }
+    const response = await fetch(url, options)
+    const responseBody = await response.json()
+    if (!response.ok){
+        console.log(responseBody)
+        return undefined
+    }
+    return responseBody
+}
+
+//  get user
+describe('GET /user', () => {
+    it('get user', async () => {
+      const user = await getUser();
+      expect(user).toBeDefined();
+      expect(user.user.id).toBeDefined();
+      expect(user.user.id).toBe(userId);
+    });
+  
+  });
+
+
+
+
+
 
