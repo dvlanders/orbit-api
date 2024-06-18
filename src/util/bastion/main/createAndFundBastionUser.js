@@ -4,6 +4,8 @@ const createLog = require("../../logger/supabaseLogger");
 const submitBastionKyc = require("./submitBastionKyc");
 const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
+const { CustomerStatus } = require("../../user/common");
+const { Chain } = require("../../common/blockchain");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -30,6 +32,7 @@ async function createUserCore(userId) {
 
 	const response = await createUser(userId)
 	const data = await response.json();
+	console.log(data)
 
 	if (response.status !== 201) {
 		throw new BastionError(data.message, data.details, response.status);
@@ -52,11 +55,12 @@ async function createUserCore(userId) {
 				} else if (!(insertData && insertData.length > 0)) {
 					logger.warn('Supabase insert resulted in no data or an empty response.');
 				}
-
+				console.log()
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
-				// if (chain === 'POLYGON_MAINNET') {
-				// 	await fundMaticPolygon(userId, '0.15');
-				// }
+				if (chain === Chain.POLYGON_MAINNET || chain === Chain.POLYGON_AMOY) {
+					console.log("fund account")
+					await fundMaticPolygon(userId, '0.001');
+				}
 			}
 		}
 	} else {

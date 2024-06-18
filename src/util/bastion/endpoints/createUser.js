@@ -1,10 +1,13 @@
+const { Chain } = require("../../common/blockchain");
+
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
+console.log("env", process.env.NODE_ENV)
+const chains = process.env.NODE_ENV == "development"? [Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET, Chain.OPTIMISM_MAINNET]
 
 async function createUser(userId) {
 	const url = `${BASTION_URL}/v1/users`;
-	const bodyObject = { id: userId, chains: ["ETHEREUM_TESTNET"] };
-    // const bodyObject = { id: userId, chains: ["ETHEREUM_MAINNET", "POLYGON_MAINNET", "OPTIMISM_MAINNET", "BASE_MAINNET"] };
+    const bodyObject = { id: userId, chains};
 	const options = {
 		method: "POST",
 		headers: {
