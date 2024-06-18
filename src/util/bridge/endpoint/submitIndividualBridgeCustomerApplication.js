@@ -110,7 +110,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 				postal_code: userKyc.postal_code,
 				country: userKyc.country
 			},
-			signed_agreement_id: bridgeUser.signed_agreement_id, //FIXME 
+			signed_agreement_id: userKyc.signed_agreement_id, //FIXME 
 			has_accepted_terms_of_service: true,
 			birth_date: formattedBirthDate,
 			tax_identification_number: userKyc.tax_identification_number,

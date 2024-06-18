@@ -15,6 +15,9 @@ const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID } = require('../util/common/fieldsValidation');
 const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
+const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
+const { v4: uuidv4 } = require("uuid");
+
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -33,6 +36,7 @@ exports.createHifiUser = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+	let userId
 	try {
 		const profileId = req.query.profileId 
 		const fields = req.body
@@ -42,7 +46,6 @@ exports.createHifiUser = async (req, res) => {
 		}
 
 		// upload information and create new user
-		let userId
 		try {
 			userId = await informationUploadForCreateUser(profileId, fields)
 		} catch (error) {
@@ -647,5 +650,64 @@ exports.getAllHifiUser = async(req, res) => {
 	if (req.method !== 'PUT') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+}
+
+exports.generateToSLink = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	try {
+		const DASHBOARD_URL = process.env.DASHBOARD_URL
+		const {profileId} = req.query
+		const {redirectUrl, idempotencyKey, templateId} = req.body
+		if (!templateId) return res.status(400).json({error: "templateId is required"})
+		if (!idempotencyKey) return res.status(400).json({error: "idempotencyKey is required"})
+		// check is template exist
+		if (!(await checkToSTemplate(templateId))) return res.status(400).json({error: "templateId is not exist"})
+		const encodedUrl = encodeURIComponent(redirectUrl)
+		// check is idempotencyKey already exist
+		const {isValid, isExpired, data} = await checkSignedAgreementId(idempotencyKey)
+		if (isExpired) return res.status(400).json({error: "Session expired, please generate with new idempotencyKey"})
+		if (!isValid) return res.status(400).json({error: "Invalid or used idempotencyKey"})
+		// valid and unexpired record
+		if (data) {
+			const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}`
+			return res.status(200).json({url: tosLink})
+		}
+		
+		// insert signed agreement record 
+		const signedAgreementInfo = await generateNewSignedAgreementRecord(idempotencyKey, templateId)
+		// generate hosted tos page
+		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}&templateId=${templateId}`
+
+		return res.status(200).json({url: tosLink})
+	} catch(error){
+		createLog("user/generateToSLink", "", error.message, error)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+	
+}
+
+exports.acceptToSLink = async(req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	try{
+		const {profileId} = req.query
+		const {sessionToken} = req.body
+		if (!sessionToken) return res.status(400).json({error: "Session token is required"})
+		const signedAgreementId = await updateSignedAgreementRecord(sessionToken)
+		if (!signedAgreementId) return res.status(400).json({error: "Session token is invalid"})
+		
+		
+		return res.status(200).json({signedAgreementId})
+
+
+	}catch (error){
+		createLog("user/acceptToSLink", "", error.message, error)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 }
 

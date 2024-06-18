@@ -734,4 +734,7 @@ router.get("/get_ping", user.getPing);
 	 *                   type: string
 	 */
 	router.put("/user", authorize, user.updateHifiUser);
+
+	router.post("/tos-link", user.generateToSLink)
+	router.put("/tos-link", user.acceptToSLink)
 };

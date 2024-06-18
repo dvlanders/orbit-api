@@ -4,6 +4,7 @@ const createLog = require("../logger/supabaseLogger");
 const { uploadFileFromUrl } = require("../supabase/fileUpload");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
+const { checkIsSignedAgreementIdSigned } = require("./signedAgreement");
 
 const requiredFields = [
 	"userType",
@@ -133,8 +134,11 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	// check if the field that is passsed is a valid field that we allow updates on
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FEILD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
+	// check signedAgreementId
+	const isValidSignedAgreementId = await checkIsSignedAgreementIdSigned(fields.signedAgreementId)
+	if (!isValidSignedAgreementId) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: [], invalid_fields: ["signedAgreementId"] })
 
 
 	// create new user
@@ -161,7 +165,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		const { error: newBridgeRecordError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.insert(
-				{ user_id: userId, signed_agreement_id: fields.signedAgreementId },
+				{ user_id: userId},
 			)
 			.select())
 
@@ -213,6 +217,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		}))
 
 	} catch (error) {
+		console.error(error)
 		createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
 		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
@@ -256,7 +261,8 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 				gov_id_back_path: fields.govIdBackPath,
 				proof_of_residency_path: fields.proofOfResidencyPath,
 				proof_of_ownership_path: fields.proofOfOwnershipPath,
-				formation_doc_path: fields.formationDocPath
+				formation_doc_path: fields.formationDocPath,
+				signed_agreement_id: fields.signedAgreementId
 			}			
 		)
 		.select()
@@ -352,7 +358,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 }
 
 const ipCheck = async (ip) => {
-
+	return true
 	const locationRes = await fetch(`https://ipapi.co/${ip}/json/`);
 	if (locationRes.ok) {
 		const locaionData = await locationRes.json();
