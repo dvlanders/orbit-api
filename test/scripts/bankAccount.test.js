@@ -41,14 +41,63 @@ async function createUsdOffRamp() {
 
 }
 
-// generate tos link
-describe('POST /tos-link', () => {
-    it('generate tos link', async () => {
-      const tosInfo = await generateToSLink();
-      expect(tosInfo).toBeDefined();
-      expect(tosInfo.sessionToken).toBeDefined();
-      expect(tosInfo.url).toBeDefined();
-      sessionToken = tosInfo.sessionToken
+// create usd off ramp destination
+describe('POST /account/usd/offramp', () => {
+    it('create usd off ramp destination', async () => {
+      const accountInfo = await createUsdOffRamp();
+      expect(accountInfo).toBeDefined();
+      expect(accountInfo.status).toBe("ACTIVE");
+      expect(accountInfo.id).toBeDefined();
+    });
+  
+  });
+
+async function createEuOffRamp() {
+    try{
+        url = `${BASE_URL}/account/euro/offramp?userId=${userId}&apiKeyId=${apiKeyId}`
+        options = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "zuplo-secret": ZUPLO_SECRET,
+            },
+            body: JSON.stringify({
+                "currency": "eur",
+                "bankName": "Deutsche Bank",
+                "accountOwnerName": "John Doe",
+                "accountOwnerType": "individual",
+                "ibanAccountNumber": "DE75512108001245126199",
+                "country": "DEU",
+                "businessIdentifierCode": "DEUTDEDBFRA",
+                "ibanCountryCode": "DEU",
+                "firstName": "John",
+                "lastName": "Doe"
+            })
+        }
+
+        const response = await fetch(url, options)
+        if (!response.ok){
+            return undefined
+        }
+        const responseBody = await response.json()
+        return responseBody
+    }catch (error){
+        console.error(error)
+        throw(error)
+    }
+
+}
+
+// create usd off ramp destination
+describe('POST /account/euro/offramp', () => {
+    it('create usd off ramp destination', async () => {
+        if (env == "development"){
+            return it.skip("skipping test in sandbox")
+        }
+        const accountInfo = await createEuOffRamp();
+        expect(accountInfo).toBeDefined();
+        expect(accountInfo.status).toBe("ACTIVE");
+        expect(accountInfo.id).toBeDefined();
     });
   
   });

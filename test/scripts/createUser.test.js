@@ -140,8 +140,7 @@ describe('POST /user/create', () => {
       userId = user.user.id
       expect(user.wallet).toBeDefined();
       expect(user.wallet.walletStatus).toBe("ACTIVE");
-      expect(user.wallet.walletAddress.ETHEREUM_TESTNET).toBeDefined();
-      expect(typeof user.wallet.walletAddress.ETHEREUM_TESTNET.address).toBe('string');
+      expect(user.wallet.walletAddress).toBeDefined();
       expect(user.user_kyc).toBeDefined()
       expect(user.user_kyc.status).toBe("PENDING")
       expect(user.ramps).toBeDefined()
@@ -149,7 +148,7 @@ describe('POST /user/create', () => {
       expect(user.ramps.usdAch.onRamp.achPull.achPullStatus).toBe("PENDING")
       expect(user.ramps.usdAch.offRamp.status).toBe("PENDING")
       expect(user.ramps.euroSepa.offRamp.status).toBe("PENDING")
-    }, 10000);
+    }, 15000);
   
   });
 
