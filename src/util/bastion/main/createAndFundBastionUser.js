@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const fundMaticPolygon = require("../fundMaticPolygon");
 const createLog = require("../../logger/supabaseLogger");
-const submitBastionKyc = require("./submitBastionkyc");
+const submitBastionKyc = require("./submitBastionKyc");
 const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
 

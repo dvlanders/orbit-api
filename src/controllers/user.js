@@ -94,7 +94,7 @@ exports.createHifiUser = async (req, res) => {
 
 						},
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -112,7 +112,7 @@ exports.createHifiUser = async (req, res) => {
 						},
 						message: 'SEPA onRamp will be available in near future',
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -187,11 +187,11 @@ exports.createHifiUser = async (req, res) => {
 					}
 				}
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+					actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
 				},
 			}
 		}
@@ -206,11 +206,11 @@ exports.createHifiUser = async (req, res) => {
 				},
 				message: 'SEPA onRamp will be available in near future',
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
 				},
 				message: ''
 			},
@@ -294,7 +294,7 @@ exports.getHifiUser = async (req, res) => {
 
 						},
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -312,7 +312,7 @@ exports.getHifiUser = async (req, res) => {
 						},
 						message: 'SEPA onRamp will be available in near future',
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -385,18 +385,18 @@ exports.getHifiUser = async (req, res) => {
 					}
 				}
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
 				},
 			}
 		}
 		getHifiUserResponse.ramps.usdAch = usdAch
 		// euRamp
 		const euroSepa = {
-			onramp: {
+			onRamp: {
 				status: Status.INACTIVE,
 				actionNeeded: {
 					actions: [],
@@ -404,11 +404,11 @@ exports.getHifiUser = async (req, res) => {
 				},
 				message: 'SEPA onRamp will be available in near future',
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
 				},
 				message: ''
 			},
@@ -499,7 +499,7 @@ exports.updateHifiUser = async (req, res) => {
 			},
 			ramps: {
 				usdAch: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -516,7 +516,7 @@ exports.updateHifiUser = async (req, res) => {
 
 						},
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -526,7 +526,7 @@ exports.updateHifiUser = async (req, res) => {
 					},
 				},
 				euroSepa: {
-					onramp: {
+					onRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -534,7 +534,7 @@ exports.updateHifiUser = async (req, res) => {
 						},
 						message: 'SEPA onRamp will be available in near future',
 					},
-					offramp: {
+					offRamp: {
 						status: Status.INACTIVE, // represent bridge
 						actionNeeded: {
 							actions: [],
@@ -561,13 +561,13 @@ exports.updateHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+			achPullMessage: [...checkbookResult.message, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 			}
 		}
-		updateHifiUserResponse.ramps.usdAch.onramp.achPull = achPull
+		updateHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
 		// bridge status
 		// kyc
@@ -582,7 +582,7 @@ exports.updateHifiUser = async (req, res) => {
 		updateHifiUserResponse.user_kyc = userKyc
 		// usRamp
 		const usdAch = {
-			onramp: {
+			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: bridgeResult.customerStatus.actions,
@@ -590,25 +590,25 @@ exports.updateHifiUser = async (req, res) => {
 				},
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onramp.achPull.achPullMessage],
+					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onramp.achPull.actionNeeded.fieldsToResubmit]
+						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
+						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
 					}
 				}
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.offramp.actionNeeded.fieldsToResubmit]
+					actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
 				},
 			}
 		}
 		updateHifiUserResponse.ramps.usdAch = usdAch
 		// euRamp
 		const euroSepa = {
-			onramp: {
+			onRamp: {
 				status: Status.INACTIVE,
 				actionNeeded: {
 					actions: [],
@@ -616,11 +616,11 @@ exports.updateHifiUser = async (req, res) => {
 				},
 				message: 'SEPA onRamp will be available in near future',
 			},
-			offramp: {
+			offRamp: {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offramp.actionNeeded.actions],
+					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
 				},
 				message: ''
 			},

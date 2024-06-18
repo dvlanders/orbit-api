@@ -3,7 +3,8 @@ const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const createAndFundBastionUser = require("./createAndFundBastionUser");
 const getBastionUser = require("./getBastionUser");
-const submitBastionKyc = require("./submitBastionkyc");
+const submitBastionKyc = require("./submitBastionKyc");
+
 
 const UpdateBastionUserErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
