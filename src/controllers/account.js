@@ -69,14 +69,18 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId, currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
+	const { userId } = req.query;
+
+	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
+
+
 
 	// Define required fields based on account owner type
 	let requiredFields = ["userId", "currency", "bankName", "accountOwnerName", "accountOwnerType", "accountNumber", "routingNumber"];
 	// if (accountOwnerType === "individual") {
 	// 	requiredFields.push("firstName", "lastName");
 	// } else if (accountOwnerType === "business") {
-	// 	requiredFields.push("businessName");
+	// 	requiredFields.push("businessName");C
 	// } else {
 	// 	return res.status(400).json({ error: "Invalid accountOwnerType" });
 	// }
@@ -196,8 +200,9 @@ exports.createEuroOfframpDestination = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+	const { userId } = req.query;
 
-	const { userId, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName, businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode } = req.body;
+	const { currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName, businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode } = req.body;
 
 	// Define required fields based on account owner type
 	let requiredFields = ["userId", "currency", "bankName", "accountOwnerName", "accountOwnerType", "ibanAccountNumber", "businessIdentifierCode", "ibanCountryCode"];
