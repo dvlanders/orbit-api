@@ -12,12 +12,13 @@ async function pollOfframpTransactionsBridgeStatus() {
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
 		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status')
-		.or('bridge_transaction_status.is.null,bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded')
+		// .eq("bridge_transaction_status", "")
+		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded)')
 	)
 
 
 	console.log('offrampTransactionData', offrampTransactionData);
-
+	console.log('offrampTransactionError', offrampTransactionError);
 
 
 	if (offrampTransactionError) {
