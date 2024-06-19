@@ -5,7 +5,7 @@ const createAndFundBastionUser = require('../util/bastion/fundMaticPolygon');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
 const { createBridgeLiquidationAddress } = require('../util/bridge/endpoint/createBridgeLiquidationAddress')
-const { createCheckbookBankAccount } = require('../util/checkbook/endpoint/createCheckbookBankAccount')
+const { createCheckbookBankAccountWithProcessorToken } = require('../util/checkbook/endpoint/createCheckbookBankAccount')
 const { getBridgeExternalAccount } = require('../util/bridge/endpoint/getBridgeExternalAccount');
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
@@ -26,7 +26,7 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 
 	// TODO: validate the request body fields to make sure all fields are present and are the valid type
 
-	const checkbookAccountResult = await createCheckbookBankAccount(user_id, plaid_processor_token, bank_name, account_number, routing_number);
+	const checkbookAccountResult = await createCheckbookBankAccountWithProcessorToken(user_id, plaid_processor_token, bank_name, account_number, routing_number);
 
 	let createUsdOnrampSourceWithPlaidResponse = {
 		status: null,

@@ -5,13 +5,13 @@ const { createLog } = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
-async function pollBastionStatus() {
+async function pollOfframpTransactionsBastionStatus() {
 	console.log('Polling Bastion API for offramp transaction status updates...');
 
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
-		.select('id, user_id, transaction_status')
+		.select('id, user_id, transaction_status, bastion_transaction_status')
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 	)
@@ -19,7 +19,7 @@ async function pollBastionStatus() {
 
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollBastionStatus', offrampTransactionError);
-		createLog('pollBastionStatus', null, 'Failed to fetch transactions', offrampTransactionError);
+		createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to fetch transactions', offrampTransactionError);
 		return;
 	}
 
@@ -43,7 +43,7 @@ async function pollBastionStatus() {
 			if (response.status === 404 || !response.ok) {
 				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
 				console.error(errorMessage);
-				createLog('pollBastionStatus', null, errorMessage);
+				createLog('pollOfframpTransactionsBastionStatus', null, errorMessage);
 				continue;
 			}
 
@@ -54,8 +54,8 @@ async function pollBastionStatus() {
 						data.status === 'FAILED' ? 'FAILED_ONCHAIN' :
 							'UNKNOWN';
 
-			// If the hifiOfframpTransactionStatus is different from the current transaction_status, update the transaction_status
-			if (hifiOfframpTransactionStatus !== transaction.transaction_status) {
+			// If the hifiOfframpTransactionStatus is different from the current transaction_status or if the data.status is different than the transaction.bastion_transaction_status, update the transaction_status
+			if (hifiOfframpTransactionStatus !== transaction.transaction_status || data.status !== transaction.bastion_transaction_status) {
 				const { data: updateData, error: updateError } = await supabaseCall(() => supabase
 					.from('offramp_transactions')
 					.update({
@@ -67,16 +67,16 @@ async function pollBastionStatus() {
 
 				if (updateError) {
 					console.error('Failed to update transaction status', updateError);
-					createLog('pollBastionStatus', null, 'Failed to update transaction status', updateError);
+					createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to update transaction status', updateError);
 				} else {
 					console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 				}
 			}
 		} catch (error) {
 			console.error('Failed to fetch transaction status from Bastion API', error);
-			createLog('pollBastionStatus', null, 'Failed to fetch transaction status from Bastion API', error);
+			createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to fetch transaction status from Bastion API', error);
 		}
 	}
 }
 
-module.exports = pollBastionStatus;
+module.exports = pollOfframpTransactionsBastionStatus;
