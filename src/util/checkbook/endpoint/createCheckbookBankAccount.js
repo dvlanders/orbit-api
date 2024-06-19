@@ -20,7 +20,7 @@ class createCheckbookError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, createBridgeCustomerError.prototype);
+		Object.setPrototypeOf(this, createCheckbookErrorType.prototype);
 	}
 }
 
@@ -106,7 +106,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			} else if (checkbookData.error == "Invalid processor token") {
 				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, checkbookData.message, checkbookData)
 			} else {
-				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", checkbookData)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookData.error || "unknown error", checkbookData)
 			}
 		}
 
@@ -185,10 +185,10 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			const { error: checkbookAccountUpdateError } = await supabase
 				.from('checkbook_accounts')
 				.update({
-					checkbook_response: response,
-
+					checkbook_response: checkbookData,
+					checkbook_id: checkbookData.id
 				})
-				.eq('user_id', userId);
+				.eq('on_behave_of_user_id', userId);
 
 			if (checkbookAccountUpdateError) {
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountUpdateError.message, checkbookAccountUpdateError)
@@ -198,14 +198,14 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 				status: 200,
 				invalidFields: [],
 				message: "Bank account added successfully",
-				id: checkbookAccountData.id
 			}
 
 		} else {
+			console.error(checkbookData)
 			if (checkbookData.error == "Unauthorized") {
 				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, checkbookData.message, checkbookData)
 			} else {
-				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", checkbookData)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookData.error || "unknown error", checkbookData)
 			}
 		}
 

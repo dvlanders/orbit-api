@@ -11,6 +11,8 @@ const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
 const { BridgeCustomerStatus } = require('../util/bridge/utils');
 const { createDefaultBridgeVirtualAccount, createBridgeVirtualAccountError } = require('../util/bridge/endpoint/createBridgeVirtualAccount');
+const { supportedRail, OnRampRail } = require('../util/account/activateOnRampRail/utils');
+const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAch');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -385,29 +387,30 @@ exports.getAccount = async (req, res) => {
 	return res.status(400).json({ error: `An account with accountId == ${accountId} of type == ${accountType} could not be found. Please make sure that the this account has indeed been created for userId == ${userId}` });
 }
 
-exports.createBridgeVirtualAccount = async(req, res) => {
+exports.activateOnRampRail = async(req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	console.log("received updated")
-	let userId
+
+	const {userId} = req.query
+	const {rail} = req.body
+	let result
+	if (!rail) return res.status("400").json({error: "rail is required"})
+	if (!supportedRail.has(rail)) return res.status("400").json({error: "Unsupported rail"})
 	try{
-		const updatedRecord = req.body.record
-		if (!updatedRecord) return res.status(400).json({error: "no record found"})
-		userId = updatedRecord.user_id
-		// only check us on ramp for now
-		if (updatedRecord.status != BridgeCustomerStatus.ACTIVE || updatedRecord.base_status != "approved") return res.status(200).json({message: "customer not yet approved"})
-		const bridgeId = updatedRecord.bridge_id
-		await createDefaultBridgeVirtualAccount(userId, bridgeId)
-		console.log("create virtual account success")
-		return res.status(200).json({message: "create virtual account success"})
-	}catch (error){
-		if (error instanceof createBridgeVirtualAccountError){
-			createLog("account/createBridgeVirtualAccount", userId, error.message, error.rawResponse)
+		if (rail == OnRampRail.US_ACH){
+			result = await activateUsAchOnRampRail(userId)
 		}else{
-			createLog("account/createBridgeVirtualAccount", userId, error.message, error)
+			return res.status(501).json({message: `${rail} is not yet implemented`})
 		}
-		console.error(error)
+
+		if (result.alreadyExisted) return res.status(200).json({message: `rail already activated`})
+		else if (!result.isAllowedTocreate) return res.status(400).json({message: `User is not allowed to create the rail`})
+
+		return res.status(200).json({message: `${rail} create successfully`})
+
+	}catch (error){
+		createLog("account/activateOnRampRail", userId, error.message, error.rawResponse)
 		return res.status(500).json({error: "Unexpected error happened"})
 	}
 

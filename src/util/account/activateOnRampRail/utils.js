@@ -1,11 +1,11 @@
-const Rail = {
+const OnRampRail = {
     US_ACH: "US_ACH",
     EU_SEPA: "EU_SEPA"
 }
 
-const supportedRail = [Rail.US_ACH]
+const supportedRail = new Set([OnRampRail.US_ACH])
 
 module.exports = {
-    Rail,
+    OnRampRail,
     supportedRail
 }
