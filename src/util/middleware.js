@@ -5,6 +5,7 @@ const { verifyUser } = require("./helper/verifyUser");
 const { isUUID } = require("./common/fieldsValidation");
 const { verifyApiKey } = require("./helper/verifyApiKey");
 const SECRET = process.env.ZUPLO_SECRET
+const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
 // /**
 //  * @description Middleware to protect routes by verifying JWT token.
 //  * @param {Object} req - Express request object.
@@ -35,3 +36,14 @@ exports.authorize = async (req, res, next) => {
 		return res.status(500).json({error : "Unexpected error happened"});
 	}
 };
+
+exports.authorizeSupabase = async(req, res, next) => {
+	try{
+		const token = req.headers['supabase-webhook-secret'];
+		if (token !== SUPABASE_WEBHOOK_SECRET) return res.status(401).json({error: "Not authorized"});
+		next()
+	}catch (error){
+		console.error(err)
+		return res.status(500).json({error : "Unexpected error happened"});
+	}
+}

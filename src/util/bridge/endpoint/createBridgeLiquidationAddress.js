@@ -3,6 +3,7 @@ const { v4 } = require("uuid");
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { BridgeCustomerStatus } = require("../utils");
+const {getAddress} = require("ethers")
 
 
 
@@ -77,7 +78,7 @@ exports.createBridgeLiquidationAddress = async (
 					external_account_id: externalAccountId,
 					destination_payment_rail: destinationPaymentRail,
 					destination_currency: destinationCurrency,
-					address: responseJson.address,
+					address: getAddress(responseJson.address),
 
 				}
 			);

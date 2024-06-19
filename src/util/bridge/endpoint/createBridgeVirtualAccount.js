@@ -2,7 +2,7 @@ const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const { BridgeCustomerStatus, virtualAccountPaymentRailToChain } = require("../utils");
 const  createLog  = require("../../logger/supabaseLogger");
-
+const {getAddress} = require("ethers")
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -49,7 +49,7 @@ const getUserWallet = async (chain, userId) => {
 		throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.RECORD_NOT_FOUND, "User wallet not found");
 	}
 	
-	return bastion_wallets.address
+	return getAddress(bastion_wallets.address)
 
 }
 
@@ -69,20 +69,18 @@ const createDefaultBridgeVirtualAccount = async (userId, bridgeId) => {
 			try{
 			// get wallet address
 			const address = await getUserWallet(virtualAccountPaymentRailToChain[rail.destinationPaymentRail], userId)
-
 			// check if virtual account is already created
 			let { data: bridge_virtual_accounts, error: bridge_virtual_accounts_error } = await supabase
 				.from('bridge_virtual_accounts')
-				.select('id')
-				.eq("user_id", userId)
-				.eq("destination_wallet_address", address)
-				.eq("destination_payment_rail", rail.destinationPaymentRail)
-				.maybeSingle()
+				.select('id, destination_wallet_address')
+				.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail})
 
 			if (bridge_virtual_accounts_error) {
 				throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, bridge_virtual_accounts_error.message, bridge_virtual_accounts_error);
 			}
-			if (bridge_virtual_accounts) return
+			console.log(address, typeof address)
+			console.log("bridge_virtual_accounts: ", bridge_virtual_accounts)
+			if (bridge_virtual_accounts && bridge_virtual_accounts.length > 0) return
 
 			// create virtual account
 			const idempotencyKey = v4();
