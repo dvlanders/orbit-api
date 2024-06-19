@@ -9,6 +9,8 @@ const { createCheckbookBankAccount } = require('../util/checkbook/endpoint/creat
 const { getBridgeExternalAccount } = require('../util/bridge/endpoint/getBridgeExternalAccount');
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
+const { BridgeCustomerStatus } = require('../util/bridge/utils');
+const { createDefaultBridgeVirtualAccount, createBridgeVirtualAccountError } = require('../util/bridge/endpoint/createBridgeVirtualAccount');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -381,4 +383,32 @@ exports.getAccount = async (req, res) => {
 
 	// return error if the account id with that account type is not recognized
 	return res.status(400).json({ error: `An account with accountId == ${accountId} of type == ${accountType} could not be found. Please make sure that the this account has indeed been created for userId == ${userId}` });
+}
+
+exports.createBridgeVirtualAccount = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	console.log("received updated")
+	let userId
+	try{
+		const updatedRecord = req.body.record
+		if (!updatedRecord) return res.status(400).json({error: "no record found"})
+		userId = updatedRecord.user_id
+		// only check us on ramp for now
+		if (updatedRecord.status != BridgeCustomerStatus.ACTIVE || updatedRecord.base_status != "approved") return res.status(200).json({message: "customer not yet approved"})
+		const bridgeId = updatedRecord.bridge_id
+		await createDefaultBridgeVirtualAccount(userId, bridgeId)
+		console.log("create virtual account success")
+		return res.status(200).json({message: "create virtual account success"})
+	}catch (error){
+		if (error instanceof createBridgeVirtualAccountError){
+			createLog("account/createBridgeVirtualAccount", userId, error.message, error.rawResponse)
+		}else{
+			createLog("account/createBridgeVirtualAccount", userId, error.message, error)
+		}
+		console.error(error)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 }
