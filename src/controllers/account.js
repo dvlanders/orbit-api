@@ -13,6 +13,7 @@ const { BridgeCustomerStatus } = require('../util/bridge/utils');
 const { createDefaultBridgeVirtualAccount, createBridgeVirtualAccountError } = require('../util/bridge/endpoint/createBridgeVirtualAccount');
 const { supportedRail, OnRampRail } = require('../util/account/activateOnRampRail/utils');
 const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAch');
+const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -119,56 +120,71 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	}
 
 	try {
-
-
-		const bridgeAccountResult = await createBridgeExternalAccount(
-			userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
-			null, null, null,
-			streetLine1, streetLine2, city, state, postalCode, country,
-			null, null, null, // iban fields not used for USD
-			accountNumber, routingNumber
-		);
-
-
-
-
-		if (bridgeAccountResult.status !== 200) {
-			return res.status(bridgeAccountResult.status).json({
-				error: bridgeAccountResult.type,
-				message: bridgeAccountResult.message,
-				source: bridgeAccountResult.source,
-
-			});
-		}
-
-		console.log('raw result', bridgeAccountResult.rawResponse)
-
-		const recordId = v4();
-
-		const { error: bridgeAccountInserterror } = await supabase
-			.from('bridge_external_accounts')
-			.insert({
-				id: recordId,
-				user_id: userId,
-				currency: currency,
-				bank_name: bankName,
-				account_owner_name: accountOwnerName,
-				account_owner_type: accountOwnerType,
-				account_type: 'us',
-				beneficiary_street_line_1: streetLine1,
-				beneficiary_street_line_2: streetLine2,
-				beneficiary_city: city,
-				beneficiary_state: state,
-				beneficiary_postal_code: postalCode,
-				beneficiary_country: country,
-				account_number: accountNumber,
-				routing_number: routingNumber,
-				bridge_response: bridgeAccountResult.rawResponse,
-				bridge_external_account_id: bridgeAccountResult.rawResponse.id,
+		let recordId
+		// check if the external account is already exist
+		const {externalAccountExist, liquidationAddressExist, externalAccountRecordId} = await checkUsdOffRampAccount({
+			accountNumber,
+			routingNumber
+		})
+		recordId = externalAccountRecordId
+		
+		// already created
+		if (externalAccountExist && liquidationAddressExist) {
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account already exist",
+				id: recordId
 			})
+		} 
 
-		if (bridgeAccountInserterror) {
-			return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
+		// external account is not yet created
+		if (!externalAccountExist){
+			const bridgeAccountResult = await createBridgeExternalAccount(
+				userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
+				null, null, null,
+				streetLine1, streetLine2, city, state, postalCode, country,
+				null, null, null, // iban fields not used for USD
+				accountNumber, routingNumber
+			);
+
+
+			if (bridgeAccountResult.status !== 200) {
+				return res.status(bridgeAccountResult.status).json({
+					error: bridgeAccountResult.type,
+					message: bridgeAccountResult.message,
+					source: bridgeAccountResult.source,
+
+				});
+			}
+
+			recordId = v4();
+
+			const { error: bridgeAccountInserterror } = await supabase
+				.from('bridge_external_accounts')
+				.insert({
+					id: recordId,
+					user_id: userId,
+					currency: currency,
+					bank_name: bankName,
+					account_owner_name: accountOwnerName,
+					account_owner_type: accountOwnerType,
+					account_type: 'us',
+					beneficiary_street_line_1: streetLine1,
+					beneficiary_street_line_2: streetLine2,
+					beneficiary_city: city,
+					beneficiary_state: state,
+					beneficiary_postal_code: postalCode,
+					beneficiary_country: country,
+					account_number: accountNumber,
+					routing_number: routingNumber,
+					bridge_response: bridgeAccountResult.rawResponse,
+					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
+				})
+
+			if (bridgeAccountInserterror) {
+				return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
+			}
 		}
 
 		// now create the liquidation address for the external account

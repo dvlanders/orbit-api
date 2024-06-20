@@ -139,7 +139,6 @@ const extractActionsAndFields = (reasons) => {
     if (reasons){
       reasons.map((reason) => {
         const actions = RejectionReasons[reason]
-		console.log(actions)
         if (!actions){
 			requiredActions = [...requiredActions, ...AccountActions.MANUAL_REVIEW.actions]
 			fieldsToResubmit = [...fieldsToResubmit, ...AccountActions.MANUAL_REVIEW.fieldsToResubmit]
@@ -179,7 +178,7 @@ const getEndorsementStatus = (endorsements, name) => {
 	const additionalRequirements = endorsement && endorsement.additional_requirements ? endorsement.additional_requirements : [];
 	let actions = []
 	let fields = []
-
+	
 	additionalRequirements.map((r) => {
 		const action = additionalRequirementsMap[r]
 		if (action){
@@ -187,7 +186,6 @@ const getEndorsementStatus = (endorsements, name) => {
 			fields= [...fields, ...action.fields]
 		}
 	})
-
 	return {status, actions, fields}
 }
 

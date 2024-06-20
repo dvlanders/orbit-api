@@ -210,7 +210,7 @@ exports.createHifiUser = async (req, res) => {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
 					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.fields, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.fieldsToResubmit],
 				},
 				message: ''
 			},
@@ -240,8 +240,8 @@ exports.getHifiUser = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+	const { userId } = req.query
 	try{
-		const { userId } = req.query
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
 		// check if user is created
@@ -408,7 +408,7 @@ exports.getHifiUser = async (req, res) => {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
 					actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.fields, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.fieldsToResubmit],
 				},
 				message: ''
 			},
@@ -430,6 +430,7 @@ exports.getHifiUser = async (req, res) => {
 
 		return res.status(status).json(getHifiUserResponse);
 	} catch (error) {
+		console.error(error)
 		createLog("user/get", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
@@ -457,14 +458,13 @@ exports.updateHifiUser = async (req, res) => {
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided user_id" })
-
+		
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
 		} catch (error) {
 			return res.status(error.status).json(error.rawResponse)
 		}
-
 		// STEP 2: Update the 3rd party providers with the new information
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
