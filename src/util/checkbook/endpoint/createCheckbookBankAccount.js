@@ -35,8 +35,11 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			.maybeSingle()
 		);
 
+		console.log('checkbookUserData', checkbookUserData)
+
 		if (checkbookUserError) {
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
+
 		}
 		if (!checkbookUserData.api_key || !checkbookUserData.api_secret) {
 			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found for ach pull. Please create a user first.")
@@ -75,7 +78,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 		});
 
 		const checkbookData = await response.json()
-
+		console.log('******checkbookData', checkbookData)
 		// happy path
 		if (response.ok) {
 
@@ -102,9 +105,9 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 
 		} else {
 			if (checkbookData.error == "Unauthorized") {
-				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, checkbookData.message, checkbookData)
+				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, checkbookData.message)
 			} else if (checkbookData.error == "Invalid processor token") {
-				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, checkbookData.message, checkbookData)
+				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, checkbookData.message)
 			} else {
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", checkbookData)
 			}
@@ -112,6 +115,8 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 
 
 	} catch (error) {
+
+		console.log('error', error)
 		if (error.type == createCheckbookErrorType.UNAUTHORIZED) {
 			return {
 				status: 400,
@@ -134,7 +139,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			return {
 				status: 500,
 				invalidFields: [],
-				message: error.message
+				message: "Unknown error, please send a screenshot of this request to developers@hifibridge.com"
 			}
 		}
 	}
