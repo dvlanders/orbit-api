@@ -226,7 +226,6 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		accountOwnerName: 'string',
 		accountOwnerType: 'string',
 		ibanAccountNumber: 'string',
-		country: 'string',
 		firstName: 'string',
 		lastName: 'string',
 		businessName: 'string',
