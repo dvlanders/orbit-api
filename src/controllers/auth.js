@@ -23,7 +23,7 @@ exports.createApiKey = async(req, res) => {
         // const profileId = user.sub
 
         //DEV
-        const profileId = "7cdf31e1-eb47-4b43-82f7-e368e3f6197b"
+        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
 
         // filed validation
         const fields = req.body

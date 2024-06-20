@@ -137,8 +137,8 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
 	// check signedAgreementId
-	const isValidSignedAgreementId = await checkIsSignedAgreementIdSigned(fields.signedAgreementId)
-	if (!isValidSignedAgreementId) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: [], invalid_fields: ["signedAgreementId"] })
+	// const isValidSignedAgreementId = await checkIsSignedAgreementIdSigned(fields.signedAgreementId)
+	// if (!isValidSignedAgreementId) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: [], invalid_fields: ["signedAgreementId"] })
 
 
 	// create new user

@@ -737,6 +737,7 @@ router.get("/get_ping", user.getPing);
 
 	router.post("/tos-link", authorize, user.generateToSLink)
 	router.put("/tos-link", user.acceptToSLink)
+	
 };
 
 

@@ -177,8 +177,8 @@ const getEndorsementStatus = (endorsements, name) => {
 	const endorsement = endorsements.find(e => e.name === name);
 	const status = endorsement ? endorsement.status : undefined;
 	const additionalRequirements = endorsement && endorsement.additional_requirements ? endorsement.additional_requirements : [];
-	const actions = []
-	const fields = []
+	let actions = []
+	let fields = []
 
 	additionalRequirements.map((r) => {
 		const action = additionalRequirementsMap[r]
