@@ -5,9 +5,11 @@ const { v4: uuidv4 } = require("uuid");
 
 const ACCOUNT_NAME = process.env.ZUPLO_ACCOUNT_NAME
 const KEY_BUCKET_NAME = process.env.ZUPLO_KEY_BUCKET_NAME
+const SANDBOX_KEY_BUCKET_NAME = process.env.ZUPLO_SANDBOX_KEY_BUCKET_NAME
 const API_KEY = process.env.ZUPLO_API_KEY
 
-exports.createApiKeyFromProvider = async(profileId, apiKeyName, expiredAt) => {
+
+exports.createApiKeyFromProvider = async(profileId, apiKeyName, expiredAt, env) => {
     
     const uuid = uuidv4()
 
@@ -24,9 +26,15 @@ exports.createApiKeyFromProvider = async(profileId, apiKeyName, expiredAt) => {
           userCustomName: apiKeyName
         }
       }
+    let url
+    if (env == "sandbox"){
+      url = `https://dev.zuplo.com/v1/accounts/${ACCOUNT_NAME}/key-buckets/${KEY_BUCKET_NAME}/consumers?with-api-key=true`
+    }else if (env == "production"){
+      url = `https://dev.zuplo.com/v1/accounts/${ACCOUNT_NAME}/key-buckets/${SANDBOX_KEY_BUCKET_NAME}/consumers?with-api-key=true`
+    }else {
+      throw new Error(`Invalid env: ${env}`)
+    }
 
-    
-    url = `https://dev.zuplo.com/v1/accounts/${ACCOUNT_NAME}/key-buckets/${KEY_BUCKET_NAME}/consumers?with-api-key=true`
     options = {
         method: 'POST',
         headers: {
@@ -49,7 +57,7 @@ exports.createApiKeyFromProvider = async(profileId, apiKeyName, expiredAt) => {
         zuploCustomerId: responseBody.id,
     }
 
-    const apiKeyRecord = await insertApiKeyRecord(apiKeyInfo)
+    const apiKeyRecord = await insertApiKeyRecord(apiKeyInfo, env)
     console.log(apiKeyRecord)
     const record = {
         apiKeyName: apiKeyRecord.user_custom_name,

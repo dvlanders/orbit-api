@@ -51,7 +51,8 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				processor_token: processorToken,
 				bank_name: bankName,
 				routing_number: routingNumber,
-				account_number: accountNumber
+				account_number: accountNumber,
+				connected_account_type: "PLAID"
 			})
 			.select();
 

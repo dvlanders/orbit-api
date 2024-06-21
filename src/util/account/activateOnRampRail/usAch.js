@@ -39,7 +39,7 @@ const insertPreCheckbookAccountRecord = async(userId, virtualAccountInfo) => {
         .upsert({
             account_number: virtualAccountInfo.deposit_institutions_bank_account_number,
             routing_number: virtualAccountInfo.deposit_institutions_bank_routing_number,
-            on_behave_of_user_id: userId,
+            user_id: userId,
             bridge_virtual_account_id: virtualAccountInfo.virtual_account_id,
             connected_account_type: "BRIDGE_VIRTUAL_ACCOUNT"
         }, {onConflict: "bridge_virtual_account_id"})
