@@ -22,14 +22,18 @@ const Status = {
 
 // TODO: test this function in postman
 exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
+
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const { user_id, plaid_processor_token, bank_name, account_number, routing_number } = req.body;
+
+	const { userId } = req.query;
+
+	const { plaidProcessorToken, bankName, accountNumber, routingNumber } = req.body;
 
 	// TODO: validate the request body fields to make sure all fields are present and are the valid type
 
-	const checkbookAccountResult = await createCheckbookBankAccountWithProcessorToken(user_id, plaid_processor_token, bank_name, account_number, routing_number);
+	const checkbookAccountResult = await createCheckbookBankAccountWithProcessorToken(userId, plaidProcessorToken, bankName, accountNumber, routingNumber);
 
 	let createUsdOnrampSourceWithPlaidResponse = {
 		status: null,
@@ -109,7 +113,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	};
 
 	// Validate fields
-	const { missingFields, invalidFields } = fieldsValidation({...req.body, userId}, requiredFields, bridgeRequestStructureTyping);
+	const { missingFields, invalidFields } = fieldsValidation({ ...req.body, userId }, requiredFields, bridgeRequestStructureTyping);
 
 	if (missingFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields });
@@ -242,7 +246,6 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		accountOwnerName: 'string',
 		accountOwnerType: 'string',
 		ibanAccountNumber: 'string',
-		country: 'string',
 		firstName: 'string',
 		lastName: 'string',
 		businessName: 'string',
@@ -251,7 +254,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 	};
 
 	// Validate fields
-	const { missingFields, invalidFields } = fieldsValidation({...req.body, userId}, requiredFields, bridgeRequestStructureTyping);
+	const { missingFields, invalidFields } = fieldsValidation({ ...req.body, userId }, requiredFields, bridgeRequestStructureTyping);
 
 	if (missingFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields });
