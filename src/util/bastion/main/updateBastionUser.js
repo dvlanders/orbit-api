@@ -32,10 +32,10 @@ const updateBastionUser = async (userId) => {
 			.from('bastion_wallets')
 			.select('*')
 			.eq("user_id", userId)
-			.maybeSingle())
+		)
 
 		if (bastionWalletsError) throw new UpdateBastionUserError(UpdateBastionUserErrorType.INTERNAL_ERROR, bastionWalletsError.message, bastionWalletsError)
-		if (!bastionWallets) {
+		if (!bastionWallets || bastionWallets.length <= 0) {
 			return await createAndFundBastionUser(userId)
 		}
 

@@ -4,8 +4,6 @@ const { createLog } = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
-const CHECKBOOK_API_KEY = process.env.CHECKBOOK_API_KEY;
-const CHECKBOOK_API_SECRET = process.env.CHECKBOOK_API_SECRET;
 
 
 const createCheckbookErrorType = {
@@ -20,13 +18,32 @@ class createCheckbookError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, createBridgeCustomerError.prototype);
+		Object.setPrototypeOf(this, createCheckbookErrorType.prototype);
 	}
 }
 
 
-exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountType, processorToken, bankName, accountNumber, routingNumber) => {
+exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountType, processorToken, bankName) => {
 	try {
+		// check if the account already existed
+		const {data: checkbokAccount, error: checkbookAccountError} = await supabaseCall(() => supabase
+			.from("checkbook_accounts")
+			.select("*")
+			.eq("user_id", userId)
+			.eq("processor_token", processorToken)
+			.maybeSingle()
+		)
+
+		if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
+		if (checkbokAccount) {
+			return {
+				status: 200,
+				invalidFields: [],
+				message: "Bank account already added",
+				id: checkbokAccount.id
+			}
+		}
+ 
 		// get the user's api key and api secret from the checkbook_users table
 		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
 			.from('checkbook_users')
@@ -35,31 +52,12 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			.maybeSingle()
 		);
 
-		console.log('checkbookUserData', checkbookUserData)
-
 		if (checkbookUserError) {
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 
 		}
 		if (!checkbookUserData.api_key || !checkbookUserData.api_secret) {
 			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found for ach pull. Please create a user first.")
-		}
-
-		// save the checkbook account details immediately
-		const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
-			.from('checkbook_accounts')
-			.insert({
-				user_id: userId,
-				account_type: accountType,
-				processor_token: processorToken,
-				bank_name: bankName,
-				routing_number: routingNumber,
-				account_number: accountNumber
-			})
-			.select();
-
-		if (checkbookAccountError) {
-			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
 		}
 
 		// make the call to the checkbook endpoint with the processor token
@@ -77,24 +75,50 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			body: JSON.stringify(requestBody)
 		});
 
-		const checkbookData = await response.json()
-		console.log('******checkbookData', checkbookData)
+		const plaidAccountData = await response.json()
 		// happy path
 		if (response.ok) {
 
-
-			// store the response and checkbook_account_id in the checkbook_accounts table
-			const { error: checkbookAccountUpdateError } = await supabase
-				.from('checkbook_accounts')
-				.update({
-					checkbook_response: response,
-
+			const { account, routing, name } = plaidAccountData.accounts[0];
+			// create checkbook account
+			const checkbookAccountResponse = await fetch(`${CHECKBOOK_URL}/account/bank`, {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Authorization': `${checkbookUserData.api_key}:${checkbookUserData.api_secret}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					account: account,
+					name: name,
+					routing: routing,
+					type: accountType
 				})
-				.eq('user_id', userId);
-
-			if (checkbookAccountUpdateError) {
-				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountUpdateError.message, checkbookAccountUpdateError)
+			});
+			const checkbookAccountResponseBody = await checkbookAccountResponse.json();
+			if (!checkbookAccountResponse.ok) {
+				console.log(checkbookAccountResponseBody)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountResponseBody.error || "unknown error", checkbookAccountResponseBody)
 			}
+			console.log(checkbookAccountResponseBody)
+			const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
+			.from('checkbook_accounts')
+			.insert({
+				checkbook_response: checkbookAccountResponseBody,
+				checkbook_id: checkbookAccountResponseBody.id,
+				checkbook_status: checkbookAccountResponseBody.status,
+				account_number: checkbookAccountResponseBody.account,
+				routing_number: checkbookAccountResponseBody.routing,
+				user_id: userId,
+				account_type: accountType,
+				processor_token: processorToken,
+				bank_name: bankName,
+				connected_account_type: "PLAID",
+				plaid_account_data_response: plaidAccountData,
+			})
+			.select("*")
+			.single()
+			if (checkbookAccountError) 	throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
 
 			return {
 				status: 200,
@@ -104,15 +128,14 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			}
 
 		} else {
-			if (checkbookData.error == "Unauthorized") {
-				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, checkbookData.message)
-			} else if (checkbookData.error == "Invalid processor token") {
-				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, checkbookData.message)
+			if (plaidAccountData.error == "Unauthorized") {
+				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, plaidAccountData.message)
+			} else if (plaidAccountData.error == "Invalid processor token") {
+				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, plaidAccountData.message)
 			} else {
-				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", checkbookData)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, plaidAccountData.error || "unknown error", plaidAccountData)
 			}
 		}
-
 
 	} catch (error) {
 
@@ -154,6 +177,7 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			.from('checkbook_accounts')
 			.select()
 			.eq('bridge_virtual_account_id', virtualAccountId)
+			.neq('checkbook_id', null)
 			.maybeSingle();
 
 		if (existingCheckbookAccountError) {
@@ -170,6 +194,8 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			"type": "CHECKING",
 		}
 
+		console.log(requestBody)
+
 		const response = await fetch(`${CHECKBOOK_URL}/account/bank`, {
 			method: 'POST',
 			headers: {
@@ -181,19 +207,18 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 		});
 
 		const checkbookData = await response.json()
-
+		console.log(checkbookData)
 		// happy path
 		if (response.ok) {
-
-
 			// store the response and checkbook_account_id in the checkbook_accounts table
 			const { error: checkbookAccountUpdateError } = await supabase
 				.from('checkbook_accounts')
 				.update({
-					checkbook_response: response,
-
+					checkbook_response: checkbookData,
+					checkbook_id: checkbookData.id
 				})
-				.eq('user_id', userId);
+				.eq('user_id', userId)
+				.eq('bridge_virtual_account_id', virtualAccountId)
 
 			if (checkbookAccountUpdateError) {
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountUpdateError.message, checkbookAccountUpdateError)
@@ -203,14 +228,14 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 				status: 200,
 				invalidFields: [],
 				message: "Bank account added successfully",
-				id: checkbookAccountData.id
 			}
 
 		} else {
+			console.error(checkbookData)
 			if (checkbookData.error == "Unauthorized") {
 				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, checkbookData.message, checkbookData)
 			} else {
-				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbook_user_error.error || "unknown error", checkbookData)
+				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookData.error || "unknown error", checkbookData)
 			}
 		}
 

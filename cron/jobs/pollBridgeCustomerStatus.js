@@ -2,6 +2,7 @@ const { supabaseCall } = require('../../src/util/supabaseWithRetry');
 const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const createBridgeVirtualAccount = require('../../src/util/bridge/endpoint/createBridgeVirtualAccount');
+const { getEndorsementStatus } = require('../../src/util/bridge/utils');
 
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -46,6 +47,8 @@ async function pollBridgeCustomerStatus() {
 			}
 
 			const data = await response.json();
+			const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(data.endorsements, "base")
+			const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(data.endorsements, "sepa")
 
 			if (customer.status !== data.status) {
 				const { error: updateError } = await supabaseCall(() => supabase
@@ -53,8 +56,8 @@ async function pollBridgeCustomerStatus() {
 					.update({
 						status: data.status,
 						bridge_response: data,
-						base_status: endorsements[0].status,
-						sepa_status: endorsements[1].status,
+						base_status: baseStatus,
+						sepa_status: sepaStatus,
 					})
 					.eq('id', customer.id)
 				)

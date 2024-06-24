@@ -8,4 +8,5 @@ module.exports = (router) => {
 
 	router.post("/dev/testFileUpload", upload.fields([{ name: 'front', maxCount: 1 }, { name: 'back', maxCount: 1 }]), dev.testFileUpload);
 	router.post("/dev/privateRoute", authorize, dev.privateRoute)
+	router.post("/dev/testWebhook", dev.testSupabaseWebhook)
 };

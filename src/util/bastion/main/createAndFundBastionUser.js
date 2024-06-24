@@ -6,9 +6,11 @@ const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
 const { CustomerStatus } = require("../../user/common");
 const { Chain } = require("../../common/blockchain");
+const {getAddress} = require("ethers")
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
+const preFundAmount = '0.1'
 
 /**
  * Throws a structured error for API failures.
@@ -46,7 +48,7 @@ async function createUserCore(userId) {
 					.insert([{
 						user_id: userId,
 						chain: chain,
-						address: addressEntry.address
+						address: getAddress(addressEntry.address)
 					}])
 					.select();
 
@@ -59,7 +61,7 @@ async function createUserCore(userId) {
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET || chain === Chain.POLYGON_AMOY) {
 					console.log("fund account")
-					await fundMaticPolygon(userId, '0.001');
+					await fundMaticPolygon(userId, preFundAmount);
 				}
 			}
 		}
