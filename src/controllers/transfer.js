@@ -171,6 +171,5 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		return res.status(500).json({ error: 'Unexpected error happened' });
 	}
 
-
 }
 
