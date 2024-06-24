@@ -1,12 +1,12 @@
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 
-const checkUsdOffRampAccount = async(accountInfo) => {
+const checkEuOffRampAccount = async(accountInfo) => {
     // check is bridge external account created
     const {data: externalAccount, error: externalAccountError} = await supabaseCall(() => supabase
         .from("bridge_external_accounts")
         .select("*")
-        .match({account_number: accountInfo.accountNumber, routing_number: accountInfo.routingNumber, user_id: accountInfo.userId})
+        .match({iban: accountInfo.ibanAccountNumber, business_identifier_code: accountInfo.businessIdentifierCode, user_id: accountInfo.userId})
         .maybeSingle()
         )
     if (externalAccountError) throw externalAccountError
@@ -27,4 +27,4 @@ const checkUsdOffRampAccount = async(accountInfo) => {
     return {externalAccountExist: true, liquidationAddressExist: true, externalAccountRecordId: externalAccountRecordId}
 }
 
-module.exports = checkUsdOffRampAccount
+module.exports = checkEuOffRampAccount

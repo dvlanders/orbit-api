@@ -151,7 +151,6 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 	let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
 		.from('bridge_virtual_accounts')
 		.select('*')
-		.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail})
 		.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail, destination_wallet_address: address})
 		.maybeSingle()
 	if (bridgeVirtualAccountError) {

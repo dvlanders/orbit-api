@@ -10,7 +10,7 @@ const checkUsAchOnRampRail = async(userId) => {
     let { data: checkbook_accounts, error } = await supabaseCall(() => supabase
     .from('checkbook_accounts')
     .select('*')
-    .eq("on_behave_of_user_id", userId)
+    .eq("user_id", userId)
     .eq("connected_account_type", "BRIDGE_VIRTUAL_ACCOUNT")
     .maybeSingle()
     )
@@ -41,7 +41,7 @@ const insertPreCheckbookAccountRecord = async(userId, virtualAccountInfo) => {
             routing_number: virtualAccountInfo.deposit_institutions_bank_routing_number,
             user_id: userId,
             bridge_virtual_account_id: virtualAccountInfo.virtual_account_id,
-            connected_account_type: "BRIDGE_VIRTUAL_ACCOUNT"
+            connected_account_type: "BRIDGE_VIRTUAL_ACCOUNT",
         }, {onConflict: "bridge_virtual_account_id"})
         .select()
     if (error) throw error
@@ -65,6 +65,7 @@ const activateUsAchOnRampRail = async(userId) => {
             destinationPaymentRail: "polygon"
         }
         const virtualAccount = await createBridgeVirtualAccount(userId, userBridgeInfo.bridge_id, rail)
+        console.log(virtualAccount)
         // create checkbook account
         await insertPreCheckbookAccountRecord(userId, virtualAccount)
         const result = await createCheckbookBankAccountForVirtualAccount(userId, virtualAccount.virtual_account_id, virtualAccount.deposit_institutions_bank_account_number, virtualAccount.deposit_institutions_bank_routing_number)

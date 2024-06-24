@@ -45,6 +45,19 @@ const virtualAccountPaymentRailToChain = NODE_ENV == "development" ?
 		polygon: "POLYGON_MAINNET"
 	}
 
+const chainToVirtualAccountPaymentRail = NODE_ENV == "development" ?
+{
+	"ETHEREUM_TESTNET": "ethereum",
+	"OPTIMISM_TESTNET": "optimism",
+	"POLYGON_AMOY": "polygon"
+}
+: 
+{
+	"ETHEREUM_MAINNET": "ethereum",
+	"OPTIMISM_MAINNET": "optimism",
+	"POLYGON_MAINNET": "polygon"
+}
+
 const AccountActions = {
 	MANUAL_REVIEW: {
 		fieldsToResubmit: [],
@@ -197,4 +210,5 @@ module.exports = {
 	BridgeCustomerStatus,
 	virtualAccountPaymentRailToChain,
 	extractActionsAndFields,
+	chainToVirtualAccountPaymentRail
 }

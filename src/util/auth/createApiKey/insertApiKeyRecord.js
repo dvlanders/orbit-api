@@ -1,3 +1,4 @@
+const { createClient } = require("@supabase/supabase-js");
 let supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 

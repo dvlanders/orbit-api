@@ -38,7 +38,7 @@ const getRequestRecord = async(requestRecord) => {
         }
         const record = await updateRequestRecord(requestRecord.request_id, toUpdate)
         upToDateRequestRecord.transferDetails.updatedAt = record.updated_at
-        upToDateRequestRecord.status = record.status
+        upToDateRequestRecord.transferDetails.status = record.status
     }
 
     return upToDateRequestRecord

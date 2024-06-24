@@ -2,11 +2,13 @@ const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transf
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
 const { transferType } = require("../../utils/transfer")
+const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer")
 const { toUnitsString } = require("../utils/toUnits")
 const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
 
-exports.transfer = async(fields) => {
+
+const transfer = async(fields) => {
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
     const unitsAmount = toUnitsString(fields.amount, decimal) 
@@ -22,8 +24,18 @@ exports.transfer = async(fields) => {
     const response = await bastionTransfer(fields)
     const responseBody = await response.json()
     if (!response.ok) {
+         // update to database
+        toUpdate = {
+            bastion_response: responseBody,
+            status: "FAILED"
+        }
+        const record = await updateRequestRecord(fields.requestId, toUpdate)
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
-        throw new Error("Something went wrong when creating crypto transfer")
+        if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
+            throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
+        }else{
+            throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message)
+        }
     }
 
     // update to database
@@ -44,6 +56,7 @@ exports.transfer = async(fields) => {
             recipientAddress: fields.recipientAddress,
             chain: fields.chain,
             currency: fields.currency,
+            amount: record.amount,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
             updatedAt: record.updatedAt,
@@ -53,4 +66,12 @@ exports.transfer = async(fields) => {
     }
 
     return receipt
+}
+
+
+module.exports = {
+    transfer,
+    CreateCryptoToCryptoTransferError,
+    CreateCryptoToCryptoTransferErrorType
+
 }

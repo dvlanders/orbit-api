@@ -23,19 +23,40 @@ exports.createApiKey = async(req, res) => {
             return res.status(401).json({ error: "Not authorized" });
         };
         const profileId = user.sub
+        const fields = req.body
+        const { apiKeyName, expiredAt, env } = fields
+
+        // dev spin up sandbox profile if not yet exist
+        if (env == "sandbox"){
+            const supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
+            const {data: sandboxProfile, error: sandboxProfileError} = await supabaseCall(() => supabase
+                .from("profiles")
+                .select("id")
+                .eq("id", profileId)
+                .maybeSingle())
+            
+            if (sandboxProfileError) throw sandboxProfileError
+            if (!sandboxProfile){
+                // insert new profile
+                const {data: newSandboxProfile, error: newSandboxProfileError} = await supabaseCall(() => supabase
+                    .from("profiles")
+                    .insert({
+                        id: profileId
+                    }))
+                if (newSandboxProfileError) throw newSandboxProfileError
+            }
+        }
 
 
         // filed validation
-        const fields = req.body
         const {missingFields, invalidFields} = fieldsValidation(fields, ["apiKeyName", "expiredAt", "env"], {"apiKeyName": "string", "expiredAt": "string", "env": "string"})
         if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
-        // crearte an api key
-        const { apiKeyName, expiredAt, env } = fields
         const apikeyInfo = await createApiKeyFromProvider(profileId, apiKeyName, expiredAt, env)
         return res.status(200).json(apikeyInfo)
 
     }catch (error){
+        console.error(error)
         createLog("auth/createApiKey", "", error.message, error)
         return res.status(500).json({error: "Internal server error"})
     }
@@ -63,6 +84,4 @@ exports.createProfileInSandbox = async(req, res) => {
         createLog("auth/createProfileInSandbox", "", `Fail to create profile for: ${record.id}, ${error.message}`)
         return res.status(500).json({error: "Unexpected error happened"})
     }
-
-
 }
