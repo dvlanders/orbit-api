@@ -1,40 +1,31 @@
 const fieldsValidation = (fields, requiredFields, acceptedFields) => {
-	const missingFields = [];
-	const invalidFields = [];
-	const fieldsKey = Object.keys(fields);
+	const missingFields = []
+	const invalidFields = []
+	const fieldsKey = Object.keys(fields)
 
-    // check if all required fields is provided
+	// check if all required fields is provided
 	requiredFields.map((key) => {
 		if (fields[key] === undefined || fields[key] === "") {
 			missingFields.push(key)
 		}
-	});
+	})
 
-	fieldsKey.forEach((key) => {
-		if (!acceptedFields.hasOwnProperty(key)) {
-			invalidFields.push(key);
-		} else {
-			const expectedType = acceptedFields[key];
-			const actualValue = fields[key];
-			if (!isValidType(actualValue, expectedType)) {
-				invalidFields.push(key);
-			}
+	// check if all fields are valid
+	fieldsKey.map((key) => {
+		if (!(key in acceptedFields) || typeof (fields[key]) != acceptedFields[key]) {
+			invalidFields.push(key)
 		}
-	});
+	})
 
-	return { missingFields, invalidFields };
+	return { missingFields, invalidFields }
 }
 
-const isValidType = (value, type) => {
-	if (type === "array") {
-		return Array.isArray(value);
-	} else if (type === "object" && typeof value === "object") {
-		return !Array.isArray(value) && value !== null;
-	} else {
-		return typeof value === type;
-	}
+const isUUID = (uuid) => {
+	const regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+	return regex.test(uuid);
 }
 
 module.exports = {
+	isUUID,
 	fieldsValidation
 }
