@@ -5,27 +5,9 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
-async function pollOfframpTransactionsBridgeStatus() {
-	console.log('Polling Bridge API for offramp transaction status updates...');
 
-	// Get all records where the bridge_transaction_status is not 
-	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
-		.from('offramp_transactions')
-		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash')
-		// .eq("bridge_transaction_status", "")
-		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
-	)
-
-	if (offrampTransactionError) {
-		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
-		createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);
-		return;
-	}
-
-	// For each transaction, get the latest status from the Bridge API and update the db
-	for (const transaction of offrampTransactionData) {
-
-		const { data: bridgeCustomerData, error: bridgeCustomerError } = await supabaseCall(() => supabase
+const updateStatus = async(transaction) => {
+	const { data: bridgeCustomerData, error: bridgeCustomerError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.select('bridge_id')
 			.eq('user_id', transaction.user_id)
@@ -50,15 +32,12 @@ async function pollOfframpTransactionsBridgeStatus() {
 			if (!response.ok) {
 				const errorData = await response.json();
 				createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', errorData);
-				continue
+				
 			}
 
 			const responseBody = await response.json();
 			const data = responseBody.data.find(item => item.deposit_tx_hash == transaction.transaction_hash);
-			if (!data) continue
-			console.log(data)
-
-			
+			if (data === undefined) return
 
 			// Map the data.state to our transaction_status
 			const hifiOfframpTransactionStatus =
@@ -90,7 +69,27 @@ async function pollOfframpTransactionsBridgeStatus() {
 			console.error('Failed to fetch transaction status from Bridge API', error);
 			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transaction status from Bridge API', error);
 		}
+}
+
+async function pollOfframpTransactionsBridgeStatus() {
+	console.log('Polling Bridge API for offramp transaction status updates...');
+
+	// Get all records where the bridge_transaction_status is not 
+	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
+		.from('offramp_transactions')
+		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash')
+		// .eq("bridge_transaction_status", "")
+		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
+	)
+
+	if (offrampTransactionError) {
+		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
+		createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);
+		return;
 	}
+
+	// For each transaction, get the latest status from the Bridge API and update the db
+	await Promise.all(offrampTransactionData.map(async(transaction) => await updateStatus(transaction)))
 }
 
 module.exports = pollOfframpTransactionsBridgeStatus;

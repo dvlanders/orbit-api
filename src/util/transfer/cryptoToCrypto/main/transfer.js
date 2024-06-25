@@ -52,7 +52,7 @@ const transfer = async(fields) => {
         transferDetails: {
             requestId: fields.requestId,
             senderUserId: fields.senderUserId,
-            recipientUserId: fields.recipientUserId,
+            recipientUserId: fields.recipientUserId || null,
             recipientAddress: fields.recipientAddress,
             chain: fields.chain,
             currency: fields.currency,

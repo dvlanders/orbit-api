@@ -6,7 +6,7 @@ const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
 const { CustomerStatus } = require("../../user/common");
 const { Chain } = require("../../common/blockchain");
-const {getAddress} = require("ethers")
+const { getAddress } = require("ethers")
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -34,7 +34,6 @@ async function createUserCore(userId) {
 
 	const response = await createUser(userId)
 	const data = await response.json();
-	console.log(data)
 
 	if (response.status !== 201) {
 		throw new BastionError(data.message, data.details, response.status);
@@ -81,7 +80,6 @@ async function createUserCore(userId) {
  */
 async function createAndFundBastionUser(userId) {
 	try {
-		console.log('About to call createUserCore');
 		// create user
 		const walletAddress = await createUserCore(userId);
 		// submit kyc
