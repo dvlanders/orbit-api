@@ -36,6 +36,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
             "name": destinationUserId,
             "amount": amount,
             "account": transferInfo.plaid_checkbook_id,
+            "description": requestId
         }
     
         const options = {

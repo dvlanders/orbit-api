@@ -90,7 +90,6 @@ exports.createHifiUser = async (req, res) => {
 								actions: [],
 								fieldsToResubmit: [],
 							},
-							achPullMessage: ""
 
 						},
 					},
@@ -151,7 +150,6 @@ exports.createHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
 				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
@@ -242,7 +240,7 @@ exports.getHifiUser = async (req, res) => {
 	const { userId } = req.query
 	try{
 		//invalid user_id
-		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
 		// check if user is created
 		let { data: user, error: userError } = await supabaseCall(() => supabase
 			.from('users')
@@ -252,7 +250,7 @@ exports.getHifiUser = async (req, res) => {
 		)
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		if (!user) return res.status(404).json({ error: "User not found for provided user_id" })
+		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 
 
 		// base response
@@ -289,8 +287,6 @@ exports.getHifiUser = async (req, res) => {
 								actions: [],
 								fieldsToResubmit: [],
 							},
-							achPullMessage: ""
-
 						},
 					},
 					offRamp: {
@@ -348,7 +344,6 @@ exports.getHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
 				actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
@@ -377,7 +372,6 @@ exports.getHifiUser = async (req, res) => {
 				message: bridgeResult.message,
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...getHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
 						actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
@@ -446,7 +440,7 @@ exports.updateHifiUser = async (req, res) => {
 		const fields = req.body
 
 		//invalid user_id
-		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
 		// check if user is created
 		let { data: user, error: userError } = await supabaseCall(() => supabase
 			.from('users')
@@ -456,7 +450,7 @@ exports.updateHifiUser = async (req, res) => {
 		)
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		if (!user) return res.status(404).json({ error: "User not found for provided user_id" })
+		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 		
 		// upload all the information
 		try {
@@ -511,8 +505,6 @@ exports.updateHifiUser = async (req, res) => {
 								actions: [],
 								fieldsToResubmit: [],
 							},
-							achPullMessage: ""
-
 						},
 					},
 					offRamp: {
@@ -560,7 +552,6 @@ exports.updateHifiUser = async (req, res) => {
 		//checkbook status
 		const achPull = {
 			achPullStatus: checkbookResult.usOnRamp.status,
-			achPullMessage: [...checkbookResult.message, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 			actionNeeded: {
 				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
@@ -589,7 +580,6 @@ exports.updateHifiUser = async (req, res) => {
 				},
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					achPullMessage: [...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.achPullMessage],
 					actionNeeded: {
 						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
