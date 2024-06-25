@@ -5,7 +5,8 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 // const env = process.env.NODE_ENV ?? "production";
-const env = 'production';
+const env = 'development';
+
 const result = require("dotenv").config({ path: `.env.${env}`, debug: env === "production" });
 
 if (result.error) {

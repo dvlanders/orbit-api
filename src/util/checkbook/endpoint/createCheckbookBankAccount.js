@@ -26,7 +26,7 @@ class createCheckbookError extends Error {
 exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountType, processorToken, bankName) => {
 	try {
 		// check if the account already existed
-		const {data: checkbokAccount, error: checkbookAccountError} = await supabaseCall(() => supabase
+		const { data: checkbokAccount, error: checkbookAccountError } = await supabaseCall(() => supabase
 			.from("checkbook_accounts")
 			.select("*")
 			.eq("user_id", userId)
@@ -43,7 +43,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				id: checkbokAccount.id
 			}
 		}
- 
+
 		// get the user's api key and api secret from the checkbook_users table
 		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
 			.from('checkbook_users')
@@ -65,6 +65,10 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			"processor_token": processorToken,
 		}
 
+
+		console.log('ccheckbookUserData.api_key', checkbookUserData.api_key, 'checkbookUserData.api_secret', checkbookUserData.api_secret)
+		console.log('checkbook url', `${CHECKBOOK_URL}/account/bank/iav/plaid`)
+		console.log('requestBody', requestBody)
 		const response = await fetch(`${CHECKBOOK_URL}/account/bank/iav/plaid`, {
 			method: 'POST',
 			headers: {
@@ -102,23 +106,23 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			}
 			console.log(checkbookAccountResponseBody)
 			const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
-			.from('checkbook_accounts')
-			.insert({
-				checkbook_response: checkbookAccountResponseBody,
-				checkbook_id: checkbookAccountResponseBody.id,
-				checkbook_status: checkbookAccountResponseBody.status,
-				account_number: checkbookAccountResponseBody.account,
-				routing_number: checkbookAccountResponseBody.routing,
-				user_id: userId,
-				account_type: accountType,
-				processor_token: processorToken,
-				bank_name: bankName,
-				connected_account_type: "PLAID",
-				plaid_account_data_response: plaidAccountData,
-			})
-			.select("*")
-			.single()
-			if (checkbookAccountError) 	throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
+				.from('checkbook_accounts')
+				.insert({
+					checkbook_response: checkbookAccountResponseBody,
+					checkbook_id: checkbookAccountResponseBody.id,
+					checkbook_status: checkbookAccountResponseBody.status,
+					account_number: checkbookAccountResponseBody.account,
+					routing_number: checkbookAccountResponseBody.routing,
+					user_id: userId,
+					account_type: accountType,
+					processor_token: processorToken,
+					bank_name: bankName,
+					connected_account_type: "PLAID",
+					plaid_account_data_response: plaidAccountData,
+				})
+				.select("*")
+				.single()
+			if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
 
 			return {
 				status: 200,

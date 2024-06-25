@@ -127,13 +127,13 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	try {
 		let recordId
 		// check if the external account is already exist
-		const {externalAccountExist, liquidationAddressExist, externalAccountRecordId} = await checkUsdOffRampAccount({
+		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({
 			userId,
 			accountNumber,
 			routingNumber
 		})
 		recordId = externalAccountRecordId
-		
+
 		// already created
 		if (externalAccountExist && liquidationAddressExist) {
 			return res.status(200).json({
@@ -142,10 +142,10 @@ exports.createUsdOfframpDestination = async (req, res) => {
 				message: "Account already exist",
 				id: recordId
 			})
-		} 
+		}
 
 		// external account is not yet created
-		if (!externalAccountExist){
+		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
 				null, null, null,
@@ -268,7 +268,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 		let recordId
 		// check if the external account is already exist
-		const {externalAccountExist, liquidationAddressExist, externalAccountRecordId} = await checkEuOffRampAccount({
+		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkEuOffRampAccount({
 			userId,
 			ibanAccountNumber,
 			businessIdentifierCode
@@ -285,7 +285,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 			})
 		}
 
-		if (!externalAccountExist){
+		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'iban', currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
@@ -293,13 +293,13 @@ exports.createEuroOfframpDestination = async (req, res) => {
 				ibanAccountNumber, businessIdentifierCode, ibanCountryCode, // iban fields for EUR
 				null, null // accountNumber and routingNumber not used for IBAN
 			);
-	
-			
+
+
 			if (bridgeAccountResult.source && bridgeAccountResult.source.key.account_type == "Please contact Bridge to enable SEPA/Euro services") {
 				return res.status(bridgeAccountResult.status).json({
 					error: bridgeAccountResult.type,
 					message: 'Account would normally be successfully created. However, euro offramp creation is currently not available in sandbox.',
-	
+
 				});
 			} else if (bridgeAccountResult.status !== 200) {
 				return res.status(bridgeAccountResult.status).json({
@@ -330,7 +330,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 					bridge_response: bridgeAccountResult.rawResponse,
 					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 				})
-	
+
 			if (bridgeAccountInserterror) {
 				return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 			}
@@ -369,7 +369,7 @@ exports.getAccount = async (req, res) => {
 	// get user id from path parameter
 	const { userId, accountId, railType } = req.query;
 
-	try{
+	try {
 		if (!['usOnRamp', 'usOffRamp', 'euOffRamp'].includes(railType)) {
 			return res.status(400).json({ error: 'Invalid accountType' });
 		}
@@ -388,7 +388,7 @@ exports.getAccount = async (req, res) => {
 			if (bridgeExternalAccountError) {
 				return res.status(400).json({ error: 'Could not find this account in the database. Please make sure that the account has been created for this user.' });
 			}
-			if (!bridgeExternalAccountData) return res.status(404).json({error: "No account found for the requested type"})
+			if (!bridgeExternalAccountData) return res.status(404).json({ error: "No account found for the requested type" })
 
 			const bankInfo = {
 				createdAt: bridgeExternalAccountData.created_at,
@@ -409,7 +409,7 @@ exports.getAccount = async (req, res) => {
 				accountNumber: bridgeExternalAccountData.account_number,
 				routingNumber: bridgeExternalAccountData.routing_number,
 				railType
-				}
+			}
 
 			return res.status(200).json(bankInfo);
 		}
@@ -424,8 +424,8 @@ exports.getAccount = async (req, res) => {
 				.maybeSingle())
 
 			if (error) throw error
-			if (!checkbookAccount) return res.status(404).json({error: "No account found for the requested type"})
-			
+			if (!checkbookAccount) return res.status(404).json({ error: "No account found for the requested type" })
+
 			const bankInfo = {
 				id: checkbookAccount.id,
 				createdAt: checkbookAccount.createdAt,
@@ -435,45 +435,45 @@ exports.getAccount = async (req, res) => {
 				bankName: checkbookAccount.bank_name,
 				railType: 'usOnramp'
 			}
-		
-			
+
+
 			return res.status(200).json(bankInfo);
 		}
 
 		// return error if the account id with that account type is not recognized
 		return res.status(400).json({ error: `Unknown rail type: ${railType}` });
-	}catch (error){
+	} catch (error) {
 		console.error(error)
 		createLog("account", userId, error.message, error)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
 
-exports.activateOnRampRail = async(req, res) => {
+exports.activateOnRampRail = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const {userId} = req.query
-	const {rail} = req.body
+	const { userId } = req.query
+	const { rail } = req.body
 	let result
-	if (!rail) return res.status("400").json({error: "rail is required"})
-	if (!supportedRail.has(rail)) return res.status("400").json({error: "Unsupported rail"})
-	try{
-		if (rail == OnRampRail.US_ACH){
+	if (!rail) return res.status("400").json({ error: "rail is required" })
+	if (!supportedRail.has(rail)) return res.status("400").json({ error: "Unsupported rail" })
+	try {
+		if (rail == OnRampRail.US_ACH) {
 			result = await activateUsAchOnRampRail(userId)
-		}else{
-			return res.status(501).json({message: `${rail} is not yet implemented`})
+		} else {
+			return res.status(501).json({ message: `${rail} is not yet implemented` })
 		}
 
-		if (result.alreadyExisted) return res.status(200).json({message: `rail already activated`})
-		else if (!result.isAllowedTocreate) return res.status(400).json({message: `User is not allowed to create the rail`})
+		if (result.alreadyExisted) return res.status(200).json({ message: `rail already activated` })
+		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create the rail` })
 
-		return res.status(200).json({message: `${rail} create successfully`})
+		return res.status(200).json({ message: `${rail} create successfully` })
 
-	}catch (error){
+	} catch (error) {
 		createLog("account/activateOnRampRail", userId, error.message, error.rawResponse)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 }

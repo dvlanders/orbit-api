@@ -4,6 +4,7 @@ const updateBastionUser = require("../util/bastion/main/updateBastionUser")
 const createAndFundBastionUser = require('../util/bastion/main/createAndFundBastionUser');
 const createLog = require('../util/logger/supabaseLogger');
 const { createIndividualBridgeCustomer } = require('../util/bridge/endpoint/submitIndividualBridgeCustomerApplication')
+const { createBusinessBridgeCustomer } = require('../util/bridge/endpoint/submitBusinessBridgeCustomerApplication')
 const { createToSLink } = require("../util/bridge/endpoint/createToSLink_dep");
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
@@ -38,7 +39,7 @@ exports.createHifiUser = async (req, res) => {
 	}
 	let userId
 	try {
-		const profileId = req.query.profileId 
+		const profileId = req.query.profileId
 		const fields = req.body
 
 		if (!profileId) {
@@ -128,11 +129,17 @@ exports.createHifiUser = async (req, res) => {
 		}
 
 		// create customer object for providers
+		// Determine the Bridge function based on user type
+		const bridgeFunction = fields.userType === "individual"
+			? createIndividualBridgeCustomer
+			: createBusinessBridgeCustomer;
+
+		// Create customer objects for providers
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
 			createAndFundBastionUser(userId),
-			createIndividualBridgeCustomer(userId),
+			bridgeFunction(userId),
 			createCheckbookUser(userId)
-		])
+		]);
 
 		// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.
 		// Submit Bastion kyc
@@ -241,7 +248,7 @@ exports.getHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const { userId } = req.query
-	try{
+	try {
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided user_id" })
 		// check if user is created
@@ -441,9 +448,9 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	try{
-	
-		const {userId} = req.query
+	try {
+
+		const { userId } = req.query
 		const fields = req.body
 
 		//invalid user_id
@@ -458,7 +465,7 @@ exports.updateHifiUser = async (req, res) => {
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided user_id" })
-		
+
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
@@ -646,67 +653,67 @@ exports.updateHifiUser = async (req, res) => {
 	}
 };
 
-exports.getAllHifiUser = async(req, res) => {
+exports.getAllHifiUser = async (req, res) => {
 	if (req.method !== 'PUT') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 }
 
-exports.generateToSLink = async(req, res) => {
+exports.generateToSLink = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	try {
 		const DASHBOARD_URL = process.env.DASHBOARD_URL
-		const {profileId} = req.query
-		const {redirectUrl, idempotencyKey, templateId} = req.body
-		if (!templateId) return res.status(400).json({error: "templateId is required"})
-		if (!idempotencyKey) return res.status(400).json({error: "idempotencyKey is required"})
+		const { profileId } = req.query
+		const { redirectUrl, idempotencyKey, templateId } = req.body
+		if (!templateId) return res.status(400).json({ error: "templateId is required" })
+		if (!idempotencyKey) return res.status(400).json({ error: "idempotencyKey is required" })
 		// check is template exist
-		if (!(await checkToSTemplate(templateId))) return res.status(400).json({error: "templateId is not exist"})
+		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
 		const encodedUrl = encodeURIComponent(redirectUrl)
 		// check is idempotencyKey already exist
-		const {isValid, isExpired, data} = await checkSignedAgreementId(idempotencyKey)
-		if (isExpired) return res.status(400).json({error: "Session expired, please generate with new idempotencyKey"})
-		if (!isValid) return res.status(400).json({error: "Invalid or used idempotencyKey"})
+		const { isValid, isExpired, data } = await checkSignedAgreementId(idempotencyKey)
+		if (isExpired) return res.status(400).json({ error: "Session expired, please generate with new idempotencyKey" })
+		if (!isValid) return res.status(400).json({ error: "Invalid or used idempotencyKey" })
 		// valid and unexpired record
 		if (data) {
 			const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}`
-			return res.status(200).json({url: tosLink})
+			return res.status(200).json({ url: tosLink })
 		}
-		
+
 		// insert signed agreement record 
 		const signedAgreementInfo = await generateNewSignedAgreementRecord(idempotencyKey, templateId)
 		// generate hosted tos page
 		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}&templateId=${templateId}`
 
-		return res.status(200).json({url: tosLink, sessionToken: signedAgreementInfo.session_token})
-	} catch(error){
+		return res.status(200).json({ url: tosLink, sessionToken: signedAgreementInfo.session_token })
+	} catch (error) {
 		createLog("user/generateToSLink", "", error.message, error)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
-	
+
 }
 
-exports.acceptToSLink = async(req, res) => {
+exports.acceptToSLink = async (req, res) => {
 	if (req.method !== 'PUT') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	try{
-		const {profileId} = req.query
-		const {sessionToken} = req.body
-		if (!sessionToken) return res.status(400).json({error: "Session token is required"})
+	try {
+		const { profileId } = req.query
+		const { sessionToken } = req.body
+		if (!sessionToken) return res.status(400).json({ error: "Session token is required" })
 		const signedAgreementId = await updateSignedAgreementRecord(sessionToken)
-		if (!signedAgreementId) return res.status(400).json({error: "Session token is invalid"})
-		
-		
-		return res.status(200).json({signedAgreementId})
+		if (!signedAgreementId) return res.status(400).json({ error: "Session token is invalid" })
 
 
-	}catch (error){
+		return res.status(200).json({ signedAgreementId })
+
+
+	} catch (error) {
 		createLog("user/acceptToSLink", "", error.message, error)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 }
