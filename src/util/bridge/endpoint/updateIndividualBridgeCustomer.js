@@ -1,7 +1,6 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToDatabaseFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const {supabaseCall} = require("../../supabaseWithRetry")
 const {BridgeCustomerStatus} = require("../utils")
@@ -19,7 +18,7 @@ class UpdateBridgeCustomerError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, updateBridgeCustomerError.prototype);
+		Object.setPrototypeOf(this, UpdateBridgeCustomerError.prototype);
 	}
 }
 

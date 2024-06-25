@@ -1,22 +1,23 @@
 const NODE_ENV = process.env.NODE_ENV
 
-const bridgeFieldsToDatabaseFields = {
-	first_name: "legal_first_name",
-	last_name: "legal_last_name",
-	email: "compliance_email",
-	phone: "compliance_phone",
-	birth_date: "date_of_birth",
-	tax_identification_number: "tax_identification_number",
-	gov_id_country: "gov_id_country",
-	gov_id_image_front: "gov_id_front",
-	gov_id_image_back: "gov_id_back",
-	proof_of_address_document: "proof_of_residency",
+const bridgeFieldsToRequestFields = {
+	first_name: "legalFirstName",
+	last_name: "legalLastName",
+	email: "complianceEmail",
+	phone: "compliancePhone",
+	birth_date: "dateOfBirth",
+	tax_identification_number: "taxIdentificationNumber",
+	gov_id_country: "govIdCountry",
+	gov_id_image_front: "govIdFront",
+	gov_id_image_back: "govIdBack",
+	proof_of_address_document: "proofOfResidency",
 	"address.country": "country",
-	"street_line_1": "address_line_1",
-	"street_line_2": "address_line_2",
-	"city": "city",
-	"address.postal_code": "postal_code",
-	"address.state": "state_state_region",
+	street_line_1: "addressLine1",
+	street_line_2: "addressLine2",
+	city: "city",
+	"address.postal_code": "postalCode",
+	"address.state": "stateStateRegion",
+	signed_agreement_id: "signedAgreementId"
 };
 
 
@@ -203,7 +204,7 @@ const getEndorsementStatus = (endorsements, name) => {
 }
 
 module.exports = {
-	bridgeFieldsToDatabaseFields,
+	bridgeFieldsToRequestFields,
 	getEndorsementStatus,
 	AccountActions,
 	RejectionReasons,

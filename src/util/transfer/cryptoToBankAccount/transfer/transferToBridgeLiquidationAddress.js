@@ -12,7 +12,7 @@ const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBridgeLiquidationAddress = async(requestId, userId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress) => {
-    const {isExternalAccountExist, liquidationAddress, liquidationAddressId} = await bridgeRailCheck(destinationAccountId, sourceCurrency, destinationCurrency, chain)
+    const {isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId} = await bridgeRailCheck(destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
     if (!isExternalAccountExist) return {isExternalAccountExist: false, transferResult: null}
     
@@ -28,8 +28,8 @@ const transferToBridgeLiquidationAddress = async(requestId, userId, destinationA
         chain: chain,
         from_wallet_address: getAddress(sourceWalletAddress),
         to_wallet_address: getAddress(liquidationAddress),
-        to_bridge_liquidation_address_id: liquidationAddressId,
-        to_bridge_external_account_id: destinationAccountId,
+        to_bridge_liquidation_address_id: liquidationAddressId, // actual id that bridge return to us
+        to_bridge_external_account_id: bridgeExternalAccountId, // actual id that bridge return to us
         transaction_status: 'NOT_INITIATED',
         contract_address: contractAddress,
         action_name: "transfer",
