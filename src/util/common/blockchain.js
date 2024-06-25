@@ -1,3 +1,5 @@
+const NODE_ENV = process.env.NODE_ENV
+
 const Chain = {
 	ETHEREUM_MAINNET: "ETHEREUM_MAINNET",
 	OPTIMISM_MAINNET: "OPTIMISM_MAINNET",
@@ -7,7 +9,8 @@ const Chain = {
 	POLYGON_AMOY: "POLYGON_AMOY",
 }
 
-const hifiSupportedChain = [Chain.ETHEREUM_TESTNET, Chain.POLYGON_MAINNET, Chain.POLYGON_AMOY]
+const hifiSupportedChain = NODE_ENV == "development" ?
+ [Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET]
 
 const currencyDecimal = {
 	"usdc": 6

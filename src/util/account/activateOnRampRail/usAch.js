@@ -41,6 +41,7 @@ const insertPreCheckbookAccountRecord = async(userId, virtualAccountInfo) => {
             routing_number: virtualAccountInfo.deposit_institutions_bank_routing_number,
             user_id: userId,
             bridge_virtual_account_id: virtualAccountInfo.virtual_account_id,
+            account_type: "CHECKING",
             connected_account_type: "BRIDGE_VIRTUAL_ACCOUNT",
         }, {onConflict: "bridge_virtual_account_id"})
         .select()
