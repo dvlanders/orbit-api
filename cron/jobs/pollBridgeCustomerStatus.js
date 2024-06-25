@@ -8,6 +8,53 @@ const { getEndorsementStatus } = require('../../src/util/bridge/utils');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
+const updateStatus = async(customer) => {
+	try {
+
+		const response = await fetch(`${BRIDGE_URL}/v0/customers/${customer.bridge_id}`, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY
+			}
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			console.error('Error response:', errorData);
+			return res.status(response.status).json({ error: 'Failed to fetch bridge customer' });
+		}
+
+		const data = await response.json();
+		const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(data.endorsements, "base")
+		const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(data.endorsements, "sepa")
+
+		if (customer.status !== data.status) {
+			const { error: updateError } = await supabaseCall(() => supabase
+				.from('bridge_customers')
+				.update({
+					status: data.status,
+					bridge_response: data,
+					base_status: baseStatus,
+					sepa_status: sepaStatus,
+				})
+				.eq('id', customer.id)
+			)
+
+			if (updateError) {
+				console.error('Failed to update bridge customer status', updateError);
+				createLog('pollBridgeCustomerStatus', null, 'Failed to update bridge customer status', updateError);
+			} else {
+				console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
+			}
+
+
+		}
+	} catch (error) {
+		console.error('Failed to fetch customer status from Bridge API', error);
+		createLog('pollBridgeCustomerStatus', null, 'Failed to fetch customer status from Bridge API', error);
+	}
+}
+
 async function pollBridgeCustomerStatus() {
 	console.log('Polling for bridge customer status updates...');
 
@@ -28,54 +75,7 @@ async function pollBridgeCustomerStatus() {
 	}
 
 	// for each one that isn't active or rejected, get the latest status from the Bridge API and update the db
-	for (const customer of bridgeCustomerData) {
-
-
-		try {
-
-			const response = await fetch(`${BRIDGE_URL}/v0/customers/${customer.bridge_id}`, {
-				method: 'GET',
-				headers: {
-					'Api-Key': BRIDGE_API_KEY
-				}
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				console.error('Error response:', errorData);
-				return res.status(response.status).json({ error: 'Failed to fetch bridge customer' });
-			}
-
-			const data = await response.json();
-			const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(data.endorsements, "base")
-			const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(data.endorsements, "sepa")
-
-			if (customer.status !== data.status) {
-				const { error: updateError } = await supabaseCall(() => supabase
-					.from('bridge_customers')
-					.update({
-						status: data.status,
-						bridge_response: data,
-						base_status: baseStatus,
-						sepa_status: sepaStatus,
-					})
-					.eq('id', customer.id)
-				)
-
-				if (updateError) {
-					console.error('Failed to update bridge customer status', updateError);
-					createLog('pollBridgeCustomerStatus', null, 'Failed to update bridge customer status', updateError);
-				} else {
-					console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
-				}
-
-
-			}
-		} catch (error) {
-			console.error('Failed to fetch customer status from Bridge API', error);
-			createLog('pollBridgeCustomerStatus', null, 'Failed to fetch customer status from Bridge API', error);
-		}
-	}
+	await Promise.all(bridgeCustomerData.map(async(customer) => await updateStatus(customer)))
 }
 
 module.exports = pollBridgeCustomerStatus;

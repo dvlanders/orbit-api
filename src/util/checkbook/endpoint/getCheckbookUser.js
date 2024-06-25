@@ -20,6 +20,27 @@ class GetCheckbookUserError extends Error {
 	}
 }
 
+const checkUserApiKeyPairsHealth = async(checkbook_user) => {
+    // check if the api key and api secret is valid
+    const response = await fetch(`${CHECKBOOK_URL}/user`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `${checkbook_user.api_key}:${checkbook_user.api_secret}`,
+            'Content-Type': 'application/json'
+        },
+    }); 
+    const responseBody = await response.json()
+    if (response.ok){
+        return
+    }else if (response.status == 400){
+        throw new GetCheckbookUserError(GetCheckbookUserErrorType.INVALID_ACCOUNT, responseBody.message, responseBody)
+
+    }else{
+        throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
+    }
+}
+
 /**
  * return 
  * status: 200, 400, 500, 404   
@@ -34,40 +55,27 @@ class GetCheckbookUserError extends Error {
 const getCheckbookUser = async(userId) => {
     // get user spi key and secret
     try {
-        let { data: checkbookUser, error: checkcookUserError } = await supabaseCall(() => supabase
+        let { data: checkbookUsers, error: checkcookUserError } = await supabaseCall(() => supabase
         .from('checkbook_users')
         .select('api_key, api_secret')
         .eq("user_id", userId)
-        .maybeSingle())
+        )
 
         if (checkcookUserError) throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, checkcookUserError.message, checkcookUserError)
-        if (!checkbookUser) throw new GetCheckbookUserError(GetCheckbookUserErrorType.RECORD_NOT_FOUND, "No checkbook user found")
+        if (!checkbookUsers) throw new GetCheckbookUserError(GetCheckbookUserErrorType.RECORD_NOT_FOUND, "No checkbook user found")
+        if (checkbookUsers.length != 2 ) throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, "Checkbook user is created falsefully")
 
         // check if the api key and api secret is valid
-		const response = await fetch(`${CHECKBOOK_URL}/user`, {
-			method: 'GET',
-			headers: {
-				'Accept': 'application/json',
-				'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`,
-				'Content-Type': 'application/json'
-			},
-		}); 
-        const responseBody = await response.json()
-        if (response.ok){
-            return {
-                status: 200,
-                usOnRamp:  {
-                    status: CustomerStatus.ACTIVE,
-                    actions: [],
-                    fields: []
-                },
-                message: ""
-            }
-        }else if (response.status == 400){
-            throw new GetCheckbookUserError(GetCheckbookUserErrorType.INVALID_ACCOUNT, responseBody.message, responseBody)
+		await Promise.all(checkbookUsers.map(async(checkbookUser) => await checkUserApiKeyPairsHealth(checkbookUser)))
 
-        }else{
-            throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
+        return {
+            status: 200,
+            usOnRamp:  {
+                status: CustomerStatus.ACTIVE,
+                actions: [],
+                fields: []
+            },
+            message: ""
         }
 
 

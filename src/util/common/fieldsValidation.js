@@ -3,9 +3,10 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 	const invalidFields = [];
 	const fieldsKey = Object.keys(fields);
 
-	requiredFields.forEach((key) => {
-		if (!fields.hasOwnProperty(key) || fields[key] === "") {
-			missingFields.push(key);
+    // check if all required fields is provided
+	requiredFields.map((key) => {
+		if (fields[key] === undefined || fields[key] === "") {
+			missingFields.push(key)
 		}
 	});
 
