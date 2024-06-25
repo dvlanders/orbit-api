@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToDatabaseFields, getEndorsementStatus } = require("../utils");
+const { bridgeFieldsToRequestFields, getEndorsementStatus } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const {supabaseCall} = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
@@ -172,7 +172,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 
 		} else if (response.status == 400) {
 			// supposed to be missing or invalid field
-			invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToDatabaseFields[k])
+			invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToRequestFields[k])
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, responseBody.message, responseBody)
 		} else if (response.status == 401) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)

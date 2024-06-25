@@ -47,8 +47,9 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 		// get the user's api key and api secret from the checkbook_users table
 		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
 			.from('checkbook_users')
-			.select('api_key, api_secret')
+			.select('api_key, api_secret, checkbook_user_id')
 			.eq('user_id', userId)
+			.eq("type", "SOURCE")
 			.maybeSingle()
 		);
 
@@ -115,6 +116,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				bank_name: bankName,
 				connected_account_type: "PLAID",
 				plaid_account_data_response: plaidAccountData,
+				checkbook_user_id: checkbookUserData.checkbook_user_id
 			})
 			.select("*")
 			.single()
@@ -184,6 +186,23 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, existingCheckbookAccountError.message, existingCheckbookAccountError)
 		}
 
+		// get the user's api key and api secret from the checkbook_users table
+		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
+		.from('checkbook_users')
+		.select('api_key, api_secret, checkbook_user_id')
+		.eq('user_id', userId)
+		.eq("type", "DESTINATION")
+		.maybeSingle()
+		);
+	
+		if (checkbookUserError) {
+			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
+
+		}
+		if (!checkbookUserData.api_key || !checkbookUserData.api_secret) {
+			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found for ach pull. Please create a user first.")
+		}
+
 
 
 		// make the call to the checkbook bank account creation endpoint
@@ -200,7 +219,7 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
-				'Authorization': `${process.env.CHECKBOOK_CENTRAL_USER_API_KEY}:${process.env.CHECKBOOK_CENTRAL_USER_API_SECRET}`,
+				'Authorization': `${checkbookUserData.api_key}:${checkbookUserData.api_secret}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
@@ -215,7 +234,8 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 				.from('checkbook_accounts')
 				.update({
 					checkbook_response: checkbookData,
-					checkbook_id: checkbookData.id
+					checkbook_id: checkbookData.id,
+					checkbook_user_id: checkbookUserData.checkbook_user_id
 				})
 				.eq('user_id', userId)
 				.eq('bridge_virtual_account_id', virtualAccountId)

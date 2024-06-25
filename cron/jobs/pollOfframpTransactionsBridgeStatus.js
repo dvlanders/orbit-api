@@ -16,11 +16,6 @@ async function pollOfframpTransactionsBridgeStatus() {
 		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
 	)
 
-
-	console.log('offrampTransactionData', offrampTransactionData);
-	console.log('offrampTransactionError', offrampTransactionError);
-
-
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
 		createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);
@@ -36,8 +31,6 @@ async function pollOfframpTransactionsBridgeStatus() {
 			.eq('user_id', transaction.user_id)
 			.single()
 		)
-		console.log('bridgeCustomerData', bridgeCustomerData);
-		console.log('bridgeCustomerError', bridgeCustomerError);
 
 		if (bridgeCustomerError) {
 			console.error('Failed to fetch a single bridge id for the given user id', bridgeCustomerError);
@@ -47,10 +40,6 @@ async function pollOfframpTransactionsBridgeStatus() {
 
 
 		try {
-			console.log('bridgeCustomerData.bridge_id', bridgeCustomerData.bridge_id);
-			console.log('offrampTransactionData.to_bridge_liquidation_address_id', transaction.to_bridge_liquidation_address_id);
-
-
 			const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/liquidation_addresses/${transaction.to_bridge_liquidation_address_id}/drains`, {
 				method: 'GET',
 				headers: {
@@ -61,12 +50,13 @@ async function pollOfframpTransactionsBridgeStatus() {
 			if (!response.ok) {
 				const errorData = await response.json();
 				createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', errorData);
-				return
+				continue
 			}
 
 			const responseBody = await response.json();
-			const data = responseBody.data.find(item => item.deposit_tx_hash === offrampTransactionData.transaction_hash);
-			if (!data) return
+			const data = responseBody.data.find(item => item.deposit_tx_hash == transaction.transaction_hash);
+			if (!data) continue
+			console.log(data)
 
 			
 

@@ -15,6 +15,8 @@ const { v4 } = require('uuid');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
 const CryptoToBankSupportedPairFunctions = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
+const FiatToCryptoSupportedPairFunctions = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
+const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -169,6 +171,67 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		}
 		createLog("transfer/crypto-to-fiat", userId, error.message)
 		return res.status(500).json({ error: 'Unexpected error happened' });
+	}
+
+}
+
+exports.createFiatToCryptoTransfer = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const {profileId} = req.query
+	const fields = req.body
+	console.log(fields)
+	const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId} = fields
+	try {
+		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "amount", "sourceCurrency", "destinationCurrency", "chain", "sourceAccountId", "isInstant"]
+		const acceptedFields = {
+			"requestId": "string",
+			"sourceUserId": "string",
+			"destinationUserId": "string",
+			"amount": "number",
+			"sourceCurrency": "string",
+			"destinationCurrency": "string",
+			"chain": "string",
+			"sourceAccountId": "string",
+			"isInstant": "boolean"
+		}
+		
+		const {missingFields, invalidFields} = fieldsValidation(fields, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		//check if sender is under profileId
+		if (! (await verifyUser(sourceUserId, profileId))) return res.status(401).json({error: "Not authorized"})
+		// check is chain supported
+		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({error: "invalid requestId"})
+		const {data: onRampRecord, error: onRampRecordError} = await supabaseCall(() => supabase
+			.from("onramp_transactions")
+			.select("id")
+			.eq("id", requestId)
+			.maybeSingle()
+		)
+		if (onRampRecordError) throw  onRampRecordError
+		if (onRampRecord) return res.status(400).json({error: "requestId already existed"})
+
+		//check is source-destination pair supported
+		const pair = `${sourceCurrency}-${destinationCurrency}`
+		if (!(pair in FiatToCryptoSupportedPairFunctions)) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` }); 
+
+		const { transferFunc } = FiatToCryptoSupportedPairFunctions[pair]
+		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId)
+		return res.status(200).json(transferResult);
+
+	}catch (error){
+		if (error instanceof CreateFiatToCryptoTransferError){
+			if (error.type == CreateFiatToCryptoTransferErrorType.CLIENT_ERROR){
+				return res.status(400).json({error: error.message})
+			}else{
+				return res.status(500).json({error: "Unexpected error happened"})
+			}
+		}
+		createLog("transfer/createFiatToCryptoTransfer", sourceUserId, error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
 	}
 
 }

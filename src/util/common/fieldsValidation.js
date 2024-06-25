@@ -5,7 +5,7 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 
     // check if all required fields is provided
 	requiredFields.map((key) => {
-		if (!fields[key] || fields[key] == "") {
+		if (fields[key] === undefined || fields[key] === "") {
 			missingFields.push(key)
 		}
 	})
