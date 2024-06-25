@@ -11,7 +11,7 @@ let sessionToken
 
 async function generateToSLink() {
     try{
-        url = `${BASE_URL}/tos-link`
+        url = `${BASE_URL}/tos-link?apiKeyId=${apiKeyId}`
         options = {
             method: "POST",
             headers: {
@@ -26,10 +26,11 @@ async function generateToSLink() {
         }
 
         const response = await fetch(url, options)
+        const responseBody = await response.json()
+        console.log(responseBody)
         if (!response.ok){
             return undefined
         }
-        const responseBody = await response.json()
         return responseBody
     }catch (error){
         console.error(error)
@@ -66,6 +67,7 @@ async function acceptToSlink() {
 
         const response = await fetch(url, options)
         const responseBody = await response.json()
+        console.log(responseBody)
         if (!response.ok){
             return undefined
         }
@@ -107,20 +109,20 @@ async function createUser() {
                 "taxIdentificationNumber": "373898358",
                 "govIdCountry": "TW",
                 "country": "USA",
-                "addressLine1": "effjhefefefef",
+                "addressLine1": "Test address 1",
                 "city": "NV",
                 "postalCode": "10044",
                 "stateProvinceRegion": "NV",
                 "signedAgreementId": signedAgreementId,
                 "ipAddress": "108.28.159.21",
-                "govIdFront": "https://pqgnrjvoqbopfaxmlhlv.supabase.co/storage/v1/object/sign/compliance_id/4075c5ba-dfa3-4886-a693-6505728571d3/gov_id_front?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJjb21wbGlhbmNlX2lkLzQwNzVjNWJhLWRmYTMtNDg4Ni1hNjkzLTY1MDU3Mjg1NzFkMy9nb3ZfaWRfZnJvbnQiLCJpYXQiOjE3MTg3Mjc1NDcsImV4cCI6MTc1MDI2MzU0N30.uLrPMwmYYoURCbuBYV-nRKET0nQQ37UoMjvIRv3ZEqk&t=2024-06-18T16%3A19%3A07.430Z",
-                "govIdBack": "https://pqgnrjvoqbopfaxmlhlv.supabase.co/storage/v1/object/sign/compliance_id/4075c5ba-dfa3-4886-a693-6505728571d3/gov_id_front?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJjb21wbGlhbmNlX2lkLzQwNzVjNWJhLWRmYTMtNDg4Ni1hNjkzLTY1MDU3Mjg1NzFkMy9nb3ZfaWRfZnJvbnQiLCJpYXQiOjE3MTg3Mjc1NDcsImV4cCI6MTc1MDI2MzU0N30.uLrPMwmYYoURCbuBYV-nRKET0nQQ37UoMjvIRv3ZEqk&t=2024-06-18T16%3A19%3A07.430Z",
-                "proofOfResidency": "https://pqgnrjvoqbopfaxmlhlv.supabase.co/storage/v1/object/sign/compliance_id/4075c5ba-dfa3-4886-a693-6505728571d3/gov_id_front?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJjb21wbGlhbmNlX2lkLzQwNzVjNWJhLWRmYTMtNDg4Ni1hNjkzLTY1MDU3Mjg1NzFkMy9nb3ZfaWRfZnJvbnQiLCJpYXQiOjE3MTg3Mjc1NDcsImV4cCI6MTc1MDI2MzU0N30.uLrPMwmYYoURCbuBYV-nRKET0nQQ37UoMjvIRv3ZEqk&t=2024-06-18T16%3A19%3A07.430Z",
+                "govIdFront": "https://pqgnrjvoqbopfaxmlhlv.supabase.co/storage/v1/object/sign/dev/example_id_front.JPG?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJkZXYvZXhhbXBsZV9pZF9mcm9udC5KUEciLCJpYXQiOjE3MTg3NTkyNDQsImV4cCI6MTc1MDI5NTI0NH0.35ZGhwvll23GgMt364ywlDmElGLZ_AnkO-AAx8H_lIo&t=2024-06-19T01%3A07%3A24.640Z",
+                "govIdBack": "https://pqgnrjvoqbopfaxmlhlv.supabase.co/storage/v1/object/sign/dev/example_id_back.JPG?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJkZXYvZXhhbXBsZV9pZF9iYWNrLkpQRyIsImlhdCI6MTcxODc1OTI1NSwiZXhwIjoxNzUwMjk1MjU1fQ.E6ffgFVc8gc263-MJWC9MaBmfXZpIOjsXxUSz1Z2Exg&t=2024-06-19T01%3A07%3A35.363Z",
             })
         }
 
         const response = await fetch(url, options)
         const responseBody = await response.json()
+        console.log(responseBody)
         if (response.status == 500){
             return undefined
         }
@@ -162,8 +164,8 @@ async function getUser(){
     }
     const response = await fetch(url, options)
     const responseBody = await response.json()
+    console.log(responseBody)
     if (!response.ok){
-        console.log(responseBody)
         return undefined
     }
     return responseBody

@@ -1,3 +1,5 @@
+const NODE_ENV = process.env.NODE_ENV
+
 const bridgeFieldsToDatabaseFields = {
 	first_name: "legal_first_name",
 	last_name: "legal_last_name",
@@ -30,10 +32,30 @@ const BridgeCustomerStatus = {
 	AWAITING_UBO: "awaiting_ubo",
 }
 
-const virtualAccountPaymentRailToChain = {
-	ethereum: "ETHEREUM_MAINNET",
-	optimism: "OPTIMISM_MAINNET",
-	polygon: "POLYGON_MAINNET"
+const virtualAccountPaymentRailToChain = NODE_ENV == "development" ?
+	{
+		ethereum: "ETHEREUM_TESTNET",
+		optimism: "OPTIMISM_TESTNET",
+		polygon: "POLYGON_AMOY"
+	}
+	: 
+	{
+		ethereum: "ETHEREUM_MAINNET",
+		optimism: "OPTIMISM_MAINNET",
+		polygon: "POLYGON_MAINNET"
+	}
+
+const chainToVirtualAccountPaymentRail = NODE_ENV == "development" ?
+{
+	"ETHEREUM_TESTNET": "ethereum",
+	"OPTIMISM_TESTNET": "optimism",
+	"POLYGON_AMOY": "polygon"
+}
+: 
+{
+	"ETHEREUM_MAINNET": "ethereum",
+	"OPTIMISM_MAINNET": "optimism",
+	"POLYGON_MAINNET": "polygon"
 }
 
 const AccountActions = {
@@ -130,7 +152,6 @@ const extractActionsAndFields = (reasons) => {
     if (reasons){
       reasons.map((reason) => {
         const actions = RejectionReasons[reason]
-		console.log(actions)
         if (!actions){
 			requiredActions = [...requiredActions, ...AccountActions.MANUAL_REVIEW.actions]
 			fieldsToResubmit = [...fieldsToResubmit, ...AccountActions.MANUAL_REVIEW.fieldsToResubmit]
@@ -168,9 +189,9 @@ const getEndorsementStatus = (endorsements, name) => {
 	const endorsement = endorsements.find(e => e.name === name);
 	const status = endorsement ? endorsement.status : undefined;
 	const additionalRequirements = endorsement && endorsement.additional_requirements ? endorsement.additional_requirements : [];
-	const actions = []
-	const fields = []
-
+	let actions = []
+	let fields = []
+	
 	additionalRequirements.map((r) => {
 		const action = additionalRequirementsMap[r]
 		if (action){
@@ -178,7 +199,6 @@ const getEndorsementStatus = (endorsements, name) => {
 			fields= [...fields, ...action.fields]
 		}
 	})
-
 	return {status, actions, fields}
 }
 
@@ -190,4 +210,5 @@ module.exports = {
 	BridgeCustomerStatus,
 	virtualAccountPaymentRailToChain,
 	extractActionsAndFields,
+	chainToVirtualAccountPaymentRail
 }

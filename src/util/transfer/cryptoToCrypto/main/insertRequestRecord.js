@@ -2,6 +2,8 @@ const { currencyDecimal } = require("../../../common/blockchain");
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 const { toUnitsString } = require("../utils/toUnits");
+const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer");
+
 
 exports.insertRequestRecord = async(requestInfo) => {
     const { data, error } = await supabaseCall(() => supabase
@@ -22,7 +24,7 @@ exports.insertRequestRecord = async(requestInfo) => {
     .select("*")
     .single())
 
-    if (error) throw error
+    if (error) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, error.message)
     return data
         
 }

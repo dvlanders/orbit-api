@@ -1,5 +1,6 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
+const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer");
 
 exports.updateRequestRecord = async(requestId, requestInfo) => {
 
@@ -14,7 +15,7 @@ exports.updateRequestRecord = async(requestId, requestInfo) => {
     .single()
     )
 
-    if (error) throw error
+    if (error) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, error.message)
     return data
         
 }

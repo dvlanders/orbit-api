@@ -6,7 +6,7 @@ const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { checkIsSignedAgreementIdSigned } = require("./signedAgreement");
 
-const requiredFields = [
+const individualRequiredFields = [
 	"userType",
 	"legalFirstName",
 	"legalLastName",
@@ -24,40 +24,100 @@ const requiredFields = [
 	"ipAddress"
 ];
 
-const acceptedFields = {
-	"id": "string",
-    "createdAt": "string",
-    "legalFirstName": "string",
-    "legalLastName": "string",
-    "dateOfBirth": "string",
-    "complianceEmail": "string",
-    "compliancePhone": "string",
-    "addressLine1": "string",
-    "addressLine2": "string",
-    "city": "string",
-    "stateProvinceRegion": "string",
-    "postalCode": "string",
-    "country": "string",
-    "addressType": "string",
-    "taxIdentificationNumber": "string",
-    "idType": "string",
-    "proofOfResidency": "string",
-    "govIdFront": "string",
-    "govIdBack": "string",
-    "govIdCountry": "string",
-    "proofOfOwnership": "string",
-    "formationDoc": "string",
-    "businessName": "string",
-    "businessDescription": "string",
-    "businessType": "string",
-    "website": "string",
-    "sourceOfFunds": "string",
-    "isDao": "string",
-    "transmitsCustomerFunds": "string",
-    "complianceScreeningExplanation": "string",
-    "ipAddress": "string",
-    "signedAgreementId": "string",
-    "userType": "string"
+
+
+const individualAcceptedFields = {
+	"legalFirstName": "string",
+	"legalLastName": "string",
+	"dateOfBirth": "string",
+	"complianceEmail": "string",
+	"compliancePhone": "string",
+	"addressLine1": "string",
+	"addressLine2": "string",
+	"city": "string",
+	"stateProvinceRegion": "string",
+	"postalCode": "string",
+	"country": "string",
+	"addressType": "string",
+	"taxIdentificationNumber": "string",
+	"idType": "string",
+	"proofOfResidency": "string",
+	"govIdFront": "string",
+	"govIdBack": "string",
+	"govIdCountry": "string",
+	"proofOfOwnership": "string",
+	"formationDoc": "string",
+	"businessName": "string",
+	"businessDescription": "string",
+	"businessType": "string",
+	"website": "string",
+	"statementOfFunds": "string",
+	"isDao": "string",
+	"transmitsCustomerFunds": "string",
+	"complianceScreeningExplanation": "string",
+	"ipAddress": "string",
+	"signedAgreementId": "string",
+	"userType": "string"
+};
+
+const businessRequiredFields = [
+	"userType",
+	"businessName",
+	"businessType",
+	"complianceEmail",
+	"taxIdentificationNumber",
+	"country",
+	"addressLine1",
+	"city",
+	"postalCode",
+	"stateProvinceRegion",
+	"signedAgreementId",
+	"ipAddress",
+	"formationDoc",
+	"sourceOfFunds",
+	"ipAddress",
+	"ultimateBeneficialOwners",
+	"ipAddress",
+	"ipAddress",
+
+
+];
+
+const businessAcceptedFields = {
+	"legalFirstName": "string",
+	"legalLastName": "string",
+	"dateOfBirth": "string",
+	"complianceEmail": "string",
+	"compliancePhone": "string",
+	"addressLine1": "string",
+	"addressLine2": "string",
+	"city": "string",
+	"stateProvinceRegion": "string",
+	"postalCode": "string",
+	"country": "string",
+	"addressType": "string",
+	"taxIdentificationNumber": "string",
+	"idType": "string",
+	"proofOfResidency": "string",
+	"govIdFront": "string",
+	"govIdBack": "string",
+	"govIdCountry": "string",
+	"proofOfOwnership": "string",
+	"formationDoc": "string",
+	"businessName": "string",
+	"businessDescription": "string",
+	"businessType": "string",
+	"website": "string",
+	"sourceOfFunds": "string",
+	"statementOfFunds": "string",
+	"isDao": "string",
+	"transmitsCustomerFunds": "string",
+	"complianceScreeningExplanation": "string",
+	"ipAddress": "string",
+	"signedAgreementId": "string",
+	"userType": "string",
+	"ultimateBeneficialOwners": "array"
+
 };
 
 const userKycColumnsMap = {
@@ -80,6 +140,7 @@ const userKycColumnsMap = {
 	businessDescription: "business_description",
 	businessType: "business_type",
 	website: "website",
+	statementOfFunds: "statement_of_funds",
 	sourceOfFunds: "source_of_funds",
 	isDao: "is_dao",
 	transmitsCustomerFunds: "transmits_customer_funds",
@@ -104,7 +165,7 @@ const fieldsToColumnsMap = (fields, map) => {
 	return mapped
 }
 
-	
+
 
 // Function to upload information
 const InformationUploadErrorType = {
@@ -127,45 +188,55 @@ class InformationUploadError extends Error {
 
 const informationUploadForCreateUser = async (profileId, fields) => {
 	// check ip address
-	const isIpAllowed = await ipCheck(fields.ipAddress)
-	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: "Unsupported area (ipAddress)"})
-	
-	// check if required fields are uploaded
-	// check if the field that is passsed is a valid field that we allow updates on
-	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-	if (missingFields.length > 0 || invalidFields.length > 0) {
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+	let requiredFields, acceptedFields;
+	if (fields.userType === "business") {
+		requiredFields = businessRequiredFields;
+		acceptedFields = businessAcceptedFields;
+	} else {
+		requiredFields = individualRequiredFields;
+		acceptedFields = individualAcceptedFields;
 	}
-	// check signedAgreementId
-	const isValidSignedAgreementId = await checkIsSignedAgreementIdSigned(fields.signedAgreementId)
-	if (!isValidSignedAgreementId) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: [], invalid_fields: ["signedAgreementId"] })
 
+	// check ip address
+	const isIpAllowed = await ipCheck(fields.ipAddress);
+	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Unsupported area (ipAddress)" });
 
-	// create new user
-	let userId
+	// check if required fields are uploaded and validate field values
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields });
+	}
+
+	// Create new user
+	let userId;
 	try {
 		const { data: newUser, error: newUserError } = await supabaseCall(() => supabase
 			.from('users')
-			.insert(
-				{ profile_id: profileId, user_type: fields.userType },
-			)
+			.insert({ profile_id: profileId, user_type: fields.userType })
 			.select()
 			.single()
-		)
-
-		if (newUserError) throw newUserError
-		userId = newUser.id
+		);
+		if (newUserError) throw newUserError;
+		userId = newUser.id;
 	} catch (error) {
-		createLog("user/util/informationUploadForCreateUser", "", error.message, error)
-		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
+		createLog("user/util/informationUploadForCreateUser", "", error.message, error);
+		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
 	}
+
+
+
+
+
+
+
+
 
 	// create bridge record and input signed agreement id
 	try {
 		const { error: newBridgeRecordError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.insert(
-				{ user_id: userId},
+				{ user_id: userId },
 			)
 			.select())
 
@@ -226,51 +297,134 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
+	// Map fields to database columns
+	const kycData = {};
+	Object.keys(fields).forEach(field => {
+		const column = userKycColumnsMap[field];
+		if (column && fields[field] !== undefined) {
+			kycData[column] = fields[field];
+		}
+	});
 
-	// update the user_kyc table record	
+
+
+	// Handle specific data type transformations if necessary, e.g., date of birth
+	if (fields.dateOfBirth) {
+		kycData.date_of_birth = new Date(fields.dateOfBirth).toISOString();
+	}
+
+	kycData.user_id = userId;
+
+
+	// update the user_kyc table record  
 	const { data, error } = await supabaseCall(() => supabase
 		.from('user_kyc')
-		.insert(
-			{
-				user_id: userId,
-				legal_first_name: fields.legalFirstName,
-				legal_last_name: fields.legalLastName,
-				compliance_email: fields.complianceEmail,
-				compliance_phone: fields.compliancePhone,
-				address_line_1: fields.addressLine1,
-				address_line_2: fields.addressLine2,
-				city: fields.city,
-				state_province_region: fields.stateProvinceRegion,
-				postal_code: fields.postalCode,
-				country: fields.country,
-				address_type: fields.addressType,
-				tax_identification_number: fields.taxIdentificationNumber,
-				id_type: fields.idType,
-				gov_id_country: fields.govIdCountry,
-				business_name: fields.businessName,
-				business_description: fields.businessDescription,
-				business_type: fields.businessType,
-				website: fields.website,
-				source_of_funds: fields.sourceOfFunds,
-				is_dao: fields.isDao,
-				transmits_customer_funds: fields.transmitsCustomerFunds,
-				compliance_screening_explanation: fields.complianceScreeningExplanation,
-				ip_address: fields.ipAddress,
-				date_of_birth: new Date(fields.dateOfBirth).toISOString(),
-				gov_id_front_path: fields.govIdFrontPath,
-				gov_id_back_path: fields.govIdBackPath,
-				proof_of_residency_path: fields.proofOfResidencyPath,
-				proof_of_ownership_path: fields.proofOfOwnershipPath,
-				formation_doc_path: fields.formationDocPath,
-				signed_agreement_id: fields.signedAgreementId
-			}			
-		)
+		.insert([kycData]) // Ensure kycData is used correctly here
 		.select()
-	)
+	);
 
 	if (error) {
-		createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
-		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
+		console.error(error);
+		createLog("user/util/informationUploadForCreateUser", userId, error.message, error);
+		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
+	}
+
+
+	// insert records into the ultimate_beneficial_owners table from the ultimateBeneficialOwners array
+
+	// only save ultimate beneficial owners if the ultimateBeneficialOwners array is not empt/null
+	if (fields.ultimateBeneficialOwners && fields.ultimateBeneficialOwners.length > 0) {
+		const { ultimateBeneficialOwners } = fields;
+
+		// Define the files to be uploaded for each UBO
+		const uboFiles = [
+			{
+				key: "govIdFront",
+				bucket: "compliance_id",
+				columnName: "gov_id_front_path"
+			},
+			{
+				key: "govIdBack",
+				bucket: "compliance_id",
+				columnName: "gov_id_back_path"
+			},
+
+			{
+				key: "proofOfResidency",
+				bucket: "proof_of_residency",
+				columnName: "proof_of_residency_path"
+			}
+
+		];
+
+		// Process each UBO
+
+		try {
+			const processedUbos = await Promise.all(ultimateBeneficialOwners.map(async (owner, index) => {
+				// Upload files for each UBO
+				await Promise.all(uboFiles.map(async (file) => {
+					if (owner[file.key]) {
+						owner[file.columnName] = await uploadFileFromUrl(
+							owner[file.key],
+							file.bucket,
+							`${userId}/ubo_${index + 1}_${file.key}`
+						);
+						delete owner[file.key];
+					}
+				}));
+
+				// Return the processed UBO data
+				return {
+					user_id: userId,
+					legal_first_name: owner.legalFirstName,
+					legal_last_name: owner.legalLastName,
+					compliance_phone: owner.compliancePhone,
+					compliance_email: owner.complianceEmail,
+					address_line_1: owner.addressLine1,
+					address_line_2: owner.addressLine2,
+
+					city: owner.city,
+					state_province_region: owner.stateProvinceRegion,
+					postal_code: owner.postalCode,
+					country: owner.country,
+					address_type: owner.addressType,
+					date_of_birth: new Date(owner.dateOfBirth).toISOString(),
+					tax_identification_number: owner.taxIdentificationNumber,
+					id_type: owner.idType,
+					gov_id_country: owner.govIdCountry,
+					gov_id_front_path: owner.gov_id_front_path,
+					gov_id_back_path: owner.gov_id_back_path,
+					proof_of_residency_path: owner.proof_of_residency_path,
+				};
+			}));
+
+
+			// Insert the processed UBO data into the database
+			const { data: ultimateBeneficialOwnersData, error: ultimateBeneficialOwnersError } = await supabaseCall(() =>
+				supabase
+					.from('ultimate_beneficial_owners')
+					.insert(processedUbos)
+					.select()
+			);
+
+			if (ultimateBeneficialOwnersError) {
+				// Handle the error
+				console.error(ultimateBeneficialOwnersError);
+				throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "Error inserting UBO data", { error: ultimateBeneficialOwnersError.message });
+			}
+		} catch (error) {
+			console.error(error)
+			createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
+			if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
+				throw new InformationUploadError(error.type, 400, "", { error: error.message })
+			}
+			// internal server error
+			throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
+
+		}
+
+
+
 	}
 
 	return userId
@@ -280,9 +434,9 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 const informationUploadForUpdateUser = async (userId, fields) => {
 
 	// check ip address
-	if (fields.ipAddress){
+	if (fields.ipAddress) {
 		const isIpAllowed = await ipCheck(fields.ipAddress)
-		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", {error: "Unsupported area (ipAddress)"})
+		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Unsupported area (ipAddress)" })
 	}
 
 	// check if required fields are uploaded
@@ -347,8 +501,9 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 		.from('user_kyc')
 		.update(fieldsToColumnsMap(fields, userKycColumnsMap))
 		.eq("user_id", userId)
+		.select()
 	)
-
+	console.log('*************data', data)
 	if (error) {
 		console.error(error)
 		createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
