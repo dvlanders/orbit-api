@@ -651,10 +651,18 @@ exports.generateToSLink = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+	console.log("generateToSLink")
 	try {
 		const DASHBOARD_URL = process.env.DASHBOARD_URL
 		const { profileId } = req.query
 		const { redirectUrl, idempotencyKey, templateId } = req.body
+
+		// Validate idempotencyKey directly using regex for UUID v4
+		if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(idempotencyKey)) {
+			return res.status(400).json({ error: "idempotencyKey must be uuid v4" });
+		}
+
 		if (!templateId) return res.status(400).json({ error: "templateId is required" })
 		if (!idempotencyKey) return res.status(400).json({ error: "idempotencyKey is required" })
 		// check is template exist

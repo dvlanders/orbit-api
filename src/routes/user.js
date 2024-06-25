@@ -15,9 +15,11 @@ module.exports = (router) => {
 
 	router.put("/user", authorize, user.updateHifiUser);
 
-	router.post("/tos-link", authorize, user.generateToSLink)
+	// router.post("/tos-link", authorize, user.generateToSLink)
+	router.post("/tos-link", user.generateToSLink)
+
 	router.put("/tos-link", user.acceptToSLink)
-	
+
 };
 
 
