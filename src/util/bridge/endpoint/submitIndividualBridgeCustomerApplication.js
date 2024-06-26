@@ -3,7 +3,7 @@ const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
 const { bridgeFieldsToRequestFields, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
-const {supabaseCall} = require("../../supabaseWithRetry");
+const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -32,15 +32,15 @@ class createBridgeCustomerError extends Error {
  * @returns 
  */
 
-exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUpdate=false) => {
+exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, isUpdate = false) => {
 	let invalidFields = [];
-	if (isUpdate && !bridgeId){
+	if (isUpdate && !bridgeId) {
 		throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, "Using update but bridge is not provided");
 	}
 
 	try {
 		// check if user exist
-		let { data: user, error: user_error } = await supabaseCall( () => supabase
+		let { data: user, error: user_error } = await supabaseCall(() => supabase
 			.from('users')
 			.select('profile_id, user_type')
 			.eq('id', userId)
@@ -55,7 +55,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 		}
 
 		// fetch user kyc data
-		const { data: userKyc, error: userKycError } = await supabaseCall( () =>  supabase
+		const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase
 			.from('user_kyc')
 			.select('*')
 			.eq('user_id', userId)
@@ -110,7 +110,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 				postal_code: userKyc.postal_code,
 				country: userKyc.country
 			},
-			signed_agreement_id: userKyc.signed_agreement_id, //FIXME 
+			// signed_agreement_id: userKyc.signed_agreement_id, //FIXME 
 			has_accepted_terms_of_service: true,
 			birth_date: formattedBirthDate,
 			tax_identification_number: userKyc.tax_identification_number,
@@ -134,7 +134,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 
 		let url = `${BRIDGE_URL}/v0/customers`
 		let opstions = {
-			method: 'POST' ,
+			method: 'POST',
 			headers: {
 				'Idempotency-Key': idempotencyKey,
 				'Api-Key': BRIDGE_API_KEY,
@@ -144,7 +144,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 		}
 		// for update
 		if (isUpdate) {
-			url += `/${bridgeId}` 
+			url += `/${bridgeId}`
 			opstions = {
 				method: 'PUT',
 				headers: {
@@ -163,11 +163,11 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 			const reasons = responseBody.rejection_reasons.map((reason) => {
 				return reason.developer_reason
 			})
-			const {requiredActions, fieldsToResubmit} = extractActionsAndFields(reasons)
-			console.log({requiredActions, fieldsToResubmit})
+			const { requiredActions, fieldsToResubmit } = extractActionsAndFields(reasons)
+			console.log({ requiredActions, fieldsToResubmit })
 			//extract base, sepa status
-			const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(responseBody.endorsements, "base")
-			const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(responseBody.endorsements, "sepa")
+			const { status: baseStatus, actions: baseActions, fields: baseFields } = getEndorsementStatus(responseBody.endorsements, "base")
+			const { status: sepaStatus, actions: sepaActions, fields: sepaFields } = getEndorsementStatus(responseBody.endorsements, "sepa")
 
 			const { error: bridge_customers_error } = await supabase
 				.from('bridge_customers')
@@ -186,24 +186,24 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId=undefined, isUp
 			}
 
 			return {
-                status: 200,
-                customerStatus: {
-                    status: CustomerStatus.PENDING,
-                    actions: requiredActions,
-                    fields: fieldsToResubmit
-                },
-                usRamp: {
-                    status: CustomerStatus.PENDING,
-                    actions: baseActions,
-                    fields: baseFields
-                },
-                euRamp: {
-                    status: CustomerStatus.PENDING,
-                    actions: sepaActions,
-                    fields: sepaFields
-                },
-                message: "kyc aplication still under review"
-            }
+				status: 200,
+				customerStatus: {
+					status: CustomerStatus.PENDING,
+					actions: requiredActions,
+					fields: fieldsToResubmit
+				},
+				usRamp: {
+					status: CustomerStatus.PENDING,
+					actions: baseActions,
+					fields: baseFields
+				},
+				euRamp: {
+					status: CustomerStatus.PENDING,
+					actions: sepaActions,
+					fields: sepaFields
+				},
+				message: "kyc aplication still under review"
+			}
 
 		} else if (response.status == 400) {
 			// supposed to be missing or invalid field

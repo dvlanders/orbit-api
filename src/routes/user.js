@@ -5,7 +5,7 @@ const { authorize } = require("../util/middleware");
 module.exports = (router) => {
 
 
-	router.get("/get_ping", user.getPing);
+	router.get("/ping", user.getPing);
 
 	router.post("/user/create", authorize, user.createHifiUser);
 
@@ -15,8 +15,7 @@ module.exports = (router) => {
 
 	router.put("/user", authorize, user.updateHifiUser);
 
-	// router.post("/tos-link", authorize, user.generateToSLink)
-	router.post("/tos-link", user.generateToSLink)
+	router.post("/tos-link", authorize, user.generateToSLink)
 
 	router.put("/tos-link", user.acceptToSLink)
 
