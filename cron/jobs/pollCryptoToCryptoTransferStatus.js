@@ -33,7 +33,8 @@ const updateStatus = async(transaction) => {
                 .from('crypto_to_crypto')
                 .update({
                     status: data.status,
-                    bastion_response: data
+                    bastion_response: data,
+                    updated_at: new Date().toISOString()
                 })
                 .eq('id', transaction.id)
             )

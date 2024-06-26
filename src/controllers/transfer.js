@@ -4,7 +4,7 @@ const { requiredFields, acceptedFields, supportedCurrency } = require("../util/t
 const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
 const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privilegeCheck");
-const { fetchRequestInfortmaionById, checkIsRequestIdAlreadyUsed } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
+const { checkIsCryptoToCryptoRequestIdAlreadyUsed } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
 const { transfer, CreateCryptoToCryptoTransferErrorType, CreateCryptoToCryptoTransferError } = require("../util/transfer/cryptoToCrypto/main/transfer");
 const { fetchUserWalletInformation } = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
 const { getRequestRecord } = require("../util/transfer/cryptoToCrypto/main/getRequestRecord");
@@ -21,6 +21,7 @@ const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cr
 const fetchCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchTransferRecord");
 const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoRequestInfortmaionByRequestId, fetchFiatToCryptoRequestInfortmaionById } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
 const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchTransferRecord");
+const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -64,7 +65,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			fields.recipientAddress = recipientWalletInformation.address
 		}
 		// check is request_id exist
-		const record = await checkIsRequestIdAlreadyUsed(requestId, senderUserId)
+		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
 		// peform transfer
 		const receipt = await transfer(fields)
@@ -91,14 +92,12 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 
 	try {
 		// check if requestRecord exist
-		const requestRecord = await fetchRequestInfortmaionById(id)
-		if (!requestRecord) return res.status(404).json({ error: "request not found" })
-		// fetch up to date record
-		const receipt = await getRequestRecord(requestRecord)
-		return res.status(200).json(receipt)
+		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id)
+		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}`})
+		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		console.error(error)
+		createLog("transfer/getCryptoToCryptoTransfer", null, error.message)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 

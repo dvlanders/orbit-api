@@ -1,7 +1,7 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const fetchRequestInfortmaionById = async(id) => {
+const fetchCryptoToCryptoRequestInfortmaionById = async(id) => {
         let { data: request, error:requestError } = await supabaseCall(() => supabase
             .from('crypto_to_crypto')
             .select('*')
@@ -16,7 +16,7 @@ const fetchRequestInfortmaionById = async(id) => {
     return request
 }
 
-const fetchRequestInfortmaionByRequestId = async(requestId) => {
+const fetchCryptoToCryptoRequestInfortmaionByRequestId = async(requestId) => {
     let { data: request, error:requestError } = await supabaseCall(() => supabase
         .from('crypto_to_crypto')
         .select('*')
@@ -31,7 +31,7 @@ if (!request) return null
 return request
 }
 
-const checkIsRequestIdAlreadyUsed = async(requestId, senderUserId) => {
+const checkIsCryptoToCryptoRequestIdAlreadyUsed = async(requestId, senderUserId) => {
     let { data: request, error:requestError } = await supabaseCall(() => supabase
         .from('crypto_to_crypto')
         .select('*')
@@ -47,7 +47,7 @@ const checkIsRequestIdAlreadyUsed = async(requestId, senderUserId) => {
 }
 
 module.exports = {
-    fetchRequestInfortmaionById,
-    fetchRequestInfortmaionByRequestId,
-    checkIsRequestIdAlreadyUsed
+    fetchCryptoToCryptoRequestInfortmaionById,
+    fetchCryptoToCryptoRequestInfortmaionByRequestId,
+    checkIsCryptoToCryptoRequestIdAlreadyUsed
 }
