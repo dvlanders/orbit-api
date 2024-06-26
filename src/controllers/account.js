@@ -15,6 +15,8 @@ const { supportedRail, OnRampRail } = require('../util/account/activateOnRampRai
 const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAch');
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
+const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
+const fetchRailFunctionsMap = require('../util/account/getAccount/utils/fetchRailFunctionMap');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -367,84 +369,22 @@ exports.getAccount = async (req, res) => {
 	}
 
 	// get user id from path parameter
-	const { userId, accountId, railType } = req.query;
+	const { accountId, railType } = req.query;
 
 	try {
-		if (!['usOnRamp', 'usOffRamp', 'euOffRamp'].includes(railType)) {
+		if (!railType in fetchRailFunctionsMap) {
 			return res.status(400).json({ error: 'Invalid accountType' });
 		}
 
-		// if the account type is usOfframp or euOfframp, get the account from the bridge_external_accounts table
-		if (railType === 'usOffRamp' || railType === 'euOffRamp') {
-			const currency = railType == "usOffRamp" ? "usd" : "eur"
-			const { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
-				.from('bridge_external_accounts')
-				.select('id, created_at, currency, bank_name, account_owner_name, account_owner_type, account_type, beneficiary_street_line_1, beneficiary_street_line_2, beneficiary_city, beneficiary_state, beneficiary_postal_code, beneficiary_country, iban, business_identifier_code, bank_country, account_number, routing_number')
-				.eq('id', accountId)
-				.eq('currency', currency)
-				.maybeSingle()
-			)
+		const func = fetchRailFunctionsMap[railType]
+		const accountInfo = await func(accountId)
 
-			if (bridgeExternalAccountError) {
-				return res.status(400).json({ error: 'Could not find this account in the database. Please make sure that the account has been created for this user.' });
-			}
-			if (!bridgeExternalAccountData) return res.status(404).json({ error: "No account found for the requested type" })
-
-			const bankInfo = {
-				createdAt: bridgeExternalAccountData.created_at,
-				currency: bridgeExternalAccountData.currency,
-				bankName: bridgeExternalAccountData.bank_name,
-				accountOwnerName: bridgeExternalAccountData.account_owner_name,
-				accountOwnerType: bridgeExternalAccountData.account_owner_type,
-				accountType: bridgeExternalAccountData.account_type,
-				beneficiaryStreetLine1: bridgeExternalAccountData.beneficiary_street_line_1,
-				beneficiaryStreetLine2: bridgeExternalAccountData.beneficiary_street_line_2,
-				beneficiaryCity: bridgeExternalAccountData.beneficiary_city,
-				beneficiaryState: bridgeExternalAccountData.beneficiary_state,
-				beneficiaryPostalCode: bridgeExternalAccountData.beneficiary_postal_code,
-				beneficiaryCountry: bridgeExternalAccountData.beneficiary_country,
-				iban: bridgeExternalAccountData.iban,
-				businessIdentifierCode: bridgeExternalAccountData.business_identifier_code,
-				bankCountry: bridgeExternalAccountData.bank_country,
-				accountNumber: bridgeExternalAccountData.account_number,
-				routingNumber: bridgeExternalAccountData.routing_number,
-				railType
-			}
-
-			return res.status(200).json(bankInfo);
-		}
-
-		// if the account type is usOnramp, get the account from the checkbook_bank_accounts table
-		if (railType === 'usOnRamp') {
-			let { data: checkbookAccount, error } = await supabaseCall(() => supabase
-				.from('checkbook_accounts')
-				.select('id, created_at, account_type, account_number, routing_number, bank_name')
-				.eq("id", accountId)
-				.eq("connected_account_type", "PLAID")
-				.maybeSingle())
-
-			if (error) throw error
-			if (!checkbookAccount) return res.status(404).json({ error: "No account found for the requested type" })
-
-			const bankInfo = {
-				id: checkbookAccount.id,
-				createdAt: checkbookAccount.createdAt,
-				accountType: checkbookAccount.account_type,
-				accountNumber: checkbookAccount.account_number,
-				routingNumber: checkbookAccount.routing_number,
-				bankName: checkbookAccount.bank_name,
-				railType: 'usOnramp'
-			}
-
-
-			return res.status(200).json(bankInfo);
-		}
-
-		// return error if the account id with that account type is not recognized
-		return res.status(400).json({ error: `Unknown rail type: ${railType}` });
+		if (!accountInfo) return res.status(404).json({ error: "No account found" }) 
+		accountInfo.railType = railType
+		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
-		createLog("account", userId, error.message, error)
+		createLog("account", null, error.message, error)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
