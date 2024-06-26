@@ -13,7 +13,7 @@ const createBridgeExternalAccountErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
 	INVALID_FIELD: "INVALID_FIELD",
 	INTERNAL_ERROR: "INTERNAL_ERROR",
-	INACTIVE_USER: "INACTIVE_USER"
+	INACTIVE_USER: "INACTIVE_USER",
 };
 
 class createBridgeExternalAccountError extends Error {
@@ -132,7 +132,25 @@ exports.createBridgeExternalAccount = async (
 				message: "Bank account created successfully",
 				rawResponse: bridgeData
 			};
-		} else {
+		} else if (bridgeResponse.status == 403){
+			// for user that not yet approved for off ramp in EU
+			return {
+				status: 400,
+				type: createBridgeExternalAccountErrorType.INACTIVE_USER,
+				message: "Please review and complete the listed requirements to gain access to the SEPA/Euro services.",
+				source: bridgeData.source,
+				rawResponse: bridgeData
+			};
+		} else if (bridgeResponse.status == 400){
+			return {
+				status: 400,
+				type: createBridgeExternalAccountErrorType.INVALID_FIELD,
+				message: "Please resubmit the following parameters that are either missing or invalid",
+				source: bridgeData.source,
+				rawResponse: bridgeData
+			};
+		}
+		else {
 			return {
 				status: bridgeResponse.status,
 				type: createBridgeExternalAccountErrorType.INTERNAL_ERROR,
