@@ -46,7 +46,7 @@ const create = async (user, user_id, checkbook_user_id, type) => {
 	if (response.ok) {
 		const { error: checkbookUserError } = await supabase
 			.from('checkbook_users')
-			.insert({
+			.upsert({
 				checkbook_user_id: responseBody.user_id,
 				checkbook_id: responseBody.id,
 				api_key: responseBody.key,
@@ -55,7 +55,7 @@ const create = async (user, user_id, checkbook_user_id, type) => {
 				user_id: user_id,
 				checkbook_response: responseBody,
 				type
-			});
+			}, {onConflict: "checkbook_user_id"});
 
 		if (checkbookUserError) {
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
