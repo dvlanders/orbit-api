@@ -10,10 +10,10 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
     try{
         const transferInfo = await bridgePlaidRailCheck(sourceAccountId, sourceCurrency, destinationCurrency, chain, sourceUserId, destinationUserId)
         // insert record
-        const {data: initialRecord, error: initialRecordError} = await supabase
+        const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
             .insert({
-                id: requestId,
+                request_id: requestId,
                 user_id: sourceUserId,
                 destination_user_id: destinationUserId,
                 amount: amount,
@@ -22,6 +22,8 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 destination_checkbook_user_id: transferInfo.recipient_checkbook_user_id,
                 status: "CREATED"
             })
+            .select()
+            .single())
         if (initialRecordError) {
             createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, initialRecordError.message)
             throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, initialRecordError.message)
@@ -36,7 +38,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
             "name": destinationUserId,
             "amount": amount,
             "account": transferInfo.plaid_checkbook_id,
-            "description": requestId
+            "description": initialRecord.id
         }
     
         const options = {
@@ -58,7 +60,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                     checkbook_response: responseBody,
                     status: "SUBMISSION_FAILED"
                 })
-                .eq("id", requestId)
+                .eq("id", initialRecord.id)
             createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, responseBody.message, responseBody)
             throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
         }
@@ -71,7 +73,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 checkbook_payment_id: responseBody.id,
                 checkbook_status: responseBody.status
             })
-            .eq("id", requestId)
+            .eq("id", initialRecord.id)
             .select()
             .single())
         
@@ -87,6 +89,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
         const result = {
             transferType: transferType.FIAT_TO_CRYPTO,
             transferDetails: {
+                id: initialRecord.id,
                 requestId,
                 sourceUserId,
                 destinationUserId,

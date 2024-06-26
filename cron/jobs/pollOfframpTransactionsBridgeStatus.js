@@ -13,13 +13,12 @@ const updateStatus = async(transaction) => {
 			.eq('user_id', transaction.destination_user_id)
 			.single()
 		)
-
+		
 		if (destnationBridgeCustomerDataError) {
 			console.error('Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
 			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
 			return;
 		}
-
 
 		try {
 			const response = await fetch(`${BRIDGE_URL}/v0/customers/${destnationBridgeCustomerData.bridge_id}/liquidation_addresses/${transaction.to_bridge_liquidation_address_id}/drains`, {
@@ -29,13 +28,12 @@ const updateStatus = async(transaction) => {
 				}
 			});
 
+			const responseBody = await response.json();
 			if (!response.ok) {
-				const errorData = await response.json();
-				createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', errorData);
-				
+				createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch response from bridge', responseBody);
+				return
 			}
 
-			const responseBody = await response.json();
 			const data = responseBody.data.find(item => item.deposit_tx_hash == transaction.transaction_hash);
 			if (data === undefined) return
 			if (transaction.bridge_transaction_status == data.state) return

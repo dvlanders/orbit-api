@@ -4,7 +4,7 @@ const { requiredFields, acceptedFields, supportedCurrency } = require("../util/t
 const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
 const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privilegeCheck");
-const { fetchRequestInfortmaion } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
+const { checkIsCryptoToCryptoRequestIdAlreadyUsed } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
 const { transfer, CreateCryptoToCryptoTransferErrorType, CreateCryptoToCryptoTransferError } = require("../util/transfer/cryptoToCrypto/main/transfer");
 const { fetchUserWalletInformation } = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
 const { getRequestRecord } = require("../util/transfer/cryptoToCrypto/main/getRequestRecord");
@@ -17,6 +17,11 @@ const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } =
 const CryptoToBankSupportedPairFunctions = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
 const FiatToCryptoSupportedPairFunctions = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
+const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
+const fetchCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchTransferRecord");
+const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoRequestInfortmaionByRequestId, fetchFiatToCryptoRequestInfortmaionById } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
+const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchTransferRecord");
+const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -59,10 +64,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!recipientWalletInformation) return res.status(400).json({ error: `recipient wallet not found` })
 			fields.recipientAddress = recipientWalletInformation.address
 		}
-		// check is uuid valid
-		if (!isUUID(requestId)) return res.status(400).json({ error: "requestId is not a valid uuid" })
 		// check is request_id exist
-		if (await fetchRequestInfortmaion(requestId)) return res.status(400).json({ error: `Request for requestId: ${requestId} is already exist, use get endpoint to get the status instead` })
+		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
 		// peform transfer
 		const receipt = await transfer(fields)
 
@@ -84,24 +88,18 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const { requestId } = req.query
+	const { id } = req.query
 
 	try {
 		// check if requestRecord exist
-		const requestRecord = await fetchRequestInfortmaion(requestId)
-		if (!requestRecord) return res.status(404).json({ error: "request not found" })
-		// fetch up to date record
-		const receipt = await getRequestRecord(requestRecord)
-		return res.status(200).json(receipt)
+		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id)
+		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}`})
+		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		console.error(error)
+		createLog("transfer/getCryptoToCryptoTransfer", null, error.message)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
-
-
-
-
 
 }
 
@@ -125,16 +123,10 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 	}
 	// check is request id valid
 	if (!isUUID(requestId)) return res.status(400).json({error: "invalid requestId"})
+	const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+	if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` }) 
 	// check if authorized
 	if (! (await verifyUser(sourceUserId, profileId))) return res.status(401).json({error: "Not authorized"})
-	const {data: offRampRecord, error: offRampRecordError} = await supabaseCall(() => supabase
-		.from("offramp_transactions")
-		.select("id")
-		.eq("id", requestId)
-		.maybeSingle()
-	)
-	if (offRampRecordError) throw  offRampRecordError
-	if (offRampRecord) return res.status(400).json({error: "requestId already existed"})
 
 	// check is chain supported
 	if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` }); 
@@ -177,6 +169,25 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 }
 
+exports.getCryptoToFiatTransfer = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const { id } = req.query
+	if (!id) return res.status(400).json({error: `id is required`})
+	try{
+		const transactionRecord = await fetchCryptoToFiatTransferRecord(id)
+
+		if (!transactionRecord) return res.status(404).json({error: `No transaction found for id: ${id}`})
+		return res.status(200).json(transactionRecord)
+
+	}catch (error){
+		createLog("transfer/getCryptoToFiatTransfer", null, error.message)
+		return res.status(500).json({error: `Unexpected error happened`})
+	}
+
+}
+
 exports.createFiatToCryptoTransfer = async(req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -206,16 +217,8 @@ exports.createFiatToCryptoTransfer = async(req, res) => {
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 		// check is request id valid
-		if (!isUUID(requestId)) return res.status(400).json({error: "invalid requestId"})
-		const {data: onRampRecord, error: onRampRecordError} = await supabaseCall(() => supabase
-			.from("onramp_transactions")
-			.select("id")
-			.eq("id", requestId)
-			.maybeSingle()
-		)
-		if (onRampRecordError) throw  onRampRecordError
-		if (onRampRecord) return res.status(400).json({error: "requestId already existed"})
-
+		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` }) 
 		//check is source-destination pair supported
 		const pair = `${sourceCurrency}-${destinationCurrency}`
 		if (!(pair in FiatToCryptoSupportedPairFunctions)) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` }); 
@@ -234,6 +237,25 @@ exports.createFiatToCryptoTransfer = async(req, res) => {
 		}
 		createLog("transfer/createFiatToCryptoTransfer", sourceUserId, error.message)
 		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
+}
+
+exports.getFiatToCryptoTransfer = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const { id } = req.query
+	if (!id) return res.status(400).json({error: `id is required`})
+	try{
+		const transactionRecord = await fetchFiatToCryptoTransferRecord(id)
+
+		if (!transactionRecord) return res.status(404).json({error: `No transaction found for id: ${id}`})
+		return res.status(200).json(transactionRecord)
+
+	}catch (error){
+		createLog("transfer/getCryptoToFiatTransfer", null, error.message)
+		return res.status(500).json({error: `Unexpected error happened`})
 	}
 
 }

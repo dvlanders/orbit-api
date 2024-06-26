@@ -23,7 +23,7 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
     const { data: initialBastionTransfersInsertData, error: initialBastionTransfersInsertError } = await supabase
     .from('offramp_transactions')
     .insert({
-        id: requestId,
+        request_id: requestId,
         user_id: sourceUserId,
         destination_user_id: destinationUserId,
         amount: amount,
@@ -49,7 +49,7 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
     const decimals = currencyDecimal[sourceCurrency]
     const transferAmount = toUnitsString(amount, decimals)
     const bodyObject = {
-        requestId: requestId,
+        requestId: initialBastionTransfersInsertData.id,
         userId: sourceUserId,
         contractAddress: contractAddress,
         actionName: "transfer",
@@ -83,7 +83,7 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
         bastion_transaction_status: "FAILED",
         transaction_status: "FAILED_ONCHAIN",
         })
-        .match({ id: requestId })
+        .match({ id: initialBastionTransfersInsertData.id })
         
         if (updateError) {
             createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
@@ -106,7 +106,7 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
         bastion_transaction_status: responseBody.status,
         transaction_status: "SUBMITTED_ONCHAIN"
     })
-    .match({ id: requestId })
+    .match({ id: initialBastionTransfersInsertData.id })
 
     if (updateError) {
         createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
@@ -115,6 +115,7 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
     const result = {
         transferType: transferType.CRYPTO_TO_FIAT,
         transferDetails: {
+            id: initialBastionTransfersInsertData.id,
             requestId,
             sourceUserId,
             destinationUserId,
