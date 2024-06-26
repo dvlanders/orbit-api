@@ -5,7 +5,7 @@ const { authorize } = require("../util/middleware");
 module.exports = (router) => {
 
 
-	router.get("/ping", user.getPing);
+	router.get("/ping", authorize, user.getPing);
 
 	router.post("/user/create", authorize, user.createHifiUser);
 
