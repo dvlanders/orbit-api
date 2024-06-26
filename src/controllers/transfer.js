@@ -110,21 +110,23 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId } = req.query;
 	const fields = req.body;
-	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency } = fields
+	const {profileId} = req.query
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId } = fields
 	try{
 	// filed validation
-	const requiredFields = ["requestId", "userId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
+	const requiredFields = ["requestId", "sourceUserId", "destinationUserId","destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
 	const acceptedFields = {
-		"requestId": "string", "userId": "string", "destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string"
+		"requestId": "string", "sourceUserId": "string", "destinationUserId": "string","destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string"
 	}
-	const { missingFields, invalidFields } = fieldsValidation({...fields, userId}, requiredFields, acceptedFields)
+	const { missingFields, invalidFields } = fieldsValidation({...fields}, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
 		return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
 	// check is request id valid
 	if (!isUUID(requestId)) return res.status(400).json({error: "invalid requestId"})
+	// check if authorized
+	if (! (await verifyUser(sourceUserId, profileId))) return res.status(401).json({error: "Not authorized"})
 	const {data: offRampRecord, error: offRampRecordError} = await supabaseCall(() => supabase
 		.from("offramp_transactions")
 		.select("id")
@@ -145,7 +147,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 	const { data: walletData, error: walletError } = await supabase
 		.from('bastion_wallets')
 		.select('address')
-		.eq('user_id', userId)
+		.eq('user_id', sourceUserId)
 		.eq('chain', chain)
 		.maybeSingle();
 
@@ -157,7 +159,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 	}
 
 	const { transferFunc } = CryptoToBankSupportedPairFunctions[pair]
-	const {isExternalAccountExist, transferResult} = await transferFunc(requestId, userId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletData.address)
+	const {isExternalAccountExist, transferResult} = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletData.address)
 	if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 	return res.status(200).json(transferResult);
 
@@ -169,7 +171,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		createLog("transfer/crypto-to-fiat", userId, error.message)
+		createLog("transfer/crypto-to-fiat", sourceUserId, error.message)
 		return res.status(500).json({ error: 'Unexpected error happened' });
 	}
 
