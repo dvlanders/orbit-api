@@ -69,11 +69,11 @@ const AccountActions = {
 		actions: ["update"]
 	},
 	UPDATE_AGE: {
-		fieldsToResubmit: ["date_of_birth"],
+		fieldsToResubmit: ["dateOfBirth"],
 		actions: ["update"]
 	},
 	UPDATE_TIN: {
-		fieldsToResubmit: ["tax_identification_number"],
+		fieldsToResubmit: ["taxIdentificationNumber"],
 		actions: ["update"]
 	},
 	UPDATE_ADDRESS: {
@@ -81,17 +81,21 @@ const AccountActions = {
 		actions: ["update"]
 	},
 	ID_UPLOAD: {
-		fieldsToResubmit: ["gov_id"],
+		fieldsToResubmit: ["govId"],
 		actions: ["update"]
 	},
 	POR_UPLOAD: {
-		fieldsToResubmit: ["proof_of_residency"],
+		fieldsToResubmit: ["proofOfResidency"],
 		actions: ["update"]
 	},
 	RE_ONBOARD: {
 		fieldsToResubmit: [],
 		actions: ["invalid_customer_info"]
 	},
+	SIGNED_AGREEMENT_ID:{
+		fieldsToResubmit: ["signedAgreementId"],
+		actions: ["update"]
+	}
 }
 
 const RejectionReasons = {
@@ -145,29 +149,28 @@ const RejectionReasons = {
 	"Potential elder abuse": [AccountActions.MANUAL_REVIEW],
 	"Inconsistent or incomplete information.": [AccountActions.MANUAL_REVIEW],
 	"Missing or invalid proof of address": [AccountActions.POR_UPLOAD],
+	"The customer has not accepted the terms of service": [AccountActions.SIGNED_AGREEMENT_ID]
   };
 
 const extractActionsAndFields = (reasons) => {
-	const requiredActions = []
-	const fieldsToResubmit = []
+	const requiredActions = new Set([])
+	const fieldsToResubmit = new Set([])
     if (reasons){
       reasons.map((reason) => {
         const actions = RejectionReasons[reason]
         if (!actions){
-			requiredActions = [...requiredActions, ...AccountActions.MANUAL_REVIEW.actions]
-			fieldsToResubmit = [...fieldsToResubmit, ...AccountActions.MANUAL_REVIEW.fieldsToResubmit]
+			AccountActions.MANUAL_REVIEW.actions.map((requiredAction) => requiredActions.add(requiredAction))
+			AccountActions.MANUAL_REVIEW.fieldsToResubmit.map((requiredField) => fieldsToResubmit.add(requiredField))
         }
     	else{
           actions.map((action) => {
-            if (actions.indexOf(action) === -1){
-				requiredActions = [...requiredActions, ...action.actions]
-				fieldsToResubmit = [...fieldsToResubmit, ...action.fieldsToResubmit]
-            }
+			action.actions.map((requiredAction) => requiredActions.add(requiredAction))
+			action.fieldsToResubmit.map((requiredField) => fieldsToResubmit.add(requiredField))
           })
         }
       })
     }
-	return {requiredActions, fieldsToResubmit}
+	return {requiredActions: Array.from(requiredActions), fieldsToResubmit: Array.from(fieldsToResubmit)}
   }
 
 const additionalRequirementsMap = {
@@ -177,11 +180,11 @@ const additionalRequirementsMap = {
 	},
 	"tos_acceptance": {
 		actions: ["update"],
-		fields: ["signed_agreement_id"]
+		fields: ["signedAgreementId"]
 	},
 	"kyc_with_proof_of_address":{
 		actions: ["update"],
-		fields: ["proof_of_residency"]
+		fields: ["proofOfResidency"]
 	}
 }
 
@@ -190,17 +193,17 @@ const getEndorsementStatus = (endorsements, name) => {
 	const endorsement = endorsements.find(e => e.name === name);
 	const status = endorsement ? endorsement.status : undefined;
 	const additionalRequirements = endorsement && endorsement.additional_requirements ? endorsement.additional_requirements : [];
-	let actions = []
-	let fields = []
+	const actions = new Set([])
+	const fields = new Set([])
 	
 	additionalRequirements.map((r) => {
 		const action = additionalRequirementsMap[r]
 		if (action){
-			actions = [...actions, ...action.actions]
-			fields= [...fields, ...action.fields]
+			action.actions.map((requiredAction) => actions.add(requiredAction))
+			action.fields.map((requiredAField) => fields.add(requiredAField))
 		}
 	})
-	return {status, actions, fields}
+	return {status, actions: Array.from(actions), fields: Array.from(fields)}
 }
 
 module.exports = {
