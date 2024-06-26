@@ -151,7 +151,8 @@ const userKycColumnsMap = {
 	govIdBackPath: "gov_id_back_path",
 	proofOfResidencyPath: "proof_of_residency_path",
 	proofOfOwnershipPath: "proof_of_ownership_path",
-	formationDocPath: "formation_doc_path"
+	formationDocPath: "formation_doc_path",
+	signedAgreementId: "signed_agreement_id"
 }
 
 
@@ -222,14 +223,6 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		createLog("user/util/informationUploadForCreateUser", "", error.message, error);
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
 	}
-
-
-
-
-
-
-
-
 
 	// create bridge record and input signed agreement id
 	try {
@@ -306,8 +299,6 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		}
 	});
 
-
-
 	// Handle specific data type transformations if necessary, e.g., date of birth
 	if (fields.dateOfBirth) {
 		kycData.date_of_birth = new Date(fields.dateOfBirth).toISOString();
@@ -319,7 +310,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	// update the user_kyc table record  
 	const { data, error } = await supabaseCall(() => supabase
 		.from('user_kyc')
-		.insert([kycData]) // Ensure kycData is used correctly here
+		.insert(kycData) // Ensure kycData is used correctly here
 		.select()
 	);
 
@@ -441,7 +432,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 
 	// check if required fields are uploaded
 	// check if the field that is passsed is a valid field that we allow updates on
-	const { missingFields, invalidFields } = fieldsValidation(fields, [], acceptedFields)
+	const { missingFields, invalidFields } = fieldsValidation(fields, [], individualAcceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
 		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}

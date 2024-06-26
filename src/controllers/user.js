@@ -462,6 +462,10 @@ exports.updateHifiUser = async (req, res) => {
 		try {
 			await informationUploadForUpdateUser(userId, fields)
 		} catch (error) {
+			if (! (error instanceof InformationUploadError)){
+				createLog("user/utils/informationUploadForUpdateUser", error.message, error)
+				return res.status(500).json({error: "Unexpected error happened"})
+			}
 			return res.status(error.status).json(error.rawResponse)
 		}
 		// STEP 2: Update the 3rd party providers with the new information
@@ -615,7 +619,7 @@ exports.updateHifiUser = async (req, res) => {
 				status: bridgeResult.euRamp.status,
 				actionNeeded: {
 					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
+					fieldsToResubmit: [...bridgeResult.euRamp.fields, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.fieldsToResubmit],
 				},
 				message: ''
 			},
@@ -636,6 +640,7 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(status).json(updateHifiUserResponse);
 	} catch (error) {
 		const { user_id: userId } = req.query
+		console.log(error)
 		createLog("user/update", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
