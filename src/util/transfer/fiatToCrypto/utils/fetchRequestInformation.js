@@ -1,14 +1,13 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const fetchRequestInfortmaionById = async(id) => {
+const fetchFiatToCryptoRequestInfortmaionById = async(id) => {
         let { data: request, error:requestError } = await supabaseCall(() => supabase
-            .from('crypto_to_crypto')
+            .from('onramp_transactions')
             .select('*')
             .eq("id", id)
             .maybeSingle())
         
-    
 
     if (requestError) throw requestError
     if (!request) return null
@@ -16,9 +15,9 @@ const fetchRequestInfortmaionById = async(id) => {
     return request
 }
 
-const fetchRequestInfortmaionByRequestId = async(requestId) => {
+const fetchFiatToCryptoRequestInfortmaionByRequestId = async(requestId) => {
     let { data: request, error:requestError } = await supabaseCall(() => supabase
-        .from('crypto_to_crypto')
+        .from('onramp_transactions')
         .select('*')
         .eq("request_id", requestId)
         .maybeSingle())
@@ -31,12 +30,12 @@ if (!request) return null
 return request
 }
 
-const checkIsRequestIdAlreadyUsed = async(requestId, senderUserId) => {
+const checkIsFiatToCryptoRequestIdAlreadyUsed = async(requestId, userId) => {
     let { data: request, error:requestError } = await supabaseCall(() => supabase
-        .from('crypto_to_crypto')
+        .from('onramp_transactions')
         .select('*')
         .eq("request_id", requestId)
-        .eq("sender_user_id", senderUserId)
+        .eq("user_id", userId)
         .maybeSingle())
 
 
@@ -47,7 +46,7 @@ const checkIsRequestIdAlreadyUsed = async(requestId, senderUserId) => {
 }
 
 module.exports = {
-    fetchRequestInfortmaionById,
-    fetchRequestInfortmaionByRequestId,
-    checkIsRequestIdAlreadyUsed
+    fetchFiatToCryptoRequestInfortmaionById,
+    fetchFiatToCryptoRequestInfortmaionByRequestId,
+    checkIsFiatToCryptoRequestIdAlreadyUsed
 }
