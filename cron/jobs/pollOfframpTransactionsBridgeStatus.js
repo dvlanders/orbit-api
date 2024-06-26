@@ -7,22 +7,22 @@ const BRIDGE_URL = process.env.BRIDGE_URL;
 
 
 const updateStatus = async(transaction) => {
-	const { data: bridgeCustomerData, error: bridgeCustomerError } = await supabaseCall(() => supabase
+	const { data: destnationBridgeCustomerData, error: destnationBridgeCustomerDataError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.select('bridge_id')
-			.eq('user_id', transaction.user_id)
+			.eq('user_id', transaction.destination_user_id)
 			.single()
 		)
 
-		if (bridgeCustomerError) {
-			console.error('Failed to fetch a single bridge id for the given user id', bridgeCustomerError);
-			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', bridgeCustomerError);
+		if (destnationBridgeCustomerDataError) {
+			console.error('Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
+			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
 			return;
 		}
 
 
 		try {
-			const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/liquidation_addresses/${transaction.to_bridge_liquidation_address_id}/drains`, {
+			const response = await fetch(`${BRIDGE_URL}/v0/customers/${destnationBridgeCustomerData.bridge_id}/liquidation_addresses/${transaction.to_bridge_liquidation_address_id}/drains`, {
 				method: 'GET',
 				headers: {
 					'Api-Key': BRIDGE_API_KEY
@@ -38,6 +38,7 @@ const updateStatus = async(transaction) => {
 			const responseBody = await response.json();
 			const data = responseBody.data.find(item => item.deposit_tx_hash == transaction.transaction_hash);
 			if (data === undefined) return
+			if (transaction.bridge_transaction_status == data.state) return
 
 			// Map the data.state to our transaction_status
 			const hifiOfframpTransactionStatus =
@@ -77,7 +78,7 @@ async function pollOfframpTransactionsBridgeStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
-		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash')
+		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id')
 		// .eq("bridge_transaction_status", "")
 		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
 	)

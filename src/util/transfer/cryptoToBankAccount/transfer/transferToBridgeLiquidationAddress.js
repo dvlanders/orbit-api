@@ -11,8 +11,9 @@ const { transferType } = require("../../utils/transfer");
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-const transferToBridgeLiquidationAddress = async(requestId, userId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress) => {
-    const {isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId} = await bridgeRailCheck(destinationAccountId, sourceCurrency, destinationCurrency, chain)
+const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress) => {
+    if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
+    const {isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId} = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
     if (!isExternalAccountExist) return {isExternalAccountExist: false, transferResult: null}
     
@@ -23,7 +24,8 @@ const transferToBridgeLiquidationAddress = async(requestId, userId, destinationA
     .from('offramp_transactions')
     .insert({
         id: requestId,
-        user_id: userId,
+        user_id: sourceUserId,
+        destination_user_id: destinationUserId,
         amount: amount,
         chain: chain,
         from_wallet_address: getAddress(sourceWalletAddress),
@@ -39,7 +41,7 @@ const transferToBridgeLiquidationAddress = async(requestId, userId, destinationA
 
     if (initialBastionTransfersInsertError) {
         console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
-        createLog("transfer/util/transferToBridgeLiquidationAddress", userId, initialBastionTransfersInsertError.message)
+        createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, initialBastionTransfersInsertError.message)
         throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
     }
 
@@ -48,7 +50,7 @@ const transferToBridgeLiquidationAddress = async(requestId, userId, destinationA
     const transferAmount = toUnitsString(amount, decimals)
     const bodyObject = {
         requestId: requestId,
-        userId: userId,
+        userId: sourceUserId,
         contractAddress: contractAddress,
         actionName: "transfer",
         chain: chain,
@@ -84,11 +86,11 @@ const transferToBridgeLiquidationAddress = async(requestId, userId, destinationA
         .match({ id: requestId })
         
         if (updateError) {
-            createLog("transfer/util/transferToBridgeLiquidationAddress", userId, updateError.message)
+            createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
             throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
         }
 
-       createLog("transfer/util/transfer", userId, responseBody.message, responseBody)
+       createLog("transfer/util/transfer", sourceUserId, responseBody.message, responseBody)
        if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
            throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
        }else{
@@ -107,14 +109,15 @@ const transferToBridgeLiquidationAddress = async(requestId, userId, destinationA
     .match({ id: requestId })
 
     if (updateError) {
-        createLog("transfer/util/transferToBridgeLiquidationAddress", userId, updateError.message)
+        createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
         throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
     }
     const result = {
         transferType: transferType.CRYPTO_TO_FIAT,
         transferDetails: {
             requestId,
-            userId,
+            sourceUserId,
+            destinationUserId,
             chain,
             sourceCurrency,
             amount,

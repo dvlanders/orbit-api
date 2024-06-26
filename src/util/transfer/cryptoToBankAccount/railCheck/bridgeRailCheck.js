@@ -2,7 +2,18 @@ const { virtualAccountPaymentRailToChain, chainToVirtualAccountPaymentRail } = r
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const bridgeRailCheck = async(externalAccountId, sourceCurrency, destinationCurrency, chain) => {
+const bridgeRailCheck = async(destinationUserId, externalAccountId, sourceCurrency, destinationCurrency, chain) => {
+    // check if the destination user own the external account
+    let { data: bridgeExternalAccount, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
+        .from('bridge_external_accounts')
+        .select('id')
+        .eq("user_id", destinationUserId)
+        .eq("id", externalAccountId)
+        .maybeSingle())
+    if (bridgeExternalAccountError) throw bridgeExternalAccountError
+    if (!bridgeExternalAccount) throw {isExternalAccountExist: false, liquidationAddress: null, liquidationAddressId: null}
+        
+    // check if liquidationAddress is created
     const { data: liquidationAddressData, error: liquidationAddressError } = await supabaseCall(() => supabase
 		.from('bridge_liquidation_addresses')
 		.select('id, address, currency, destination_currency, chain, liquidation_address_id, bridge_external_accounts (bridge_external_account_id)')
@@ -11,8 +22,6 @@ const bridgeRailCheck = async(externalAccountId, sourceCurrency, destinationCurr
         .eq('destination_currency', destinationCurrency)
         .eq('chain', chainToVirtualAccountPaymentRail[chain])
 		.maybeSingle())
-    
-    console.log(liquidationAddressData)
     
     if (liquidationAddressError) throw liquidationAddressError
     if (!liquidationAddressData) return {isExternalAccountExist: false, liquidationAddress: null, liquidationAddressId: null}
