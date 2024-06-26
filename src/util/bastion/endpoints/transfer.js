@@ -3,10 +3,10 @@ const { currencyContractAddress } = require("../../common/blockchain");
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 
-exports.transfer = async(requestRecord) => {
+exports.transfer = async(id, requestRecord) => {
 
     const bodyObject = {
-		requestId: requestRecord.requestId,
+		requestId: id,
 		userId: requestRecord.senderUserId,
 		contractAddress: requestRecord.contractAddress,
 		actionName: "transfer",

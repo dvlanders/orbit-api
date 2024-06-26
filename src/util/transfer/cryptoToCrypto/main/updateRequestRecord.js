@@ -2,7 +2,7 @@ const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer");
 
-exports.updateRequestRecord = async(requestId, requestInfo) => {
+exports.updateRequestRecord = async(id, requestInfo) => {
 
     const { data, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
@@ -10,7 +10,7 @@ exports.updateRequestRecord = async(requestId, requestInfo) => {
         ...requestInfo,
         updated_at: new Date().toISOString(),
     },)
-    .eq('request_id', requestId)
+    .eq('id', id)
     .select("*")
     .single()
     )

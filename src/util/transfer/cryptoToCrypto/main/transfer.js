@@ -16,12 +16,13 @@ const transfer = async(fields) => {
     const contractAddress = currencyContractAddress[fields.chain][fields.currency]
     fields.contractAddress = contractAddress
 
+    let record
     
     // insert request record
     const requestRecord = await insertRequestRecord(fields)
     
     // transfer
-    const response = await bastionTransfer(fields)
+    const response = await bastionTransfer(requestRecord.id, fields)
     const responseBody = await response.json()
     if (!response.ok) {
          // update to database
@@ -29,7 +30,7 @@ const transfer = async(fields) => {
             bastion_response: responseBody,
             status: "FAILED"
         }
-        const record = await updateRequestRecord(fields.requestId, toUpdate)
+        record = await updateRequestRecord(requestRecord.id, toUpdate)
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
         if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
             throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
@@ -44,12 +45,13 @@ const transfer = async(fields) => {
         status: responseBody.status,
         transaction_hash: responseBody.transactionHash,
     }
-    const record = await updateRequestRecord(fields.requestId, toUpdate)
+    record = await updateRequestRecord(requestRecord.id, toUpdate)
 
     // return receipt
     const receipt =  {
         transferType: transferType.CRYPTO_TO_CRYPTO,
         transferDetails: {
+            id: record.id,
             requestId: fields.requestId,
             senderUserId: fields.senderUserId,
             recipientUserId: fields.recipientUserId || null,
