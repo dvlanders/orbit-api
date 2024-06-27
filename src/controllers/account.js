@@ -370,6 +370,7 @@ exports.getAccount = async (req, res) => {
 
 	// get user id from path parameter
 	const { accountId, railType } = req.query;
+	if (!railType || !accountId) return res.status(400).json({ error: 'railType and accountId is required' });
 
 	try {
 		if (!railType in fetchRailFunctionsMap) {
