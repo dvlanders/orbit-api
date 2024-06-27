@@ -671,21 +671,26 @@ exports.generateToSLink = async (req, res) => {
 		if (!idempotencyKey) return res.status(400).json({ error: "idempotencyKey is required" })
 		// check is template exist
 		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
-		const encodedUrl = encodeURIComponent(redirectUrl)
+		let encodedUrl
+		if (redirectUrl){	
+			encodedUrl = `&redirectUrl=${encodeURIComponent(redirectUrl)}`
+		}else{
+			encodedUrl = ""
+		}
 		// check is idempotencyKey already exist
 		const { isValid, isExpired, data } = await checkSignedAgreementId(idempotencyKey)
 		if (isExpired) return res.status(400).json({ error: "Session expired, please generate with new idempotencyKey" })
 		if (!isValid) return res.status(400).json({ error: "Invalid or used idempotencyKey" })
 		// valid and unexpired record
 		if (data) {
-			const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}`
+			const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}`
 			return res.status(200).json({ url: tosLink })
 		}
 
 		// insert signed agreement record 
 		const signedAgreementInfo = await generateNewSignedAgreementRecord(idempotencyKey, templateId)
 		// generate hosted tos page
-		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}&redirectUrl=${encodedUrl}&templateId=${templateId}`
+		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}&templateId=${templateId}`
 
 		return res.status(200).json({ url: tosLink, sessionToken: signedAgreementInfo.session_token })
 	} catch (error) {
