@@ -14,7 +14,8 @@ const getBastionUser = require('../util/bastion/main/getBastionUser');
 const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
 const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID } = require('../util/common/fieldsValidation');
-const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
+const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
+const { updateBusinessBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
 const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
 const { v4: uuidv4 } = require("uuid");
@@ -462,19 +463,26 @@ exports.updateHifiUser = async (req, res) => {
 		try {
 			await informationUploadForUpdateUser(userId, fields)
 		} catch (error) {
-			if (! (error instanceof InformationUploadError)){
+			if (!(error instanceof InformationUploadError)) {
 				createLog("user/utils/informationUploadForUpdateUser", error.message, error)
-				return res.status(500).json({error: "Unexpected error happened"})
+				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 			return res.status(error.status).json(error.rawResponse)
 		}
 		// STEP 2: Update the 3rd party providers with the new information
 
+
+		// if the user is an individual, update the individual bridge customer
+		// if the user is a business, update the business bridge customer
+		const bridgeFunction = fields.userType === "individual"
+			? updateIndividualBridgeCustomer
+			: updateBusinessBridgeCustomer;
+
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
 		// update customer object for providers
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
 			updateBastionUser(userId), // TODO: implement this function in utils and import before using it here
-			updateIndividualBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
+			bridgeFunction(userId), // TODO: implement this function in utils and import before using it here
 			updateCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
 		])
 
