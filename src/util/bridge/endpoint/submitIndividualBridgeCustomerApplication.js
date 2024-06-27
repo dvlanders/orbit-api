@@ -133,7 +133,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 		}));
 
 		let url = `${BRIDGE_URL}/v0/customers`
-		let opstions = {
+		let options = {
 			method: 'POST',
 			headers: {
 				'Idempotency-Key': idempotencyKey,
@@ -145,7 +145,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 		// for update
 		if (isUpdate) {
 			url += `/${bridgeId}`
-			opstions = {
+			options = {
 				method: 'PUT',
 				headers: {
 					'Api-Key': BRIDGE_API_KEY,
@@ -155,8 +155,10 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 			}
 		}
 
+		console.log('request body that was just used:', requestBody)
+
 		// call bridge endpoint
-		const response = await fetch(url, opstions);
+		const response = await fetch(url, options);
 		const responseBody = await response.json();
 		if (response.ok) {
 			// extract rejections

@@ -20,7 +20,7 @@ const individualRequiredFields = [
 	"city",
 	"postalCode",
 	"stateProvinceRegion",
-	"signedAgreementId",
+	// "signedAgreementId",
 	"ipAddress"
 ];
 
@@ -52,11 +52,11 @@ const individualAcceptedFields = {
 	"businessType": "string",
 	"website": "string",
 	"statementOfFunds": "string",
-	"isDao": "string",
-	"transmitsCustomerFunds": "string",
+	"isDao": "boolean",
+	"transmitsCustomerFunds": "boolean",
 	"complianceScreeningExplanation": "string",
 	"ipAddress": "string",
-	"signedAgreementId": "string",
+	// "signedAgreementId": "string",
 	"userType": "string"
 };
 
@@ -71,14 +71,18 @@ const businessRequiredFields = [
 	"city",
 	"postalCode",
 	"stateProvinceRegion",
-	"signedAgreementId",
+	// "signedAgreementId",
 	"ipAddress",
 	"formationDoc",
 	"sourceOfFunds",
 	"ipAddress",
 	"ultimateBeneficialOwners",
 	"ipAddress",
-	"ipAddress",
+	"transmitsCustomerFunds",
+	"complianceScreeningExplanation",
+	"proofOfOwnership",
+	"website",
+	"businessDescription",
 
 
 ];
@@ -110,11 +114,11 @@ const businessAcceptedFields = {
 	"website": "string",
 	"sourceOfFunds": "string",
 	"statementOfFunds": "string",
-	"isDao": "string",
-	"transmitsCustomerFunds": "string",
+	"isDao": "boolean",
+	"transmitsCustomerFunds": "boolean",
 	"complianceScreeningExplanation": "string",
 	"ipAddress": "string",
-	"signedAgreementId": "string",
+	// "signedAgreementId": "string",
 	"userType": "string",
 	"ultimateBeneficialOwners": "array"
 
@@ -152,7 +156,7 @@ const userKycColumnsMap = {
 	proofOfResidencyPath: "proof_of_residency_path",
 	proofOfOwnershipPath: "proof_of_ownership_path",
 	formationDocPath: "formation_doc_path",
-	signedAgreementId: "signed_agreement_id"
+	// signedAgreementId: "signed_agreement_id"
 }
 
 
@@ -364,7 +368,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 					}
 				}));
 
-				// Return the processed UBO data
+				// Return the processed UBO data with is_primary set to true only for the first owner
 				return {
 					user_id: userId,
 					legal_first_name: owner.legalFirstName,
@@ -373,7 +377,6 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 					compliance_email: owner.complianceEmail,
 					address_line_1: owner.addressLine1,
 					address_line_2: owner.addressLine2,
-
 					city: owner.city,
 					state_province_region: owner.stateProvinceRegion,
 					postal_code: owner.postalCode,
@@ -386,8 +389,10 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 					gov_id_front_path: owner.gov_id_front_path,
 					gov_id_back_path: owner.gov_id_back_path,
 					proof_of_residency_path: owner.proof_of_residency_path,
+					is_primary: index === 0 // sets the first ubo's is_primary to true and sets the rest to false
 				};
 			}));
+
 
 
 			// Insert the processed UBO data into the database
@@ -494,7 +499,6 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 		.eq("user_id", userId)
 		.select()
 	)
-	console.log('*************data', data)
 	if (error) {
 		console.error(error)
 		createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)

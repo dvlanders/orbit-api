@@ -30,6 +30,7 @@ const submitBastionKyc = async (userId) => {
 		const response = await submitKycData(userId)
 		const responseBody = await response.json();
 
+
 		if (response.ok) {
 			const { error: newBastionUserError } = await supabaseCall(() => supabase
 				.from('bastion_users')
@@ -77,7 +78,7 @@ const submitBastionKyc = async (userId) => {
 				message: ""
 			}
 		} else {
-			throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, response.message, response)
+			throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, response.message, responseBody)
 		}
 
 	} catch (error) {
@@ -87,7 +88,7 @@ const submitBastionKyc = async (userId) => {
 			walletStatus: CustomerStatus.INACTIVE,
 			invalidFileds: [],
 			actions: [],
-			message: "unexpected error happened when creating user wallet, please contact hifi for more information"
+			message: "unexpected error happened when creating user wallet or during compliance checks, please contact hifi for more information"
 		}
 	}
 

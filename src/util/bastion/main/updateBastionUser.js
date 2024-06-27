@@ -59,7 +59,7 @@ const updateBastionUser = async (userId) => {
 			walletStatus: CustomerStatus.INACTIVE,
 			invalidFileds: [],
 			actions: [],
-			message: "unexpected error happened when creating user wallet, please contact hifi for more information"
+			message: "unexpected error happened when creating user wallet or during compliance checks, please contact hifi for more information"
 		}
 	}
 

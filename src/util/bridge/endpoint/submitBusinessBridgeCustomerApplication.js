@@ -34,7 +34,6 @@ class createBridgeCustomerError extends Error {
 
 exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUpdate = false) => {
 
-	console.log("createBusinessBridgeCustomer", userId, bridgeId, isUpdate)
 	let invalidFields = [];
 	if (isUpdate && !bridgeId) {
 		throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, "Using update but bridge is not provided");
@@ -137,9 +136,6 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 
 
 
-		console.log('***ultimateBeneficialOwnersList', ultimateBeneficialOwnersList
-
-		)
 		const idempotencyKey = v4();
 		// pre fill info
 		const requestBody = {
@@ -159,7 +155,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			},
 			website: userKyc.website,
 			tax_identification_number: userKyc.tax_identification_number,
-			signed_agreement_id: userKyc.signed_agreement_id, //FIXME: we will pass a hardcoded param to bridge in the future
+			has_accepted_terms_of_service: true,
 			is_dao: userKyc.is_dao,
 			transmits_customer_funds: userKyc.transmits_customer_funds,
 			statement_of_funds: userKyc.statement_of_funds,
@@ -186,7 +182,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 
 
 		let url = `${BRIDGE_URL}/v0/customers`
-		let opstions = {
+		let options = {
 			method: 'POST',
 			headers: {
 				'Idempotency-Key': idempotencyKey,
@@ -198,7 +194,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		// for update
 		if (isUpdate) {
 			url += `/${bridgeId}`
-			opstions = {
+			options = {
 				method: 'PUT',
 				headers: {
 					'Api-Key': BRIDGE_API_KEY,
@@ -209,7 +205,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		}
 
 		// call bridge endpoint
-		const response = await fetch(url, opstions);
+		const response = await fetch(url, options);
 		const responseBody = await response.json();
 
 		if (response.ok) {
