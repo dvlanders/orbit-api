@@ -8,16 +8,17 @@ const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
 
 
-const transfer = async(fields) => {
+const bastionCryptoTransfer = async(fields) => {
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
     const unitsAmount = toUnitsString(fields.amount, decimal) 
     fields.unitsAmount = unitsAmount
     const contractAddress = currencyContractAddress[fields.chain][fields.currency]
     fields.contractAddress = contractAddress
-
-    let record
+    fields.provider = "BASTION"
     
+    let record
+    let failedReason = ""
     // insert request record
     const requestRecord = await insertRequestRecord(fields)
     
@@ -26,26 +27,29 @@ const transfer = async(fields) => {
     const responseBody = await response.json()
     if (!response.ok) {
          // update to database
-        toUpdate = {
+        const toUpdate = {
             bastion_response: responseBody,
             status: "FAILED"
         }
         record = await updateRequestRecord(requestRecord.id, toUpdate)
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
         if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
-            throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
+            failedReason = "Transfer amount exceeds balance"
+            // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
         }else{
-            throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message)
+            failedReason = "Not enough gas, please contact HIFI for more information"
+            // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message)
         }
+    }else{
+        // update to database
+        const toUpdate = {
+            bastion_response: responseBody,
+            status: responseBody.status,
+            transaction_hash: responseBody.transactionHash,
+        }
+        record = await updateRequestRecord(requestRecord.id, toUpdate)
     }
 
-    // update to database
-    toUpdate = {
-        bastion_response: responseBody,
-        status: responseBody.status,
-        transaction_hash: responseBody.transactionHash,
-    }
-    record = await updateRequestRecord(requestRecord.id, toUpdate)
 
     // return receipt
     const receipt =  {
@@ -64,6 +68,7 @@ const transfer = async(fields) => {
             updatedAt: record.updatedAt,
             status: record.status,
             contractAddress: contractAddress,
+            failedReason
         }
     }
 
@@ -72,7 +77,7 @@ const transfer = async(fields) => {
 
 
 module.exports = {
-    transfer,
+    bastionCryptoTransfer,
     CreateCryptoToCryptoTransferError,
     CreateCryptoToCryptoTransferErrorType
 

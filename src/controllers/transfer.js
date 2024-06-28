@@ -5,7 +5,7 @@ const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
 const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privilegeCheck");
 const { checkIsCryptoToCryptoRequestIdAlreadyUsed } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
-const { transfer, CreateCryptoToCryptoTransferErrorType, CreateCryptoToCryptoTransferError } = require("../util/transfer/cryptoToCrypto/main/transfer");
+const { transfer, CreateCryptoToCryptoTransferErrorType, CreateCryptoToCryptoTransferError } = require("../util/transfer/cryptoToCrypto/main/bastionTransfer");
 const { fetchUserWalletInformation } = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
 const { getRequestRecord } = require("../util/transfer/cryptoToCrypto/main/getRequestRecord");
 const fetch = require('node-fetch');
@@ -22,6 +22,7 @@ const fetchCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAc
 const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoRequestInfortmaionByRequestId, fetchFiatToCryptoRequestInfortmaionById } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
 const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
+const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -48,27 +49,29 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!recipientUserId && !recipientAddress) return res.status(400).json({ error: `Should provide either recipientUserId or recipientAddress` })
 		if (recipientUserId && recipientAddress) return res.status(400).json({ error: `Should only provide either recipientUserId or recipientAddress` })
 		// check if chain is supported
-		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Chain ${chain} is not supported` })
+		if (!chain in cryptoToCryptoSupportedFunctions) return res.status(400).json({ error: `Chain ${chain} is not supported` })
 		// check if currency is supported
-		if (!supportedCurrency.has(currency)) return res.status(400).json({ error: `Currency ${currency} is not supported` })
-		// fetch sender wallet address information
-		if (recipientUserId) {
-			const senderBastionInformation = await fetchUserWalletInformation(senderUserId, chain)
-			if (!senderBastionInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
-		}
-		// check privilege
-		if (!(await isBastionKycPassed(senderUserId)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
-		// check recipient wallet address if using recipientUserId
-		if (recipientUserId) {
-			const recipientWalletInformation = await fetchUserWalletInformation(recipientUserId, chain)
-			if (!recipientWalletInformation) return res.status(400).json({ error: `recipient wallet not found` })
-			fields.recipientAddress = recipientWalletInformation.address
-		}
+		if (!currency in cryptoToCryptoSupportedFunctions[chain]) return res.status(400).json({ error: `Currency ${currency} is not supported` })
 		// check is request_id exist
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
-		// peform transfer
-		const receipt = await transfer(fields)
+		// get transfer function
+		const { transferFunc, walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
+		// fetch sender wallet address information
+		const senderWalletInformation = await fetchUserWalletInformation(senderUserId, chain, walletProviderTable)
+		if (!senderWalletInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+
+		// check privilege
+		if (!(await isBastionKycPassed(senderUserId)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+
+		// check recipient wallet address if using recipientUserId
+		if (recipientUserId) {
+			const recipientWalletInformation = await fetchUserWalletInformation(recipientUserId, chain, walletProviderTable)
+			if (!recipientWalletInformation) return res.status(400).json({ error: `recipient wallet not found` })
+			fields.recipientAddress = recipientWalletInformation.address
+		}
+		// transfer
+		const receipt = await transferFunc(fields)
 
 		return res.status(200).json(receipt)
 	} catch (error) {

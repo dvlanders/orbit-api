@@ -1,9 +1,9 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const fetchUserWalletInformation = async(userId, chain) => {
+const fetchUserWalletInformation = async(userId, chain, providerTable) => {
     const {data: userWallet, error: userWalletError} = await supabaseCall(() => supabase
-        .from("bastion_wallets")
+        .from(providerTable)
         .select("*")
         .eq("user_id", userId)
         .eq("chain", chain)

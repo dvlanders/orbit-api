@@ -18,7 +18,8 @@ exports.insertRequestRecord = async(requestInfo) => {
             chain: requestInfo.chain,
             units_amount: requestInfo.unitsAmount,
             currency: requestInfo.currency,
-            contract_address: requestInfo.contractAddress
+            contract_address: requestInfo.contractAddress,
+            provider: requestInfo.provider
         },
     )
     .select("*")
