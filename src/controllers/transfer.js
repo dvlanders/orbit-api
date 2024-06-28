@@ -32,6 +32,11 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+	if (process.env.NODE_ENV === "development") {
+		return res.status(200).json({ message: "This endpoint is only available in production" });
+	}
+
 	// should gather senderUserId, profileId, amount, requestId, recipientUserId, recipientAddress, chain
 	const { profileId } = req.query
 	const fields = req.body
@@ -91,6 +96,13 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+
+	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+	if (process.env.NODE_ENV === "development") {
+		return res.status(200).json({ message: "This endpoint is only available in production" });
+	}
+
 	const { id } = req.query
 
 	try {
@@ -109,6 +121,11 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+	if (process.env.NODE_ENV === "development") {
+		return res.status(200).json({ message: "This endpoint is only available in production" });
 	}
 
 
@@ -179,6 +196,13 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+
+	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+	if (process.env.NODE_ENV === "development") {
+		return res.status(200).json({ message: "This endpoint is only available in production" });
+	}
+
 	const { id } = req.query
 	if (!id) return res.status(400).json({ error: `id is required` })
 	try {
@@ -198,9 +222,15 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+
+	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+	if (process.env.NODE_ENV === "development") {
+		return res.status(200).json({ message: "This endpoint is only available in production" });
+	}
+
 	const { profileId } = req.query
 	const fields = req.body
-	console.log(fields)
 	const { requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId } = fields
 	try {
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "amount", "sourceCurrency", "destinationCurrency", "chain", "sourceAccountId", "isInstant"]
@@ -251,6 +281,13 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+
+	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+	if (process.env.NODE_ENV === "development") {
+		return res.status(200).json({ message: "This endpoint is only available in production" });
+	}
+
 	const { id } = req.query
 	if (!id) return res.status(400).json({ error: `id is required` })
 	try {
