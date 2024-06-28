@@ -20,7 +20,9 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 plaid_checkbook_id: transferInfo.plaid_checkbook_id,
                 bridge_virtual_account_id: transferInfo.bridge_virtual_account_id,
                 destination_checkbook_user_id: transferInfo.recipient_checkbook_user_id,
-                status: "CREATED"
+                status: "CREATED",
+                fiat_provider: "CHECKBOOK",
+                crypto_provider: "BRIDGE"
             })
             .select()
             .single())
