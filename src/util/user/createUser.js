@@ -20,7 +20,7 @@ const individualRequiredFields = [
 	"city",
 	"postalCode",
 	"stateProvinceRegion",
-	// "signedAgreementId",
+	"signedAgreementId",
 	"ipAddress"
 ];
 
@@ -56,7 +56,7 @@ const individualAcceptedFields = {
 	"transmitsCustomerFunds": "boolean",
 	"complianceScreeningExplanation": "string",
 	"ipAddress": "string",
-	// "signedAgreementId": "string",
+	"signedAgreementId": "string",
 	"userType": "string"
 };
 
@@ -71,7 +71,7 @@ const businessRequiredFields = [
 	"city",
 	"postalCode",
 	"stateProvinceRegion",
-	// "signedAgreementId",
+	"signedAgreementId",
 	"ipAddress",
 	"formationDoc",
 	"sourceOfFunds",
@@ -118,7 +118,7 @@ const businessAcceptedFields = {
 	"transmitsCustomerFunds": "boolean",
 	"complianceScreeningExplanation": "string",
 	"ipAddress": "string",
-	// "signedAgreementId": "string",
+	"signedAgreementId": "string",
 	"userType": "string",
 	"ultimateBeneficialOwners": "array"
 
