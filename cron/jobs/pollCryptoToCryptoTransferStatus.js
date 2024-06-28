@@ -19,8 +19,6 @@ const updateStatus = async(transaction) => {
 			const response = await fetch(url, options);
 			const data = await response.json();
 
-			console.log('data', data);
-
 			if (response.status === 404 || !response.ok) {
 				const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
 				console.error(errorMessage);
@@ -54,13 +52,14 @@ const updateStatus = async(transaction) => {
 
 
 
-async function pollCryptoToCryptoTransferStatus() {
+async function pollBastionCryptoToCryptoTransferStatus() {
 	console.log('Polling Bastion API for crypto transaction status updates...');
     try{
         // Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
         const { data: cryptoTransactionData, error: cryptoTransactionDataError } = await supabaseCall(() => supabase
             .from('crypto_to_crypto')
             .select('id, status, sender_user_id')
+            .eq('provider', "BASTION")
             .neq('status', BastionTransferStatus.CONFIRMED)
             .neq('status', BastionTransferStatus.FAILED)
         )
@@ -79,4 +78,4 @@ async function pollCryptoToCryptoTransferStatus() {
     }
 }
 
-module.exports = pollCryptoToCryptoTransferStatus;
+module.exports = pollBastionCryptoToCryptoTransferStatus;

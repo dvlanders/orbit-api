@@ -12,7 +12,7 @@ const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress) => {
-    if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
+    // if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
     const {isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId} = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
     if (!isExternalAccountExist) return {isExternalAccountExist: false, transferResult: null}
@@ -35,6 +35,8 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
         transaction_status: 'NOT_INITIATED',
         contract_address: contractAddress,
         action_name: "transfer",
+        fiat_provider: "BRIDGE",
+        crypto_provider: "BASTION"
     })
     .select()
     .single()
@@ -74,6 +76,24 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
     const response = await fetch(url, options);
 	const responseBody = await response.json();
 
+    const result = {
+        transferType: transferType.CRYPTO_TO_FIAT,
+        transferDetails: {
+            id: initialBastionTransfersInsertData.id,
+            requestId,
+            sourceUserId,
+            destinationUserId,
+            chain,
+            sourceCurrency,
+            amount,
+            destinationCurrency,
+            destinationAccountId,
+            createdAt: initialBastionTransfersInsertData.created_at,
+            contractAddress: contractAddress,
+            failedReason: ""
+        }
+    }
+
     // fail to transfer
     if (!response.ok) {
        const { error: updateError } = await supabase
@@ -92,45 +112,35 @@ const transferToBridgeLiquidationAddress = async(requestId, sourceUserId, destin
 
        createLog("transfer/util/transfer", sourceUserId, responseBody.message, responseBody)
        if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
+            result.transferDetails.status = "FAILED_ONCHAIN"
+            result.transferDetails.failedReason = "transfer amount exceeds balance"
            throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
        }else{
+            result.transferDetails.status = "FAILED_ONCHAIN"
+            result.transferDetails.failedReason = "Not enough gas, please contact HIFI for more information"
            throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, responseBody.message)
        }
+   }else{
+        // bastion might return 200 response with failed transaction
+        result.transferDetails.transactionHash = responseBody.transactionHash
+        result.transferDetails.status = responseBody.status == "FAILED" ? "FAILED_ONCHAIN" : "SUBMITTED_ONCHAIN"
+
+       const { error: updateError } = await supabase
+       .from('offramp_transactions')
+       .update({
+            bastion_response: responseBody,
+            transaction_hash: responseBody.transactionHash,
+            bastion_transaction_status: responseBody.status,
+            transaction_status: result.transferDetails.status
+        })
+        .match({ id: initialBastionTransfersInsertData.id })
+    
+        if (updateError) {
+            createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
+            throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
+        }
    }
 
-   const { error: updateError } = await supabase
-   .from('offramp_transactions')
-   .update({
-        bastion_response: responseBody,
-        transaction_hash: responseBody.transactionHash,
-        bastion_transaction_status: responseBody.status,
-        transaction_status: "SUBMITTED_ONCHAIN"
-    })
-    .match({ id: initialBastionTransfersInsertData.id })
-
-    if (updateError) {
-        createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
-        throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
-    }
-    const result = {
-        transferType: transferType.CRYPTO_TO_FIAT,
-        transferDetails: {
-            id: initialBastionTransfersInsertData.id,
-            requestId,
-            sourceUserId,
-            destinationUserId,
-            chain,
-            sourceCurrency,
-            amount,
-            destinationCurrency,
-            destinationAccountId,
-            transactionHash: responseBody.transaction_hash,
-            createdAt: initialBastionTransfersInsertData.created_at,
-            status: "SUBMITTED_ONCHAIN",
-            contractAddress: contractAddress,
-        }
-
-    }
 
     return {isExternalAccountExist: true, transferResult: result}
 

@@ -665,17 +665,16 @@ exports.generateToSLink = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	console.log("generateToSLink")
 	try {
 		const DASHBOARD_URL = process.env.DASHBOARD_URL
 		const { profileId } = req.query
-		const { redirectUrl, idempotencyKey, templateId } = req.body
+		let { redirectUrl, idempotencyKey, templateId } = req.body
 
 		// Validate idempotencyKey directly using regex for UUID v4
 		if (!isUUID(idempotencyKey)) return res.status(404).json({ error: "idempotencyKey must be a uuid v4" })
 
-
-		if (!templateId) return res.status(400).json({ error: "templateId is required" })
+		// fallback to HIFI template
+		if (!templateId) templateId = "2fb2da24-472a-4e5b-b160-038d9dc82a40"
 		if (!idempotencyKey) return res.status(400).json({ error: "idempotencyKey is required" })
 		// check is template exist
 		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
