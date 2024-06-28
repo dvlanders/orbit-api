@@ -508,10 +508,9 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 }
 
 const ipCheck = async (ip) => {
-	return true
-	const locationRes = await fetch(`https://ipapi.co/${ip}/json/`);
+	const locationRes = await fetch(`https://ipapi.co/${ip}/json/?key=${process.env.IP_API_SECRET}`);
+	const locaionData = await locationRes.json();
 	if (locationRes.ok) {
-		const locaionData = await locationRes.json();
 		if (sanctionedCountries.includes(locaionData.country_code_iso3)) {
 			return false
 		}
@@ -520,6 +519,7 @@ const ipCheck = async (ip) => {
 			return false
 		}
 	} else {
+		console.error(locaionData)
 		createLog("user/util/ipCheck", "", "failed to get ip information")
 		throw new Error("failed to get ip information")
 	}
