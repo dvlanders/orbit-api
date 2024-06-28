@@ -155,7 +155,6 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 			}
 		}
 
-		console.log('request body that was just used:', requestBody)
 
 		// call bridge endpoint
 		const response = await fetch(url, options);
@@ -166,7 +165,6 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 				return reason.developer_reason
 			})
 			const { requiredActions, fieldsToResubmit } = extractActionsAndFields(reasons)
-			console.log({ requiredActions, fieldsToResubmit })
 			//extract base, sepa status
 			const { status: baseStatus, actions: baseActions, fields: baseFields } = getEndorsementStatus(responseBody.endorsements, "base")
 			const { status: sepaStatus, actions: sepaActions, fields: sepaFields } = getEndorsementStatus(responseBody.endorsements, "sepa")
