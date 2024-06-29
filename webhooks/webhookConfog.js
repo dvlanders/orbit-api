@@ -3,7 +3,8 @@ const webhookEventActionType = {
 }
 
 const webhookEventType = {
-    "USER.STATUS": "USER.STATUS"
+    "USER.STATUS": "USER.STATUS",
+    "TRANSFER.CRYPTO_TO_CRYPTO": "TRANSFER.CRYPTO_TO_CRYPTO"
 }
 
 

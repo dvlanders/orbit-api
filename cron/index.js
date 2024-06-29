@@ -9,6 +9,6 @@ const pollBastionCryptoToCryptoTransferStatus = require('./jobs/pollCryptoToCryp
 // cron.schedule('*/60 * * * * *', pollOfframpTransactionsBastionStatus); // every 60 seconds
 // cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 // cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds
-// cron.schedule('*/60 * * * * *', pollBastionCryptoToCryptoTransferStatus); // every 60 seconds
+cron.schedule('*/60 * * * * *', pollBastionCryptoToCryptoTransferStatus); // every 60 seconds
 
 

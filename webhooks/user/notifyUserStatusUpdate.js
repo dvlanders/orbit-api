@@ -176,12 +176,6 @@ const getUserStatus = async (userId) => {
 
 const notifyUserStatusUpdate = async(userId) => {
 
-    const userStatus = await getUserStatus(userId)
-    const message = {
-        eventAction: webhookEventActionType.UPDATE,
-        eventType: webhookEventType["USER.STATUS"],
-        data: userStatus
-    }
     // get profileId
 
     let { data: user, error: userError } = await supabaseCall(() => supabase
@@ -194,6 +188,13 @@ const notifyUserStatusUpdate = async(userId) => {
     if (userError) {
         createLog("notifyUserStatusUpdate", userId, userError.message)
         return
+    }
+    
+    const userStatus = await getUserStatus(userId)
+    const message = {
+        eventAction: webhookEventActionType.UPDATE,
+        eventType: webhookEventType["USER.STATUS"],
+        data: userStatus
     }
 
     await sendMessage(user.profile_id, message)
