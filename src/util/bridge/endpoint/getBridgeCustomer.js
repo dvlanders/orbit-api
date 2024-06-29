@@ -58,17 +58,17 @@ const getBridgeCustomer = async(userId) => {
             return {
                 status: 200,
                 customerStatus: {
-                    status: CustomerStatus.FAILED,
+                    status: CustomerStatus.INACTIVE,
                     actions: ["update"],
                     fields: []
                 },
                 usRamp: {
-                    status: CustomerStatus.FAILED,
+                    status: CustomerStatus.INACTIVE,
                     actions: [],
                     fields: []
                 },
                 euRamp: {
-                    status: CustomerStatus.FAILED,
+                    status: CustomerStatus.INACTIVE,
                     actions: [],
                     fields: []
                 },

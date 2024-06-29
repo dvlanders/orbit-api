@@ -332,9 +332,9 @@ exports.getHifiUser = async (req, res) => {
 
 
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			getBastionUser(userId), // TODO: implement this function in utils and import before using it here
-			getBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
-			getCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
+			getBastionUser(userId),
+			getBridgeCustomer(userId),
+			getCheckbookUser(userId)
 		])
 
 		// Bastion status

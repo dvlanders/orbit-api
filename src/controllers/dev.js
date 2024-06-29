@@ -1,4 +1,6 @@
+const {sendMessage} = require("../../webhooks/sendWebhookMessage");
 const supabase = require("../util/supabaseClient");
+const jwt = require("jsonwebtoken")
 
 const uploadFile = async (file, path) => {
     
@@ -62,11 +64,29 @@ exports.privateRoute = async(req, res) => {
     return res.status(200).json({message: "ha"})
 }
 
-exports.testSupabaseWebhook = async(req, res) => {
+exports.testwebhook = async(req, res) => {
     if (req.method !== "POST"){
         return res.status(405).json({ error: 'Method not allowed' });
     }
+    try {
+        // console.log(req.headers)
+        const token = req.headers['authorization'].split(' ')[1];
 
-    console.log(req.body.record)
-    return res.status(200).json({message: "Success"})
+        // Verify the token
+        jwt.verify(token, "this-is-a-webhook-secret", (err, decoded) => {
+            if (err) {
+                console.error('Failed to verify token:', err.message);
+                throw new Error("wrong token")
+            } else {
+                console.log('Token is valid. Decoded payload:', decoded);
+            }
+        });
+
+
+
+        return res.status(200).json({message: "Success"})
+    }catch (error){
+        return res.status(401).json({message: "Wrong token"})
+    }
 }
+

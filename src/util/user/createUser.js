@@ -156,7 +156,7 @@ const userKycColumnsMap = {
 	proofOfResidencyPath: "proof_of_residency_path",
 	proofOfOwnershipPath: "proof_of_ownership_path",
 	formationDocPath: "formation_doc_path",
-	// signedAgreementId: "signed_agreement_id"
+	signedAgreementId: "signed_agreement_id"
 }
 
 
@@ -164,6 +164,7 @@ const fieldsToColumnsMap = (fields, map) => {
 	const mapped = {}
 
 	Object.keys(fields).map((key) => {
+		if (! (key in map)) return
 		mapped[map[key]] = fields[key]
 	})
 
@@ -205,6 +206,11 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	// check ip address
 	const isIpAllowed = await ipCheck(fields.ipAddress);
 	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Unsupported area (ipAddress)" });
+
+	// check signedAgreementId only for prod
+	if (process.env.NODE_ENV == "production"){
+		if (!(await checkIsSignedAgreementIdSigned(fields.signedAgreementId))) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid signedAgreementId" });
+	}
 
 	// check if required fields are uploaded and validate field values
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);

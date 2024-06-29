@@ -2,6 +2,7 @@ const { supabaseCall } = require('../../src/util/supabaseWithRetry');
 const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
+const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -47,6 +48,8 @@ const updateStatus = async(transaction) => {
 								data.state === 'refunded' ? 'FAILED_FIAT_REFUNDED' :
 									data.state === 'error' ? 'FAILED_UNKNOWN' :
 										'UNKNOWN';
+			
+			if (hifiOfframpTransactionStatus == transaction.transaction_status) return
 
 			const { data: updateData, error: updateError } = await supabaseCall(() => supabase
 				.from('offramp_transactions')
@@ -54,16 +57,22 @@ const updateStatus = async(transaction) => {
 					transaction_status: hifiOfframpTransactionStatus,
 					bridge_transaction_status: data.state,
 					bridge_response: data,
+					updated_at: new Date().toISOString()
 				})
 				.eq('id', transaction.id)
+				.select()
+                .single()
 			)
 
 			if (updateError) {
 				console.error('Failed to update transaction status', updateError);
 				createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to update transaction status', updateError);
-			} else {
-				console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+				return
 			}
+				
+			console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+			await notifyCryptoToFiatTransfer(updateData)
+			
 		} catch (error) {
 			console.error('Failed to fetch transaction status from Bridge API', error);
 			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transaction status from Bridge API', error);
@@ -79,6 +88,7 @@ async function pollOfframpTransactionsBridgeStatus() {
 		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id')
 		// .eq("bridge_transaction_status", "")
 		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
+		.order('updated_at', {ascending: true})
 	)
 
 	if (offrampTransactionError) {

@@ -2,6 +2,7 @@ const { BastionTransferStatus } = require("../../src/util/bastion/utils/utils");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
+const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
@@ -25,7 +26,7 @@ const updateStatus = async(transaction) => {
 				createLog('pollCryptoToCryptoTransferStatus/updateStatus', null, errorMessage);
 				return
 			}
-
+            if (data.status == transaction.status) return
 			// If the hifiOfframpTransactionStatus is different from the current transaction_status or if the data.status is different than the transaction.bastion_transaction_status, update the transaction_status
             const { data: updateData, error: updateError } = await supabaseCall(() => supabase
                 .from('crypto_to_crypto')
@@ -35,14 +36,18 @@ const updateStatus = async(transaction) => {
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', transaction.id)
-            )
-
+                .select()
+                .single())
+            
             if (updateError) {
                 console.error('Failed to update transaction status', updateError);
                 createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update transaction status', updateError);
-            } else {
-                console.log('Updated transaction status for transaction ID', transaction.id, 'to', data.status);
+                return
             }
+
+            console.log('Updated transaction status for transaction ID', transaction.id, 'to', data.status);
+            await notifyCryptoToCryptoTransfer(updateData)
+            
 			
 		} catch (error) {
 			console.error('Failed to fetch transaction status from Bastion API', error);
@@ -58,10 +63,11 @@ async function pollBastionCryptoToCryptoTransferStatus() {
         // Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
         const { data: cryptoTransactionData, error: cryptoTransactionDataError } = await supabaseCall(() => supabase
             .from('crypto_to_crypto')
-            .select('id, status, sender_user_id')
+            .select('*')
             .eq('provider', "BASTION")
             .neq('status', BastionTransferStatus.CONFIRMED)
             .neq('status', BastionTransferStatus.FAILED)
+            .order('updated_at', {ascending: true})
         )
 
 
