@@ -42,7 +42,8 @@ const updateStatus = async(transaction) => {
 					.from('offramp_transactions')
 					.update({
 						transaction_status: hifiOfframpTransactionStatus,
-						bastion_transaction_status: data.status
+						bastion_transaction_status: data.status,
+						updated_at: new Date().toISOString()
 					})
 					.eq('id', transaction.id)
 					.select()
@@ -73,6 +74,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.select('id, user_id, transaction_status, bastion_transaction_status')
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
+		.order('updated_at', {ascending: true})
 	)
 
 

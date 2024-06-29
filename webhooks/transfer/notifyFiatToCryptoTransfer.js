@@ -5,7 +5,7 @@ const { transferType } = require("../../src/util/transfer/utils/transfer")
 const { sendMessage } = require("../sendWebhookMessage")
 const { webhookEventType, webhookEventActionType } = require("../webhookConfog")
 
-const notifyCryptoToFiatTransfer = async(record) => {
+const notifyFiatToCryptoTransfer = async(record) => {
 
     // get profileId
     let { data: user, error: userError } = await supabaseCall(() => supabase
@@ -22,46 +22,45 @@ const notifyCryptoToFiatTransfer = async(record) => {
 
 
     // get rail information
-    let { data: bridgeLiquidationAddress, error: bridgeLiquidationAddressError } = await supabaseCall(() => supabase
-    .from('bridge_liquidation_addresses')
-    .select('chain, currency, destination_currency')
-    .eq("liquidation_address_id", record.to_bridge_liquidation_address_id)
-    .single())
+    let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
+        .from('bridge_virtual_accounts')
+        .select('destination_payment_rail, source_currency, destination_currency')
+        .eq("virtual_account_id", record.bridge_virtual_account_id)
+        .single())
 
-    if (bridgeLiquidationAddressError) throw bridgeLiquidationAddressError
+    if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
 
-    // get external account information
+    // get source plaid account information
 
     let { data: bridgeExternalAccount, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
-        .from('bridge_external_accounts')
+        .from('checkbook_accounts')
         .select('id')
-        .eq("bridge_external_account_id", record.to_bridge_external_account_id)
+        .eq("checkbook_id", record.plaid_checkbook_id)
         .single())
 
     if (bridgeExternalAccountError) throw bridgeExternalAccountError
-
+        
     const receipt = {
-        transferType: transferType.CRYPTO_TO_FIAT,
+        transferType: transferType.FIAT_TO_CRYPTO,
         transferDetails: {
             id: record.id,
             requestId: record.request_id,
             sourceUserId: record.user_id,
             destinationUserId: record.destination_user_id,
-            chain: bridgeLiquidationAddress.chain,
-            sourceCurrency: bridgeLiquidationAddress.currency,
+            chain: bridgeVirtualAccount.destination_payment_rail,
+            sourceCurrency: bridgeVirtualAccount.source_currency,
             amount: record.amount,
-            destinationCurrency: bridgeLiquidationAddress.destination_currency,
-            destinationAccountId: bridgeExternalAccount.id,
-            transactionHash: record.transaction_hash,
+            destinationCurrency: bridgeVirtualAccount.destination_currency,
+            sourceAccountId: bridgeExternalAccount.id,
             createdAt: record.created_at,
-            status: record.transaction_status,
-            contractAddress: record.contract_address,
+            status: record.status,
         }
     }
 
+
     const message = {
         eventAction: webhookEventActionType.UPDATE,
-        eventType: webhookEventType["TRANSFER.CRYPTO_TO_FIAT"],
+        eventType: webhookEventType["TRANSFER.FIAT_TO_CRYPTO"],
         data: receipt
     }
 
@@ -70,4 +69,4 @@ const notifyCryptoToFiatTransfer = async(record) => {
 
 }
 
-module.exports = notifyCryptoToFiatTransfer
+module.exports = notifyFiatToCryptoTransfer

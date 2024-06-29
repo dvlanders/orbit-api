@@ -67,6 +67,7 @@ async function pollBastionCryptoToCryptoTransferStatus() {
             .eq('provider', "BASTION")
             .neq('status', BastionTransferStatus.CONFIRMED)
             .neq('status', BastionTransferStatus.FAILED)
+            .order('updated_at', {ascending: true})
         )
 
 

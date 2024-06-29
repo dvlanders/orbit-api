@@ -2,6 +2,7 @@ const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
+const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -48,19 +49,28 @@ const updateStatus = async(onrampTransaction) => {
         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
     }
 
+    if (status == onrampTransaction.status) return
+
     //update status
-    const { data: update, error: updateError } = await supabase
+    const { data: update, error: updateError } = await supabaseCall(() => supabase
     .from('onramp_transactions')
     .update({ 
         status,
         checkbook_status: responseBody.status,
-        checkbook_response: responseBody
+        checkbook_response: responseBody,
+        updated_at: new Date().toISOString()
     })
     .eq('id', onrampTransaction.id)
+    .select()
+    .single())
 
-    if (!updateError) {
+    if (updateError) {
         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
+        return
     }
+
+    await notifyFiatToCryptoTransfer(update)
+
 }
 
 
@@ -70,8 +80,9 @@ async function pollOnrampTransactionsCheckbookStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
-		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id')
+		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id, status')
         .or('status.eq.FIAT_SUBMITTED,checkbook_status.eq.IN_PROCESS')
+        .order('updated_at', {ascending: true})
 	)
 
 	if (onRampTransactionStatusError) {

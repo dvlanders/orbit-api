@@ -186,10 +186,10 @@ const notifyUserStatusUpdate = async(userId) => {
     )
 
     if (userError) {
-        createLog("notifyUserStatusUpdate", userId, userError.message)
+        createLog("webhook/notifyUserStatusUpdate", userId, userError.message)
         return
     }
-    
+
     const userStatus = await getUserStatus(userId)
     const message = {
         eventAction: webhookEventActionType.UPDATE,

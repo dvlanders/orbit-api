@@ -10,7 +10,6 @@ const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const updateStatus = async(customer) => {
-	console.log("update for: ",customer.user_id)
 	try {
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${customer.bridge_id}`, {
@@ -38,6 +37,7 @@ const updateStatus = async(customer) => {
 					bridge_response: data,
 					base_status: baseStatus,
 					sepa_status: sepaStatus,
+					updated_at: new Date().toISOString()
 				})
 				.eq('id', customer.id)
 			)
@@ -66,7 +66,8 @@ async function pollBridgeCustomerStatus() {
 		.neq('status', 'active')
 		.neq('status', 'rejected')
 		.neq('status', null)
-	)
+		.order('updated_at', {ascending: true}))
+	
 
 
 	if (bridgeCustomerError) {
