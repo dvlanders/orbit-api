@@ -3,12 +3,14 @@ const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const createBridgeVirtualAccount = require('../../src/util/bridge/endpoint/createBridgeVirtualAccount');
 const { getEndorsementStatus } = require('../../src/util/bridge/utils');
+const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const updateStatus = async(customer) => {
+	console.log("update for: ",customer.user_id)
 	try {
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${customer.bridge_id}`, {
@@ -43,11 +45,10 @@ const updateStatus = async(customer) => {
 			if (updateError) {
 				console.error('Failed to update bridge customer status', updateError);
 				createLog('pollBridgeCustomerStatus', null, 'Failed to update bridge customer status', updateError);
-			} else {
-				console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
+				return
 			}
-
-
+			console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
+			await notifyUserStatusUpdate(customer.user_id)
 		}
 	} catch (error) {
 		console.error('Failed to fetch customer status from Bridge API', error);

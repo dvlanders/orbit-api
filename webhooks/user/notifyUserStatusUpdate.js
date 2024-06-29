@@ -1,9 +1,17 @@
 const getBastionUser = require("../../src/util/bastion/main/getBastionUser");
 const getBridgeCustomer = require("../../src/util/bridge/endpoint/getBridgeCustomer");
 const getCheckbookUser = require("../../src/util/checkbook/endpoint/getCheckbookUser");
+const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
+const { sendMessage } = require("../sendWebhookMessage");
 const { webhookEventActionType, webhookEventType } = require("../webhookConfog");
+
+const Status = {
+	ACTIVE: "ACTIVE",
+	INACTIVE: "INACTIVE",
+	PENDING: "PENDING",
+}
 
 const getUserStatus = async (userId) => {
 
@@ -174,5 +182,22 @@ const notifyUserStatusUpdate = async(userId) => {
         eventType: webhookEventType["USER.STATUS"],
         data: userStatus
     }
+    // get profileId
 
+    let { data: user, error: userError } = await supabaseCall(() => supabase
+    .from('users')
+    .select('profile_id')
+    .eq("id", userId)
+    .single()
+    )
+
+    if (userError) {
+        createLog("notifyUserStatusUpdate", userId, userError.message)
+        return
+    }
+
+    await sendMessage(user.profile_id, message)
+        
 }
+
+module.exports = notifyUserStatusUpdate

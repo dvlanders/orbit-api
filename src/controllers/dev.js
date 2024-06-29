@@ -73,7 +73,7 @@ exports.testwebhook = async(req, res) => {
         const token = req.headers['authorization'].split(' ')[1];
 
         // Verify the token
-        jwt.verify(token, "this-is-a-fake-webhook-secret", (err, decoded) => {
+        jwt.verify(token, "this-is-a-webhook-secret", (err, decoded) => {
             if (err) {
                 console.error('Failed to verify token:', err.message);
                 throw new Error("wrong token")
@@ -95,8 +95,7 @@ exports.webhookTrigger = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     try {
-        const profileId = "75ecd730-8ae6-40f9-b0c1-71ce588f0023"
-        await reSendMessage("96abde4f-69aa-409e-ac5f-d4c23a8029cd")
+        await reSendMessage("899c081d-e55f-4efc-9fb7-6bb7c10a1ae7")
         return res.status(200).json({message: "success"})
     }catch (error){
         console.error(error)
