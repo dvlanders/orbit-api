@@ -1,9 +1,14 @@
+const { timeStamp } = require("console");
 const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
 const { supabaseCall } = require("../src/util/supabaseWithRetry");
 const jwt = require("jsonwebtoken")
 
-const sendMessage = async(profileId, requestBody) => {
+const initialRetryInterval = 60 * 1000 // 60 secs
+const maxRetryInterval = 3600 * 1000 // 1 hr
+
+
+const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=new Date()) => {
     //get client webhook url and secret
     let { data: webhookUrl, error: webhookUrlError } = await supabaseCall(() => supabase
         .from('webhook_urls')
@@ -18,7 +23,10 @@ const sendMessage = async(profileId, requestBody) => {
     if (!webhookUrl) return
 
     try {
-
+        const toSend = {
+            timeStamp: new Date().toISOString(),
+            ...requestBody
+        }
         // try sending the webhook message
         const token = jwt.sign(requestBody, webhookUrl.webhook_secret, { expiresIn: '1h' });
         const response = await fetch(webhookUrl.webhook_url, {
@@ -27,7 +35,7 @@ const sendMessage = async(profileId, requestBody) => {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify(toSend)
         })
         const responseBody = await response.json()
 
@@ -48,12 +56,17 @@ const sendMessage = async(profileId, requestBody) => {
         }
 
         if (!response.ok){
-            // insert record in queue
+            // insert failed record in queue
+            const now = new Date()
+            const jitter = Math.random() * Math.min(initialRetryInterval * numberOfRetries, maxRetryInterval)
             const { data: webhookQueue, error: webhookQueueError } = await supabaseCall(() => supabase
             .from('webhook_queue')
             .insert({
                 request_body: requestBody,
                 profile_id: profileId,
+                next_retry: new Date(now.getTime() + jitter).toISOString(),
+                number_of_retries: numberOfRetries + 1,
+                first_retry: firstRetry
             })
             .select())
 
@@ -64,6 +77,8 @@ const sendMessage = async(profileId, requestBody) => {
         }
         
     }catch (error){
+        const now = new Date()
+        const jitter = Math.random() * Math.min(initialRetryInterval * numberOfRetries, maxRetryInterval)
         createLog("webhook/sendMessage", "", error.message)
         // queue the message
         // insert record in queue
@@ -72,6 +87,9 @@ const sendMessage = async(profileId, requestBody) => {
         .insert({
             request_body: requestBody,
             profile_id: profileId,
+            next_retry: new Date(now.getTime() + jitter).toISOString(),
+            number_of_retries: numberOfRetries + 1,
+            first_retry: firstRetry
         })
         .select())
 
@@ -83,29 +101,6 @@ const sendMessage = async(profileId, requestBody) => {
 
 }
 
-const reSendMessage = async(requestId) => {
-    // get message
-    let { data: message, error: messageError } = await supabase
-    .from('webhook_queue')
-    .delete()
-    .eq("id", requestId)
-    .select('request_body, profile_id')
-    .maybeSingle()
-
-    if (messageError){
-        createLog("webhook/reSendMessage", "",messageError.message)
-        return
-    }
-    if (!message) {
-        createLog("webhook/reSendMessage", "",`No record found for id: ${requestId}`)
-        return
-    }
-
-    await sendMessage(message.profile_id, message.request_body)
-
-}
-
 module.exports = {
     sendMessage,
-    reSendMessage
 }

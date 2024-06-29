@@ -1,4 +1,4 @@
-const {sendMessage, reSendMessage} = require("../../webhooks/sendWebhookMessage");
+const {sendMessage} = require("../../webhooks/sendWebhookMessage");
 const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken")
 
@@ -90,16 +90,3 @@ exports.testwebhook = async(req, res) => {
     }
 }
 
-exports.webhookTrigger = async(req, res) => {
-    if (req.method !== "POST"){
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-    try {
-        await reSendMessage("899c081d-e55f-4efc-9fb7-6bb7c10a1ae7")
-        return res.status(200).json({message: "success"})
-    }catch (error){
-        console.error(error)
-        return res.status(500).json({error: error})
-    }
-
-}
