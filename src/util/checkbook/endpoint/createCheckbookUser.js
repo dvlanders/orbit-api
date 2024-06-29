@@ -26,6 +26,16 @@ class createCheckbookError extends Error {
 }
 
 const create = async (user, user_id, checkbook_user_id, type) => {
+	// check is checkbook user already created
+	let { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
+		.from('checkbook_users')
+		.select('id')
+		.eq("checkbook_user_id", checkbook_user_id)
+		.maybeSingle())
+	
+	if (checkbookUserError) throw checkbookUserError
+	if (checkbookUser) return
+		
 	const requestBody = {
 		"name": `${user.legal_first_name} ${user.legal_last_name}`,
 		"user_id": checkbook_user_id
@@ -63,11 +73,11 @@ const create = async (user, user_id, checkbook_user_id, type) => {
 
 		return 
 	} else {
-		if (response.status == 400 && responseBody.more_info.name) {
+		if (response.status == 400 && responseBody.more_info && responseBody.more_info.name) {
 			throw new createCheckbookError(createCheckbookErrorType.INVALID_FIELD, "Name is missing or invalid", responseBody)
 		} else if (response.status == 400 && responseBody.error == "User already exists") {
 			// fetch the created user
-			const response = await fetch(`${CHECKBOOK_URL}/user/list?page=1&per_page=10&q=${userId}`, {
+			const response = await fetch(`${CHECKBOOK_URL}/user/list?page=1&per_page=10&q=${user_id}`, {
 				headers: {
 					'Accept': 'application/json',
 					'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
