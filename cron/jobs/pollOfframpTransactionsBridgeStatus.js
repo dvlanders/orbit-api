@@ -47,6 +47,8 @@ const updateStatus = async(transaction) => {
 								data.state === 'refunded' ? 'FAILED_FIAT_REFUNDED' :
 									data.state === 'error' ? 'FAILED_UNKNOWN' :
 										'UNKNOWN';
+			
+			if (hifiOfframpTransactionStatus == transaction.transaction_status) return
 
 			const { data: updateData, error: updateError } = await supabaseCall(() => supabase
 				.from('offramp_transactions')
@@ -56,14 +58,19 @@ const updateStatus = async(transaction) => {
 					bridge_response: data,
 				})
 				.eq('id', transaction.id)
+				.select()
+                .single()
 			)
 
 			if (updateError) {
 				console.error('Failed to update transaction status', updateError);
 				createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to update transaction status', updateError);
-			} else {
-				console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+				return
 			}
+				
+			console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+			await notifyCryptoToFiatTransfer(updateData)
+			
 		} catch (error) {
 			console.error('Failed to fetch transaction status from Bridge API', error);
 			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transaction status from Bridge API', error);
