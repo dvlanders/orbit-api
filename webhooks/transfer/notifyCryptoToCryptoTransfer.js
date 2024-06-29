@@ -1,3 +1,4 @@
+const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
 const { supabaseCall } = require("../../src/util/supabaseWithRetry")
 const { transferType } = require("../../src/util/transfer/utils/transfer")

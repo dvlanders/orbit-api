@@ -3,6 +3,7 @@ const supabase = require('../../src/util/supabaseClient');
 const { BastionTransferStatus } = require('../../src/util/bastion/utils/utils');
 const { createLog } = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
+const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async(transaction) => {
@@ -44,14 +45,18 @@ const updateStatus = async(transaction) => {
 						bastion_transaction_status: data.status
 					})
 					.eq('id', transaction.id)
+					.select()
+                	.single()
 				)
 
 				if (updateError) {
 					console.error('Failed to update transaction status', updateError);
 					createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to update transaction status', updateError);
-				} else {
-					console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+					return
 				}
+				console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+				await notifyCryptoToFiatTransfer(updateData)
+				
 			}
 		} catch (error) {
 			console.error('Failed to fetch transaction status from Bastion API', error);
