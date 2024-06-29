@@ -14,7 +14,7 @@ const getBastionUser = require('../util/bastion/main/getBastionUser');
 const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
 const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID } = require('../util/common/fieldsValidation');
-const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
+const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
 const { updateBusinessBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
 const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
@@ -332,9 +332,9 @@ exports.getHifiUser = async (req, res) => {
 
 
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			getBastionUser(userId), // TODO: implement this function in utils and import before using it here
-			getBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
-			getCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
+			getBastionUser(userId),
+			getBridgeCustomer(userId),
+			getCheckbookUser(userId)
 		])
 
 		// Bastion status

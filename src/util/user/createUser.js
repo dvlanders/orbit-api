@@ -164,6 +164,7 @@ const fieldsToColumnsMap = (fields, map) => {
 	const mapped = {}
 
 	Object.keys(fields).map((key) => {
+		if (! (key in map)) return
 		mapped[map[key]] = fields[key]
 	})
 
