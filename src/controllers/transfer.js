@@ -17,11 +17,12 @@ const FiatToCryptoSupportedPairFunctions = require("../util/transfer/fiatToCrypt
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
 const { checkIsFiatToCryptoRequestIdAlreadyUsed} = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
-const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchTransferRecord");
+const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
 const CryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
 const FetchCryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
+const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFetchFunctions");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -260,9 +261,18 @@ exports.getFiatToCryptoTransfer = async(req, res) => {
 	const { id } = req.query
 	if (!id) return res.status(400).json({error: `id is required`})
 	try{
-		const transactionRecord = await fetchFiatToCryptoTransferRecord(id)
+		// get provider
+		let { data: request, error:requestError } = await supabaseCall(() => supabase
+		.from('onramp_transactions')
+		.select('fiat_provider, crypto_provider')
+		.eq("id", id)
+		.maybeSingle())
 
-		if (!transactionRecord) return res.status(404).json({error: `No transaction found for id: ${id}`})
+		if (requestError) throw requestError
+		if (!request) return res.status(404).json({error: `No transaction found for id: ${id}`})
+		const fetchFunc = FiatToCryptoSupportedPairFetchFunctionsCheck(request.crypto_provider, request.fiat_provider)
+		const transactionRecord = await fetchFunc(id)
+
 		return res.status(200).json(transactionRecord)
 
 	}catch (error){
