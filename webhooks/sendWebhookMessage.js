@@ -3,7 +3,7 @@ const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
 const { supabaseCall } = require("../src/util/supabaseWithRetry");
 const jwt = require("jsonwebtoken")
-
+const { v4 } = require('uuid');
 const initialRetryInterval = 60 * 1000 // 60 secs
 const maxRetryInterval = 3600 * 1000 // 1 hr
 
@@ -23,8 +23,10 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
     if (!webhookUrl) return
 
     try {
+        const eventId = v4()
         const toSend = {
-            timeStamp: new Date().toISOString(),
+            eventId,
+            timestamp: new Date().toISOString(),
             ...requestBody
         }
         // try sending the webhook message
@@ -43,6 +45,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         const { data: webhookHistory, error: webhookHistoryError } = await supabaseCall(() => supabase
             .from('webhook_history')
             .insert({
+                id: eventId,
                 request_body: requestBody,
                 profile_id: profileId,
                 client_response: responseBody,
