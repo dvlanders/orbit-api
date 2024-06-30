@@ -14,7 +14,6 @@ const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
-const CryptoToBankSupportedPairFunctions = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
 const FiatToCryptoSupportedPairFunctions = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
@@ -23,6 +22,7 @@ const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoRequestInfortm
 const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
+const CryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -113,12 +113,12 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 	const fields = req.body;
 	const {profileId} = req.query
-	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId } = fields
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment } = fields
 	try{
 	// filed validation
-	const requiredFields = ["requestId", "sourceUserId", "destinationUserId","destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
+	const requiredFields = ["requestId", "sourceUserId", "destinationUserId","destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
 	const acceptedFields = {
-		"requestId": "string", "sourceUserId": "string", "destinationUserId": "string","destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string"
+		"requestId": "string", "sourceUserId": "string", "destinationUserId": "string","destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string"
 	}
 	const { missingFields, invalidFields } = fieldsValidation({...fields}, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
@@ -135,8 +135,8 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 	if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` }); 
 
 	//check is source-destination pair supported
-	const pair = `${sourceCurrency}-${destinationCurrency}`
-	if (!(pair in CryptoToBankSupportedPairFunctions)) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` }); 
+	const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+	if (!funcs) return res.status(400).json({ error: `Unsupported rail for ${paymentRail}: ${sourceCurrency} to ${destinationCurrency}` }); 
 
 	// get the wallet record
 	const { data: walletData, error: walletError } = await supabase
@@ -153,7 +153,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		return res.status(400).json({error: `No user wallet found for chain: ${chain}`})
 	}
 
-	const { transferFunc } = CryptoToBankSupportedPairFunctions[pair]
+	const { transferFunc } = funcs
 	const {isExternalAccountExist, transferResult} = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletData.address)
 	if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 	return res.status(200).json(transferResult);
