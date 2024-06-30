@@ -40,6 +40,7 @@ const fetchFiatToCryptoTransferRecord = async(id) => {
             destinationCurrency: bridgeVirtualAccount.destination_currency,
             sourceAccountId: bridgeExternalAccount.id,
             createdAt: record.created_at,
+            updatedAt: record.updated_at,
             status: record.status,
         }
     }
