@@ -72,6 +72,7 @@ async function pollOfframpTransactionsBastionStatus() {
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
 		.select('id, user_id, transaction_status, bastion_transaction_status')
+		.eq("crypto_provider", "BASTION")
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.order('updated_at', {ascending: true})
