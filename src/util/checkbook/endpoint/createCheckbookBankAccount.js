@@ -18,6 +18,7 @@ class createCheckbookError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
+		Object.setPrototypeOf(this, createCheckbookErrorType.prototype);
 	}
 }
 
@@ -106,24 +107,24 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			}
 			console.log(checkbookAccountResponseBody)
 			const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
-			.from('checkbook_accounts')
-			.insert({
-				checkbook_response: checkbookAccountResponseBody,
-				checkbook_id: checkbookAccountResponseBody.id,
-				checkbook_status: checkbookAccountResponseBody.status,
-				account_number: checkbookAccountResponseBody.account,
-				routing_number: checkbookAccountResponseBody.routing,
-				user_id: userId,
-				account_type: accountType,
-				processor_token: processorToken,
-				bank_name: bankName,
-				connected_account_type: "PLAID",
-				plaid_account_data_response: plaidAccountData,
-				checkbook_user_id: checkbookUserData.checkbook_user_id
-			})
-			.select("*")
-			.single()
-			if (checkbookAccountError) 	throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
+				.from('checkbook_accounts')
+				.insert({
+					checkbook_response: checkbookAccountResponseBody,
+					checkbook_id: checkbookAccountResponseBody.id,
+					checkbook_status: checkbookAccountResponseBody.status,
+					account_number: checkbookAccountResponseBody.account,
+					routing_number: checkbookAccountResponseBody.routing,
+					user_id: userId,
+					account_type: accountType,
+					processor_token: processorToken,
+					bank_name: bankName,
+					connected_account_type: "PLAID",
+					plaid_account_data_response: plaidAccountData,
+					checkbook_user_id: checkbookUserData.checkbook_user_id
+				})
+				.select("*")
+				.single()
+			if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
 
 
 			return {
@@ -192,13 +193,13 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 
 		// get the user's api key and api secret from the checkbook_users table
 		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
-		.from('checkbook_users')
-		.select('api_key, api_secret, checkbook_user_id')
-		.eq('user_id', userId)
-		.eq("type", "DESTINATION")
-		.maybeSingle()
+			.from('checkbook_users')
+			.select('api_key, api_secret, checkbook_user_id')
+			.eq('user_id', userId)
+			.eq("type", "DESTINATION")
+			.maybeSingle()
 		);
-	
+
 		if (checkbookUserError) {
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 
