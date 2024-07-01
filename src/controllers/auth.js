@@ -27,6 +27,17 @@ exports.createApiKey = async(req, res) => {
         const fields = req.body
         const { apiKeyName, expiredAt, env } = fields
 
+        if (env == "production"){
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+            const {data: profile, error: profileError} = await supabaseCall(() => supabase
+                .from("profiles")
+                .select("prod_enabled")
+                .eq("id", profileId)
+                .maybeSingle())
+            if (profileError) throw profileError
+            if (!profile.prod_enabled) return res.status(401).json({error: "Please contact HIFI for activating production environment"})
+        }s
+
         // dev spin up sandbox profile if not yet exist
         if (env == "sandbox"){
             const supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
@@ -109,6 +120,17 @@ exports.createWebhook = async(req, res) => {
         const { webhookUrl, env } = req.body
         // filed validation
         if (!webhookUrl || !env) return res.status(400).json({error: "webhookUrl and env is required"})
+        
+        if (env == "production"){
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+            const {data: profile, error: profileError} = await supabaseCall(() => supabase
+                .from("profiles")
+                .select("prod_enabled")
+                .eq("id", profileId)
+                .maybeSingle())
+            if (profileError) throw profileError
+            if (!profile.prod_enabled) return res.status(401).json({error: "Please contact HIFI for activating production environment"})
+        }
 
         // dev spin up sandbox profile if not yet exist
         if (env == "sandbox"){

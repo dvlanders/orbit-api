@@ -1,6 +1,10 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
+
+/**
+ * The table should at least return wallet address based on provided chain and user_id
+ */
 const fetchUserWalletInformation = async(userId, chain, providerTable) => {
     const {data: userWallet, error: userWalletError} = await supabaseCall(() => supabase
         .from(providerTable)
