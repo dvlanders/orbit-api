@@ -14,7 +14,7 @@ const getBastionUser = require('../util/bastion/main/getBastionUser');
 const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
 const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID } = require('../util/common/fieldsValidation');
-const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
+const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
 const { updateBusinessBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
 const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
@@ -332,9 +332,9 @@ exports.getHifiUser = async (req, res) => {
 
 
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			getBastionUser(userId), // TODO: implement this function in utils and import before using it here
-			getBridgeCustomer(userId), // TODO: implement this function in utils and import before using it here
-			getCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
+			getBastionUser(userId),
+			getBridgeCustomer(userId),
+			getCheckbookUser(userId)
 		])
 
 		// Bastion status
@@ -456,7 +456,7 @@ exports.updateHifiUser = async (req, res) => {
 			.eq("id", userId)
 			.maybeSingle()
 		)
-
+		console.log("*************user", user)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 		// upload all the information
@@ -474,9 +474,14 @@ exports.updateHifiUser = async (req, res) => {
 
 		// if the user is an individual, update the individual bridge customer
 		// if the user is a business, update the business bridge customer
-		const bridgeFunction = fields.userType === "individual"
-			? updateIndividualBridgeCustomer
-			: updateBusinessBridgeCustomer;
+		let bridgeFunction
+		if (user.user_type === "individual") {
+			bridgeFunction = updateIndividualBridgeCustomer;
+		} else if (user.user_type === "business") {
+			bridgeFunction = updateBusinessBridgeCustomer;
+		} else {
+			return res.status(500).json({ error: "User type not found for provided userId" })	
+		}
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
 		// update customer object for providers

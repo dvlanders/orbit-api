@@ -54,9 +54,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!recipientUserId && !recipientAddress) return res.status(400).json({ error: `Should provide either recipientUserId or recipientAddress` })
 		if (recipientUserId && recipientAddress) return res.status(400).json({ error: `Should only provide either recipientUserId or recipientAddress` })
 		// check if chain is supported
-		if (!chain in cryptoToCryptoSupportedFunctions) return res.status(400).json({ error: `Chain ${chain} is not supported` })
+		if (!(chain in cryptoToCryptoSupportedFunctions)) return res.status(400).json({ error: `Chain ${chain} is not supported` })
 		// check if currency is supported
-		if (!currency in cryptoToCryptoSupportedFunctions[chain]) return res.status(400).json({ error: `Currency ${currency} is not supported` })
+		if (!(currency in cryptoToCryptoSupportedFunctions[chain])) return res.status(400).json({ error: `Currency ${currency} is not supported` })
 		// check is request_id exist
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })

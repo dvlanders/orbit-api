@@ -82,7 +82,7 @@ async function fundMaticPolygon(userId, amount) {
 	} catch (error) {
 		console.error("Error during MATIC transfer:", error);
 		createLog("user/util/fundMaticPolygon", userId, error, error)
-		throw JSON.stringify(error);
+		// throw JSON.stringify(error);
 	}
 }
 
