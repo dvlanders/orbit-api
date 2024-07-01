@@ -14,40 +14,43 @@ const updateStatus = async (onrampTransaction) => {
 		.eq("checkbook_user_id", onrampTransaction.destination_checkbook_user_id)
 		.maybeSingle())
 
-	if (checkbookUserError) {
-		createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message)
-	}
-	if (!checkbookUser) {
-		createLog("pollOnrampTransactionsCheckbookStatus", `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
-	}
+    if (checkbookUserError) {
+        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message)
+        return
+    }
+    if (!checkbookUser){
+        createLog("pollOnrampTransactionsCheckbookStatus", `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
+        return
+    }
+    
+    // pull up-to-date status
+    const url = `${CHECKBOOK_URL}/check/${onrampTransaction.checkbook_payment_id}`;
+    const options = {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`, // use the api key of the checkbook user that received the payment
+        },
+    };
 
-	// pull up-to-date status
-	const url = `${CHECKBOOK_URL}/check/${onrampTransaction.checkbook_payment_id}`;
-	const options = {
-		method: 'GET',
-		headers: {
-			'Accept': 'application/json',
-			'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`, // use the api key of the checkbook user that received the payment
-		},
-	};
-
-	const response = await fetch(url, options)
-	const responseBody = await response.json()
-	if (!response.ok) {
-		createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
-	}
-	// map status
-	let status
-	if (responseBody.status == "PAID") {
-		status = "FIAT_PROCESSED"
-	} else if (responseBody.status == "IN_PROCESS") {
-		status = "FIAT_SUBMITTED"
-	} else if (responseBody.status == "REFUNDED") {
-		status = "REFUNDED"
-	} else {
-		status = "UNKNOWN"
-		createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
-	}
+    const response = await fetch(url, options)
+    const responseBody = await response.json()
+    if (!response.ok) {
+        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
+        return
+    }
+    // map status
+    let status
+    if (responseBody.status == "PAID"){
+        status = "FIAT_PROCESSED"
+    }else if (responseBody.status == "IN_PROCESS"){
+        status = "FIAT_SUBMITTED"
+    }else if (responseBody.status == "REFUNDED"){
+        status = "REFUNDED"
+    }else{
+        status = "UNKNOWN"
+        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
+    }
 
 	if (status == onrampTransaction.status) return
 
@@ -80,8 +83,9 @@ async function pollOnrampTransactionsCheckbookStatus() {
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
 		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id, status')
-		.or('status.eq.FIAT_SUBMITTED,checkbook_status.eq.IN_PROCESS')
-		.order('updated_at', { ascending: true })
+        .eq('fiat_provider', "CHECKBOOK")
+        .or('status.eq.FIAT_SUBMITTED,checkbook_status.eq.IN_PROCESS')
+        .order('updated_at', {ascending: true})
 	)
 
 	if (onRampTransactionStatusError) {
