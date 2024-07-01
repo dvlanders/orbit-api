@@ -67,9 +67,6 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 		}
 
 
-		console.log('ccheckbookUserData.api_key', checkbookUserData.api_key, 'checkbookUserData.api_secret', checkbookUserData.api_secret)
-		console.log('checkbook url', `${CHECKBOOK_URL}/account/bank/iav/plaid`)
-		console.log('requestBody', requestBody)
 		const response = await fetch(`${CHECKBOOK_URL}/account/bank/iav/plaid`, {
 			method: 'POST',
 			headers: {
