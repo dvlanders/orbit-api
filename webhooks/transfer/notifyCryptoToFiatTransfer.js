@@ -1,9 +1,11 @@
+const { virtualAccountPaymentRailToChain } = require("../../src/util/bridge/utils")
 const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
 const { supabaseCall } = require("../../src/util/supabaseWithRetry")
 const { transferType } = require("../../src/util/transfer/utils/transfer")
 const { sendMessage } = require("../sendWebhookMessage")
 const { webhookEventType, webhookEventActionType } = require("../webhookConfog")
+
 
 const notifyCryptoToFiatTransfer = async(record) => {
 
@@ -47,13 +49,14 @@ const notifyCryptoToFiatTransfer = async(record) => {
             requestId: record.request_id,
             sourceUserId: record.user_id,
             destinationUserId: record.destination_user_id,
-            chain: bridgeLiquidationAddress.chain,
+            chain: virtualAccountPaymentRailToChain[bridgeLiquidationAddress.chain],
             sourceCurrency: bridgeLiquidationAddress.currency,
             amount: record.amount,
             destinationCurrency: bridgeLiquidationAddress.destination_currency,
             destinationAccountId: bridgeExternalAccount.id,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
+            updatedAt: record.updated_at,
             status: record.transaction_status,
             contractAddress: record.contract_address,
         }
