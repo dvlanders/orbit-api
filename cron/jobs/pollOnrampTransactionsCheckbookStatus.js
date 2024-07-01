@@ -16,9 +16,11 @@ const updateStatus = async(onrampTransaction) => {
 
     if (checkbookUserError) {
         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message)
+        return
     }
     if (!checkbookUser){
         createLog("pollOnrampTransactionsCheckbookStatus", `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
+        return
     }
     
     // pull up-to-date status
@@ -35,6 +37,7 @@ const updateStatus = async(onrampTransaction) => {
     const responseBody = await response.json()
     if (!response.ok) {
         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
+        return
     }
     // map status
     let status
@@ -85,8 +88,6 @@ async function pollOnrampTransactionsCheckbookStatus() {
         .or('status.eq.FIAT_SUBMITTED,checkbook_status.eq.IN_PROCESS')
         .order('updated_at', {ascending: true})
 	)
-
-    console.log(onRampTransactionStatus.length)
 
 	if (onRampTransactionStatusError) {
 		console.error('Failed to fetch transactions for pollOnrampTransactionsCheckbookStatus', onRampTransactionStatusError);
