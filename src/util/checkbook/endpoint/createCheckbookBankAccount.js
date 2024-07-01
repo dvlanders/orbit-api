@@ -18,7 +18,6 @@ class createCheckbookError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, createCheckbookErrorType.prototype);
 	}
 }
 
@@ -57,7 +56,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 
 		}
-		if (!checkbookUserData.api_key || !checkbookUserData.api_secret) {
+		if (!checkbookUserData || !checkbookUserData.api_key || !checkbookUserData.api_secret) {
 			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found for ach pull. Please create a user first.")
 		}
 
@@ -204,7 +203,7 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 
 		}
-		if (!checkbookUserData.api_key || !checkbookUserData.api_secret) {
+		if (!checkbookUserData || !checkbookUserData.api_key || !checkbookUserData.api_secret) {
 			throw new createCheckbookError(createCheckbookErrorType.RECORD_NOT_FOUND, "No user record found for ach pull. Please create a user first.")
 		}
 
