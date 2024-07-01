@@ -3,10 +3,9 @@ const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
 const { fetchFiatToCryptoRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 
-const fetchFiatToCryptoTransferRecord = async(id) => {
+const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id) => {
     // get transactio record
     const record = await fetchFiatToCryptoRequestInfortmaionById(id)
-    if (!record) return null
 
     // get rail information
     let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
@@ -40,6 +39,7 @@ const fetchFiatToCryptoTransferRecord = async(id) => {
             destinationCurrency: bridgeVirtualAccount.destination_currency,
             sourceAccountId: bridgeExternalAccount.id,
             createdAt: record.created_at,
+            updatedAt: record.updated_at,
             status: record.status,
         }
     }
@@ -47,4 +47,4 @@ const fetchFiatToCryptoTransferRecord = async(id) => {
     return result
 }
 
-module.exports = fetchFiatToCryptoTransferRecord
+module.exports = fetchCheckbookBridgeFiatToCryptoTransferRecord

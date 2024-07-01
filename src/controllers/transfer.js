@@ -7,22 +7,22 @@ const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privil
 const { checkIsCryptoToCryptoRequestIdAlreadyUsed } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
 const { transfer, CreateCryptoToCryptoTransferErrorType, CreateCryptoToCryptoTransferError } = require("../util/transfer/cryptoToCrypto/main/bastionTransfer");
 const { fetchUserWalletInformation } = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
-const { getRequestRecord } = require("../util/transfer/cryptoToCrypto/main/getRequestRecord");
 const fetch = require('node-fetch');
 // const { fieldsValidation } = require("../util/common/fieldsValidation");
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
-const CryptoToBankSupportedPairFunctions = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
 const FiatToCryptoSupportedPairFunctions = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
-const fetchCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchTransferRecord");
-const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoRequestInfortmaionByRequestId, fetchFiatToCryptoRequestInfortmaionById } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
-const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchTransferRecord");
+const { checkIsFiatToCryptoRequestIdAlreadyUsed } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
+const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
+const CryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
+const FetchCryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
+const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFetchFunctions");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -113,12 +113,12 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId } = fields
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment } = fields
 	try {
 		// filed validation
-		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
+		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
 		const acceptedFields = {
-			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string"
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
@@ -135,8 +135,8 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 
 		//check is source-destination pair supported
-		const pair = `${sourceCurrency}-${destinationCurrency}`
-		if (!(pair in CryptoToBankSupportedPairFunctions)) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` });
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `Unsupported rail for ${paymentRail}: ${sourceCurrency} to ${destinationCurrency}` });
 
 		// get the wallet record
 		const { data: walletData, error: walletError } = await supabase
@@ -153,7 +153,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
 
-		const { transferFunc } = CryptoToBankSupportedPairFunctions[pair]
+		const { transferFunc } = funcs
 		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletData.address)
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
@@ -179,9 +179,19 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 	const { id } = req.query
 	if (!id) return res.status(400).json({ error: `id is required` })
 	try {
-		const transactionRecord = await fetchCryptoToFiatTransferRecord(id)
 
-		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
+		// get provider
+		let { data: request, error: requestError } = await supabaseCall(() => supabase
+			.from('offramp_transactions')
+			.select('fiat_provider, crypto_provider')
+			.eq("id", id)
+			.maybeSingle())
+
+		if (requestError) throw requestError
+		if (!request) return res.status(404).json({ error: `No transaction found for id: ${id}` })
+
+		const fetchFunc = FetchCryptoToBankSupportedPairCheck(request.crypto_provider, request.fiat_provider)
+		const transactionRecord = await fetchFunc(id)
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
@@ -251,9 +261,18 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 	const { id } = req.query
 	if (!id) return res.status(400).json({ error: `id is required` })
 	try {
-		const transactionRecord = await fetchFiatToCryptoTransferRecord(id)
+		// get provider
+		let { data: request, error: requestError } = await supabaseCall(() => supabase
+			.from('onramp_transactions')
+			.select('fiat_provider, crypto_provider')
+			.eq("id", id)
+			.maybeSingle())
 
-		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
+		if (requestError) throw requestError
+		if (!request) return res.status(404).json({ error: `No transaction found for id: ${id}` })
+		const fetchFunc = FiatToCryptoSupportedPairFetchFunctionsCheck(request.crypto_provider, request.fiat_provider)
+		const transactionRecord = await fetchFunc(id)
+
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {

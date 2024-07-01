@@ -13,12 +13,12 @@ const activateWebhook = async(webhookUrl, profileId, env) => {
 
     const { data, error } = await supabase
     .from('webhook_urls')
-    .insert({ 
+    .upsert({ 
         profile_id: profileId, 
         webhook_url: webhookUrl,
         webhook_secret: secretKey
     }
-    )
+    , {onConflict: "profile_id"})
     .select()
 
     if (error) throw error

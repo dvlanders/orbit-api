@@ -3,7 +3,7 @@ const pollOfframpTransactionsBastionStatus = require('./jobs/pollOfframpTransact
 const pollOfframpTransactionsBridgeStatus = require('./jobs/pollOfframpTransactionsBridgeStatus');
 const pollBridgeCustomerStatus = require('./jobs/pollBridgeCustomerStatus');
 const pollOnrampTransactionsCheckbookStatus = require('./jobs/pollOnrampTransactionsCheckbookStatus');
-const pollBastionCryptoToCryptoTransferStatus = require('./jobs/pollCryptoToCryptoTransferStatus');
+const pollBastionCryptoToCryptoTransferStatus = require('./jobs/pollBastionCryptoToCryptoTransferStatus');
 const pollWebhookRetry = require('./jobs/pollWebhookRetry');
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
