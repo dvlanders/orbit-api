@@ -1,86 +1,106 @@
-// const supabase = require("../../src/util/supabaseClient");
-// const { supabaseCall } = require("../../src/util/supabaseWithRetry");
-// const createLog = require('../../src/util/logger/supabaseLogger');
-// const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
+const supabase = require("../../src/util/supabaseClient");
+const { supabaseCall } = require("../../src/util/supabaseWithRetry");
+const createLog = require('../../src/util/logger/supabaseLogger');
+const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
+const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
+const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
+const BRIDGE_URL = process.env.BRIDGE_URL;
 
-// const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
-// const updateStatus = async(onrampTransaction) => {
-//     // get user api key
-//     let { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
-//     .from('checkbook_users')
-//     .select('api_key, api_secret')
-//     .eq("checkbook_user_id", onrampTransaction.destination_checkbook_user_id)
-//     .maybeSingle())
+const bridgeStatusMap = {
+    "in_review": "CRYPTO_IN_REVIEW",
+    "payment_submitted": "CRYPTO_SUBMITTED",
+    "funds_received": "FIAT_CONFIRMED",
+    "payment_processed": "CONFIRMED",
+    "refunded": "REFUNDED",
+}
 
-//     if (checkbookUserError) {
-//         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message)
-//     }
-//     if (!checkbookUser){
-//         createLog("pollOnrampTransactionsCheckbookStatus", `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
-//     }
+const updateStatus = async(onrampTransaction) => {
+    try{
+    // get user bridge Id
+    const {data: bridgeUser, error: bridgeUserError} = await supabaseCall(() => supabase
+        .from("bridge_customers")
+        .select("bridge_id")
+        .eq("user_id", onrampTransaction.destination_user_id)
+        .single())
     
-//     // pull up-to-date status
-//     const url = `${CHECKBOOK_URL}/check/${onrampTransaction.checkbook_payment_id}`;
-//     const options = {
-//         method: 'GET',
-//         headers: {
-//             'Accept': 'application/json',
-//             'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`, // use the api key of the checkbook user that received the payment
-//         },
-//     };
+    if (bridgeUserError) throw bridgeUserError
+    
+    // fetch up to 100 actvity of this account until no more records after the last_bridge_virtual_account_event_id
+    // or the transaction status is final
+    let last_event_id = onrampTransaction.last_bridge_virtual_account_event_id
+    while (true){
+        const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeUser.bridge_id}/virtual_accounts/${onrampTransaction.bridge_virtual_account_id}/history?limit=100&${last_event_id ? `ending_before=${last_event_id}` : ""}`, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY
+			}
+		});
 
-//     const response = await fetch(url, options)
-//     const responseBody = await response.json()
-//     if (!response.ok) {
-//         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
-//     }
-//     // map status
-//     let status
-//     if (responseBody.status == "PAID"){
-//         status = "FIAT_PROCESSED"
-//     }else if (responseBody.status == "IN_PROCESS"){
-//         status = "FIAT_SUBMITTED"
-//     }else if (responseBody.status == "REFUNDED"){
-//         status = "REFUNDED"
-//     }else{
-//         status = "UNKNOWN"
-//         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
-//     }
+		const responseBody = await response.json();
+		if (!response.ok) {
+			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch response from bridge', responseBody);
+			return
+		}
 
-//     //update status
-//     const { data: update, error: updateError } = await supabase
-//     .from('onramp_transactions')
-//     .update({ 
-//         status,
-//         checkbook_status: responseBody.status,
-//         checkbook_response: responseBody
-//     })
-//     .eq('id', onrampTransaction.id)
+        // no activity
+        if (responseBody.data <= 0){
+            break
+        }
+        const events = responseBody.data
+        last_event_id = events[0].id
 
-//     if (!updateError) {
-//         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
-//     }
-// }
+        // "description": "INDIVIDUAL Checkbook Inc [75D7C01F 5F93 4490 8B9] CHECK 5006 WILLIAM YANG 312410A2 9C1B 4337 AFEB 71DAD9DA3428"
+        // try to find the latest record
+        for (const event of events){
+            const description = event.source.description
+            const referenceId = description.split(" ").slice(-5).join('-').toLowerCase()
+            if (referenceId != onrampTransaction.id) continue
+            // update status, this should be the latest for this batch of records
+            const {data: update, error: updateError} = await supabase
+                .from("onramp_transactions")
+                .update({
+                    bridge_response: event,
+                    bridge_status: event.type,
+                    status: event.type in bridgeStatusMap ? bridgeStatusMap[event.type] : "UNKNOWN",
+                    last_bridge_virtual_account_event_id: last_event_id,
+                    updated_at: new Date().toISOString(),
+                    transaction_hash: event.destination_tx_hash
+                })
+                .eq("id", onrampTransaction.id)
+                .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id")
+                .single()
+            if (updateError) throw updateError
+            await notifyFiatToCryptoTransfer(update)
+            break
+        }
+        
+    } 
+
+    }catch (error){
+        createLog("pollOnrampTransactionsBridgeStatus/updateStatus", onrampTransaction.user_id, error.message)
+        return
+    }
+}
 
 
-// async function pollOnrampTransactionsCheckbookStatus() {
-//     console.log('Polling checkbook API for onramp transaction status updates...');
+async function pollOnrampTransactionsBridgeStatus() {
+	// Get all records where the bridge_transaction_status is not 
+	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
+		.from('onramp_transactions')
+		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id')
+        .eq("crypto_provider", "BRIDGE")
+        .or('status.eq.FIAT_PROCESSED,status.eq.FIAT_CONFIRMED,status.eq.CRYPTO_SUBMITTED,status.eq.CRYPTO_IN_REVIEW')
+        .order('updated_at', {ascending: true})
+	)
 
-// 	// Get all records where the bridge_transaction_status is not 
-// 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
-// 		.from('onramp_transactions')
-// 		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id')
-//         .or('status.eq.FIAT_SUBMITTED,checkbook_status.eq.IN_PROCESS')
-// 	)
+	if (onRampTransactionStatusError) {
+		console.error('Failed to fetch transactions for pollOnrampTransactionsBridgeStatus', onRampTransactionStatusError);
+		createLog('pollOnrampTransactionsBridgeStatus', null, onRampTransactionStatusError.message);
+		return;
+	}
+    await Promise.all(onRampTransactionStatus.map(async(onrampTransaction) => await updateStatus(onrampTransaction)))
 
-// 	if (onRampTransactionStatusError) {
-// 		console.error('Failed to fetch transactions for pollOnrampTransactionsCheckbookStatus', onRampTransactionStatusError);
-// 		createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message);
-// 		return;
-// 	}
-//     await Promise.all(onRampTransactionStatus.map(async(onrampTransaction) => await updateStatus(onrampTransaction)))
+}
 
-// }
-
-// module.exports = pollOnrampTransactionsCheckbookStatus
+module.exports = pollOnrampTransactionsBridgeStatus
