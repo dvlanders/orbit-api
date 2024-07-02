@@ -9,7 +9,7 @@ const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpda
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
-const updateStatus = async(customer) => {
+const updateStatus = async (customer) => {
 	try {
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${customer.bridge_id}`, {
@@ -26,8 +26,8 @@ const updateStatus = async(customer) => {
 		}
 
 		const data = await response.json();
-		const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(data.endorsements, "base")
-		const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(data.endorsements, "sepa")
+		const { status: baseStatus, actions: baseActions, fields: baseFields } = getEndorsementStatus(data.endorsements, "base")
+		const { status: sepaStatus, actions: sepaActions, fields: sepaFields } = getEndorsementStatus(data.endorsements, "sepa")
 
 		if (customer.status !== data.status) {
 			const { error: updateError } = await supabaseCall(() => supabase
@@ -57,7 +57,6 @@ const updateStatus = async(customer) => {
 }
 
 async function pollBridgeCustomerStatus() {
-	console.log('Polling for bridge customer status updates...');
 
 
 	const { data: bridgeCustomerData, error: bridgeCustomerError } = await supabaseCall(() => supabase
@@ -77,7 +76,7 @@ async function pollBridgeCustomerStatus() {
 	}
 
 	// for each one that isn't active or rejected, get the latest status from the Bridge API and update the db
-	await Promise.all(bridgeCustomerData.map(async(customer) => await updateStatus(customer)))
+	await Promise.all(bridgeCustomerData.map(async (customer) => await updateStatus(customer)))
 }
 
 module.exports = pollBridgeCustomerStatus;

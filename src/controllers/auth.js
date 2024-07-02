@@ -37,7 +37,7 @@ exports.createApiKey = async(req, res) => {
                 .maybeSingle())
             if (profileError) throw profileError
             if (!profile.prod_enabled) return res.status(401).json({error: "Please contact HIFI for activating production environment"})
-        }s
+        }
 
         // dev spin up sandbox profile if not yet exist
         if (env == "sandbox"){

@@ -12,8 +12,8 @@ const createLog = require('../logger/supabaseLogger');
  */
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
-const chain = process.env.NODE_ENV == "development"? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
-const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
+const chain = process.env.NODE_ENV == "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
+const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with MATIC to serve as gas station wallet
 
 async function fundMaticPolygon(userId, amount) {
 	try {
@@ -24,7 +24,7 @@ async function fundMaticPolygon(userId, amount) {
 			.eq('user_id', userId)
 			.eq('chain', chain)
 			.single();
-		
+
 		if (walletError) throw walletError
 
 		const requestId = uuidv4();

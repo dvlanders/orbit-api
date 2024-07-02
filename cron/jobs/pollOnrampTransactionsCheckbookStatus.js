@@ -6,13 +6,13 @@ const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatTo
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
-const updateStatus = async(onrampTransaction) => {
-    // get user api key
-    let { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
-    .from('checkbook_users')
-    .select('api_key, api_secret')
-    .eq("checkbook_user_id", onrampTransaction.destination_checkbook_user_id)
-    .maybeSingle())
+const updateStatus = async (onrampTransaction) => {
+	// get user api key
+	let { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
+		.from('checkbook_users')
+		.select('api_key, api_secret')
+		.eq("checkbook_user_id", onrampTransaction.destination_checkbook_user_id)
+		.maybeSingle())
 
     if (checkbookUserError) {
         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message)
@@ -52,33 +52,32 @@ const updateStatus = async(onrampTransaction) => {
         createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
     }
 
-    if (status == onrampTransaction.status) return
+	if (status == onrampTransaction.status) return
 
-    //update status
-    const { data: update, error: updateError } = await supabaseCall(() => supabase
-    .from('onramp_transactions')
-    .update({ 
-        status,
-        checkbook_status: responseBody.status,
-        checkbook_response: responseBody,
-        updated_at: new Date().toISOString()
-    })
-    .eq('id', onrampTransaction.id)
-    .select()
-    .single())
+	//update status
+	const { data: update, error: updateError } = await supabaseCall(() => supabase
+		.from('onramp_transactions')
+		.update({
+			status,
+			checkbook_status: responseBody.status,
+			checkbook_response: responseBody,
+			updated_at: new Date().toISOString()
+		})
+		.eq('id', onrampTransaction.id)
+		.select()
+		.single())
 
-    if (updateError) {
-        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
-        return
-    }
+	if (updateError) {
+		createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
+		return
+	}
 
-    await notifyFiatToCryptoTransfer(update)
+	await notifyFiatToCryptoTransfer(update)
 
 }
 
 
 async function pollOnrampTransactionsCheckbookStatus() {
-    console.log('Polling checkbook API for onramp transaction status updates...');
 
 	// Get all records where the bridge_transaction_status is not 
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
@@ -94,7 +93,7 @@ async function pollOnrampTransactionsCheckbookStatus() {
 		createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message);
 		return;
 	}
-    await Promise.all(onRampTransactionStatus.map(async(onrampTransaction) => await updateStatus(onrampTransaction)))
+	await Promise.all(onRampTransactionStatus.map(async (onrampTransaction) => await updateStatus(onrampTransaction)))
 
 }
 
