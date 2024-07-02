@@ -102,7 +102,6 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				console.log(checkbookAccountResponseBody)
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountResponseBody.error || "unknown error", checkbookAccountResponseBody)
 			}
-			console.log(checkbookAccountResponseBody)
 			const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
 				.from('checkbook_accounts')
 				.insert({
@@ -174,7 +173,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 
 // Creates a checkbook bank account for a virtual account under a hardcoded central checkbook user account which holds all the checkbook accounts for virtual accounts
 // TODO: finish creating this util function and implement it into the poll Bridge3 customer status thing after the bridge virtual account gets created
-exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAccountId, accountNumber, routingNumber) => {
+exports.createCheckbookBankAccountForVirtualAccount = async (checkbookUserId, virtualAccountId, accountNumber, routingNumber) => {
 	try {
 		// check if a checkbook account record already exists for this virtual account
 		const { data: existingCheckbookAccountData, error: existingCheckbookAccountError } = await supabase
@@ -192,7 +191,7 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 		const { data: checkbookUserData, error: checkbookUserError } = await supabaseCall(() => supabase
 			.from('checkbook_users')
 			.select('api_key, api_secret, checkbook_user_id')
-			.eq('user_id', userId)
+			.eq('checkbook_user_id', checkbookUserId)
 			.eq("type", "DESTINATION")
 			.maybeSingle()
 		);
@@ -214,9 +213,6 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 			"routing": routingNumber,
 			"type": "CHECKING",
 		}
-
-		console.log(requestBody)
-
 		const response = await fetch(`${CHECKBOOK_URL}/account/bank`, {
 			method: 'POST',
 			headers: {
@@ -228,7 +224,6 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 		});
 
 		const checkbookData = await response.json()
-		console.log(checkbookData)
 		// happy path
 		if (response.ok) {
 			// store the response and checkbook_account_id in the checkbook_accounts table
@@ -237,9 +232,8 @@ exports.createCheckbookBankAccountForVirtualAccount = async (userId, virtualAcco
 				.update({
 					checkbook_response: checkbookData,
 					checkbook_id: checkbookData.id,
-					checkbook_user_id: checkbookUserData.checkbook_user_id
+					checkbook_user_id: checkbookUserId
 				})
-				.eq('user_id', userId)
 				.eq('bridge_virtual_account_id', virtualAccountId)
 
 			if (checkbookAccountUpdateError) {

@@ -1,9 +1,29 @@
 const transferFromPlaidToBridge = require("../transfer/transferFromPlaidToBridge")
 
-const FiatToCryptoSupportedPairFunctions = {
-    "usd-usdc": {
-        transferFunc: transferFromPlaidToBridge,
-    }, 
+const FiatToCryptoSupportedPairFunctionsCheck = (sourceCurrency, destinationChain, destinationCurrency) => {
+    try{
+        return FiatToCryptoSupportedPairFunctions[sourceCurrency][destinationChain][destinationCurrency]
+    }catch (error){
+        return null
+    }
 }
 
-module.exports = FiatToCryptoSupportedPairFunctions
+const FiatToCryptoSupportedPairFunctions = {
+    usd:{
+        ETHEREUM_MAINNET: {
+            usdc: transferFromPlaidToBridge,
+            usdt: transferFromPlaidToBridge
+        },
+        POLYGON_MAINNET: {
+            usdc: transferFromPlaidToBridge,
+        },
+        OPTIMISM_MAINNET: {
+            usdc: transferFromPlaidToBridge
+        },
+        BASE_MAINNET: {
+            usdc: transferFromPlaidToBridge
+        }
+    }
+}
+
+module.exports = FiatToCryptoSupportedPairFunctionsCheck

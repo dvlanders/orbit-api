@@ -1,9 +1,9 @@
 const { Chain } = require("../../common/blockchain");
+const { BastionSupportedEVMChainSandbox, BastionSupportedEVMChainProd } = require("../utils/utils");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
-console.log("env", process.env.NODE_ENV)
-const chains = process.env.NODE_ENV == "development"? [Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET, Chain.OPTIMISM_MAINNET]
+const chains = process.env.NODE_ENV == "development"? BastionSupportedEVMChainSandbox : BastionSupportedEVMChainProd
 
 async function createUser(userId) {
 	const url = `${BASTION_URL}/v1/users`;

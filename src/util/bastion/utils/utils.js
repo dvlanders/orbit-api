@@ -6,6 +6,12 @@ const BastionTransferStatus = {
     PENDING: "PENDING"
 }
 
+// only for EVM
+const BastionSupportedEVMChainProd =  ["POLYGON_MAINNET", "ETHEREUM_MAINNET", "BASE_MAINNET", "OPTIMISM_MAINNET"]
+const BastionSupportedEVMChainSandbox =  ["POLYGON_AMOY", "ETHEREUM_TESTNET", "BASE_SEPOLIA", "OPTIMISM_SEPOLIA"]
+
 module.exports = {
-    BastionTransferStatus
+    BastionTransferStatus,
+    BastionSupportedEVMChainProd,
+    BastionSupportedEVMChainSandbox
 }
