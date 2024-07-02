@@ -28,9 +28,9 @@ exports.createApiKeyFromProvider = async(profileId, apiKeyName, expiredAt, env) 
       }
     let url
     if (env == "sandbox"){
-      url = `https://dev.zuplo.com/v1/accounts/${ACCOUNT_NAME}/key-buckets/${KEY_BUCKET_NAME}/consumers?with-api-key=true`
-    }else if (env == "production"){
       url = `https://dev.zuplo.com/v1/accounts/${ACCOUNT_NAME}/key-buckets/${SANDBOX_KEY_BUCKET_NAME}/consumers?with-api-key=true`
+    }else if (env == "production"){
+      url = `https://dev.zuplo.com/v1/accounts/${ACCOUNT_NAME}/key-buckets/${KEY_BUCKET_NAME}/consumers?with-api-key=true`
     }else {
       throw new Error(`Invalid env: ${env}`)
     }
