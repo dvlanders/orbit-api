@@ -58,7 +58,6 @@ const updateStatus = async (transaction) => {
 
 
 async function pollBastionCryptoToCryptoTransferStatus() {
-	console.log('Polling Bastion API for crypto transaction status updates...');
 	try {
 		// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 		const { data: cryptoTransactionData, error: cryptoTransactionDataError } = await supabaseCall(() => supabase
