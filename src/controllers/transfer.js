@@ -21,9 +21,10 @@ const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/t
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
 const CryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
-const FetchCryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
+const {FetchCryptoToBankSupportedPairCheck } = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
 const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFetchFunctions");
 const fetchAllCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchAllTransferRecord");
+const fetchAllCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchAllBridgeCryptoToFiatTransferRecord");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -211,6 +212,35 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		createLog("transfer/crypto-to-fiat", sourceUserId, error.message)
 		return res.status(500).json({ error: 'Unexpected error happened' });
 	}
+
+}
+
+exports.getAllCryptoToFiatTransfer = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const fields = req.query
+	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const requiredFields = []
+	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+
+	try{
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		// check if required fileds provided
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+
+		// get all records
+		const records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
+		return res.status(200).json(records)
+
+	}catch (error){
+		console.error(error)
+		createLog("transfer/getAllCryptoToCryptoTransfer")
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 
 }
 

@@ -5,7 +5,7 @@ const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchReque
 
 const fetchBridgeCryptoToFiatTransferRecord = async(id) => {
     // get transactio record
-    const record = await fetchCryptoToFiatRequestInfortmaionById(id)
+    const record = await fetchCryptoToFiatRequestInfortmaionById(id, "BRIDGE", "BASTION")
 
     // get rail information
     let { data: bridgeLiquidationAddress, error: bridgeLiquidationAddressError } = await supabaseCall(() => supabase

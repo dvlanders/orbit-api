@@ -1,11 +1,13 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const fetchCryptoToFiatRequestInfortmaionById = async(id) => {
+const fetchCryptoToFiatRequestInfortmaionById = async(id, fiatProvider, cryptoProvider) => {
         let { data: request, error:requestError } = await supabaseCall(() => supabase
             .from('offramp_transactions')
             .select('*')
             .eq("id", id)
+            .eq("fiat_provider", fiatProvider)
+            .eq("crypto_provider", cryptoProvider)
             .maybeSingle())
         
 
