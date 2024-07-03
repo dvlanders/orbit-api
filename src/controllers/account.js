@@ -398,15 +398,14 @@ exports.getAllAccounts = async (req, res) => {
 
 	// get user id from path parameter
 	const fields = req.query
-	const { railType, limit, createdAfter, createdBefore } = fields;
+	const { profileId, railType, limit, createdAfter, createdBefore, userId } = fields;
 	const requiredFields = ["railType"]
-	const acceptedFields = {railType: "string", limit: "string", createdAfter: "string", createdBefore: "string"}
-
+	const acceptedFields = {railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string"}
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		const func = fetchRailFunctionsMap[railType]
-		const accountInfo = await func(undefined, limit, createdAfter, createdBefore)
+		const accountInfo = await func(undefined, profileId, userId, limit, createdAfter, createdBefore)
 		accountInfo.railType = railType
 		return res.status(200).json(accountInfo);
 	} catch (error) {

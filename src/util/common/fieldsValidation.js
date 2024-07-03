@@ -13,6 +13,7 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 	// Check if all fields are valid
 	fieldsKey.forEach((key) => {
 		if (key == "apiKeyId") return
+		if (key == "profileId") return
 
 		if (!(key in acceptedFields)) {
 			invalidFields.push(key);

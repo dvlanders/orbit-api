@@ -26,22 +26,42 @@ const filledInfo = (bridgeExternalAccountData) => {
 }
 
 
-const fetchBridgeExternalAccountInformation = async (currency, accountId, limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
+const fetchBridgeExternalAccountInformation = async (currency, profileId, accountId, userId, limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
 	let allBanksInfo
 	let bankInfo
 	if (!accountId){
-		let { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
-		.from('bridge_external_accounts')
-		.select('id, created_at, currency, bank_name, account_owner_name, account_owner_type, account_type, beneficiary_street_line_1, beneficiary_street_line_2, beneficiary_city, beneficiary_state, beneficiary_postal_code, beneficiary_country, iban, business_identifier_code, bank_country, account_number, routing_number, user_id')
-		.eq('currency', currency)
-		.lt("created_at", createdBefore)
-        .gt("created_at", createdAfter)
-        .order("created_at", {ascending: false})
-        .limit(limit)
-		)
-		if (bridgeExternalAccountError) throw bridgeExternalAccountError
-		allBanksInfo = bridgeExternalAccountData
+		if (userId){
+			// fetch all record of an user
+			let { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
+				.from('bridge_external_accounts')
+				.select('id, created_at, currency, bank_name, account_owner_name, account_owner_type, account_type, beneficiary_street_line_1, beneficiary_street_line_2, beneficiary_city, beneficiary_state, beneficiary_postal_code, beneficiary_country, iban, business_identifier_code, bank_country, account_number, routing_number, user_id')
+				.eq('currency', currency)
+				.eq("user_id", userId)
+				.lt("created_at", createdBefore)
+				.gt("created_at", createdAfter)
+				.order("created_at", {ascending: false})
+				.limit(limit)
+				)
+				if (bridgeExternalAccountError) throw bridgeExternalAccountError
+				allBanksInfo = bridgeExternalAccountData
+
+		}else{
+			// fetch all records of an org
+			let { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
+				.from('bridge_external_accounts')
+				.select('users: user_id!inner(id, profile_id), id, created_at, currency, bank_name, account_owner_name, account_owner_type, account_type, beneficiary_street_line_1, beneficiary_street_line_2, beneficiary_city, beneficiary_state, beneficiary_postal_code, beneficiary_country, iban, business_identifier_code, bank_country, account_number, routing_number, user_id')
+				.eq('currency', currency)
+				.eq("users.profile_id", profileId)
+				.lt("created_at", createdBefore)
+				.gt("created_at", createdAfter)
+				.order("created_at", {ascending: false})
+				.limit(limit)
+				)
+				if (bridgeExternalAccountError) throw bridgeExternalAccountError
+				allBanksInfo = bridgeExternalAccountData
+		}
 	}else{
+		// fetch single record
 		let { data: bridgeExternalAccountData, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
 			.from('bridge_external_accounts')
 			.select('id, created_at, currency, bank_name, account_owner_name, account_owner_type, account_type, beneficiary_street_line_1, beneficiary_street_line_2, beneficiary_city, beneficiary_state, beneficiary_postal_code, beneficiary_country, iban, business_identifier_code, bank_country, account_number, routing_number, user_id')
