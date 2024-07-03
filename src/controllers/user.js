@@ -667,7 +667,7 @@ exports.getAllHifiUser = async (req, res) => {
 	const fields = req.query
 	const {profileId, limit, createdAfter, createdBefore} = fields
 	const requiredFields = []
-	const acceptedFields = {limit: "number", createdAfter: "string", createdBefore: "string"}
+	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string"}
 	try{
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })

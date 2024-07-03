@@ -400,7 +400,7 @@ exports.getAllAccounts = async (req, res) => {
 	const fields = req.query
 	const { railType, limit, createdAfter, createdBefore } = fields;
 	const requiredFields = ["railType"]
-	const acceptedFields = {railType: "string", limit: "number", createdAfter: "string", createdBefore: "string"}
+	const acceptedFields = {railType: "string", limit: "string", createdAfter: "string", createdBefore: "string"}
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
