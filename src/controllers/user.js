@@ -19,6 +19,7 @@ const { updateBusinessBridgeCustomer } = require('../util/bridge/endpoint/update
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
 const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
 const { v4: uuidv4 } = require("uuid");
+const getAllUsers = require('../util/user/getAllUsers');
 
 
 const Status = {
@@ -660,9 +661,19 @@ exports.updateHifiUser = async (req, res) => {
 };
 
 exports.getAllHifiUser = async (req, res) => {
-	if (req.method !== 'PUT') {
+	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+	const {profileId, limit, createdAfter, createdBefore} = req.query
+	try{
+		const users = await getAllUsers(profileId, limit, createdAfter, createdBefore)
+		return res.status(200).json({users})
+	}catch (error){
+		console.error(error)
+		createLog("user/getAllHifiUser", "", error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 }
 
 exports.generateToSLink = async (req, res) => {
