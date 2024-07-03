@@ -374,14 +374,39 @@ exports.getAccount = async (req, res) => {
 	if (!railType || !accountId) return res.status(400).json({ error: 'railType and accountId is required' });
 
 	try {
-		if (!railType in fetchRailFunctionsMap) {
-			return res.status(400).json({ error: 'Invalid accountType' });
+		if (!(railType in fetchRailFunctionsMap)) {
+			return res.status(400).json({ error: 'Invalid railType' });
 		}
 
 		const func = fetchRailFunctionsMap[railType]
 		const accountInfo = await func(accountId)
 
 		if (!accountInfo) return res.status(404).json({ error: "No account found" }) 
+		accountInfo.railType = railType
+		return res.status(200).json(accountInfo);
+	} catch (error) {
+		console.error(error)
+		createLog("account", null, error.message, error)
+		return res.status(500).json({ error: `Unexpected error happened` });
+	}
+}
+
+exports.getAllAccounts = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	// get user id from path parameter
+	const fields = req.query
+	const { railType, limit, createdAfter, createdBefore } = fields;
+	const requiredFields = ["railType"]
+	const acceptedFields = {railType: "string", limit: "number", createdAfter: "string", createdBefore: "string"}
+
+	try {
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		const func = fetchRailFunctionsMap[railType]
+		const accountInfo = await func(undefined, limit, createdAfter, createdBefore)
 		accountInfo.railType = railType
 		return res.status(200).json(accountInfo);
 	} catch (error) {
