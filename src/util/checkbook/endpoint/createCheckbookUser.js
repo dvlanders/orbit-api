@@ -25,7 +25,7 @@ class createCheckbookError extends Error {
 	}
 }
 
-const create = async (user, user_id, checkbook_user_id, type) => {
+const createSingleCheckbookUser = async (user, user_id, checkbook_user_id, type) => {
 	// check is checkbook user already created
 	let { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
 		.from('checkbook_users')
@@ -96,7 +96,7 @@ const create = async (user, user_id, checkbook_user_id, type) => {
 }
 
 
-exports.createCheckbookUser = async (userId) => {
+const createCheckbookUser = async (userId) => {
 	let invalidFields = []
 	try {
 		const getUserInfo = () => supabase
@@ -115,9 +115,9 @@ exports.createCheckbookUser = async (userId) => {
 		}
 
 		// create source checkbook user
-		await create(user, userId, userId, "SOURCE")
+		await createSingleCheckbookUser(user, userId, userId, "SOURCE")
 		// create destination checkbook user
-		await create(user, userId, `${userId}-destination`, "DESTINATION")
+		await createSingleCheckbookUser(user, userId, `${userId}-destination`, "DESTINATION")
 
 
 		return {
@@ -175,4 +175,10 @@ exports.createCheckbookUser = async (userId) => {
             }
 		}
 	}
+}
+
+
+module.exports = {
+	createCheckbookUser,
+	createSingleCheckbookUser
 }

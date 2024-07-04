@@ -13,7 +13,7 @@ const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
-const FiatToCryptoSupportedPairFunctions = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
+const FiatToCryptoSupportedPairFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
 const { checkIsFiatToCryptoRequestIdAlreadyUsed } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
@@ -256,16 +256,13 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		//check if sender is under profileId
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
-		// check is chain supported
-		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 		// check is request id valid
 		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
 		//check is source-destination pair supported
-		const pair = `${sourceCurrency}-${destinationCurrency}`
-		if (!(pair in FiatToCryptoSupportedPairFunctions)) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` });
-
-		const { transferFunc } = FiatToCryptoSupportedPairFunctions[pair]
+		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
+		// onramp
 		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId)
 		return res.status(200).json(transferResult);
 
