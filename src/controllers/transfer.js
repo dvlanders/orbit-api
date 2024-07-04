@@ -21,8 +21,11 @@ const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/t
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
 const CryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
-const FetchCryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
+const {FetchCryptoToBankSupportedPairCheck } = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
 const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFetchFunctions");
+const fetchAllCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchAllTransferRecord");
+const fetchAllCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchAllCryptoToFiatTransferRecord");
+const fetchAllFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchAllFiatToCryptoTransferRecords");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -92,20 +95,43 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 	}
 }
 
+exports.getAllCryptoToCryptoTransfer = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const fields = req.query
+	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const requiredFields = []
+	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+
+	try{
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		// check if required fileds provided
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+
+		// get all records
+		const records = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
+		return res.status(200).json(records)
+
+	}catch (error){
+		console.error(error)
+		createLog("transfer/getAllCryptoToCryptoTransfer", "", error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
+}
+
 exports.getCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-
-	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
-
 	const { id } = req.query
 
 	try {
+		if (!id || !isUUID(id)) return res.status(200).json({error: "Invalid id"}) 
 		// check if requestRecord exist
 		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id)
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
@@ -187,6 +213,35 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		createLog("transfer/crypto-to-fiat", sourceUserId, error.message)
 		return res.status(500).json({ error: 'Unexpected error happened' });
 	}
+
+}
+
+exports.getAllCryptoToFiatTransfer = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const fields = req.query
+	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const requiredFields = []
+	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+
+	try{
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		// check if required fileds provided
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+
+		// get all records
+		const records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
+		return res.status(200).json(records)
+
+	}catch (error){
+		console.error(error)
+		createLog("transfer/getAllCryptoToFiatTransfer", "", error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 
 }
 
@@ -312,6 +367,35 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		createLog("transfer/getCryptoToFiatTransfer", null, error.message)
 		return res.status(500).json({ error: `Unexpected error happened` })
 	}
+
+}
+
+exports.getAllFiatToCryptoTransfer = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const fields = req.query
+	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const requiredFields = []
+	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+
+	try{
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		// check if required fileds provided
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+
+		// get all records
+		const records = await fetchAllFiatToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
+		return res.status(200).json(records)
+
+	}catch (error){
+		console.error(error)
+		createLog("transfer/getAllFiatToCryptoTransfer", "", error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+
 
 }
 

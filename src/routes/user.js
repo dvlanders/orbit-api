@@ -9,7 +9,7 @@ module.exports = (router) => {
 
 	router.post("/user/create", authorize, user.createHifiUser);
 
-
+	router.get("/user/all", authorize, user.getAllHifiUser)
 
 	router.get("/user", authorize, user.getHifiUser);
 

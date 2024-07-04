@@ -101,7 +101,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 			.update({
 				bastion_response: responseBody,
 				bastion_transaction_status: "FAILED",
-				transaction_status: "FAILED_ONCHAIN",
+				transaction_status: "NOT_INITIATED",
 			})
 			.match({ id: initialBastionTransfersInsertData.id })
 
@@ -112,13 +112,13 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 
 		createLog("transfer/util/transfer", sourceUserId, responseBody.message, responseBody)
 		if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance") {
-			result.transferDetails.status = "FAILED_ONCHAIN"
+			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = "transfer amount exceeds balance"
-			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
+			// throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
 		} else {
-			result.transferDetails.status = "FAILED_ONCHAIN"
+			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = "Not enough gas, please contact HIFI for more information"
-			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, responseBody.message)
+			// throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, responseBody.message)
 		}
 	} else {
 		// bastion might return 200 response with failed transaction
