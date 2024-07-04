@@ -52,7 +52,7 @@ const updateStatus = async (customer) => {
 		}
 	} catch (error) {
 		console.error('Failed to fetch customer status from Bridge API', error);
-		createLog('pollBridgeCustomerStatus', null, 'Failed to fetch customer status from Bridge API', error);
+		createLog('pollBridgeCustomerStatus', customer.id, 'Failed to fetch customer status from Bridge API', error);
 	}
 }
 

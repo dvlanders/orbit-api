@@ -25,10 +25,6 @@ async function createLog(source, userId, log, response) {
 	if (userError || !userData) {
 		throw new Error('Failed to fetch user data')
 	}
-	console.log(userData)
-
-
-
 	const { data, error } = await supabase
 		.from('logs')
 		.insert({
