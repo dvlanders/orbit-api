@@ -30,7 +30,7 @@ async function createLog(source, userId, log, response) {
 		.insert({
 			source: source,
 			user_id: userId,
-			user_identifier: userData.user_kyc.length > 0 ? `${userData.user_kyc[0].legal_first_name} ${userData.user_kyc[0].legal_last_name} ${userData.user_kyc[0].business_name} ${userData.user_kyc[0].compliance_email}` : null,
+			user_identifier: userData.user_kyc && userData.user_kyc.length > 0 ? `${userData.user_kyc[0].legal_first_name} ${userData.user_kyc[0].legal_last_name} ${userData.user_kyc[0].business_name} ${userData.user_kyc[0].compliance_email}` : null,
 			log: log,
 			profile_id: userData.profile_id,
 			response: response
