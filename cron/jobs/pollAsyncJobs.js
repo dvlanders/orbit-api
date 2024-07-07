@@ -11,7 +11,6 @@ const maxRetryInterval = 3600 * 1000 // 1 hr
 
 
 const pollAsyncJobs = async() => {
-    console.log("pollAsyncJobs")
     try{
         // get all the job that has next_retry smaller than currenct time and sort in asceding order
         const now = new Date()
