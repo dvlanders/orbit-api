@@ -1,3 +1,4 @@
+const createJob = require("../../asyncJobs/createJob");
 const {sendMessage} = require("../../webhooks/sendWebhookMessage");
 const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken")
@@ -88,5 +89,16 @@ exports.testwebhook = async(req, res) => {
     }catch (error){
         return res.status(401).json({message: "Wrong token"})
     }
+}
+
+exports.testCreateJob = async(req, res) => {
+    if (req.method !== "POST"){
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    await createJob("fundGas", {userid: "123", amount: "123"}, undefined, undefined)
+
+    return res.status(200).json({message: "success"})
+
 }
 

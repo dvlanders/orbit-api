@@ -47,3 +47,24 @@ exports.authorizeSupabase = async(req, res, next) => {
 		return res.status(500).json({error : "Unexpected error happened"});
 	}
 }
+
+exports.authorizeDashboard = async(req, res, next) => {
+	try{
+		// this token will be supabase auth token
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({error: "Not authorized"});
+        };
+
+        // get user info (user_id)
+        const user = await verifyToken(token);
+        if (!user && !user?.sub) {
+            return res.status(401).json({ error: "Not authorized" });
+        };
+        req.query.profileId = user.sub
+		next()
+	}catch (error){
+		console.error(err)
+		return res.status(500).json({error : "Unexpected error happened"});
+	}
+}

@@ -15,4 +15,6 @@ const FetchCryptoToBankSupportedPairFunctions = {
    }
 }
 
-module.exports = FetchCryptoToBankSupportedPairCheck
+module.exports = {
+    FetchCryptoToBankSupportedPairCheck,
+}

@@ -11,12 +11,13 @@ const { supabaseCall } = require('../util/supabaseWithRetry');
 const { v4 } = require('uuid');
 const { BridgeCustomerStatus } = require('../util/bridge/utils');
 const { createDefaultBridgeVirtualAccount, createBridgeVirtualAccountError } = require('../util/bridge/endpoint/createBridgeVirtualAccount');
-const { supportedRail, OnRampRail } = require('../util/account/activateOnRampRail/utils');
+const { supportedRail, OnRampRail, activateOnRampRailFunctionsCheck } = require('../util/account/activateOnRampRail/utils');
 const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAch');
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
 const fetchRailFunctionsMap = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -373,8 +374,8 @@ exports.getAccount = async (req, res) => {
 	if (!railType || !accountId) return res.status(400).json({ error: 'railType and accountId is required' });
 
 	try {
-		if (!railType in fetchRailFunctionsMap) {
-			return res.status(400).json({ error: 'Invalid accountType' });
+		if (!(railType in fetchRailFunctionsMap)) {
+			return res.status(400).json({ error: 'Invalid railType' });
 		}
 
 		const func = fetchRailFunctionsMap[railType]
@@ -390,23 +391,60 @@ exports.getAccount = async (req, res) => {
 	}
 }
 
+exports.getAllAccounts = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	// get user id from path parameter
+	const fields = req.query
+	const { profileId, railType, limit, createdAfter, createdBefore, userId } = fields;
+	const requiredFields = ["railType"]
+	const acceptedFields = {railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string"}
+	try {
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		const func = fetchRailFunctionsMap[railType]
+		const accountInfo = await func(undefined, profileId, userId, limit, createdAfter, createdBefore)
+		accountInfo.railType = railType
+		return res.status(200).json(accountInfo);
+	} catch (error) {
+		console.error(error)
+		createLog("account", null, error.message, error)
+		return res.status(500).json({ error: `Unexpected error happened` });
+	}
+}
+
 exports.activateOnRampRail = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
 	const { userId } = req.query
-	const { rail } = req.body
-	let result
-	if (!rail) return res.status("400").json({ error: "rail is required" })
-	if (!supportedRail.has(rail)) return res.status("400").json({ error: "Unsupported rail" })
-	try {
-		if (rail == OnRampRail.US_ACH) {
-			result = await activateUsAchOnRampRail(userId)
-		} else {
-			return res.status(501).json({ message: `${rail} is not yet implemented` })
-		}
+	const fields = req.body
+	const { rail, destinationCurrency, destinationChain } = fields
+	// fields validation
+	const requiredFields = ["rail", "destinationCurrency", "destinationChain"]
+	const acceptedFields = {"rail": "string", "destinationCurrency": "string", "destinationChain": "string"}
+	const {missingFields, invalidFields} = fieldsValidation(fields, requiredFields, acceptedFields)
+	if (missingFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	}
 
+	if (invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+	}
+
+
+	try {
+		const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
+		if (!activateFunction) return res.status(400).json({error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported`})
+		const config = {
+			userId, 
+			destinationCurrency, 
+			destinationChain
+		}
+		const result = await activateFunction(config)
 		if (result.alreadyExisted) return res.status(200).json({ message: `rail already activated` })
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create the rail` })
 

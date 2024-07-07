@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToDatabaseFields, getEndorsementStatus, extractActionsAndFields } = require("../utils");
+const { bridgeFieldsToRequestFields, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
@@ -256,8 +256,21 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			}
 
 		} else if (response.status == 400) {
+			// EXPERIMENTAL
+			const { error: bridge_customers_error } = await supabase
+			.from('bridge_customers')
+			.update({
+				bridge_response: responseBody,
+				status: "invalid_fields",
+			})
+			.eq("user_id", userId)
+			.single()
+
+			if (bridge_customers_error) {
+				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
+			}
 			// supposed to be missing or invalid field
-			invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToDatabaseFields[k]) //FIXME: this returns the db field, not the prop name that the user needs to pass. instead of gov_id_front, we should return govIdFront in the fieldsToResubmit array
+			invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToRequestFields[k]) //FIXME: this returns the db field, not the prop name that the user needs to pass. instead of gov_id_front, we should return govIdFront in the fieldsToResubmit array
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, responseBody.message, responseBody)
 		} else if (response.status == 401) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)

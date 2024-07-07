@@ -1,3 +1,4 @@
+const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
@@ -18,13 +19,13 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id) => {
 
     // get source plaid account information
 
-    let { data: bridgeExternalAccount, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
+    let { data: plaidAccount, error: plaidAccountError } = await supabaseCall(() => supabase
         .from('checkbook_accounts')
-        .select('id')
+        .select('id, account_number, routing_number, bank_name')
         .eq("checkbook_id", record.plaid_checkbook_id)
         .single())
 
-    if (bridgeExternalAccountError) throw bridgeExternalAccountError
+    if (plaidAccountError) throw plaidAccountError
         
     const result = {
         transferType: transferType.FIAT_TO_CRYPTO,
@@ -33,14 +34,18 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id) => {
             requestId: record.request_id,
             sourceUserId: record.user_id,
             destinationUserId: record.destination_user_id,
-            chain: bridgeVirtualAccount.destination_payment_rail,
+            transactionHash: record.transaction_hash,
+            chain: virtualAccountPaymentRailToChain[bridgeVirtualAccount.destination_payment_rail],
             sourceCurrency: bridgeVirtualAccount.source_currency,
             amount: record.amount,
             destinationCurrency: bridgeVirtualAccount.destination_currency,
-            sourceAccountId: bridgeExternalAccount.id,
+            sourceAccountId: plaidAccount.id,
             createdAt: record.created_at,
             updatedAt: record.updated_at,
             status: record.status,
+            sourceUser: record.source_user.user_kyc,
+            destinationUser: record.destination_user.user_kyc,
+            sourceAccount: plaidAccount
         }
     }
 
