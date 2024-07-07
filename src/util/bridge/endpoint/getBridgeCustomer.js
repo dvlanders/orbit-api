@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const {supabaseCall} = require("../../supabaseWithRetry")
 const { v4 } = require("uuid");
-const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields } = require("../utils");
+const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields, bridgeFieldsToRequestFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { CustomerStatus } = require("../../user/common");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -54,13 +54,17 @@ const getBridgeCustomer = async(userId) => {
         )
         if (bridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridgeCustomerError.message, bridgeCustomerError)
         if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
-        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
+        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id || bridgeCustomer.status == "invalid_fields") {
+            let invalidFields = []
+            if (bridgeCustomer.bridge_response){
+                invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToRequestFields[k])
+            }
             return {
                 status: 200,
                 customerStatus: {
                     status: CustomerStatus.INACTIVE,
                     actions: ["update"],
-                    fields: []
+                    fields: invalidFields
                 },
                 usRamp: {
                     status: CustomerStatus.INACTIVE,

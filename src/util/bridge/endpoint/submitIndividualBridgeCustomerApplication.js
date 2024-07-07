@@ -206,6 +206,19 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 			}
 
 		} else if (response.status == 400) {
+			// EXPERIMENTAL
+			const { error: bridge_customers_error } = await supabase
+			.from('bridge_customers')
+			.update({
+				bridge_response: responseBody,
+				status: "invalid_fields",
+			})
+			.eq("user_id", userId)
+			.single()
+
+			if (bridge_customers_error) {
+				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
+			}
 			// supposed to be missing or invalid field
 			invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToRequestFields[k])
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INVALID_FIELD, responseBody.message, responseBody)

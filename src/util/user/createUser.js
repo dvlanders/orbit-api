@@ -1,7 +1,7 @@
 const { sanctionedCountries, allowedUsState } = require("../bastion/utils/restrictedArea");
 const { fieldsValidation } = require("../common/fieldsValidation");
 const createLog = require("../logger/supabaseLogger");
-const { uploadFileFromUrl } = require("../supabase/fileUpload");
+const { uploadFileFromUrl, fileUploadErrorType } = require("../supabase/fileUpload");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { checkIsSignedAgreementIdSigned } = require("./signedAgreement");
@@ -291,13 +291,12 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		}))
 
 	} catch (error) {
-		console.error(error)
 		createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
-		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
+		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE || fileUploadErrorType.FAILED_TO_FETCH)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
 		// internal server error
-		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error:  "Unexpected error happened"})
 	}
 
 	// Map fields to database columns

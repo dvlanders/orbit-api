@@ -17,7 +17,7 @@ const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id
 
 async function fundMaticPolygon(userId, amount) {
 	try {
-
+		console.log("amount: ", amount)
 		const { data: walletData, error: walletError } = await supabase
 			.from('bastion_wallets')
 			.select('address')
@@ -82,6 +82,7 @@ async function fundMaticPolygon(userId, amount) {
 	} catch (error) {
 		console.error("Error during MATIC transfer:", error);
 		createLog("user/util/fundMaticPolygon", userId, error, error)
+		return null
 		// throw JSON.stringify(error);
 	}
 }

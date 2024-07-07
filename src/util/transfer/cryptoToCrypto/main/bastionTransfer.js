@@ -1,4 +1,5 @@
 const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transfer")
+const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
 const { transferType } = require("../../utils/transfer")
@@ -25,6 +26,10 @@ const bastionCryptoTransfer = async(fields) => {
     // transfer
     const response = await bastionTransfer(requestRecord.id, fields)
     const responseBody = await response.json()
+
+    // gas check
+    await bastionGasCheck(fields.senderUserId, fields.chain)
+
     if (!response.ok) {
          // update to database
         const toUpdate = {

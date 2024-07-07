@@ -20,6 +20,7 @@ const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckb
 const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
 const { v4: uuidv4 } = require("uuid");
 const getAllUsers = require('../util/user/getAllUsers');
+const { CustomerStatus } = require('../util/user/common');
 
 
 const Status = {
@@ -752,3 +753,113 @@ exports.acceptToSLink = async (req, res) => {
 
 }
 
+/**
+ * This is an experimental function which only upload user's kyc information to the database 
+ * then create async job for submit bridgeKyc, createCheckbook and createBastion
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
+exports.createHifiUserV2 = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	let userId
+	try {
+		const profileId = req.query.profileId
+		const fields = req.body
+
+		if (!profileId) {
+			return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
+		}
+
+		// upload information and create new user
+		try {
+			userId = await informationUploadForCreateUser(profileId, fields)
+		} catch (error) {
+			if (error instanceof InformationUploadError) {
+				return res.status(error.status).json(error.rawResponse)
+			}
+			createLog("user/create", "", error.message, error)
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		}
+
+		let createHifiUserResponse = {
+			wallet: {
+				walletStatus: CustomerStatus.PENDING,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: "",
+				walletAddress: {}
+			},
+			user_kyc: {
+				status: CustomerStatus.PENDING, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: CustomerStatus.PENDING, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+
+						},
+					},
+					offRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onRamp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+			user: {
+				id: userId,
+			}
+		}
+
+
+		
+
+		return res.status(200).json(createHifiUserResponse)
+
+	}catch (error){
+		createLog("user/create", userId, error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+	}
+}

@@ -13,11 +13,14 @@ const filledInfo = (record) => {
             recipientAddress: record.recipient_address,
             chain: record.chain,
             currency: record.currency,
+            amount: record.amount,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
             updatedAt: record.updated_at,
             status: record.status,
             contractAddress: record.contract_address,
+            sender: record.sender_user.user_kyc,
+            recipient: record.recipient_user?.user_kyc
         }
     }
 }
@@ -38,8 +41,8 @@ const fetchAllCryptoToCryptoTransferRecord = async (profileId, userId, limit=10,
     }else {
         const {data: records, error} = await  supabase
             .from("crypto_to_crypto")
-            .select("*, users: sender_user_id!inner(id, profile_id)")
-            .eq("users.profile_id", profileId)
+            .select("*, sender_user: sender_user_id!inner(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient_user: recipient_user_id(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))")
+            .eq("sender_user.profile_id", profileId)
             .lt("created_at", createdBefore)
             .gt("created_at", createdAfter)
             .order("created_at", {ascending: false})

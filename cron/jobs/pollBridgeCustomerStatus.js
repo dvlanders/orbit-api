@@ -52,7 +52,7 @@ const updateStatus = async (customer) => {
 		}
 	} catch (error) {
 		console.error('Failed to fetch customer status from Bridge API', error);
-		createLog('pollBridgeCustomerStatus', null, 'Failed to fetch customer status from Bridge API', error);
+		createLog('pollBridgeCustomerStatus', customer.id, 'Failed to fetch customer status from Bridge API', error);
 	}
 }
 
@@ -64,6 +64,7 @@ async function pollBridgeCustomerStatus() {
 		.select('id, user_id, status, bridge_id')
 		.neq('status', 'active')
 		.neq('status', 'rejected')
+		.neq('status', 'invalid_fields')
 		.neq('status', null)
 		.order('updated_at', {ascending: true}))
 	

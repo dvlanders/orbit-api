@@ -5,12 +5,14 @@ module.exports = (app, express) => {
 	const account = require("./account");
 	const transfer = require("./transfer");
 	const auth = require("./auth")
+	const dashboardTransfer = require("./dashboard/transfer")
 
 	user(router);
 	dev(router);
 	transfer(router);
 	account(router);
 	auth(router)
+	dashboardTransfer(router)
 
 
 	app.use("/", router);
