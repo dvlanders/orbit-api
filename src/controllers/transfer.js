@@ -46,7 +46,6 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 	const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency } = fields
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
@@ -162,7 +161,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		// filed validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
 		const acceptedFields = {
-			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": "number", "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string"
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
@@ -299,7 +298,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 			"requestId": "string",
 			"sourceUserId": "string",
 			"destinationUserId": "string",
-			"amount": "number",
+			"amount": ["number", "string"],
 			"sourceCurrency": "string",
 			"destinationCurrency": "string",
 			"chain": "string",
