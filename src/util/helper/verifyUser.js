@@ -1,7 +1,9 @@
+const { isUUID } = require("../common/fieldsValidation");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 
 exports.verifyUser = async(userId, profileId) => {
+    if (!isUUID(userId)) return false
 
     let { data: user, error } = await supabaseCall(() => supabase
         .from('users')
