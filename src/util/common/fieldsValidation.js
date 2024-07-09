@@ -22,7 +22,11 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 
 		const expectedType = acceptedFields[key];
 		const actualType = Array.isArray(fields[key]) ? "array" : typeof fields[key];
-		if (actualType !== expectedType) {
+		if (Array.isArray(expectedType) && !expectedType.includes(actualType)){
+			console.log(`Invalid type for field: ${key}, expected: ${expectedType}, got: ${actualType}`);
+			invalidFields.push(key);
+		}
+		if (typeof expectedType == "string" && actualType !== expectedType) {
 			console.log(`Invalid type for field: ${key}, expected: ${expectedType}, got: ${actualType}`);
 			invalidFields.push(key);
 		}
