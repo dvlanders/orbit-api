@@ -381,7 +381,7 @@ exports.getAccount = async (req, res) => {
 		const func = fetchRailFunctionsMap[railType]
 		const accountInfo = await func(accountId)
 
-		if (!accountInfo) return res.status(404).json({ error: "No account found" }) 
+		if (!accountInfo) return res.status(404).json({ error: "No account found" })
 		accountInfo.railType = railType
 		return res.status(200).json(accountInfo);
 	} catch (error) {
@@ -400,7 +400,7 @@ exports.getAllAccounts = async (req, res) => {
 	const fields = req.query
 	const { profileId, railType, limit, createdAfter, createdBefore, userId } = fields;
 	const requiredFields = ["railType"]
-	const acceptedFields = {railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string"}
+	const acceptedFields = { railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
@@ -425,8 +425,8 @@ exports.activateOnRampRail = async (req, res) => {
 	const { rail, destinationCurrency, destinationChain } = fields
 	// fields validation
 	const requiredFields = ["rail", "destinationCurrency", "destinationChain"]
-	const acceptedFields = {"rail": "string", "destinationCurrency": "string", "destinationChain": "string"}
-	const {missingFields, invalidFields} = fieldsValidation(fields, requiredFields, acceptedFields)
+	const acceptedFields = { "rail": "string", "destinationCurrency": "string", "destinationChain": "string" }
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields });
 	}
@@ -438,10 +438,10 @@ exports.activateOnRampRail = async (req, res) => {
 
 	try {
 		const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
-		if (!activateFunction) return res.status(400).json({error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported`})
+		if (!activateFunction) return res.status(400).json({ error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported` })
 		const config = {
-			userId, 
-			destinationCurrency, 
+			userId,
+			destinationCurrency,
 			destinationChain
 		}
 		const result = await activateFunction(config)
@@ -452,6 +452,310 @@ exports.activateOnRampRail = async (req, res) => {
 
 	} catch (error) {
 		createLog("account/activateOnRampRail", userId, error.message, error.rawResponse)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+
+}
+
+exports.createCircleWireBankAccount = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { userId, accountType } = req.query; // Assuming accountType is passed as a query parameter
+
+	// Validate the accountType
+	if (!['us', 'nonUsIbanSupported', 'nonUsIbanUnsupported'].includes(accountType)) {
+		return res.status(400).json({ error: 'Invalid account type specified' });
+	}
+
+	const fields = req.body;
+
+	// Define fields based on account type
+	let requiredFields = [];
+	let acceptedFields = {};
+	switch (accountType) {
+		case 'us':
+			requiredFields = [
+				'idempotencyKey', 'accountNumber', 'routingNumber',
+				'accountHolderName', 'accountHolderCity', 'accountHolderCountry', 'accountHolderStreetLine1', 'accountHolderPostalCode', 'bankCountry'
+			];
+			acceptedFields = {
+				'idempotencyKey': 'string', 'accountNumber': 'string', 'routingNumber': 'string',
+				'accountHolderName': 'string', 'accountHolderCity': 'string', 'accountHolderCountry': 'string', 'accountHolderStreetLine1': 'string', 'accountHolderStreetLine2': 'string', 'accountHolderStateProvinceRegion': 'string', 'accountHolderPostalCode': 'string',
+				'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string',
+			};
+			break;
+		case 'nonUsIbanSupported':
+			requiredFields = [
+				'idempotencyKey', 'iban',
+				'accountHolderName', 'accountHolderCity', 'accountHolderCountry', 'accountHolderStreetLine1', 'accountHolderPostalCodegPostalCode', 'bankCity', 'bankCountry'
+			];
+			acceptedFields = {
+				'idempotencyKey': 'string', 'iban': 'string',
+				'accountHolderName': 'string', 'accountHolderCity': 'string', 'accountHolderCountry': 'string', 'accountHolderStreetLine1': 'string', 'accountHolderStreetLine2': 'string', 'accountHolderStateProvinceRegion': 'string', 'accountHolderPostalCode': 'string', 'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string'
+			};
+			break;
+		case 'nonUsIbanUnsupported':
+			requiredFields = [
+				'idempotencyKey', 'accountNumber', 'businessIdentifierCode',
+				'accountHolderName', 'accountHolderCity', 'accountHolderCountry', 'accountHolderStreetLine1', 'accountHolderPostalCode',
+				'bankName', 'bankCity', 'bankCountry'
+			];
+			acceptedFields = {
+				'idempotencyKey': 'string', 'accountNumber': 'string', 'businessIdentifierCode': 'string',
+				'accountHolderName': 'string', 'accountHolderCity': 'string', 'accountHolderCountry': 'string', 'accountHolderStreetLine1': 'string', 'accountHolderStreetLine2': 'string', 'accountHolderStateProvinceRegion': 'string', 'accountHolderPostalCode': 'string', 'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string',
+				'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string',
+			};
+			break;
+	}
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	}
+
+	if (invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+	}
+
+	// construct the requestBody object based on the accountType
+	let requestBody = {};
+	// const idempotencyKey = v4()
+	switch (accountType) {
+		case 'us':
+			requestBody = {
+				"idempotencyKey": fields.idempotencyKey,
+				"accountNumber": fields.accountNumber,
+				"routingNumber": fields.routingNumber,
+				"billingDetails": {
+					"name": fields.accountHolderName,
+					"city": fields.accountHolderCity,
+					"country": fields.accountHolderCountry,
+					"line1": fields.accountHolderStreetLine1,
+					"postalCode": fields.accountHolderPostalCode,
+				},
+				"bankAddress": {
+					"country": fields.bankCountry,
+				}
+			};
+			// Conditionally add optional billing details
+			if (fields.accountHolderStreetLine2) {
+				requestBody.billingDetails.line2 = fields.accountHolderStreetLine2;
+			}
+			if (fields.accountHolderStateProvinceRegion) {
+				requestBody.billingDetails.district = fields.accountHolderStateProvinceRegion;
+			}
+
+			// Conditionally add optional bank address details
+			if (fields.bankName) {
+				requestBody.bankAddress.bankName = fields.bankName;
+			}
+			if (fields.bankCity) {
+				requestBody.bankAddress.city = fields.bankCity;
+			}
+			if (fields.bankStreetLine1) {
+				requestBody.bankAddress.line1 = fields.bankStreetLine1;
+			}
+			if (fields.bankStreetLine2) {
+				requestBody.bankAddress.line2 = fields.bankStreetLine2;
+			}
+			if (fields.bankStateProvinceRegion) {
+				requestBody.bankAddress.district = fields.bankStateProvinceRegion;
+			}
+			break;
+		case 'nonUsIbanSupported':
+			requestBody = {
+				"idempotencyKey": fields.idempotencyKey,
+				"name": fields.accountHolderName,
+				"iban": fields.iban,
+				"billingDetails": {
+					"name": fields.accountHolderName,
+					"city": fields.accountHolderCity,
+					"country": fields.accountHolderCountry,
+					"line1": fields.accountHolderStreetLine1,
+					"postalCode": fields.accountHolderPostalCode,
+				},
+				"bankAddress": {
+					"city": fields.bankCity,
+					"country": fields.bankCountry,
+				}
+			};
+			// Conditionally add optional billing details
+			if (fields.accountHolderStreetLine2) {
+				requestBody.billingDetails.line2 = fields.accountHolderStreetLine2;
+			}
+			if (fields.accountHolderStateProvinceRegion) {
+				requestBody.billingDetails.district = fields.accountHolderStateProvinceRegion;
+			}
+
+			// Conditionally add optional bank address details
+			if (fields.bankName) {
+				requestBody.bankAddress.bankName = fields.bankName;
+			}
+			if (fields.bankStreetLine1) {
+				requestBody.bankAddress.line1 = fields.bankStreetLine1;
+			}
+			if (fields.bankStreetLine2) {
+				requestBody.bankAddress.line2 = fields.bankStreetLine2;
+			}
+			if (fields.bankStateProvinceRegion) {
+				requestBody.bankAddress.district = fields.bankStateProvinceRegion;
+			}
+			break;
+		case 'nonUsIbanUnsupported':
+			requestBody = {
+				"idempotencyKey": fields.idempotencyKey,
+				"accountNumber": fields.accountNumber,
+				"routingNumber": fields.businessIdentifierCode,
+				"billingDetails": {
+					"name": fields.accountHolderName,
+					"city": fields.accountHolderCity,
+					"country": fields.accountHolderCountry,
+					"line1": fields.accountHolderStreetLine1,
+					"postalCode": fields.accountHolderPostalCode,
+				},
+				"bankAddress": {
+					"bankName": fields.bankName,
+					"city": fields.bankCity,
+					"country": fields.bankCountry,
+				}
+			};
+			// Conditionally add optional billing details
+			if (fields.accountHolderStreetLine2) {
+				requestBody.billingDetails.line2 = fields.accountHolderStreetLine2;
+			}
+			if (fields.accountHolderStateProvinceRegion) {
+				requestBody.billingDetails.district = fields.accountHolderStateProvinceRegion;
+			}
+
+			// Conditionally add optional bank address details
+
+			if (fields.bankStreetLine1) {
+				requestBody.bankAddress.line1 = fields.bankStreetLine1;
+			}
+			if (fields.bankStreetLine2) {
+				requestBody.bankAddress.line2 = fields.bankStreetLine2;
+			}
+			if (fields.bankStateProvinceRegion) {
+				requestBody.bankAddress.district = fields.bankStateProvinceRegion;
+			}
+			break;
+	}
+	try {
+		// save the request details to the circle_accounts table
+		const { data: circleAccountData, error: circleAccountError } = await supabase
+			.from('circle_accounts')
+			.insert({
+				user_id: userId,
+				circle_idempotency_key: requestBody.idempotencyKey,
+				account_type: accountType,
+				account_number: requestBody.accountNumber || null,
+				routing_number: requestBody.routingNumber || null,
+				account_holder_name: requestBody.billingDetails?.name || null,
+				account_holder_city: requestBody.billingDetails?.city || null,
+				account_holder_country: requestBody.billingDetails?.country || null,
+				account_holder_street_line_1: requestBody.billingDetails?.line1 || null,
+				account_holder_street_line_2: requestBody.billingDetails?.line2 || null,
+				account_holder_state_province_region: requestBody.billingDetails?.district || null,
+				account_holder_postal_code: requestBody.billingDetails?.postalCode || null,
+				bank_name: requestBody.bankAddress?.bankName || null,
+				bank_city: requestBody.bankAddress?.city || null,
+				bank_country: requestBody.bankAddress?.country || null,
+				bank_street_line_1: requestBody.bankAddress?.line1 || null,
+				bank_street_line_2: requestBody.bankAddress?.line2 || null,
+				bank_state_province_region: requestBody.bankAddress?.district || null,
+				iban: requestBody.iban || null,
+				business_identifier_code: requestBody.routingNumber || null,
+			}).select()
+			;
+
+		// handle error
+		if (circleAccountError) {
+			// console.log("circleAccountError", circleAccountError)
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+		const headers = {
+			'Accept': 'application/json',
+			'Authorization': `Bearer ${process.env.CIRCLE_API_KEY}`,
+			'Content-Type': 'application/json'
+		};
+
+		// console.log("requestBody", requestBody)
+		const url = `${process.env.CIRCLE_URL}/businessAccount/banks/wires`;
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(requestBody)
+		});
+
+
+		//check if response status is 400 or 401
+		if (response.status === 400 || response.status === 401) {
+			const responseData = await response.json();
+			createLog("account/createCircleWireBankAccount", userId, responseData.message, responseData)
+			return res.status(400).json({
+				error: responseData.message
+			});
+
+		}
+		// Check if the response is successful
+		if (response.status !== 200) {
+			const errorData = await response.text();
+			throw new Error(`API call failed with status ${response.status}: ${errorData}`);
+		}
+
+		// Parse the JSON response
+		const responseData = await response.json();
+
+
+
+		// update the circle_account_id, circle_status, circle_description, circle_tracking_ref, circle_fingerprint in the circle_accounts table
+		const { data: circleAccountUpdateData, error: circleAccountUpdateError } = await supabase
+			.from('circle_accounts')
+			.update({
+				circle_account_id: responseData.data.id,
+				circle_status: responseData.data.status,
+				circle_description: responseData.data.description,
+				circle_tracking_ref: responseData.data.trackingRef,
+				circle_fingerprint: responseData.data.fingerprint
+			})
+			.match({ id: circleAccountData[0].id })
+
+		if (circleAccountUpdateError) {
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+		const responseObject = {};
+		if (circleAccountData[0].circle_idempotency_key) responseObject.id = circleAccountData[0].id;
+		if (responseData && responseData.data && responseData.data.status) responseObject.status = responseData.data.status;
+		if (circleAccountData[0].account_type) responseObject.accountType = circleAccountData[0].account_type;
+		if (circleAccountData[0].account_number) responseObject.accountNumber = circleAccountData[0].account_number;
+		if (circleAccountData[0].iban) responseObject.iban = circleAccountData[0].iban;
+		if (circleAccountData[0].business_identifier_code) responseObject.businessIdentifierCode = circleAccountData[0].business_identifier_code;
+		if (circleAccountData[0].account_holder_name) responseObject.accountHolderName = circleAccountData[0].account_holder_name;
+		if (circleAccountData[0].account_holder_city) responseObject.accountHolderCity = circleAccountData[0].account_holder_city;
+		if (circleAccountData[0].account_holder_country) responseObject.accountHolderCountry = circleAccountData[0].account_holder_country;
+		if (circleAccountData[0].account_holder_street_line_1) responseObject.accountHolderStreetLine1 = circleAccountData[0].account_holder_street_line_1;
+		if (circleAccountData[0].account_holder_street_line_2) responseObject.accountHolderStreetLine2 = circleAccountData[0].account_holder_street_line_2;
+		if (circleAccountData[0].account_holder_state_province_region) responseObject.accountHolderStateProvinceRegion = circleAccountData[0].account_holder_state_province_region;
+		if (circleAccountData[0].account_holder_postal_code) responseObject.accountHolderPostalCode = circleAccountData[0].account_holder_postal_code;
+		if (circleAccountData[0].bank_name) responseObject.bankName = circleAccountData[0].bank_name;
+		if (circleAccountData[0].bank_city) responseObject.bankCity = circleAccountData[0].bank_city;
+		if (circleAccountData[0].bank_country) responseObject.bankCountry = circleAccountData[0].bank_country;
+		if (circleAccountData[0].bank_street_line_1) responseObject.bankStreetLine1 = circleAccountData[0].bank_street_line_1;
+		if (circleAccountData[0].bank_street_line_2) responseObject.bankStreetLine2 = circleAccountData[0].bank_street_line_2;
+		if (circleAccountData[0].bank_state_province_region) responseObject.bankStateProvinceRegion = circleAccountData[0].bank_state_province_region;
+
+
+
+		// return response object wiht success code
+		return res.status(200).json(responseObject);
+
+	} catch (error) {
+		createLog("account/createCircleWireBankAccount", userId, error.message, error.rawResponse)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
