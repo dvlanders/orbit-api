@@ -5,7 +5,7 @@ const requiredFields = [
 const acceptedFields = {
     "senderUserId": "string",
     "profileId": "string",
-    "amount": "number",
+    "amount": ["number", "string"],
     "requestId": "string",
     "recipientUserId": "string",
     "recipientAddress": "string",
