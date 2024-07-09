@@ -666,14 +666,14 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, limit, createdAfter, createdBefore} = fields
+	const {profileId, limit, createdAfter, createdBefore, userType} = fields
 	const requiredFields = []
-	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string"}
+	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string", userType: "string"}
 	try{
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		if (limit && limit > 100) return res.status(400).json({error: "At most request 100 users at a time"})
-		const users = await getAllUsers(profileId, limit, createdAfter, createdBefore)
+		const users = await getAllUsers(profileId, userType, limit, createdAfter, createdBefore)
 		return res.status(200).json({count: users.length, users})
 	}catch (error){
 		console.error(error)
