@@ -54,10 +54,10 @@ const getBridgeCustomer = async(userId) => {
         )
         if (bridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridgeCustomerError.message, bridgeCustomerError)
         if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
-        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id || bridgeCustomer.status == "invalid_fields") {
+        if (bridgeCustomer.status == "invalid_fields") {
             let invalidFields = []
             if (bridgeCustomer.bridge_response){
-                invalidFields = Object.keys(responseBody.source.key).map((k) => bridgeFieldsToRequestFields[k])
+                invalidFields = Object.keys(bridgeCustomer.bridge_response.source.key).map((k) => bridgeFieldsToRequestFields[k])
             }
             return {
                 status: 200,
@@ -77,6 +77,27 @@ const getBridgeCustomer = async(userId) => {
                     fields: []
                 },
                 message: "kyc aplication not submitted, please use user/update to resubmit application"
+            }
+        }
+        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
+            return {
+                status: 200,
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "kyc aplication not submitted, please use user/update to resubmit application or contact HIFI for more information"
             }
         }
 
