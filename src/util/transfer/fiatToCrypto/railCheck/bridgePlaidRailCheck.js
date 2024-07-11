@@ -40,7 +40,7 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
     }
 
     // rail is not exist
-    if (!bridgeVirtualAccount) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "No resource found for provided sourceCurrency, destinationCurrency, chain for provided destinationUserId")
+    if (!bridgeVirtualAccount) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "No resource found for provided sourceCurrency, destinationCurrency, chain for provided destinationUserId, please use account/activateOnRampRail to create a rail first")
     // check if the checkboook account is created for the virtual account
     // if not should be internal error
     const {data: checkbookAccountForBridgeVirtualAccount, error: checkbookAccountForBridgeVirtualAccountError} = await supabaseCall (() => supabase
