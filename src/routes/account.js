@@ -9,6 +9,6 @@ module.exports = (router) => {
 	router.post("/account/euro/offramp", authorize, account.createEuroOfframpDestination);// bridge external account
 	router.get("/account", authorize, account.getAccount);
 	router.get("/account/all", authorize, account.getAllAccounts);
-	router.post("/account/wire/offramp", account.createCircleWireBankAccount);
+	router.post("/account/wire/offramp", authorize, account.createCircleWireBankAccount);
 
 };

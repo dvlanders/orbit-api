@@ -1,10 +1,22 @@
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { CustomerStatus } = require("./common");
+const { getRawUserObject } = require("./getRawUserObject");
 
-const getAllUsers = async(profileId, userType="all", limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
+const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
     let users
-    if (userType == "all"){
+    if (userId){
+        const {data, error: usersError} = await supabase
+        .from("users")
+        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
+        .eq("profile_id", profileId)
+        .not("user_kyc", "is", null)
+        .eq("id", userId)
+        .limit(1)
+        if (usersError) throw usersError
+        users = data
+    }
+    else if (userType == "all"){
         const {data, error: usersError} = await supabase
         .from("users")
         .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
@@ -59,7 +71,7 @@ const getAllUsers = async(profileId, userType="all", limit=10, createdAfter=new 
             createdAt: new Date(user.created_at),
             userKycStatus: bridgeKycStatus, // now only represent bridge, which has the most functionality
             walletStatus: walletstatus, // only represent bastion now
-            walletAddress: user.bastion_wallets
+            walletAddress: user.bastion_wallets,
         }
         if (user.user_type == "business") {
             userInfo.ultimateBeneficialOwners = user.ultimate_beneficial_owners

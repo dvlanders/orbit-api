@@ -23,6 +23,7 @@ const getAllUsers = require('../util/user/getAllUsers');
 const { CustomerStatus } = require('../util/user/common');
 const createJob = require('../../asyncJobs/createJob');
 const jobMapping = require('../../asyncJobs/jobMapping');
+const { getRawUserObject } = require('../util/user/getRawUserObject');
 
 
 const Status = {
@@ -264,176 +265,8 @@ exports.getHifiUser = async (req, res) => {
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 
-
-		// base response
-		let getHifiUserResponse = {
-			wallet: {
-				walletStatus: Status.PENDING,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: Status.PENDING, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: Status.PENDING, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-						},
-					},
-					offRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-			user: {
-				id: userId
-			}
-		}
-
-		// check if the userCreation is in the job queue, if yes return pending response
-		const canScheduled = await jobMapping.createUser.scheduleCheck("createUser", {}, userId, profileId)
-		if (!canScheduled) return res.status(200).json(getHifiUserResponse)
-
-		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			getBastionUser(userId),
-			getBridgeCustomer(userId),
-			getCheckbookUser(userId)
-		])
-
-		// Bastion status
-		const wallet = {
-			walletStatus: bastionResult.walletStatus,
-			walletMessage: bastionResult.message,
-			actionNeeded: {
-				actions: [...bastionResult.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
-				fieldsToResubmit: [...bastionResult.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			},
-			walletAddress: bastionResult.walletAddress
-		}
-		getHifiUserResponse.wallet = wallet
-
-		//checkbook status
-		const achPull = {
-			achPullStatus: checkbookResult.usOnRamp.status,
-			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-			}
-		}
-		getHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
-
-		// bridge status
-		// kyc
-		const userKyc = {
-			status: bridgeResult.customerStatus.status,
-			actionNeeded: {
-				actions: bridgeResult.customerStatus.actions,
-				fieldsToResubmit: bridgeResult.customerStatus.fields,
-			}
-		}
-		getHifiUserResponse.user_kyc = userKyc
-		// usRamp
-		const usdAch = {
-			onRamp: {
-				status: bridgeResult.usRamp.status,
-				actionNeeded: {
-					actions: bridgeResult.customerStatus.actions,
-					fieldsToResubmit: bridgeResult.customerStatus.fields
-				},
-				message: bridgeResult.message,
-				achPull: {
-					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-					}
-				}
-			},
-			offRamp: {
-				status: bridgeResult.usRamp.status,
-				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
-				},
-			}
-		}
-		getHifiUserResponse.ramps.usdAch = usdAch
-		// euRamp
-		const euroSepa = {
-			onRamp: {
-				status: Status.INACTIVE,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: 'SEPA onRamp will be available in near future',
-			},
-			offRamp: {
-				status: bridgeResult.euRamp.status,
-				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.fields, ...getHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.fieldsToResubmit],
-				},
-				message: ''
-			},
-		}
-		getHifiUserResponse.ramps.euroSepa = euroSepa
-
-
-
-		// determine the status code to return to the client -- copied from createHifiUser, make sure this logic still holds true
-		let status
-		if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
-			status = 200
-		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
-			status = 500;
-		} else {
-			status = 400;
-		}
+		// get status
+		const {status, getHifiUserResponse} = await getRawUserObject(userId, profileId)
 
 
 		return res.status(status).json(getHifiUserResponse);
@@ -673,14 +506,15 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, limit, createdAfter, createdBefore, userType} = fields
+	const {profileId, limit, createdAfter, createdBefore, userType, userId} = fields
 	const requiredFields = []
-	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string", userType: "string"}
+	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string", userType: "string", userId: "string"}
 	try{
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		if (limit && limit > 100) return res.status(400).json({error: "At most request 100 users at a time"})
-		const users = await getAllUsers(profileId, userType, limit, createdAfter, createdBefore)
+		if (userId && !isUUID(userId)) return res.status(404).json({error: "User not found"})
+		const users = await getAllUsers(userId, profileId, userType, limit, createdAfter, createdBefore)
 		return res.status(200).json({count: users.length, users})
 	}catch (error){
 		console.error(error)
