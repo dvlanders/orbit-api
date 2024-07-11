@@ -1,3 +1,4 @@
+const { POLYGON_AMOY } = require("../../transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions")
 const activateUsAchOnRampRail = require("./usAch")
 
 const OnRampRail = {
@@ -20,6 +21,9 @@ const activateOnRampRailFunctionsCheck = (fiatRail, destinationChain, destinatio
  */
 const activateOnRampRailFunctions = {
 	US_ACH: {
+		POLYGON_AMOY: {
+			usdc: activateUsAchOnRampRail
+		},
 		POLYGON_MAINNET: {
 			usdc: activateUsAchOnRampRail
 		},
