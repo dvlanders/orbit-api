@@ -482,7 +482,7 @@ exports.updateHifiUser = async (req, res) => {
 		} else if (user.user_type === "business") {
 			bridgeFunction = updateBusinessBridgeCustomer;
 		} else {
-			return res.status(500).json({ error: "User type not found for provided userId" })	
+			return res.status(500).json({ error: "User type not found for provided userId" })
 		}
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
@@ -666,19 +666,19 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, limit, createdAfter, createdBefore} = fields
+	const { profileId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string"}
-	try{
+	const acceptedFields = { limit: "string", createdAfter: "string", createdBefore: "string" }
+	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		if (limit && limit > 100) return res.status(400).json({error: "At most request 100 users at a time"})
+		if (limit && limit > 100) return res.status(400).json({ error: "At most request 100 users at a time" })
 		const users = await getAllUsers(profileId, limit, createdAfter, createdBefore)
-		return res.status(200).json({count: users.length, users})
-	}catch (error){
+		return res.status(200).json({ count: users.length, users })
+	} catch (error) {
 		console.error(error)
 		createLog("user/getAllHifiUser", "", error.message)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 }
@@ -702,9 +702,9 @@ exports.generateToSLink = async (req, res) => {
 		// check is template exist
 		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
 		let encodedUrl
-		if (redirectUrl){	
+		if (redirectUrl) {
 			encodedUrl = `&redirectUrl=${encodeURIComponent(redirectUrl)}`
-		}else{
+		} else {
 			encodedUrl = ""
 		}
 		// check is idempotencyKey already exist
@@ -760,7 +760,7 @@ exports.acceptToSLink = async (req, res) => {
  * @param {*} res 
  * @returns 
  */
-exports.createHifiUserV2 = async(req, res) => {
+exports.createHifiUserV2 = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -854,11 +854,11 @@ exports.createHifiUserV2 = async(req, res) => {
 		}
 
 
-		
+
 
 		return res.status(200).json(createHifiUserResponse)
 
-	}catch (error){
+	} catch (error) {
 		createLog("user/create", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
