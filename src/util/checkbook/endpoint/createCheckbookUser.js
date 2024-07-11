@@ -117,7 +117,7 @@ const createCheckbookUser = async (userId) => {
 		// create source checkbook user
 		await createSingleCheckbookUser(user, userId, userId, "SOURCE")
 		// create destination checkbook user
-		await createSingleCheckbookUser(user, userId, `${userId}-destination`, "DESTINATION")
+		// await createSingleCheckbookUser(user, userId, `${userId}-destination`, "DESTINATION")
 
 
 		return {

@@ -513,6 +513,7 @@ exports.getAllHifiUser = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		if (limit && limit > 100) return res.status(400).json({error: "At most request 100 users at a time"})
+		if (userId && !isUUID(userId)) return res.status(404).json({error: "User not found"})
 		const users = await getAllUsers(userId, profileId, userType, limit, createdAfter, createdBefore)
 		return res.status(200).json({count: users.length, users})
 	}catch (error){
