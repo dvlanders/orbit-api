@@ -79,12 +79,9 @@ const businessRequiredFields = [
 	"ultimateBeneficialOwners",
 	"ipAddress",
 	"transmitsCustomerFunds",
-	"complianceScreeningExplanation",
 	"proofOfOwnership",
 	"website",
 	"businessDescription",
-
-
 ];
 
 const businessAcceptedFields = {

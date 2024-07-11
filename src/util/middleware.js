@@ -64,7 +64,7 @@ exports.authorizeDashboard = async(req, res, next) => {
         req.query.profileId = user.sub
 		next()
 	}catch (error){
-		console.error(err)
+		console.error(error)
 		return res.status(500).json({error : "Unexpected error happened"});
 	}
 }
