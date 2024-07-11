@@ -61,6 +61,18 @@ exports.authorizeDashboard = async(req, res, next) => {
         if (!user && !user?.sub) {
             return res.status(401).json({ error: "Not authorized" });
         };
+
+		//check is prod enable
+		const {data, error} = await supabase
+			.from("profiles")
+			.select("prod_enabled")
+			.eq("id", user.sub)
+			.maybeSingle()
+		
+		if (error) throw error
+		if (!data)return res.status(401).json({ error: "Not authorized" });
+		if (!data.prod_enabled) return res.status(401).json({ error: "Not authorized" });
+
         req.query.profileId = user.sub
 		next()
 	}catch (error){
