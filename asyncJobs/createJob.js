@@ -1,6 +1,9 @@
+const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
 const { supabaseCall } = require("../src/util/supabaseWithRetry");
 const jobMapping = require("./jobMapping");
+
+const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
 
 const createJob = async(job, config, userId, profileId, createdAt=new Date().toISOString(), numberOfRetries=0, nextRetry=new Date().toISOString()) => {
     try{
@@ -20,13 +23,14 @@ const createJob = async(job, config, userId, profileId, createdAt=new Date().toI
                 created_at: createdAt,
                 next_retry: nextRetry,
                 number_of_retries: numberOfRetries + 1,
+                env: JOB_ENV
             })
         
         if (error) throw error
         return
 
     }catch (error){
-        createLog("asyncJob/createJob")
+        await createLog("asyncJob/createJob", userId, error.message)
     }
 }
 
