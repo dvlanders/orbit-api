@@ -181,7 +181,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		}
 	} catch (error) {
 		//  log
-		createLog("user/create", userId, error.message, error.rawResponse)
+		createLog("user/create/createIndividualBridgeCustomer", userId, error.message, error.rawResponse)
 		console.error(`Error happens in create individual bridge user `, error)
 		// process error
 		if (error.type == createBridgeCustomerErrorType.INTERNAL_ERROR) {

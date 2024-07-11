@@ -9,6 +9,7 @@ const dayAfterCreated = 3
 const initialRetryInterval = 60 * 1000 // 60 secs
 const maxRetryInterval = 3600 * 1000 // 1 hr
 
+const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
 
 const pollAsyncJobs = async() => {
     try{
@@ -19,11 +20,12 @@ const pollAsyncJobs = async() => {
         .delete()
         .lt('next_retry', now.toISOString())
         .gt('created_at', new Date(now.getTime() - dayAfterCreated * 24 * 60 * 60 * 1000).toISOString())
+        .eq("env", JOB_ENV)
         .select("*")
         .order('next_retry', {ascending: true})
     
         if (error) {
-            createLog("pollWebhookRetry", "", error.message)
+            createLog("pollAsyncJobs", "", error.message)
             return
         }
     
@@ -34,7 +36,7 @@ const pollAsyncJobs = async() => {
                 await jobFunc(job.config)
                 success = true
             }catch(error){
-                createLog("pollAsyncJobs", job.user_id, error.message)
+                await createLog("pollAsyncJobs", job.user_id, error.message)
                 const jitter = Math.random() * Math.min(initialRetryInterval * job.number_of_retries, maxRetryInterval)
                 const newNextRetry = new Date(now.getTime() + jitter).toISOString()
                 success = false
@@ -44,7 +46,7 @@ const pollAsyncJobs = async() => {
             }
         }))
     }catch (error){
-        createLog("pollWebhookRetry", "", error.message, )
+        createLog("pollAsyncJobs", "", error.message, )
     }
 }
 
