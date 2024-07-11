@@ -35,11 +35,6 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
-
 	// should gather senderUserId, profileId, amount, requestId, recipientUserId, recipientAddress, chain
 	const { profileId } = req.query
 	const fields = req.body
@@ -79,6 +74,12 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!recipientWalletInformation) return res.status(400).json({ error: `recipient wallet not found` })
 			fields.recipientAddress = recipientWalletInformation.address
 		}
+
+		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
+		}
+
 		// transfer
 		const receipt = await transferFunc(fields)
 
@@ -210,6 +211,11 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		}
 		if (!walletData) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		}
+
+		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
 		}
 
 		const { transferFunc } = funcs
@@ -344,6 +350,11 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		//check is source-destination pair supported
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
+
+		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
+		}
 		// onramp
 		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId)
 		return res.status(200).json(transferResult);
@@ -367,13 +378,13 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
 	if (process.env.NODE_ENV === "development") {
 		return res.status(200).json({ message: "This endpoint is only available in production" });
 	}
 
 	const { id, userId, profileId } = req.query
+
 	if (!id) return res.status(400).json({ error: `id is required` })
 
 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
