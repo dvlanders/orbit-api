@@ -1,4 +1,3 @@
-const { POLYGON_AMOY } = require("../../transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions")
 const activateUsAchOnRampRail = require("./usAch")
 
 const OnRampRail = {
