@@ -21,6 +21,8 @@ const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSign
 const { v4: uuidv4 } = require("uuid");
 const getAllUsers = require('../util/user/getAllUsers');
 const { CustomerStatus } = require('../util/user/common');
+const createJob = require('../../asyncJobs/createJob');
+const jobMapping = require('../../asyncJobs/jobMapping');
 
 
 const Status = {
@@ -247,7 +249,7 @@ exports.getHifiUser = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const { userId } = req.query
+	const { userId, profileId } = req.query
 	try {
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
@@ -266,7 +268,7 @@ exports.getHifiUser = async (req, res) => {
 		// base response
 		let getHifiUserResponse = {
 			wallet: {
-				walletStatus: Status.INACTIVE,
+				walletStatus: Status.PENDING,
 				actionNeeded: {
 					actions: [],
 					fieldsToResubmit: [],
@@ -275,7 +277,7 @@ exports.getHifiUser = async (req, res) => {
 				walletAddress: {}
 			},
 			user_kyc: {
-				status: Status.INACTIVE, // represent bridge
+				status: Status.PENDING, // represent bridge
 				actionNeeded: {
 					actions: [],
 					fieldsToResubmit: [],
@@ -285,14 +287,14 @@ exports.getHifiUser = async (req, res) => {
 			ramps: {
 				usdAch: {
 					onRamp: {
-						status: Status.INACTIVE, // represent bridge
+						status: Status.PENDING, // represent bridge
 						actionNeeded: {
 							actions: [],
 							fieldsToResubmit: [],
 						},
 						message: '',
 						achPull: {
-							achPullStatus: Status.INACTIVE, //represent bridge + checkbook
+							achPullStatus: Status.PENDING, //represent bridge + checkbook
 							actionNeeded: {
 								actions: [],
 								fieldsToResubmit: [],
@@ -300,7 +302,7 @@ exports.getHifiUser = async (req, res) => {
 						},
 					},
 					offRamp: {
-						status: Status.INACTIVE, // represent bridge
+						status: Status.PENDING, // represent bridge
 						actionNeeded: {
 							actions: [],
 							fieldsToResubmit: [],
@@ -318,7 +320,7 @@ exports.getHifiUser = async (req, res) => {
 						message: 'SEPA onRamp will be available in near future',
 					},
 					offRamp: {
-						status: Status.INACTIVE, // represent bridge
+						status: Status.PENDING, // represent bridge
 						actionNeeded: {
 							actions: [],
 							fieldsToResubmit: [],
@@ -332,6 +334,9 @@ exports.getHifiUser = async (req, res) => {
 			}
 		}
 
+		// check if the userCreation is in the job queue, if yes return pending response
+		const canScheduled = await jobMapping.createUser.scheduleCheck("createUser", {}, userId, profileId)
+		if (!canScheduled) return res.status(200).json(getHifiUserResponse)
 
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
 			getBastionUser(userId),
@@ -497,7 +502,9 @@ exports.updateHifiUser = async (req, res) => {
 
 		// STEP 4: Contruct the response object based on the responses from the 3rd party providers
 		let updateHifiUserResponse = {
-			userID: userId,
+			user: {
+				id: userId
+			},
 			wallet: {
 				walletStatus: Status.INACTIVE,
 				actionNeeded: {
@@ -666,14 +673,14 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, limit, createdAfter, createdBefore} = fields
+	const {profileId, limit, createdAfter, createdBefore, userType} = fields
 	const requiredFields = []
-	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string"}
+	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string", userType: "string"}
 	try{
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		if (limit && limit > 100) return res.status(400).json({error: "At most request 100 users at a time"})
-		const users = await getAllUsers(profileId, limit, createdAfter, createdBefore)
+		const users = await getAllUsers(profileId, userType, limit, createdAfter, createdBefore)
 		return res.status(200).json({count: users.length, users})
 	}catch (error){
 		console.error(error)
@@ -760,7 +767,7 @@ exports.acceptToSLink = async (req, res) => {
  * @param {*} res 
  * @returns 
  */
-exports.createHifiUserV2 = async(req, res) => {
+exports.createHifiUserAsync = async(req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -853,13 +860,130 @@ exports.createHifiUserV2 = async(req, res) => {
 			}
 		}
 
-
-		
+		// insert async jobs
+		await createJob("createUser", {userId, userType: fields.userType}, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
 
 	}catch (error){
-		createLog("user/create", userId, error.message, error)
+		createLog("user/createHifiUserAsync", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
+
+/**
+ * This is an experimental function which only update user's kyc information to the database 
+ * then create async job for submit bridgeKyc, createCheckbook and createBastion
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
+exports.updateHifiUserAsync = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	try {
+
+		const { userId, profileId } = req.query
+		const fields = req.body
+
+		//invalid user_id
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
+		// check if user is created
+		let { data: user, error: userError } = await supabaseCall(() => supabase
+			.from('users')
+			.select('*')
+			.eq("id", userId)
+			.maybeSingle()
+		)
+		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+		// upload all the information
+		try {
+			await informationUploadForUpdateUser(userId, fields)
+		} catch (error) {
+			if (!(error instanceof InformationUploadError)) {
+				createLog("user/utils/informationUploadForUpdateUser", error.message, error)
+				return res.status(500).json({ error: "Unexpected error happened" })
+			}
+			return res.status(error.status).json(error.rawResponse)
+		}
+		// insert async jobs
+		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
+
+		let updateHifiUserResponse = {
+			user: {
+				id: userId
+			},
+			wallet: {
+				walletStatus: Status.PENDING,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: "",
+				walletAddress: {}
+			},
+			user_kyc: {
+				status: Status.PENDING, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onRamp: {
+						status: Status.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: Status.PENDING, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+						},
+					},
+					offRamp: {
+						status: Status.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onRamp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offRamp: {
+						status: Status.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+		}
+
+		return res.status(200).json(updateHifiUserResponse);
+	} catch (error) {
+		const { user_id: userId } = req.query
+		createLog("user/updateHifiUserAsync", userId, error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+	}
+};
