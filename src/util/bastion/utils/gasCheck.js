@@ -24,7 +24,7 @@ const bastionGasCheck = async(userId, chain) => {
             return
         }
 
-        const gasLeft = responseBody.baseAssetBalance
+        const gasLeft = responseBody.baseAssetBalance.quantity
         // fund 0.1 eth when gas is less than 0.01
         if (BigInt(gasLeft) < BigInt(Math.pow(10, 16))){
             await createJob("fundGas", {userId, chain, amount: "0.1"}, userId)
