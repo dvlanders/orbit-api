@@ -1,9 +1,11 @@
 const createJob = require("../../asyncJobs/createJob");
+const { JobError } = require("../../asyncJobs/error");
 const insertJobHistory = require("../../asyncJobs/insertJobHistory");
 const jobMapping = require("../../asyncJobs/jobMapping");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
+
 
 const dayAfterCreated = 3
 const initialRetryInterval = 60 * 1000 // 60 secs
@@ -19,7 +21,7 @@ const pollAsyncJobs = async() => {
         .from('jobs_queue')
         .delete()
         .lt('next_retry', now.toISOString())
-        .gt('created_at', new Date(now.getTime() - dayAfterCreated * 24 * 60 * 60 * 1000).toISOString())
+        .gt('retry_deadline', now.toISOString())
         .eq("env", JOB_ENV)
         .select("*")
         .order('next_retry', {ascending: true})
@@ -31,18 +33,29 @@ const pollAsyncJobs = async() => {
     
         await Promise.all(jobsQueue.map(async(job) => {
             let success
+            let jobError
             try{
                 const jobFunc = jobMapping[job.job].execute
                 await jobFunc(job.config)
                 success = true
             }catch(error){
                 await createLog("pollAsyncJobs", job.user_id, error.message)
-                const jitter = Math.random() * Math.min(initialRetryInterval * job.number_of_retries, maxRetryInterval)
-                const newNextRetry = new Date(now.getTime() + jitter).toISOString()
+                const newNextRetry = new Date(now.getTime() + job.retry_interval).toISOString()
                 success = false
-                await createJob(job.job, job.config, job.user_id, job.profile_id, job.created_at, job.number_of_retries, newNextRetry)
+                await createJob(job.job, job.config, job.user_id, job.profile_id, job.created_at, job.number_of_retries, newNextRetry, job.retry_deadline, job.retry_interval)
+                
+                // record error
+                if (error instanceof JobError){
+                    jobError = {
+                        type: error.type,
+                        message: error.message,
+                        json: error.json,
+                        rawResponse: error.rawResponse,
+                        needToReschedule: error.needToReschedule
+                    }
+                }
             }finally{
-                await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success)
+                await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success, jobError)
             }
         }))
     }catch (error){

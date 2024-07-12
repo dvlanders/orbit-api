@@ -26,7 +26,9 @@ const createUserAsync = async(config) => {
             bridgeFunction = createBusinessBridgeCustomer
         }else if(config.userType == "individual"){
             bridgeFunction = createIndividualBridgeCustomer
-        }
+        }else {
+			throw new Error(`userType is not found: ${config.userType}`)	
+		}
 
         // Create customer objects for providers
         const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
@@ -37,7 +39,7 @@ const createUserAsync = async(config) => {
 
     }catch (error){
         await createLog("createUserAsync", config.userId, error.message)
-        throw new JobError(JobErrorType.INTERNAL_ERROR, "createUserAsync job failed due to some unexpected reason", "", "", true)
+        throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, "", "", true)
     }
 }
 
