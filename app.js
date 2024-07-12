@@ -7,7 +7,7 @@ const swaggerUi = require('swagger-ui-express');
 // use this to get NODE_ENV
 const localEnv = require('dotenv').config({ path: process.env.DOTENV_CONFIG_PATH });
 if (localEnv.error) {
-	console.log(result.error);
+	console.log(localEnv.error);
 	process.exit(0);
 }
 console.log("ENV:", process.env.NODE_ENV)
