@@ -30,7 +30,8 @@ async function pollOfframpTransactionsForCircleWireExecution() {
 	// For each transaction, call executeCircleWirePayout
 	await Promise.all(offrampTransactionData.map(async (transaction) => {
 		const { id, user_id, destination_currency, amount, circle_account_id } = transaction;
-		const response = await executeCircleWirePayout(id, user_id, destination_currency, amount, circle_account_id);
+		// FIXME: Uncomment the following line once we have the Circle prod keys and resolve the issue
+		// const response = await executeCircleWirePayout(id, user_id, destination_currency, amount, circle_account_id);
 	})
 	)
 }
