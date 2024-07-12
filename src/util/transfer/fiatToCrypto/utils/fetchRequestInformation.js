@@ -1,11 +1,12 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const fetchFiatToCryptoRequestInfortmaionById = async(id) => {
+const fetchFiatToCryptoRequestInfortmaionById = async(id, profileId) => {
         let { data: request, error:requestError } = await supabaseCall(() => supabase
             .from('onramp_transactions')
-            .select('*, source_user: user_id(user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), destination_user: destination_user_id(user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))')
+            .select('*, source_user: user_id!inner(profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), destination_user: destination_user_id(user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))')
             .eq("id", id)
+            .eq("source_user.profile_id", profileId)
             .maybeSingle())
         
 
