@@ -4,9 +4,11 @@ const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 
-const fetchBridgeCryptoToFiatTransferRecord = async(id) => {
+const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
     // get transactio record
-    const record = await fetchCryptoToFiatRequestInfortmaionById(id, "BRIDGE", "BASTION")
+    const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "BRIDGE", "BASTION")
+
+    if (!record) return null
 
     // get rail information
     let { data: bridgeLiquidationAddress, error: bridgeLiquidationAddressError } = await supabaseCall(() => supabase
