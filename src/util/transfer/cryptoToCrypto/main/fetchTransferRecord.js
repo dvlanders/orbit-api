@@ -3,9 +3,9 @@ const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
 const { fetchFiatToCryptoRequestInfortmaionById, fetchCryptoToCryptoRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 
-const fetchCryptoToCryptoTransferRecord = async(id) => {
+const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
     // get transactio record
-    const record = await fetchCryptoToCryptoRequestInfortmaionById(id)
+    const record = await fetchCryptoToCryptoRequestInfortmaionById(id, profileId)
     if (!record) return null
         
     const result =  {

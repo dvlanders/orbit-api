@@ -113,9 +113,6 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
 
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
-
-
 		// get all records
 		const records = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(records)
@@ -133,17 +130,15 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { id, userId, profileId } = req.query
+	const { id, profileId } = req.query
 
 
 
 	try {
 		if (!id || !isUUID(id)) return res.status(200).json({ error: "Invalid id" })
 
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
-
 		// check if requestRecord exist
-		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id)
+		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id, profileId)
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 		return res.status(200).json(transactionRecord)
 
@@ -245,7 +240,6 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 	const { profileId, userId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
 	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
@@ -253,7 +247,6 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 		// get all records
 		const records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
@@ -279,10 +272,7 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		return res.status(200).json({ message: "This endpoint is only available in production" });
 	}
 
-	const { id, userId, profileId } = req.query
-	if (!id || userId) return res.status(400).json({ error: `id and userId are required` })
-
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	const { id, profileId } = req.query
 
 	try {
 
@@ -297,7 +287,8 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		if (!request) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
 		const fetchFunc = FetchCryptoToBankSupportedPairCheck(request.crypto_provider, request.fiat_provider)
-		const transactionRecord = await fetchFunc(id)
+		const transactionRecord = await fetchFunc(id, profileId)
+		if (!transactionRecord) return res.status(404).json({error: `No transaction found for id: ${id}`})
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
@@ -383,11 +374,9 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		return res.status(200).json({ message: "This endpoint is only available in production" });
 	}
 
-	const { id, userId, profileId } = req.query
+	const { id, profileId } = req.query
 
 	if (!id) return res.status(400).json({ error: `id is required` })
-
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 	try {
 		// get provider
@@ -400,7 +389,9 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		if (requestError) throw requestError
 		if (!request) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 		const fetchFunc = FiatToCryptoSupportedPairFetchFunctionsCheck(request.crypto_provider, request.fiat_provider)
-		const transactionRecord = await fetchFunc(id)
+		const transactionRecord = await fetchFunc(id, profileId)
+
+		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}`})
 
 		return res.status(200).json(transactionRecord)
 
@@ -426,7 +417,6 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 		// get all records
 		const records = await fetchAllFiatToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
