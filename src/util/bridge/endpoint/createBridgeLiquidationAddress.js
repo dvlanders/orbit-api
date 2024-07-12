@@ -78,7 +78,7 @@ exports.createBridgeLiquidationAddress = async (
 					external_account_id: externalAccountId,
 					destination_payment_rail: destinationPaymentRail,
 					destination_currency: destinationCurrency,
-					address: getAddress(responseJson.address),
+					address: process.env.NODE_ENV == "development" ? responseJson.address : getAddress(responseJson.address),
 
 				}
 			);

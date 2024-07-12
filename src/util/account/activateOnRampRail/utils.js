@@ -20,6 +20,9 @@ const activateOnRampRailFunctionsCheck = (fiatRail, destinationChain, destinatio
  */
 const activateOnRampRailFunctions = {
 	US_ACH: {
+		POLYGON_AMOY: {
+			usdc: activateUsAchOnRampRail
+		},
 		POLYGON_MAINNET: {
 			usdc: activateUsAchOnRampRail
 		},

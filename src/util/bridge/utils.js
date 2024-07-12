@@ -17,7 +17,8 @@ const bridgeFieldsToRequestFields = {
 	city: "city",
 	"address.postal_code": "postalCode",
 	"address.state": "stateStateRegion",
-	signed_agreement_id: "signedAgreementId"
+	signed_agreement_id: "signedAgreementId",
+	compliance_screening_explanation: "complianceScreeningExplanation"
 };
 
 

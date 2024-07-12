@@ -54,7 +54,7 @@ const getBridgeCustomer = async(userId) => {
         )
         if (bridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridgeCustomerError.message, bridgeCustomerError)
         if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
-        if (bridgeCustomer.status == "invalid_fields") {
+        if (bridgeCustomer.status == "invalid_fields"){
             let invalidFields = []
             if (bridgeCustomer.bridge_response){
                 invalidFields = Object.keys(bridgeCustomer.bridge_response.source.key).map((k) => bridgeFieldsToRequestFields[k])
@@ -65,6 +65,27 @@ const getBridgeCustomer = async(userId) => {
                     status: CustomerStatus.INACTIVE,
                     actions: ["update"],
                     fields: invalidFields
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "please use user/update to update the invalid information"
+            }
+        }
+        else if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
+            return {
+                status: 200,
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: []
                 },
                 usRamp: {
                     status: CustomerStatus.INACTIVE,
