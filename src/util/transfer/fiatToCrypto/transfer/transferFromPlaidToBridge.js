@@ -3,12 +3,15 @@ const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 const { transferType } = require("../../utils/transfer");
 const bridgePlaidRailCheck = require("../railCheck/bridgePlaidRailCheck");
+const { getLastBridgeVirtualAccountActivity } = require("../utils/getLastBridgeVirtualAccountActivity");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../utils/utils");
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId) => {
     try{
         const transferInfo = await bridgePlaidRailCheck(sourceAccountId, sourceCurrency, destinationCurrency, chain, sourceUserId, destinationUserId)
+        // get the last virtual account activity
+        const lastBridgeVirtualAccountActivity = await getLastBridgeVirtualAccountActivity(destinationUserId, transferInfo.bridge_virtual_account_id)
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
@@ -20,6 +23,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 plaid_checkbook_id: transferInfo.plaid_checkbook_id,
                 bridge_virtual_account_id: transferInfo.bridge_virtual_account_id,
                 destination_checkbook_user_id: transferInfo.recipient_checkbook_user_id,
+                last_bridge_virtual_account_event_id: lastBridgeVirtualAccountActivity,
                 status: "CREATED",
                 fiat_provider: "CHECKBOOK",
                 crypto_provider: "BRIDGE"

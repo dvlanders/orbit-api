@@ -100,6 +100,27 @@ const getBridgeCustomer = async(userId) => {
                 message: "kyc aplication not submitted, please use user/update to resubmit application"
             }
         }
+        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
+            return {
+                status: 200,
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: ["update"],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: "kyc aplication not submitted, please use user/update to resubmit application or contact HIFI for more information"
+            }
+        }
 
         // fetch up-to-date infortmation
         const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomer.bridge_id}`, {
