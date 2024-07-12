@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "cross-env NODE_ENV=development NODE_TEST=True jest --forceExit",
-    "start": "cross-env NODE_ENV=production node app.js",
-    "dev": "cross-env nodemon app.js"
+    "start": "cross-env DOTENV_CONFIG_PATH=./.env.local node app.js",
+    "dev": "cross-env DOTENV_CONFIG_PATH=./.env.local nodemon app.js"
   },
   "author": "HIFI",
   "license": "ISC",

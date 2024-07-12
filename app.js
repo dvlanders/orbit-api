@@ -4,6 +4,13 @@ const bodyParser = require("body-parser");
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
+// use this to get NODE_ENV
+const localEnv = require('dotenv').config({ path: process.env.DOTENV_CONFIG_PATH });
+if (localEnv.error) {
+	console.log(result.error);
+	process.exit(0);
+}
+console.log("ENV:", process.env.NODE_ENV)
 const env = process.env.NODE_ENV ?? "production";
 // const env = 'development';
 const result = require("dotenv").config({ path: `.env.${env}`, debug: env === "production" });
