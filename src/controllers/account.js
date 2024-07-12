@@ -18,6 +18,7 @@ const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBrid
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
 const fetchRailFunctionsMap = require('../util/account/getAccount/utils/fetchRailFunctionMap');
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
+const { verifyUser } = require("../util/helper/verifyUser");
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -31,9 +32,10 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId } = req.query;
+	const { userId, profileId } = req.query;
 
 	const { plaidProcessorToken, bankName, accountType } = req.body;
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 	// TODO: validate the request body fields to make sure all fields are present and are the valid type
 
@@ -82,7 +84,8 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId } = req.query;
+	const { userId, profileId } = req.query;
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
 
@@ -227,8 +230,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const { userId } = req.query;
-
+	const { userId, profileId } = req.query;
 	const { currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName, businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode } = req.body;
 
 	// Define required fields based on account owner type
@@ -266,6 +268,9 @@ exports.createEuroOfframpDestination = async (req, res) => {
 	if (invalidFields.length > 0) {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
 	}
+
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 
 	try {
 
@@ -370,8 +375,13 @@ exports.getAccount = async (req, res) => {
 	}
 
 	// get user id from path parameter
-	const { accountId, railType } = req.query;
-	if (!railType || !accountId) return res.status(400).json({ error: 'railType and accountId is required' });
+	const { accountId, railType, userId, profileId } = req.query;
+
+	console.log(req.query)
+	console.log("accountId", accountId, "railType", railType, "userId", userId, "profileId", profileId)
+	if (!userId || !railType || !accountId) return res.status(400).json({ error: 'userId, railType and accountId are required' });
+
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 	try {
 		if (!(railType in fetchRailFunctionsMap)) {
@@ -401,6 +411,9 @@ exports.getAllAccounts = async (req, res) => {
 	const { profileId, railType, limit, createdAfter, createdBefore, userId } = fields;
 	const requiredFields = ["railType"]
 	const acceptedFields = { railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
+
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
@@ -420,7 +433,7 @@ exports.activateOnRampRail = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId } = req.query
+	const { userId, profileId } = req.query
 	const fields = req.body
 	const { rail, destinationCurrency, destinationChain } = fields
 	// fields validation
@@ -434,6 +447,7 @@ exports.activateOnRampRail = async (req, res) => {
 	if (invalidFields.length > 0) {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
 	}
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 
 	try {
@@ -462,7 +476,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId, accountType } = req.query; // Assuming accountType is passed as a query parameter
+	const { userId, accountType, profileId } = req.query;
 
 	// Validate the accountType
 	if (!['us', 'nonUsIbanSupported', 'nonUsIbanUnsupported'].includes(accountType)) {
@@ -477,33 +491,33 @@ exports.createCircleWireBankAccount = async (req, res) => {
 	switch (accountType) {
 		case 'us':
 			requiredFields = [
-				'idempotencyKey', 'accountNumber', 'routingNumber',
+				'accountNumber', 'routingNumber',
 				'accountHolderName', 'accountHolderCity', 'accountHolderCountry', 'accountHolderStreetLine1', 'accountHolderPostalCode', 'bankCountry'
 			];
 			acceptedFields = {
-				'idempotencyKey': 'string', 'accountNumber': 'string', 'routingNumber': 'string',
+				'accountNumber': 'string', 'routingNumber': 'string',
 				'accountHolderName': 'string', 'accountHolderCity': 'string', 'accountHolderCountry': 'string', 'accountHolderStreetLine1': 'string', 'accountHolderStreetLine2': 'string', 'accountHolderStateProvinceRegion': 'string', 'accountHolderPostalCode': 'string',
 				'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string',
 			};
 			break;
 		case 'nonUsIbanSupported':
 			requiredFields = [
-				'idempotencyKey', 'iban',
+				'iban',
 				'accountHolderName', 'accountHolderCity', 'accountHolderCountry', 'accountHolderStreetLine1', 'accountHolderPostalCodegPostalCode', 'bankCity', 'bankCountry'
 			];
 			acceptedFields = {
-				'idempotencyKey': 'string', 'iban': 'string',
+				'iban': 'string',
 				'accountHolderName': 'string', 'accountHolderCity': 'string', 'accountHolderCountry': 'string', 'accountHolderStreetLine1': 'string', 'accountHolderStreetLine2': 'string', 'accountHolderStateProvinceRegion': 'string', 'accountHolderPostalCode': 'string', 'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string'
 			};
 			break;
 		case 'nonUsIbanUnsupported':
 			requiredFields = [
-				'idempotencyKey', 'accountNumber', 'businessIdentifierCode',
+				'accountNumber', 'businessIdentifierCode',
 				'accountHolderName', 'accountHolderCity', 'accountHolderCountry', 'accountHolderStreetLine1', 'accountHolderPostalCode',
 				'bankName', 'bankCity', 'bankCountry'
 			];
 			acceptedFields = {
-				'idempotencyKey': 'string', 'accountNumber': 'string', 'businessIdentifierCode': 'string',
+				'accountNumber': 'string', 'businessIdentifierCode': 'string',
 				'accountHolderName': 'string', 'accountHolderCity': 'string', 'accountHolderCountry': 'string', 'accountHolderStreetLine1': 'string', 'accountHolderStreetLine2': 'string', 'accountHolderStateProvinceRegion': 'string', 'accountHolderPostalCode': 'string', 'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string',
 				'bankName': 'string', 'bankCity': 'string', 'bankCountry': 'string', 'bankStreetLine1': 'string', 'bankStreetLine2': 'string', 'bankStateProvinceRegion': 'string',
 			};
@@ -520,13 +534,17 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
 	}
 
+
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 	// construct the requestBody object based on the accountType
 	let requestBody = {};
-	// const idempotencyKey = v4()
+
+	const idempotencyKey = v4();
 	switch (accountType) {
 		case 'us':
 			requestBody = {
-				"idempotencyKey": fields.idempotencyKey,
+				"idempotencyKey": idempotencyKey,
 				"accountNumber": fields.accountNumber,
 				"routingNumber": fields.routingNumber,
 				"billingDetails": {
@@ -567,7 +585,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			break;
 		case 'nonUsIbanSupported':
 			requestBody = {
-				"idempotencyKey": fields.idempotencyKey,
+				"idempotencyKey": idempotencyKey,
 				"name": fields.accountHolderName,
 				"iban": fields.iban,
 				"billingDetails": {
@@ -606,7 +624,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			break;
 		case 'nonUsIbanUnsupported':
 			requestBody = {
-				"idempotencyKey": fields.idempotencyKey,
+				"idempotencyKey": idempotencyKey,
 				"accountNumber": fields.accountNumber,
 				"routingNumber": fields.businessIdentifierCode,
 				"billingDetails": {
@@ -649,7 +667,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			.from('circle_accounts')
 			.insert({
 				user_id: userId,
-				circle_idempotency_key: requestBody.idempotencyKey,
+				circle_idempotency_key: idempotencyKey,
 				account_type: accountType,
 				account_number: requestBody.accountNumber || null,
 				routing_number: requestBody.routingNumber || null,
@@ -671,9 +689,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			}).select()
 			;
 
-		// handle error
 		if (circleAccountError) {
-			// console.log("circleAccountError", circleAccountError)
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
@@ -683,7 +699,6 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			'Content-Type': 'application/json'
 		};
 
-		// console.log("requestBody", requestBody)
 		const url = `${process.env.CIRCLE_URL}/businessAccount/banks/wires`;
 		const response = await fetch(url, {
 			method: 'POST',
@@ -692,7 +707,6 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		});
 
 
-		//check if response status is 400 or 401
 		if (response.status === 400 || response.status === 401) {
 			const responseData = await response.json();
 			createLog("account/createCircleWireBankAccount", userId, responseData.message, responseData)
@@ -707,9 +721,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			throw new Error(`API call failed with status ${response.status}: ${errorData}`);
 		}
 
-		// Parse the JSON response
 		const responseData = await response.json();
-
 
 
 		// update the circle_account_id, circle_status, circle_description, circle_tracking_ref, circle_fingerprint in the circle_accounts table
@@ -729,7 +741,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		}
 
 		const responseObject = {};
-		if (circleAccountData[0].circle_idempotency_key) responseObject.id = circleAccountData[0].id;
+		if (responseObject.id) responseObject.id = circleAccountData[0].id;
 		if (responseData && responseData.data && responseData.data.status) responseObject.status = responseData.data.status;
 		if (circleAccountData[0].account_type) responseObject.accountType = circleAccountData[0].account_type;
 		if (circleAccountData[0].account_number) responseObject.accountNumber = circleAccountData[0].account_number;

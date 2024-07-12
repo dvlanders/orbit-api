@@ -25,6 +25,8 @@ const fundGas = async(config) => {
         if (config.chain == Chain.POLYGON_MAINNET || config.chain == Chain.POLYGON_AMOY){
             const result = await fundMaticPolygon(config.userId, config.amount)
             if (!result) throw new Error("Failed to fund Matic")
+        }else {
+            throw new Error("Chain not found")
         }
     }catch (error){
         createLog("asyncJob/fundGas", config.userId, error.message)

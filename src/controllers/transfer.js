@@ -21,7 +21,7 @@ const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/t
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
 const CryptoToBankSupportedPairCheck = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions");
-const {FetchCryptoToBankSupportedPairCheck } = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
+const { FetchCryptoToBankSupportedPairCheck } = require("../util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
 const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFetchFunctions");
 const fetchAllCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchAllTransferRecord");
 const fetchAllCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchAllCryptoToFiatTransferRecord");
@@ -35,15 +35,12 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
-
 	// should gather senderUserId, profileId, amount, requestId, recipientUserId, recipientAddress, chain
 	const { profileId } = req.query
 	const fields = req.body
 	const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency } = fields
+
+
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
@@ -61,7 +58,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!(currency in cryptoToCryptoSupportedFunctions[chain])) return res.status(400).json({ error: `Currency ${currency} is not supported` })
 		// check is request_id exist
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 		// get transfer function
 		const { transferFunc, walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
 		// fetch sender wallet address information
@@ -77,6 +74,12 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!recipientWalletInformation) return res.status(400).json({ error: `recipient wallet not found` })
 			fields.recipientAddress = recipientWalletInformation.address
 		}
+
+		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
+		}
+
 		// transfer
 		const receipt = await transferFunc(fields)
 
@@ -99,25 +102,28 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const { profileId, userId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
 
-	try{
+	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
 
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
+
 		// get all records
 		const records = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(records)
 
-	}catch (error){
+	} catch (error) {
 		console.error(error)
 		createLog("transfer/getAllCryptoToCryptoTransfer", "", error.message)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 }
@@ -127,10 +133,15 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { id } = req.query
+	const { id, userId, profileId } = req.query
+
+
 
 	try {
-		if (!id || !isUUID(id)) return res.status(200).json({error: "Invalid id"}) 
+		if (!id || !isUUID(id)) return res.status(200).json({ error: "Invalid id" })
+
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 		// check if requestRecord exist
 		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id)
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
@@ -148,15 +159,18 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	//FIXME
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
+	// if (process.env.NODE_ENV === "development") {
+	// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+	// }
 
 
 	const fields = req.body;
 	const { profileId } = req.query
 	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment } = fields
+
+
 	try {
 		// filed validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
@@ -169,17 +183,20 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		}
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
+
 		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+
+		//FIXME
 		// check if authorized
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		// if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
-		if (!funcs) return res.status(400).json({ error: `Unsupported rail for ${paymentRail}: ${sourceCurrency} to ${destinationCurrency}` });
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
 		// get the wallet record
 		const { data: walletData, error: walletError } = await supabase
@@ -196,6 +213,11 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
 
+		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
+		}
+
 		const { transferFunc } = funcs
 		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletData.address)
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
@@ -206,39 +228,41 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 			if (error.type == CreateCryptoToBankTransferErrorType.CLIENT_ERROR) {
 				return res.status(400).json({ error: error.message })
 			} else {
-				return res.status(500).json({ error: "Unexpected error happened" })
+				return res.status(500).json({ error: "An unexpected error occurred" })
 			}
 		}
 		createLog("transfer/crypto-to-fiat", sourceUserId, error.message)
-		return res.status(500).json({ error: 'Unexpected error happened' });
+		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
 }
 
-exports.getAllCryptoToFiatTransfer = async(req, res) => {
+exports.getAllCryptoToFiatTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const { profileId, userId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
-	try{
+	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 		// get all records
 		const records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(records)
 
-	}catch (error){
+	} catch (error) {
 		console.error(error)
 		createLog("transfer/getAllCryptoToFiatTransfer", "", error.message)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 
@@ -255,8 +279,11 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		return res.status(200).json({ message: "This endpoint is only available in production" });
 	}
 
-	const { id } = req.query
-	if (!id) return res.status(400).json({ error: `id is required` })
+	const { id, userId, profileId } = req.query
+	if (!id || userId) return res.status(400).json({ error: `id and userId are required` })
+
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 	try {
 
 		// get provider
@@ -284,14 +311,18 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+	//FIXME
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
+	// if (process.env.NODE_ENV === "development") {
+	// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+	// }
 
 	const { profileId } = req.query
 	const fields = req.body
 	const { requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId } = fields
+
+
 	try {
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "amount", "sourceCurrency", "destinationCurrency", "chain", "sourceAccountId", "isInstant"]
 		const acceptedFields = {
@@ -308,14 +339,22 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+
+		//FIXME
 		//check if sender is under profileId
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		// if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 		// check is request id valid
 		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exist, please use get transaction endpoint with id: ${record.id}` })
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 		//check is source-destination pair supported
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
+
+		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
+		}
 		// onramp
 		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId)
 		return res.status(200).json(transferResult);
@@ -339,14 +378,17 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
 	if (process.env.NODE_ENV === "development") {
 		return res.status(200).json({ message: "This endpoint is only available in production" });
 	}
 
-	const { id } = req.query
+	const { id, userId, profileId } = req.query
+
 	if (!id) return res.status(400).json({ error: `id is required` })
+
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
 	try {
 		// get provider
 		let { data: request, error: requestError } = await supabaseCall(() => supabase
@@ -369,32 +411,32 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 
 }
 
-exports.getAllFiatToCryptoTransfer = async(req, res) => {
+exports.getAllFiatToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, userId, limit, createdAfter, createdBefore} = fields
+	const { profileId, userId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = {userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string"}
+	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
 
-	try{
+	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 		// get all records
 		const records = await fetchAllFiatToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(records)
 
-	}catch (error){
+	} catch (error) {
 		console.error(error)
 		createLog("transfer/getAllFiatToCryptoTransfer", "", error.message)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 
 }
-

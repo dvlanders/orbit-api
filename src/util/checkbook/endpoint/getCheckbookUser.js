@@ -63,7 +63,7 @@ const getCheckbookUser = async(userId) => {
 
         if (checkcookUserError) throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, checkcookUserError.message, checkcookUserError)
         if (!checkbookUsers) throw new GetCheckbookUserError(GetCheckbookUserErrorType.RECORD_NOT_FOUND, "No checkbook user found")
-        if (checkbookUsers.length != 2 ) throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, "Checkbook user is created falsefully")
+        if (checkbookUsers.length < 1 ) throw new GetCheckbookUserError(GetCheckbookUserErrorType.INTERNAL_ERROR, "Checkbook user is created falsefully")
 
         // check if the api key and api secret is valid
 		await Promise.all(checkbookUsers.map(async(checkbookUser) => await checkUserApiKeyPairsHealth(checkbookUser)))

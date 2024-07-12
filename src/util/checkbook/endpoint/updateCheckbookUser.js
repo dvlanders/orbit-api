@@ -52,7 +52,7 @@ const updateCheckbookUser = async(userId) => {
         )
 
         if (checkcookUsersError) throw new UpdateCheckbookUserError(UpdateCheckbookUserErrorType.INTERNAL_ERROR, checkcookUsersError.message, checkcookUsersError)
-        if (!checkbookUsers || checkbookUsers.length < 2) {
+        if (!checkbookUsers || checkbookUsers.length < 1) {
             // create a new checkbook user
             return await createCheckbookUser(userId)
         }

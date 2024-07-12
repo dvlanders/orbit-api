@@ -27,7 +27,7 @@ const updateUserAsync = async(config) => {
 		} else if (config.userType === "business") {
 			bridgeFunction = updateBusinessBridgeCustomer;
 		} else {
-			return res.status(500).json({ error: "User type not found for provided userId" })	
+			throw new Error(`userType is not found: ${config.userType}`)	
 		}
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
@@ -40,7 +40,7 @@ const updateUserAsync = async(config) => {
 
     }catch (error){
         await createLog("updateUserAsync", config.userId, error.message)
-        throw new JobError(JobErrorType.INTERNAL_ERROR, "updateUserAsync job failed due to some unexpected reason", "", "", true)
+        throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, "", "", true)
     }
 }
 
