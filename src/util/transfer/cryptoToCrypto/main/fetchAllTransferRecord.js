@@ -29,7 +29,7 @@ const fetchAllCryptoToCryptoTransferRecord = async (profileId, userId, limit=10,
     if (userId) {
         const {data: records, error} = await supabaseCall(() => supabase
             .from("crypto_to_crypto")
-            .select("*")
+            .select("*, sender_user: sender_user_id!inner(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient_user: recipient_user_id(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))")
             .eq("sender_user_id", userId)
             .lt("created_at", createdBefore)
             .gt("created_at", createdAfter)
