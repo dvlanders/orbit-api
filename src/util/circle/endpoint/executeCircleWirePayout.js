@@ -20,7 +20,7 @@ const chainToCircleChainValue = process.env.NODE_ENV === "development" ?
 
 const currencyToCircleChainValue = {
 	"usd": "USD",
-	"eur": "EUR"  // Example added, add more as needed
+	"eur": "EUR"
 };
 
 const executeCircleWirePayout = async (id, user_id, destination_currency, amount, circle_account_id) => {
@@ -58,7 +58,7 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 
 		if (!circlePayoutsUrlResponse.ok) {
 			const circlePayoutsUrlResponseBody = await circlePayoutsUrlResponse.json();
-			console.error('circlePayoutsUrlResponseBody', circlePayoutsUrlResponseBody);
+			// console.error('circlePayoutsUrlResponseBody', circlePayoutsUrlResponseBody); // FIXME: uncomment once we have the circle prod keys and we resolve this issue
 			createLog("transfer/util/executeCircleWirePayout", user_id, circlePayoutsUrlResponseBody.message);
 			return
 		}
