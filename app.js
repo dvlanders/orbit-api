@@ -72,10 +72,12 @@ let { logger } = require("./src/util/logger/logger");
 
 require('./cron');
 
-app.listen(port, () => {
-	logger.info(`Server Listening On Port ${port}`);
-	console.log(`Environment : ${env}`);
-});
+if(!process.env.NODE_TEST){
+	app.listen(port, () => {
+		logger.info(`Server Listening On Port ${port}`);
+		console.log(`Environment : ${env}`);
+	});
+}
 
 // Export your Express configuration so that it can be consumed by the Lambda handler
 module.exports = app;
