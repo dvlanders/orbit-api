@@ -280,7 +280,7 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 	}
 
 	const { id, userId, profileId } = req.query
-	if (!id || userId) return res.status(400).json({ error: `id and userId are required` })
+	if (!id || !userId) return res.status(400).json({ error: `id and userId are required` })
 
 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
