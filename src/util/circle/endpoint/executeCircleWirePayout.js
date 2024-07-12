@@ -25,7 +25,10 @@ const currencyToCircleChainValue = {
 
 const executeCircleWirePayout = async (id, user_id, destination_currency, amount, circle_account_id) => {
 
+	const formattedAmount = parseFloat(amount).toFixed(2);
 
+
+	console.log("circle_account_id", circle_account_id)
 	try {
 		const idempotencyKey = v4();
 		const circlePayoutsUrlRequestBody = {
@@ -35,7 +38,7 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 				"id": circle_account_id
 			},
 			"amount": {
-				"amount": amount,
+				"amount": formattedAmount,
 				"currency": currencyToCircleChainValue[destination_currency]
 			}
 		};
@@ -58,7 +61,7 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 
 		if (!circlePayoutsUrlResponse.ok) {
 			const circlePayoutsUrlResponseBody = await circlePayoutsUrlResponse.json();
-			// console.error('circlePayoutsUrlResponseBody', circlePayoutsUrlResponseBody); // FIXME: uncomment once we have the circle prod keys and we resolve this issue
+			console.error('circlePayoutsUrlResponseBody', circlePayoutsUrlResponseBody); // FIXME: uncomment once we have the circle prod keys and we resolve this issue
 			createLog("transfer/util/executeCircleWirePayout", user_id, circlePayoutsUrlResponseBody.message);
 			return
 		}

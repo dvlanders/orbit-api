@@ -288,7 +288,7 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 
 		const fetchFunc = FetchCryptoToBankSupportedPairCheck(request.crypto_provider, request.fiat_provider)
 		const transactionRecord = await fetchFunc(id, profileId)
-		if (!transactionRecord) return res.status(404).json({error: `No transaction found for id: ${id}`})
+		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
@@ -391,7 +391,7 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		const fetchFunc = FiatToCryptoSupportedPairFetchFunctionsCheck(request.crypto_provider, request.fiat_provider)
 		const transactionRecord = await fetchFunc(id, profileId)
 
-		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}`})
+		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
 		return res.status(200).json(transactionRecord)
 
