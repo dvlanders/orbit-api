@@ -14,7 +14,7 @@ const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 const chain = process.env.NODE_ENV == "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with MATIC to serve as gas station wallet
-
+const gasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
 async function fundMaticPolygon(userId, amount) {
 	try {
 		console.log("amount: ", amount)
@@ -63,7 +63,7 @@ async function fundMaticPolygon(userId, amount) {
 				request_id: requestId,
 				// source_user_id: fromMerchantId,
 				destination_user_id: userId,
-				source_wallet_address: walletData.address,
+				source_wallet_address: gasStationWalletAddress,
 				destination_wallet_address: walletData.address,
 				amount: amount,
 				chain: chain,
