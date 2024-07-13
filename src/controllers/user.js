@@ -821,3 +821,28 @@ exports.updateHifiUserAsync = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
+
+exports.getUserKycInformation = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const {userId, profileId} = req.query
+
+	try{
+		const {data, error} = await supabase
+			.from("user_kyc")
+			.select("*, users(user_type)")
+			.eq("user_id", userId)
+			.maybeSingle()
+		
+
+		if (error) throw error
+		if (!data) return res.status(404).json({error: `user not found for id: ${userId}`})
+		return res.status(200).json(data)
+		
+
+	}catch(error){
+		createLog("/user/getUserKycInformation", userId, error.message)
+		return res.status(500).json({error: `Unexpected error happened`})
+	}
+}

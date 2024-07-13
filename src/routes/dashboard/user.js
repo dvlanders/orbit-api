@@ -14,7 +14,7 @@ module.exports = (router) => {
 	router.put("/dashboard/user/async", authorizeDashboard, user.updateHifiUserAsync);
 
 	router.post("/dashboard/tos-link", authorizeDashboard, user.generateToSLink)
-
+	router.get("/dashboard/user/userKyc", authorizeDashboard, user.getUserKycInformation)
 };
 
 

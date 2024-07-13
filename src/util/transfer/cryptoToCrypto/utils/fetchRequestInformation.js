@@ -4,7 +4,7 @@ const { supabaseCall } = require("../../../supabaseWithRetry");
 const fetchCryptoToCryptoRequestInfortmaionById = async(id, profileId) => {
         let { data: request, error:requestError } = await supabaseCall(() => supabase
             .from('crypto_to_crypto')
-            .select('*, sender: sender_user_id!inner(profile_id)')
+            .select('*, sender: sender_user_id!inner(profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient: recipient_user_id(user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))')
             .eq("id", id)
             .eq("sender.profile_id", profileId)
             .maybeSingle())
