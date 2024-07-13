@@ -23,6 +23,8 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
             updatedAt: record.updated_at,
             status: record.status,
             contractAddress: record.contract_address,
+            sender: record.sender.user_kyc,
+            recipient: record.recipient?.user_kyc,
         }
     }
 

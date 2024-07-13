@@ -26,9 +26,8 @@ exports.authorize = async (req, res, next) => {
 		const keyInfo = await verifyApiKey(apiKeyId)
 		if (!keyInfo) return res.status(401).json({error: "Invalid api key"});
 		// check userId
-		if (userId && (!isUUID(userId) || !(await verifyUser(userId, keyInfo.profile_id)))) return res.status(401).json({error: "Not authorized"});	
-
-		
+		if (userId && (!isUUID(userId) || !(await verifyUser(userId, keyInfo.profile_id)))) return res.status(401).json({error: "Not authorized"});
+	
 		req.query.profileId = keyInfo.profile_id
 		next();
 	} catch (err) {
