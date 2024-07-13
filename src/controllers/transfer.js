@@ -135,7 +135,7 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 
 
 	try {
-		if (!id || !isUUID(id)) return res.status(200).json({ error: "Invalid id" })
+		if (!id || !isUUID(id)) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
 		// check if requestRecord exist
 		const transactionRecord = await fetchCryptoToCryptoTransferRecord(id, profileId)
@@ -167,6 +167,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 
 	try {
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		// filed validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
 		const acceptedFields = {
@@ -275,7 +276,7 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 	const { id, profileId } = req.query
 
 	try {
-
+		if (!id || !isUUID(id)) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 		// get provider
 		let { data: request, error: requestError } = await supabaseCall(() => supabase
 			.from('offramp_transactions')
@@ -315,6 +316,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 
 	try {
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "amount", "sourceCurrency", "destinationCurrency", "chain", "sourceAccountId", "isInstant"]
 		const acceptedFields = {
 			"requestId": "string",
@@ -376,7 +378,7 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 
 	const { id, profileId } = req.query
 
-	if (!id) return res.status(400).json({ error: `id is required` })
+	if (!id || !isUUID(id)) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
 	try {
 		// get provider
