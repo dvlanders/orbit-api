@@ -1,0 +1,52 @@
+const fetchBridgeVirtualAccountMicroDeposit = require("../../../bridge/endpoint/fetchBridgeVirtualAccountMicroDeposit");
+const { virtualAccountPaymentRailToChain, chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
+const createLog = require("../../../logger/supabaseLogger");
+const supabase = require("../../../supabaseClient");
+const { supabaseCall } = require("../../../supabaseWithRetry");
+
+
+const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurrency, destinationChain, limit, createdBefore, createdAfter) => {
+    try{
+        // get virtual account info
+        const {data, error} = await supabase
+            .from("bridge_virtual_accounts")
+            .select("created_at, id, user_id, status, source_currency, source_payment_rail, destination_currency, destination_payment_rail, destination_wallet_address, deposit_institutions_bank_name, deposit_institutions_bank_address, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number, virtual_account_id")
+            .eq("user_id", userId)
+            .eq("source_currency", sourceCurrency)
+            .eq("destination_payment_rail", chainToVirtualAccountPaymentRail[destinationChain])
+            .eq("destination_currency", destinationCurrency)
+            .maybeSingle()
+        
+        if (error) throw error
+        if (!data) return null
+
+        // get micro deposit activity
+        const microDeposits = await fetchBridgeVirtualAccountMicroDeposit(userId, data.virtual_account_id, limit, createdBefore, createdAfter)
+
+        const virtualAccountInfo = {
+            virtualAccountId: data.id,
+            userId: data.user_id,
+            paymentRail: data.source_payment_rail,
+            sourceCurrency: data.source_currency,
+            destinationChain: virtualAccountPaymentRailToChain[data.destination_payment_rail],
+            destinationCurrency: data.destination_currency,
+            destinationWalletAddress: data.destination_wallet_address,
+            railStatus: data.status,
+            depositInstructions: {
+                bankName: data.deposit_institutions_bank_name,
+                routingNumber: data.deposit_institutions_bank_routing_number,
+                accountNumber: data.deposit_institutions_bank_account_number,
+                bankAddress: data.deposit_institutions_bank_address
+            },
+            microDeposits
+        }
+
+        return virtualAccountInfo
+
+    }catch (error){
+        createLog("/getAccount/fetchBridgeVirtualAccount", userId, error.message)
+        throw new Error("Something went wrong when performing fetchBridgeVirtualAccount")
+    }
+}
+
+module.exports = fetchBridgeVirtualAccount

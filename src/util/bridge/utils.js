@@ -1,3 +1,7 @@
+const createLog = require("../logger/supabaseLogger");
+const supabase = require("../supabaseClient");
+const { supabaseCall } = require("../supabaseWithRetry");
+
 const NODE_ENV = process.env.NODE_ENV
 
 const bridgeFieldsToRequestFields = {
@@ -207,6 +211,24 @@ const getEndorsementStatus = (endorsements, name) => {
 	return {status, actions: Array.from(actions), fields: Array.from(fields)}
 }
 
+const getBridgeUserId = async(userId) => {
+	try{
+
+		const {data, error} = await supabaseCall(() => supabase
+			.from("bridge_customers")
+			.select("bridge_id")
+			.eq("user_id", userId)
+			.single()
+		)
+		
+		if (error) throw error
+		return data.bridge_id
+	}catch (error){
+		createLog("utils/getBridgeUserId", userId, error.message)
+		throw new Error("Fail to getBridgeUserId")
+	}
+}
+
 module.exports = {
 	bridgeFieldsToRequestFields,
 	getEndorsementStatus,
@@ -215,5 +237,6 @@ module.exports = {
 	BridgeCustomerStatus,
 	virtualAccountPaymentRailToChain,
 	extractActionsAndFields,
-	chainToVirtualAccountPaymentRail
+	chainToVirtualAccountPaymentRail,
+	getBridgeUserId
 }
