@@ -793,6 +793,7 @@ exports.getVirtualAccount = async(req, res) => {
 	}
 
 	try{
+		if (parseInt(limit) <= 0 || parseInt(limit) > 100) return res.status(400).json({error: "Limit should be between 1 to 100"}) 
 		const { missingFields, invalidFields} = fieldsValidation(fileds, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either invalid or missing", invalidFields, missingFields})
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
