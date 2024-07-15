@@ -33,6 +33,7 @@ exports.authorize = async (req, res, next) => {
 		readme.log(README_API_KEY, req, res, {
 			apiKey: apiKeyId,
 			label: keyInfo.profile_id,
+			email: keyInfo.profiles.email
 		});
 	
 		req.query.profileId = keyInfo.profile_id
