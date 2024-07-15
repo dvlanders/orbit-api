@@ -16,9 +16,10 @@ const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAc
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
-const fetchRailFunctionsMap = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const {fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions} = require('../util/account/getAccount/utils/fetchRailFunctionMap');
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 const { verifyUser } = require("../util/helper/verifyUser");
+const { stringify } = require('querystring');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -771,4 +772,68 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
+}
+
+exports.getVirtualAccount = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const fileds = req.query
+	const {profileId, rail, destinationCurrency, destinationChain, userId, limit, createdBefore, createdAfter} = fileds
+	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
+	const acceptedFields = {
+		profileId: "string",
+		rail: "string",
+		destinationCurrency: "string",
+		userId: "string",
+		destinationChain: "string",
+		limit: "string", 
+		createdBefore: "string", 
+		createdAfter: "string"
+	}
+
+	try{
+		const { missingFields, invalidFields} = fieldsValidation(fileds, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either invalid or missing", invalidFields, missingFields})
+		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
+		if (!fetchFunc) return res.status(400).json({message: "Rail is not yet available"})
+		const virtualAccount = await fetchFunc(userId, limit, createdBefore, createdAfter)
+		if (!virtualAccount) return res.status(404).json({message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first"})
+		return res.status(200).json(virtualAccount)
+
+	} catch (error){
+		createLog("account/getVirtualAccount", userId, error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
+	
+}
+
+exports.getVirtualAccountMicroDepositInstructions = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const fileds = req.query
+	const {profileId, rail, destinationCurrency, destinationChain, userId} = fileds
+	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
+	const acceptedFields = {
+		profileId: "string",
+		rail: "string",
+		destinationCurrency: "string",
+		userId: "string",
+		destinationChain: "string"
+	}
+
+	try{
+		const { missingFields, invalidFields} = fieldsValidation(fileds, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either invalid or missing", invalidFields, missingFields})
+		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
+		if (!fetchFunc) return res.status(400).json({message: "Rail is not yet available"})
+		const despositInformation = await fetchFunc(userId)
+		if (!despositInformation) return res.status(404).json({message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first"})
+		return res.status(200).json(despositInformation)
+
+	} catch (error){
+		createLog("account/getVirtualAccount", userId, error.message)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
 }
