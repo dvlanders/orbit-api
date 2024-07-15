@@ -797,7 +797,7 @@ exports.getVirtualAccount = async(req, res) => {
 		const { missingFields, invalidFields} = fieldsValidation(fileds, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either invalid or missing", invalidFields, missingFields})
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
-		if (!fetchFunc) return res.status(400).json({message: "Rail is not yet available"})
+		if (!fetchFunc) return res.status(501).json({message: "Rail is not yet available"})
 		const virtualAccount = await fetchFunc(userId, limit, createdBefore, createdAfter)
 		if (!virtualAccount) return res.status(404).json({message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first"})
 		return res.status(200).json(virtualAccount)
