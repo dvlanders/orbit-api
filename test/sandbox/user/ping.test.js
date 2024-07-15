@@ -1,13 +1,13 @@
 const supertest = require("supertest");
 const app = require("../../../app");
-const API_KEY = process.env.API_KEY_TEST;
+const { authTestParams } = require("../testConfig");
 
 describe("GET /ping", function () {
   it("it should has status code 200", async () => {
     await supertest(app)
-      .get(`/ping?apiKeyId=${API_KEY}`)
+      .get(`/ping?apiKeyId=${authTestParams.API_KEY}`)
       .set({
-        "zuplo-secret": process.env.ZUPLO_SECRET,
+        "zuplo-secret": authTestParams.ZUPLO_SECRET,
       })
       .expect(200);
   });

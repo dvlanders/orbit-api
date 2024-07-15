@@ -1,15 +1,15 @@
 const supertest = require("supertest");
 const app = require("../../../app");
-const API_KEY = process.env.API_KEY_TEST;
-const ZUPLO_SECRET = process.env.ZUPLO_SECRET;
-const USER_ID = process.env.UID_USER_TEST;
+const { authTestParams, userInfo } = require("../testConfig");
 
 describe("GET /user", function () {
   it("it should has status code 200", async () => {
     const userRes = await supertest(app)
-      .get(`/user?apiKeyId=${API_KEY}&userId=${USER_ID}`)
+      .get(
+        `/user?apiKeyId=${authTestParams.API_KEY}&userId=${userInfo.USER_ID}`
+      )
       .set({
-        "zuplo-secret": ZUPLO_SECRET,
+        "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
       })
       .expect(200);
@@ -17,7 +17,7 @@ describe("GET /user", function () {
     const user = userRes.body;
     expect(user).toBeDefined();
     expect(user.user.id).toBeDefined();
-    expect(user.user.id).toBe(USER_ID);
+    expect(user.user.id).toBe(userInfo.USER_ID);
     expect(user.wallet).toBeDefined();
     expect(user.wallet.walletStatus).toBe("ACTIVE");
     expect(user.wallet.walletAddress).toBeDefined();

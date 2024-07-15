@@ -1,23 +1,23 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { v4: uuidv4 } = require("uuid");
-const API_KEY = process.env.API_KEY_TEST;
-const ZUPLO_SECRET = process.env.ZUPLO_SECRET;
-const USER_ID = process.env.UID_TRANSFER_TEST;
-const ACCOUNT_ID = process.env.CHECKBOOK_PLAID_AID_TEST;
+const {
+  authTestParams,
+  createFiatToCryptoTransferParams,
+} = require("../testConfig");
 
 describe("POST /transfer/fiat-to-crypto", function () {
   it("it should has status code 200", async () => {
     const accountRes = await supertest(app)
-      .post(`/transfer/fiat-to-crypto?apiKeyId=${API_KEY}`)
+      .post(`/transfer/fiat-to-crypto?apiKeyId=${authTestParams.API_KEY}`)
       .set({
-        "zuplo-secret": ZUPLO_SECRET,
+        "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
       })
       .send({
         requestId: uuidv4(),
-        sourceUserId: USER_ID,
-        sourceAccountId: ACCOUNT_ID,
+        sourceUserId: createFiatToCryptoTransferParams.SOURCE_USER_ID,
+        sourceAccountId: createFiatToCryptoTransferParams.SOURCE_ACCOUNT_ID,
         amount: 1,
         chain: "POLYGON_MAINNET",
         sourceCurrency: "usd",

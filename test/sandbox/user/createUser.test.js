@@ -1,16 +1,14 @@
 const supertest = require("supertest");
 const { v4: uuidv4 } = require("uuid");
 const app = require("../../../app");
-const API_KEY = process.env.API_KEY_TEST;
-const ZUPLO_SECRET = process.env.ZUPLO_SECRET;
-const FIRST_NAME = process.env.FIRST_NAME_USER_TEST;
+const { authTestParams, userInfo } = require("../testConfig");
 
 describe("POST /user/create", function () {
   it("it should has status code 200", async () => {
     const tosLinkRes = await supertest(app)
-      .post(`/tos-link?apiKeyId=${API_KEY}`)
+      .post(`/tos-link?apiKeyId=${authTestParams.API_KEY}`)
       .set({
-        "zuplo-secret": ZUPLO_SECRET,
+        "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json",
       })
       .send({
@@ -35,14 +33,14 @@ describe("POST /user/create", function () {
     expect(sAIDResponse.body.signedAgreementId).toBeDefined();
 
     const newUserRes = await supertest(app)
-      .post(`/user/create?apiKeyId=${API_KEY}`)
+      .post(`/user/create?apiKeyId=${authTestParams.API_KEY}`)
       .set({
-        "zuplo-secret": ZUPLO_SECRET,
+        "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json",
       })
       .send({
         userType: "individual",
-        legalFirstName: FIRST_NAME,
+        legalFirstName: userInfo.FIRST_NAME,
         legalLastName: "Test",
         complianceEmail: "test@gmail.com",
         compliancePhone: "+19144386656",
