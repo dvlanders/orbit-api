@@ -5,6 +5,7 @@ const {
   userInfo,
   usdOnrampPlaidBankDetails,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /account/usd/onramp/plaid", function () {
   it("it should has status code 200", async () => {
@@ -20,9 +21,9 @@ describe("POST /account/usd/onramp/plaid", function () {
         plaidProcessorToken: usdOnrampPlaidBankDetails.PLAID_TOKEN,
         accountType: "SAVINGS",
         bankName: "Bank of America",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     expect(accountRes.body.status).toBeDefined();
     expect(accountRes.body.status).toBe("ACTIVE");
     expect(accountRes.body.message).toBeDefined();

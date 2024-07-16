@@ -1,6 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 const activateOnRampRail = async (
   rail,
@@ -19,9 +20,9 @@ const activateOnRampRail = async (
       rail: rail,
       destinationCurrency: destinationCurrency,
       destinationChain: destinationChain,
-    })
-    .expect(200);
+    });
 
+  expect(statusChecker(accountRes, 200)).toBe(true);
   const account = accountRes.body;
   console.log(account);
   console.log(

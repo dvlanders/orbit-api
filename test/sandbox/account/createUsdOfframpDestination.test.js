@@ -1,6 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, usdOfframpBankDetails } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /account/usd/offramp", function () {
   it("it should has status code 200", async () => {
@@ -24,9 +25,9 @@ describe("POST /account/usd/offramp", function () {
         postalCode: "10001",
         country: "USA",
         accountOwnerType: "individual",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     expect(accountRes.body.status).toBeDefined();
     expect(accountRes.body.status).toBe("ACTIVE");
     expect(accountRes.body.message).toBeDefined();

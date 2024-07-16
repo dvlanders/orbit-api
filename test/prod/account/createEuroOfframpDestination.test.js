@@ -1,9 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
-const {
-  authTestParams,
-  eurOfframpBankDetails,
-} = require("../testConfig");
+const { authTestParams, eurOfframpBankDetails } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 // bridge needs additional kyc info to activate euro offramp with Sepa
 describe("POST /account/euro/offramp", function () {
@@ -26,9 +24,9 @@ describe("POST /account/euro/offramp", function () {
         businessIdentifierCode: eurOfframpBankDetails.BIC,
         firstName: eurOfframpBankDetails.FIRST_NAME,
         lastName: eurOfframpBankDetails.LAST_NAME,
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
     console.log(account);
     expect(account.status).toBeDefined();

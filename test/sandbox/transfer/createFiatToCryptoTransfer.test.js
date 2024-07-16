@@ -5,6 +5,7 @@ const {
   authTestParams,
   createFiatToCryptoTransferParams,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /transfer/fiat-to-crypto", function () {
   it("it should has status code 200", async () => {
@@ -24,12 +25,12 @@ describe("POST /transfer/fiat-to-crypto", function () {
         destinationCurrency: "usdc",
         isInstant: false,
         destinationUserId: "75d7c01f-5f93-4490-8b93-a62fd8020358",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
-    expect(accountRes.body.message).toBeDefined();
-    expect(accountRes.body.message).toBe(
+    expect(account.message).toBeDefined();
+    expect(account.message).toBe(
       "This endpoint is only available in production"
     );
   }, 10000);

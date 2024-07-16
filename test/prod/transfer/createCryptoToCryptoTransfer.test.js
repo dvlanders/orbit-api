@@ -6,6 +6,7 @@ const {
   userInfo,
   createCryptoToCryptoTransferParams,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /transfer/crypto-to-crypto", function () {
   it("it should has status code 200", async () => {
@@ -24,9 +25,9 @@ describe("POST /transfer/crypto-to-crypto", function () {
         currency: "usdc",
         chain: "POLYGON_MAINNET",
         recipientUserId: createCryptoToCryptoTransferParams.RECIPIENT_USER_ID,
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
     console.log(account);
     expect(account.transferType).toBeDefined();
