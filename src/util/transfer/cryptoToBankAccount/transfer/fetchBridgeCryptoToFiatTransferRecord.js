@@ -49,7 +49,8 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
             contractAddress: record.contract_address,
             sourceUser: record.source_user.user_kyc,
             destinationUser: record.destination_user.user_kyc,
-            destinationAccount: bridgeExternalAccount
+            destinationAccount: bridgeExternalAccount,
+            failedReason: record.failed_reason
         }
 
     }
