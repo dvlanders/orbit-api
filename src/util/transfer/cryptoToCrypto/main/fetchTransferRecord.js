@@ -25,6 +25,7 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
             contractAddress: record.contract_address,
             sender: record.sender.user_kyc,
             recipient: record.recipient?.user_kyc,
+            failedReason: record.failed_reason
         }
     }
 
