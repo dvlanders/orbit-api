@@ -5,7 +5,7 @@ exports.verifyApiKey = async(apiKeyId) => {
 
     let { data: keyInfo, error } = await supabaseCall(() => supabase
         .from('api_keys')
-        .select('active, expired_at, profile_id')
+        .select('active, expired_at, profile_id, profiles!inner(email)')
         .eq("id", apiKeyId)
         .maybeSingle()
     )

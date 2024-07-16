@@ -136,3 +136,4 @@ dist
 
 .vscode
 .DS_Store
+**/testConfig.js
