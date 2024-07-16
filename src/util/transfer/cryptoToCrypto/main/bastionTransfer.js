@@ -19,7 +19,7 @@ const bastionCryptoTransfer = async(fields) => {
     fields.provider = "BASTION"
     
     let record
-    let failedReason = ""
+    let failedReason
     // insert request record
     const requestRecord = await insertRequestRecord(fields)
     
@@ -31,12 +31,6 @@ const bastionCryptoTransfer = async(fields) => {
     await bastionGasCheck(fields.senderUserId, fields.chain)
 
     if (!response.ok) {
-         // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: "FAILED"
-        }
-        record = await updateRequestRecord(requestRecord.id, toUpdate)
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
         if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
             failedReason = "Transfer amount exceeds balance"
@@ -45,12 +39,21 @@ const bastionCryptoTransfer = async(fields) => {
             failedReason = "Not enough gas, please contact HIFI for more information"
             // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message)
         }
+
+         // update to database
+        const toUpdate = {
+            bastion_response: responseBody,
+            status: "FAILED",
+            failed_reason: failedReason
+        }
+        record = await updateRequestRecord(requestRecord.id, toUpdate)
     }else{
         // update to database
         const toUpdate = {
             bastion_response: responseBody,
             status: responseBody.status,
             transaction_hash: responseBody.transactionHash,
+            failed_reason: failedReason
         }
         record = await updateRequestRecord(requestRecord.id, toUpdate)
     }
