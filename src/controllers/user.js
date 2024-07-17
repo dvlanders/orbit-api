@@ -846,3 +846,103 @@ exports.getUserKycInformation = async(req, res) => {
 		return res.status(500).json({error: `Unexpected error happened`})
 	}
 }
+
+exports.createDeveloperUser = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	let userId
+	try {
+		const profileId = req.query.profileId
+		const fields = req.body
+		if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
+		// upload information and create new user
+		try {
+			userId = await informationUploadForCreateUser(profileId, fields)
+		} catch (error) {
+			if (error instanceof InformationUploadError) {
+				return res.status(error.status).json(error.rawResponse)
+			}
+			createLog("user/create", "", error.message, error)
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		}
+
+		let createHifiUserResponse = {
+			wallet: {
+				walletStatus: CustomerStatus.PENDING,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: "",
+				walletAddress: {}
+			},
+			user_kyc: {
+				status: CustomerStatus.PENDING, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: CustomerStatus.PENDING, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+
+						},
+					},
+					offRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onRamp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+			user: {
+				id: userId,
+			}
+		}
+
+		// insert async jobs
+		await createJob("createDeveloperUser", {userId, userType: "business"}, userId, profileId)
+
+		return res.status(200).json(createHifiUserResponse)
+
+	}catch (error){
+		createLog("user/createHifiUserAsync", userId, error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+	}
+}
