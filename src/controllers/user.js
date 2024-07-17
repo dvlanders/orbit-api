@@ -855,7 +855,16 @@ exports.createDeveloperUser = async(req, res) => {
 	try {
 		const profileId = req.query.profileId
 		const fields = req.body
+		// user type should always be business
 		if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
+		// check if developer user is already created
+		const {data: profile, error: profileError} = await supabaseCall(() => supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", profileId)
+			.single()
+		)
+		if (profile.developer_user_id) return res.status(400).json({error: "Developer user is already created"})
 		// upload information and create new user
 		try {
 			userId = await informationUploadForCreateUser(profileId, fields)
@@ -938,6 +947,16 @@ exports.createDeveloperUser = async(req, res) => {
 
 		// insert async jobs
 		await createJob("createDeveloperUser", {userId, userType: "business"}, userId, profileId)
+		// update developer user id into profile
+		const {data, error} = await supabaseCall(() => supabase
+			.from("profiles")
+			.update({
+				developer_user_id: userId
+			})
+			.eq("id", profileId)
+		)
+
+		if (error) throw error
 
 		return res.status(200).json(createHifiUserResponse)
 

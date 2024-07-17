@@ -15,14 +15,14 @@ const BASTION_URL = process.env.BASTION_URL;
 const chain = process.env.NODE_ENV == "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with MATIC to serve as gas station wallet
 const gasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
-async function fundMaticPolygon(userId, amount) {
+async function fundMaticPolygon(userId, amount, type="INDIVIDUAL") {
 	try {
-		console.log("amount: ", amount)
 		const { data: walletData, error: walletError } = await supabase
 			.from('bastion_wallets')
 			.select('address')
 			.eq('user_id', userId)
 			.eq('chain', chain)
+			.eq('type', type)
 			.single();
 
 		if (walletError) throw walletError
@@ -53,7 +53,6 @@ async function fundMaticPolygon(userId, amount) {
 		const response = await fetch(url, options);
 		const data = await response.json();
 		if (!response.ok) {
-			console.error("Error during MATIC transfer:", JSON.stringify(data));
 			throw JSON.stringify(data);
 		}
 
@@ -80,7 +79,6 @@ async function fundMaticPolygon(userId, amount) {
 		return data;
 
 	} catch (error) {
-		console.error("Error during MATIC transfer:", error);
 		createLog("user/util/fundMaticPolygon", userId, error, error)
 		return null
 		// throw JSON.stringify(error);

@@ -62,7 +62,7 @@ async function createBastionDeveloperWallet(userId, type) {
 				console.log()
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET || chain === Chain.POLYGON_AMOY) {
-					await fundMaticPolygon(userId, preFundAmount);
+					await fundMaticPolygon(userId, preFundAmount, type);
 				}
 			}
 		}
