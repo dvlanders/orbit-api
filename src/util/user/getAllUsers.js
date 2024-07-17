@@ -12,6 +12,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
         .eq("profile_id", profileId)
         .not("user_kyc", "is", null)
         .eq("id", userId)
+        .eq("is_developer", false)
         .limit(1)
         if (usersError) throw usersError
         users = data
@@ -21,6 +22,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
         .from("users")
         .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
         .eq("profile_id", profileId)
+        .eq("is_developer", false)
         .not("user_kyc", "is", null)
         .lt("created_at", createdBefore)
         .gt("created_at", createdAfter)
@@ -33,6 +35,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
         .from("users")
         .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
         .eq("profile_id", profileId)
+        .eq("is_developer", false)
         .not("user_kyc", "is", null)
         .eq("user_type", "individual")
         .lt("created_at", createdBefore)
@@ -46,6 +49,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
         .from("users")
         .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain), ultimate_beneficial_owners (id, legal_first_name, legal_last_name, compliance_email, compliance_phone, tax_identification_number)")
         .eq("profile_id", profileId)
+        .eq("is_developer", false)
         .not("user_kyc", "is", null)
         .eq("user_type", "business")
         .lt("created_at", createdBefore)

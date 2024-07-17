@@ -264,6 +264,9 @@ exports.getHifiUser = async (req, res) => {
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+		
+		// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
 
 		// get status
 		const {status, getHifiUserResponse} = await getRawUserObject(userId, profileId)
@@ -296,9 +299,12 @@ exports.updateHifiUser = async (req, res) => {
 			.eq("id", userId)
 			.maybeSingle()
 		)
-		console.log("*************user", user)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+
+		// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use PUT user/developer" })
+
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
@@ -733,6 +739,8 @@ exports.updateHifiUserAsync = async (req, res) => {
 		)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+			// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
@@ -954,6 +962,17 @@ exports.createDeveloperUser = async(req, res) => {
 				developer_user_id: userId
 			})
 			.eq("id", profileId)
+		)
+
+		if (error) throw error
+
+		// update user account type to is_developer
+		const {data: user, error: userError} = await supabaseCall(() => supabase
+			.from("users")
+			.update({
+				is_developer: true
+			})
+			.eq("id", userId)
 		)
 
 		if (error) throw error
