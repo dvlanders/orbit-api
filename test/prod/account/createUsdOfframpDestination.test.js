@@ -5,6 +5,7 @@ const {
   userInfo,
   usdOfframpBankDetails,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /account/usd/offramp", function () {
   it("it should has status code 200", async () => {
@@ -28,9 +29,9 @@ describe("POST /account/usd/offramp", function () {
         postalCode: usdOfframpBankDetails.POSTAL_CODE,
         country: usdOfframpBankDetails.COUNTRY,
         accountOwnerType: "individual",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
     console.log(account);
     expect(accountRes.body.status).toBeDefined();

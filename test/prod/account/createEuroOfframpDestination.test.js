@@ -1,17 +1,14 @@
 const supertest = require("supertest");
 const app = require("../../../app");
-const {
-  authTestParams,
-  userInfo,
-  eurOfframpBankDetails,
-} = require("../testConfig");
+const { authTestParams, eurOfframpBankDetails } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 // bridge needs additional kyc info to activate euro offramp with Sepa
 describe("POST /account/euro/offramp", function () {
   it("it should has status code 200", async () => {
     const accountRes = await supertest(app)
       .post(
-        `/account/euro/offramp?apiKeyId=${authTestParams.API_KEY}&userId=${userInfo.USER_ID}`
+        `/account/euro/offramp?apiKeyId=${authTestParams.API_KEY}&userId=${eurOfframpBankDetails.USER_ID}`
       )
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
@@ -27,18 +24,14 @@ describe("POST /account/euro/offramp", function () {
         businessIdentifierCode: eurOfframpBankDetails.BIC,
         firstName: eurOfframpBankDetails.FIRST_NAME,
         lastName: eurOfframpBankDetails.LAST_NAME,
-      })
-      .expect(400);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
     console.log(account);
+    expect(account.status).toBeDefined();
+    expect(account.status).toBe("ACTIVE");
     expect(account.message).toBeDefined();
-    expect(account.message).toBe(
-      "Please review and complete the listed requirements to gain access to the SEPA/Euro services."
-    );
-    // expect(account.status).toBeDefined();
-    // expect(account.status).toBe("ACTIVE");
-    // expect(account.message).toBeDefined();
-    // expect(account.id).toBeDefined();
+    expect(account.id).toBeDefined();
   }, 30000);
 });

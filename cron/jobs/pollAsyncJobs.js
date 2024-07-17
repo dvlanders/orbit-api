@@ -1,4 +1,5 @@
 const createJob = require("../../asyncJobs/createJob");
+const { deleteJob } = require("../../asyncJobs/deleteJob");
 const { JobError } = require("../../asyncJobs/error");
 const insertJobHistory = require("../../asyncJobs/insertJobHistory");
 const jobMapping = require("../../asyncJobs/jobMapping");
@@ -19,10 +20,13 @@ const pollAsyncJobs = async() => {
         const now = new Date()
         let { data: jobsQueue, error } = await supabase
         .from('jobs_queue')
-        .delete()
+        .update({
+            in_process: true
+        })
         .lt('next_retry', now.toISOString())
         .gt('retry_deadline', now.toISOString())
         .eq("env", JOB_ENV)
+        .eq("in_process", false)
         .select("*")
         .order('next_retry', {ascending: true})
     
@@ -37,15 +41,18 @@ const pollAsyncJobs = async() => {
             try{
                 const jobFunc = jobMapping[job.job].execute
                 await jobFunc(job.config)
+                await deleteJob(job.id)
                 success = true
             }catch(error){
+                // delete the job before create a new one
+                await deleteJob(job.id)
                 await createLog("pollAsyncJobs", job.user_id, error.message)
-                const newNextRetry = new Date(now.getTime() + job.retry_interval).toISOString()
-                success = false
-                await createJob(job.job, job.config, job.user_id, job.profile_id, job.created_at, job.number_of_retries, newNextRetry, job.retry_deadline, job.retry_interval)
-                
-                // record error
+                // record error and create new job if needed
                 if (error instanceof JobError){
+                    if (error.needToReschedule) {
+                        const newNextRetry = new Date(now.getTime() + job.retry_interval).toISOString()
+                        await createJob(job.job, job.config, job.user_id, job.profile_id, job.created_at, job.number_of_retries, newNextRetry, job.retry_deadline, job.retry_interval)
+                    }
                     jobError = {
                         type: error.type,
                         message: error.message,
@@ -54,6 +61,7 @@ const pollAsyncJobs = async() => {
                         needToReschedule: error.needToReschedule
                     }
                 }
+                success = false
             }finally{
                 await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success, jobError)
             }

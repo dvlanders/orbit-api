@@ -79,7 +79,7 @@ exports.getRawUserObject = async(userId, profileId) => {
 
 		// check if the userCreation is in the job queue, if yes return pending response
 		const canScheduled = await jobMapping.createUser.scheduleCheck("createUser", {}, userId, profileId)
-		if (!canScheduled) return res.status(200).json(getHifiUserResponse)
+		if (!canScheduled) return {status: 200 , getHifiUserResponse}
         
         // get status
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([

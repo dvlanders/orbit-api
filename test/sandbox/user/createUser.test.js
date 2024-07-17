@@ -2,6 +2,7 @@ const supertest = require("supertest");
 const { v4: uuidv4 } = require("uuid");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /user/create", function () {
   it("it should has status code 200", async () => {
@@ -14,23 +15,23 @@ describe("POST /user/create", function () {
       .send({
         redirectUrl: "http://localhost:3000/tosredirect",
         idempotencyKey: uuidv4(),
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(tosLinkRes, 200)).toBe(true);
     expect(tosLinkRes.body.url).toBeDefined();
     expect(tosLinkRes.body.sessionToken).toBeDefined();
 
-    const sAIDResponse = await supertest(app)
+    const sAIDRes = await supertest(app)
       .put(`/tos-link`)
       .set({
         "Content-Type": "application/json",
       })
       .send({
         sessionToken: tosLinkRes.body.sessionToken,
-      })
-      .expect(200);
+      });
 
-    expect(sAIDResponse.body.signedAgreementId).toBeDefined();
+    expect(statusChecker(sAIDRes, 200)).toBe(true);
+    expect(sAIDRes.body.signedAgreementId).toBeDefined();
 
     const newUserRes = await supertest(app)
       .post(`/user/create?apiKeyId=${authTestParams.API_KEY}`)
@@ -52,11 +53,11 @@ describe("POST /user/create", function () {
         city: "NV",
         postalCode: "10044",
         stateProvinceRegion: "NV",
-        signedAgreementId: sAIDResponse.body.signedAgreementId,
+        signedAgreementId: sAIDRes.body.signedAgreementId,
         ipAddress: "108.28.159.21",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(newUserRes, 200)).toBe(true);
     const user = newUserRes.body;
     expect(user).toBeDefined();
     expect(user.user.id).toBeDefined();
