@@ -1,6 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /account/activateOnRampRail", function () {
   it("it should has status code 200", async () => {
@@ -16,8 +17,9 @@ describe("POST /account/activateOnRampRail", function () {
         rail: "US_ACH",
         destinationCurrency: "usdc",
         destinationChain: "POLYGON_AMOY",
-      })
-      .expect(200);
+      });
+
+    expect(statusChecker(accountRes, 200)).toBe(true);
     expect(accountRes.body.message).toBeDefined();
     expect(accountRes.body.message).toMatch(/(successfully|activated)$/);
   }, 20000);

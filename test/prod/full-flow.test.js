@@ -7,6 +7,7 @@ const {
   usdOfframpBankDetails,
   usdOnrampPlaidBankDetails,
 } = require("./testConfig");
+const { statusChecker } = require("../testUtils");
 
 const API_KEY = authTestParams.API_KEY;
 const ZUPLO_SECRET = authTestParams.ZUPLO_SECRET;
@@ -27,9 +28,9 @@ const activateOnRampRail = async (
       rail: rail,
       destinationCurrency: destinationCurrency,
       destinationChain: destinationChain,
-    })
-    .expect(200);
+    });
 
+  expect(statusChecker(accountRes, 200)).toBe(true);
   const account = accountRes.body;
   console.log(account);
   expect(account.message).toBeDefined();
@@ -56,23 +57,23 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .send({
           redirectUrl: "http://localhost:3000/tosredirect",
           idempotencyKey: uuidv4(),
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(tosLinkRes, 200)).toBe(true);
       expect(tosLinkRes.body.url).toBeDefined();
       expect(tosLinkRes.body.sessionToken).toBeDefined();
 
-      const sAIDResponse = await supertest(app)
+      const sAIDRes = await supertest(app)
         .put(`/tos-link`)
         .set({
           "Content-Type": "application/json",
         })
         .send({
           sessionToken: tosLinkRes.body.sessionToken,
-        })
-        .expect(200);
+        });
 
-      expect(sAIDResponse.body.signedAgreementId).toBeDefined();
+      expect(statusChecker(sAIDRes, 200)).toBe(true);
+      expect(sAIDRes.body.signedAgreementId).toBeDefined();
 
       const newUserRes = await supertest(app)
         .post(`/user/create?apiKeyId=${API_KEY}`)
@@ -96,11 +97,11 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           city: userInfo.CITY,
           postalCode: userInfo.POSTAL,
           stateProvinceRegion: userInfo.STATE,
-          signedAgreementId: sAIDResponse.body.signedAgreementId,
+          signedAgreementId: sAIDRes.body.signedAgreementId,
           ipAddress: "108.28.159.21",
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(newUserRes, 200)).toBe(true);
       const user = newUserRes.body;
       console.log(user);
       expect(user).toBeDefined();
@@ -132,9 +133,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           .set({
             "zuplo-secret": ZUPLO_SECRET,
             "Content-Type": "application/json",
-          })
-          .expect(200);
+          });
 
+        expect(statusChecker(userRes, 200)).toBe(true);
         const user = userRes.body;
         expect(user).toBeDefined();
         expect(user.user.id).toBeDefined();
@@ -196,9 +197,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           postalCode: usdOfframpBankDetails.POSTAL_CODE,
           country: usdOfframpBankDetails.COUNTRY,
           accountOwnerType: "individual",
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(accountRes, 200)).toBe(true);
       const account = accountRes.body;
       console.log(account);
       expect(accountRes.body.status).toBeDefined();
@@ -218,9 +219,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           plaidProcessorToken: usdOnrampPlaidBankDetails.PLAID_TOKEN,
           accountType: usdOnrampPlaidBankDetails.ACCOUNT_TYPE,
           bankName: usdOnrampPlaidBankDetails.BANK_NAME,
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(accountRes, 200)).toBe(true);
       const account = accountRes.body;
       console.log(account);
       expect(account.status).toBeDefined();
@@ -243,9 +244,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(usOnrampAccountsRes, 200)).toBe(true);
       const usOnrampAccounts = usOnrampAccountsRes.body;
       console.log(usOnrampAccounts);
       expect(usOnrampAccounts.count).toBeDefined();
@@ -264,8 +265,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
+
+      expect(statusChecker(euOfframpAccountsRes, 200)).toBe(true);
       const euOfframpAccounts = euOfframpAccountsRes.body;
       console.log(euOfframpAccounts);
       expect(euOfframpAccounts.count).toBeDefined();
@@ -283,8 +285,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
+
+      expect(statusChecker(usOfframpAccountsRes, 200)).toBe(true);
       const usOfframpAccounts = usOfframpAccountsRes.body;
       console.log(usOfframpAccounts);
       expect(usOfframpAccounts.count).toBeDefined();
@@ -320,9 +323,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           currency: "usdc",
           chain: "POLYGON_MAINNET",
           recipientUserId: user_id,
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(accountRes, 200)).toBe(true);
       const account = accountRes.body;
       console.log(account);
       expect(account.transferType).toBeDefined();
@@ -348,9 +351,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           destinationCurrency: "usdc",
           isInstant: false,
           destinationUserId: user_id,
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(accountRes, 200)).toBe(true);
       const account = accountRes.body;
       console.log(account);
       expect(account.transferType).toBeDefined();
@@ -376,9 +379,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
           sourceCurrency: "usdc",
           destinationCurrency: "usd",
           paymentRail: "ach",
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(accountRes, 200)).toBe(true);
       const account = accountRes.body;
       console.log(account);
       expect(account.transferType).toBeDefined();
@@ -400,9 +403,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(txsRes, 200)).toBe(true);
       const txs = txsRes.body;
       console.log(txs);
       expect(txs.count).toBeDefined();
@@ -425,9 +428,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(txsRes, 200)).toBe(true);
       const txs = txsRes.body;
       console.log(txs);
       expect(txs.count).toBeDefined();
@@ -450,9 +453,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(txsRes, 200)).toBe(true);
       const txs = txsRes.body;
       console.log(txs);
       expect(txs.count).toBeDefined();
@@ -482,9 +485,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(txRes, 200)).toBe(true);
       const tx = txRes.body;
       console.log(tx);
       expect(tx.transferType).toBeDefined();
@@ -503,9 +506,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(txRes, 200)).toBe(true);
       const tx = txRes.body;
       console.log(tx);
       expect(tx.transferType).toBeDefined();
@@ -524,9 +527,9 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         .set({
           "zuplo-secret": ZUPLO_SECRET,
           "Content-Type": "application/json", // Ensure correct content type
-        })
-        .expect(200);
+        });
 
+      expect(statusChecker(txRes, 200)).toBe(true);
       const tx = txRes.body;
       console.log(tx);
       expect(tx.transferType).toBeDefined();

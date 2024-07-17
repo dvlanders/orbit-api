@@ -2,6 +2,7 @@ const supertest = require("supertest");
 const app = require("../../../app");
 const { v4: uuidv4 } = require("uuid");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /transfer/crypto-to-crypto", function () {
   it("it should has status code 200", async () => {
@@ -18,9 +19,9 @@ describe("POST /transfer/crypto-to-crypto", function () {
         currency: "usdc",
         chain: "POLYGON_AMOY",
         recipientAddress: "0x89dfD8792c7E7041c24F01223929F1d8Dd642F0c",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     expect(accountRes.body.message).toBeDefined();
     expect(accountRes.body.message).toBe(
       "This endpoint is only available in production"

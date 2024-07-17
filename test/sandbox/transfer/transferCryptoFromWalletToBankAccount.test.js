@@ -5,6 +5,7 @@ const {
   authTestParams,
   transferCryptoFromWalletToBankAccountParams,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /transfer/crypto-to-fiat", function () {
   it("it should has status code 200", async () => {
@@ -27,9 +28,9 @@ describe("POST /transfer/crypto-to-fiat", function () {
         sourceCurrency: "usdc",
         destinationCurrency: "usd",
         paymentRail: "ach",
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     expect(accountRes.body.message).toBeDefined();
     expect(accountRes.body.message).toBe(
       "This endpoint is only available in production"

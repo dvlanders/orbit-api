@@ -1,6 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("GET /account/all", function () {
   it("it should has status code 200", async () => {
@@ -11,9 +12,9 @@ describe("GET /account/all", function () {
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(usOnrampAccountsRes, 200)).toBe(true);
     const usOnrampAccounts = usOnrampAccountsRes.body;
     console.log(usOnrampAccounts);
     expect(usOnrampAccounts.count).toBeDefined();
@@ -31,8 +32,9 @@ describe("GET /account/all", function () {
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
-      })
-      .expect(200);
+      });
+
+    expect(statusChecker(euOfframpAccountsRes, 200)).toBe(true);
     const euOfframpAccounts = euOfframpAccountsRes.body;
     console.log(euOfframpAccounts);
     expect(euOfframpAccounts.count).toBeDefined();
@@ -50,8 +52,9 @@ describe("GET /account/all", function () {
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
-      })
-      .expect(200);
+      });
+
+    expect(statusChecker(usOfframpAccountsRes, 200)).toBe(true);
     const usOfframpAccounts = usOfframpAccountsRes.body;
     console.log(usOfframpAccounts);
     expect(usOfframpAccounts.count).toBeDefined();
