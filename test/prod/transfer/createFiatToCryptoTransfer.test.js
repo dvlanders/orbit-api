@@ -6,6 +6,7 @@ const {
   userInfo,
   createFiatToCryptoTransferParams,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /transfer/fiat-to-crypto", function () {
   it("it should has status code 200", async () => {
@@ -27,9 +28,9 @@ describe("POST /transfer/fiat-to-crypto", function () {
         destinationCurrency: "usdc",
         isInstant: false,
         destinationUserId: createFiatToCryptoTransferParams.DESTINATION_USER_ID,
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
     console.log(account);
     expect(account.transferType).toBeDefined();

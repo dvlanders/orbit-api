@@ -1,6 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("PUT /user", function () {
   it("it should has status code 200", async () => {
@@ -14,8 +15,9 @@ describe("PUT /user", function () {
       })
       .send({
         legalFirstName: "Hsin-Hung",
-      })
-      .expect(200);
+      });
+
+    expect(statusChecker(userRes, 200)).toBe(true);
     const user = userRes.body;
     expect(user).toBeDefined();
     expect(user.user.id).toBeDefined();

@@ -5,6 +5,7 @@ const {
   userInfo,
   usdOfframpCircleWireBankDetails,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 // TODO: need circle prod api key
 describe("POST /account/wire/offramp", function () {
@@ -31,8 +32,9 @@ describe("POST /account/wire/offramp", function () {
         accountHolderStateProvinceRegion:
           usdOfframpCircleWireBankDetails.ACCOUNT_HOLDER_STATE_PROVINCE_REGION,
         bankCountry: usdOfframpCircleWireBankDetails.BANK_COUNTRY,
-      })
-      .expect(200);
+      });
+
+    expect(statusChecker(accountRes, 200)).toBe(true);
     const account = accountRes.body;
     console.log(account);
     expect(account.status).toBeDefined();

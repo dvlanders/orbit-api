@@ -4,6 +4,7 @@ const {
   authTestParams,
   getCryptoToCryptoTransferParams,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("GET /transfer/crypto-to-crypto", function () {
   it("it should has status code 200", async () => {
@@ -14,9 +15,9 @@ describe("GET /transfer/crypto-to-crypto", function () {
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountRes, 200)).toBe(true);
     // const account = accountRes.body;
     // expect(account.transferType).toBeDefined();
     // expect(account.transferType).toBe("CRYPTO_TO_CRYPTO");

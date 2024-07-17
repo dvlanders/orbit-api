@@ -1,9 +1,10 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("POST /account/euro/offramp", function () {
-  it("it should has status code 200", async () => {
+  it("it should has status code 400", async () => {
     const accountRes = await supertest(app)
       .post(
         `/account/euro/offramp?apiKeyId=${authTestParams.API_KEY}&userId=${userInfo.USER_ID}`
@@ -22,9 +23,9 @@ describe("POST /account/euro/offramp", function () {
         businessIdentifierCode: "DEUTDEDBFRA",
         firstName: "Test",
         lastName: "Test",
-      })
-      .expect(400);
+      });
 
+    expect(statusChecker(accountRes, 400)).toBe(true);
     expect(accountRes.body.message).toBeDefined();
     expect(accountRes.body.message).toBe(
       "Account would normally be successfully created. However, euro offramp creation is currently not available in sandbox."

@@ -4,6 +4,7 @@ const {
   authTestParams,
   getFiatToCryptoTransferParams,
 } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("GET /transfer/fiat-to-crypto", function () {
   it("it should has status code 200", async () => {
@@ -14,9 +15,9 @@ describe("GET /transfer/fiat-to-crypto", function () {
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(txRes, 200)).toBe(true);
     const tx = txRes.body;
     console.log(tx);
     expect(tx.transferType).toBeDefined();

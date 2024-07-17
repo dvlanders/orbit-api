@@ -1,6 +1,7 @@
 const supertest = require("supertest");
 const app = require("../../../app");
 const { authTestParams, userInfo } = require("../testConfig");
+const { statusChecker } = require("../../testUtils");
 
 describe("GET /transfer/crypto-to-fiat/all", function () {
   it("it should has status code 200", async () => {
@@ -11,9 +12,9 @@ describe("GET /transfer/crypto-to-fiat/all", function () {
       .set({
         "zuplo-secret": authTestParams.ZUPLO_SECRET,
         "Content-Type": "application/json", // Ensure correct content type
-      })
-      .expect(200);
+      });
 
+    expect(statusChecker(accountsRes, 200)).toBe(true);
     const accounts = accountsRes.body;
     expect(accounts.count).toBeDefined();
     expect(accounts.records).toBeDefined();
