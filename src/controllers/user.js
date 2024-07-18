@@ -864,7 +864,8 @@ exports.createDeveloperUser = async(req, res) => {
 		const profileId = req.query.profileId
 		const fields = req.body
 		// user type should always be business
-		if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
+		// if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
+		if (fields.userType != "individual") return res.status(400).json({error: "Developer user type must be individual for the current statge, will be switched to business"})
 		// check if developer user is already created
 		const {data: profile, error: profileError} = await supabaseCall(() => supabase
 			.from("profiles")
@@ -954,7 +955,7 @@ exports.createDeveloperUser = async(req, res) => {
 		}
 
 		// insert async jobs
-		await createJob("createDeveloperUser", {userId, userType: "business"}, userId, profileId)
+		await createJob("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
 		// update developer user id into profile
 		const {data, error} = await supabaseCall(() => supabase
 			.from("profiles")

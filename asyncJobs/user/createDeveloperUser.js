@@ -25,7 +25,8 @@ const createDeveloperUserAsync = async(config) => {
         // Create customer objects for providers
         await Promise.all([
             createBastionDeveloperUser(config.userId),
-            // createBusinessBridgeCustomer(config.userId),
+            // createBusinessBridgeCustomer(config.userId), // FIXME business user can not yet be created successfully use individual instead for now
+            createIndividualBridgeCustomer(config.userId), // use individual for now
             createCheckbookUser(config.userId)
         ]);
 
