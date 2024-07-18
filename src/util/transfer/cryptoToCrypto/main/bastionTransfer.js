@@ -3,6 +3,7 @@ const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
 const { chargeDeveloperFeeBastion } = require("../../fee/chargeDeveloperFeeBastion")
+const { getFeeConfig } = require("../../fee/utils")
 const { transferType } = require("../../utils/transfer")
 const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer")
 const { toUnitsString } = require("../utils/toUnits")
@@ -27,7 +28,7 @@ const bastionCryptoTransfer = async(fields) => {
     // transfer
     const response = await bastionTransfer(requestRecord.id, fields)
     const responseBody = await response.json()
-
+    let fee
     if (!response.ok) {
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
         if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
@@ -46,29 +47,31 @@ const bastionCryptoTransfer = async(fields) => {
         }
         record = await updateRequestRecord(requestRecord.id, toUpdate)
     }else{
+        //charge fee when is not failed
+        if (responseBody.status != "FAILED"){
+            // charge fee
+            if (fields.feeType && parseFloat(fields.feeValue) > 0){
+                const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, fields.amount)
+                const developer_fee_id = await chargeDeveloperFeeBastion(requestRecord.id, "CRYPTO_TO_CRYPTO", feeType, feePercent, feeAmount, fields.senderUserId, fields.profileId, fields.chain, fields.currency)
+                fee = {
+                    feeId: developer_fee_id,
+                    feeType,
+                    feePercent,
+                    feeAmount
+                }
+            }
+        }
+        
         // update to database
         const toUpdate = {
             bastion_response: responseBody,
             status: responseBody.status,
             transaction_hash: responseBody.transactionHash,
-            failed_reason: failedReason
+            failed_reason: failedReason,
+            developer_fee_id: fee.feeId
         }
+        
         record = await updateRequestRecord(requestRecord.id, toUpdate)
-    }
-
-    let fee
-    // charge fee
-    if (fields.feeType && parseFloat(fields.feeValue) > 0){
-        const feeType = fields.feeType
-        const feePercent = feeType == "PERCENT" ? parseFloat(fields.feeValue) : 0
-        const feeAmount = feeType == "PERCENT" ? parseFloat(fields.amount) * feePercent : parseFloat(fields.feeValue)
-        developer_fee_id = await chargeDeveloperFeeBastion(record.id, "CRYPTO_TO_CRYPTO", feeType, feePercent, feeAmount, fields.senderUserId, fields.profileId, fields.chain, fields.currency)
-        fee = {
-            feeId: developer_fee_id,
-            feeType,
-            feePercent,
-            feeAmount
-        }
     }
 
     // gas check

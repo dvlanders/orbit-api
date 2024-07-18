@@ -7,11 +7,13 @@ const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } =
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
+const { chargeDeveloperFeeBastion } = require("../../fee/chargeDeveloperFeeBastion");
+const { getFeeConfig } = require("../../fee/utils");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress) => {
+const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue) => {
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
 	const { isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId } = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
@@ -94,17 +96,16 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 		}
 	}
 
-	// fail to transfer
+	let fee
 	if (!response.ok) {
+		// fail to transfer
 		createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
 		if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance") {
 			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = "Transfer amount exceeds balance"
-			// throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
 		} else {
 			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = "Not enough gas, please contact HIFI for more information"
-			// throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, responseBody.message)
 		}
 
 		const { error: updateError } = await supabase
@@ -127,6 +128,23 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 		result.transferDetails.transactionHash = responseBody.transactionHash
 		result.transferDetails.status = responseBody.status == "FAILED" ? "FAILED_ONCHAIN" : "SUBMITTED_ONCHAIN"
 
+		//charge fee when is not failed
+        if (responseBody.status != "FAILED"){
+            // charge fee
+            if (feeType && parseFloat(feeValue) > 0){
+                const config = getFeeConfig(feeType, feeValue, amount)
+                const developer_fee_id = await chargeDeveloperFeeBastion(initialBastionTransfersInsertData.id, "CRYPTO_TO_FIAT", config.feeType, config.feePercent, config.feeAmount, sourceUserId, profileId, chain, sourceCurrency)
+                fee = {
+                    feeId: developer_fee_id,
+                    feeType: config.feeType,
+                    feePercent: config.feePercent,
+                    feeAmount: config.feeAmount
+                }
+
+				result.transferDetails.fee = fee
+            }
+        }
+
 		const { error: updateError } = await supabase
 			.from('offramp_transactions')
 			.update({
@@ -134,7 +152,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				transaction_hash: responseBody.transactionHash,
 				bastion_transaction_status: responseBody.status,
 				transaction_status: result.transferDetails.status,
-				failed_reason: responseBody.failureDetails 
+				failed_reason: responseBody.failureDetails,
+				developer_fee_id: fee ? fee.feeId : null
 			})
 			.match({ id: initialBastionTransfersInsertData.id })
 

@@ -17,7 +17,6 @@ const chargedStatusMap = {
 
 exports.chargeDeveloperFeeBastion = async(transferId, transferType, feeType, feePercent, feeAmount, chargedUserId, profileId, chain, currency) => {
     try{
-        console.log(transferId, transferType, feeType, feePercent, feeAmount, chargedUserId, profileId, chain, currency)
         // get fee_collection_user_id
         const {data: feeCollectionUser, error: feeCollectionUserError} = await supabase
             .from("profiles")

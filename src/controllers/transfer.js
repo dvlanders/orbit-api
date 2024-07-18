@@ -51,10 +51,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 		fields.profileId = profileId
 		// check if fee config is correct
-		if (feeType && !acceptedFeeType.has(feeType)) return res.status(400).json({error: `Provided fee type: ${feeType} is not valid`})
-		if (feeType && (!feeValue || parseFloat(feeValue) <= 0) ) return res.status(400).json({error: `Provided fee value: ${feeValue} is not valid, should be larger than 0`})
-		if (feeType == "PERCENT" && parseFloat(feeValue) > 10 ) return res.status(400).json({error: `Provided fee value: ${feeValue} is not valid, fee value for percentage is too high, please check the fee config or contact HIFI`})
-		if (! await canChargeFee(profileId)) return res.status(400).json({error: `Please create a developer user first`})
+		const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
+		if (!valid) return res.status(400).json({error})
 		//check if sender is under profileId
 		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		// check if provide either recipientUserId or recipientAddress
@@ -171,7 +169,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment } = fields
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment, feeType, feeValue } = fields
 
 
 	try {
@@ -179,6 +177,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		// filed validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
 		const acceptedFields = {
+			"feeType": "string", "feeValue": ["string", "number"],
 			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
@@ -191,10 +190,10 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
-		//FIXME
-		// check if authorized
-		// if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
-
+		// check if fee config is correct
+		const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
+		if (!valid) return res.status(400).json({error})
+		
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 
@@ -214,7 +213,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		}
 
 		const { transferFunc } = funcs
-		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress)
+		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress, profileId, feeType, feeValue)
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
