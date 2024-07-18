@@ -959,7 +959,8 @@ exports.createDeveloperUser = async(req, res) => {
 		const {data, error} = await supabaseCall(() => supabase
 			.from("profiles")
 			.update({
-				developer_user_id: userId
+				developer_user_id: userId,
+				fee_collection_enabled: true
 			})
 			.eq("id", profileId)
 		)

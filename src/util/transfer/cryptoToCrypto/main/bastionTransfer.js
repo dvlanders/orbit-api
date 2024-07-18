@@ -2,6 +2,7 @@ const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transf
 const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
+const { chargeDeveloperFeeBastion } = require("../../fee/chargeDeveloperFeeBastion")
 const { transferType } = require("../../utils/transfer")
 const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer")
 const { toUnitsString } = require("../utils/toUnits")
@@ -26,9 +27,6 @@ const bastionCryptoTransfer = async(fields) => {
     // transfer
     const response = await bastionTransfer(requestRecord.id, fields)
     const responseBody = await response.json()
-
-    // gas check
-    await bastionGasCheck(fields.senderUserId, fields.chain)
 
     if (!response.ok) {
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
@@ -58,6 +56,24 @@ const bastionCryptoTransfer = async(fields) => {
         record = await updateRequestRecord(requestRecord.id, toUpdate)
     }
 
+    let fee
+    // charge fee
+    if (fields.feeType && parseFloat(fields.feeValue) > 0){
+        const feeType = fields.feeType
+        const feePercent = feeType == "PERCENT" ? parseFloat(fields.feeValue) : 0
+        const feeAmount = feeType == "PERCENT" ? parseFloat(fields.amount) * feePercent : parseFloat(fields.feeValue)
+        developer_fee_id = await chargeDeveloperFeeBastion(record.id, "CRYPTO_TO_CRYPTO", feeType, feePercent, feeAmount, fields.senderUserId, fields.profileId, fields.chain, fields.currency)
+        fee = {
+            feeId: developer_fee_id,
+            feeType,
+            feePercent,
+            feeAmount
+        }
+    }
+
+    // gas check
+    await bastionGasCheck(fields.senderUserId, fields.chain)
+
 
     // return receipt
     const receipt =  {
@@ -76,6 +92,7 @@ const bastionCryptoTransfer = async(fields) => {
             updatedAt: record.updatedAt,
             status: record.status,
             contractAddress: contractAddress,
+            fee,
             failedReason
         }
     }

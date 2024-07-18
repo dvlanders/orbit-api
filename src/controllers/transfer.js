@@ -26,6 +26,8 @@ const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../util/transfer/f
 const fetchAllCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchAllTransferRecord");
 const fetchAllCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBankAccount/transfer/fetchAllCryptoToFiatTransferRecord");
 const fetchAllFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchAllFiatToCryptoTransferRecords");
+const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
+const { acceptedFeeType, canChargeFee } = require("../util/transfer/fee/utils");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -38,7 +40,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 	// should gather senderUserId, profileId, amount, requestId, recipientUserId, recipientAddress, chain
 	const { profileId } = req.query
 	const fields = req.body
-	const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency } = fields
+	const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue } = fields
 
 
 	try {
@@ -47,6 +49,12 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
+		fields.profileId = profileId
+		// check if fee config is correct
+		if (feeType && !acceptedFeeType.has(feeType)) return res.status(400).json({error: `Provided fee type: ${feeType} is not valid`})
+		if (feeType && (!feeValue || parseFloat(feeValue) <= 0) ) return res.status(400).json({error: `Provided fee value: ${feeValue} is not valid, should be larger than 0`})
+		if (feeType == "PERCENT" && parseFloat(feeValue) > 10 ) return res.status(400).json({error: `Provided fee value: ${feeValue} is not valid, fee value for percentage is too high, please check the fee config or contact HIFI`})
+		if (! await canChargeFee(profileId)) return res.status(400).json({error: `Please create a developer user first`})
 		//check if sender is under profileId
 		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		// check if provide either recipientUserId or recipientAddress
@@ -76,9 +84,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		if (process.env.NODE_ENV === "development") {
-			return res.status(200).json({ message: "This endpoint is only available in production" });
-		}
+		// if (process.env.NODE_ENV === "development") {
+		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+		// }
 
 		// transfer
 		const receipt = await transferFunc(fields)
@@ -92,7 +100,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		createLog("transfer/create", senderUserId, error.message, error)
+		createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -193,19 +201,10 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-
-		// get the wallet record
-		const { data: walletData, error: walletError } = await supabase
-			.from('bastion_wallets')
-			.select('address')
-			.eq('user_id', sourceUserId)
-			.eq('chain', chain)
-			.maybeSingle();
-
-		if (walletError) {
-			return res.status(400).json({ error: 'An error occurred while fetching the wallet record' });
-		}
-		if (!walletData) {
+		
+		// get user wallet
+		const walletAddress = await getBastionWallet(sourceUserId, chain)
+		if (!walletAddress) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
 
@@ -215,7 +214,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		}
 
 		const { transferFunc } = funcs
-		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletData.address)
+		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress)
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
