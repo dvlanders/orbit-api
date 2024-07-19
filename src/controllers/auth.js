@@ -6,6 +6,7 @@ const createLog = require("../util/logger/supabaseLogger");
 const { supabaseCall } = require("../util/supabaseWithRetry");
 const activateWebhook = require("../util/auth/webhook/createWebhookUrl");
 const supabase = require("../util/supabaseClient");
+const supabaseSandbox = require("../util/sandboxSupabaseClient");
 
 exports.createApiKey = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -13,27 +14,26 @@ exports.createApiKey = async (req, res) => {
 	}
 
 	try {
-
-		// this token will be supabase auth token
+		// // this token will be supabase auth token
 		const token = req.headers.authorization?.split(" ")[1];
 		if (!token) {
 			return res.status(401).json({ error: "Not authorized" });
-		};
+		}
 
 		// get user info (user_id)
 		const user = await verifyToken(token);
-		if (!user && !user?.sub) {
+		if (!user || !user.sub) {
 			return res.status(401).json({ error: "Not authorized" });
-		};
-		const profileId = user.sub
+		}
+		const profileId = user.sub;
 
+		// const profileId = "c354949f-7962-446c-915d-156fdc606100"
 
-		const fields = req.body
-		const { apiKeyName, expiredAt, env } = fields
+		const fields = req.body;
+		const { apiKeyName, expiredAt, env } = fields;
 
-		const createClientInstance = (url, key) => createClient(url, key);
-		const getProfile = async (supabase, profileId) => {
-			const { data, error } = await supabaseCall(() => supabase
+		const getProfile = async (supabaseClient, profileId) => {
+			const { data, error } = await supabaseCall(() => supabaseClient
 				.from("profiles")
 				.select("*")
 				.eq("id", profileId)
@@ -43,7 +43,6 @@ exports.createApiKey = async (req, res) => {
 		};
 
 		if (env === "production") {
-			const supabase = createClientInstance(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 			const profile = await getProfile(supabase, profileId);
 			if (!profile.prod_enabled) {
 				return res.status(401).json({ error: "Please contact HIFI for activating the production environment" });
@@ -51,19 +50,17 @@ exports.createApiKey = async (req, res) => {
 		}
 
 		if (env === "sandbox") {
-			const sandboxSupabase = createClientInstance(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY);
-			let sandboxProfile = await getProfile(sandboxSupabase, profileId);
+			let sandboxProfile = await getProfile(supabaseSandbox, profileId);
 
 			if (!sandboxProfile) {
-				const prodSupabase = createClientInstance(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-				const prodProfile = await getProfile(prodSupabase, profileId);
+				const prodProfile = await getProfile(supabase, profileId);
 
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
 
 				const { id, ...rest } = prodProfile;
-				const { data: newSandboxProfile, error: newSandboxProfileError } = await supabaseCall(() => sandboxSupabase
+				const { data: newSandboxProfile, error: newSandboxProfileError } = await supabaseCall(() => supabaseSandbox
 					.from("profiles")
 					.insert({
 						id: profileId,
@@ -73,21 +70,19 @@ exports.createApiKey = async (req, res) => {
 			}
 		}
 
+		// field validation
+		const { missingFields, invalidFields } = fieldsValidation(fields, ["apiKeyName", "expiredAt", "env"], { "apiKeyName": "string", "expiredAt": "string", "env": "string" });
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `Fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields });
 
-		// filed validation
-		const { missingFields, invalidFields } = fieldsValidation(fields, ["apiKeyName", "expiredAt", "env"], { "apiKeyName": "string", "expiredAt": "string", "env": "string" })
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		console.log("createApiKey", profileId, apiKeyName, expiredAt, env);
 
-
-		console.log("createApiKey", profileId, apiKeyName, expiredAt, env)
-
-		const apikeyInfo = await createApiKeyFromProvider(profileId, apiKeyName, expiredAt, env)
-		return res.status(200).json(apikeyInfo)
+		const apikeyInfo = await createApiKeyFromProvider(profileId, apiKeyName, expiredAt, env);
+		return res.status(200).json(apikeyInfo);
 
 	} catch (error) {
-		console.error(error)
-		createLog("auth/createApiKey", "", error.message, error)
-		return res.status(500).json({ error: "Internal server error" })
+		console.error(error);
+		createLog("auth/createApiKey", "", error.message, error);
+		return res.status(500).json({ error: "Internal server error" });
 	}
 
 }
