@@ -1,5 +1,5 @@
 const supabase = require("../../supabaseClient");
-const supabaseSandbox = require("../util/sandboxSupabaseClient");
+const supabaseSandbox = require("../../sandboxSupabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 
 exports.insertApiKeyRecord = async (info, env) => {
