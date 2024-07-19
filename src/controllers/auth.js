@@ -79,6 +79,8 @@ exports.createApiKey = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
 
+		console.log("createApiKey", profileId, apiKeyName, expiredAt, env)
+
 		const apikeyInfo = await createApiKeyFromProvider(profileId, apiKeyName, expiredAt, env)
 		return res.status(200).json(apikeyInfo)
 
