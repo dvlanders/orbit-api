@@ -29,7 +29,6 @@ const createUserAsync = async(config) => {
         }else {
 			throw new Error(`userType is not found: ${config.userType}`)	
 		}
-
         // Create customer objects for providers
         const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
             createAndFundBastionUser(config.userId),

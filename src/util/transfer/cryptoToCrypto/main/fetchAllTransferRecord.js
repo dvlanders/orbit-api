@@ -20,7 +20,8 @@ const filledInfo = (record) => {
             status: record.status,
             contractAddress: record.contract_address,
             sender: record.sender_user.user_kyc,
-            recipient: record.recipient_user?.user_kyc
+            recipient: record.recipient_user?.user_kyc,
+            failedReason: record.failed_reason
         }
     }
 }

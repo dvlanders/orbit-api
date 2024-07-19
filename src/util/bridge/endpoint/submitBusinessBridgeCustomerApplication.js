@@ -164,6 +164,10 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			// endoresements
 		};
 
+		// delete compliance_screening_explanation if not provide
+		if (!userKyc.compliance_screening_explanation || userKyc.compliance_screening_explanation == "" || userKyc.compliance_screening_explanation == "None"){
+			delete requestBody["compliance_screening_explanation"]
+		}
 
 		// fill doc
 		const files = [

@@ -82,6 +82,7 @@ const businessRequiredFields = [
 	"proofOfOwnership",
 	"website",
 	"businessDescription",
+	"isDao"
 ];
 
 const businessAcceptedFields = {

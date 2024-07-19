@@ -4,8 +4,10 @@ const supabase = require('./supabaseClient');
 const { verifyUser } = require("./helper/verifyUser");
 const { isUUID } = require("./common/fieldsValidation");
 const { verifyApiKey } = require("./helper/verifyApiKey");
+const readme = require('readmeio');
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
+const README_API_KEY = process.env.README_API_KEY
 // /**
 //  * @description Middleware to protect routes by verifying JWT token.
 //  * @param {Object} req - Express request object.
@@ -27,6 +29,12 @@ exports.authorize = async (req, res, next) => {
 		if (!keyInfo) return res.status(401).json({error: "Invalid api key"});
 		// check userId
 		if (userId && (!isUUID(userId) || !(await verifyUser(userId, keyInfo.profile_id)))) return res.status(401).json({error: "Not authorized"});
+
+		readme.log(README_API_KEY, req, res, {
+			apiKey: apiKeyId,
+			label: keyInfo.profile_id,
+			email: keyInfo.profiles.email
+		});
 	
 		req.query.profileId = keyInfo.profile_id
 		next();
