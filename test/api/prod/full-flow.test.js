@@ -318,7 +318,7 @@ describe("User Flow: Create User -> Add Account -> Transfer", function () {
         })
         .send({
           senderUserId: user_id,
-          amount: 0.0,
+          amount: 0.01,
           requestId: uuidv4(),
           currency: "usdc",
           chain: "POLYGON_MAINNET",
