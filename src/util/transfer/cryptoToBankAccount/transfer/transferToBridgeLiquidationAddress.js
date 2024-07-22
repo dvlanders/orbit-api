@@ -7,12 +7,14 @@ const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } =
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
+const { isValidAmount } = require("../../../common/transferValidation")
+const { getMappedError } = require("../utils/errorMappings")
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress) => {
-	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
+	if (!isValidAmount(amount, 1)) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 	const { isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId } = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
@@ -97,16 +99,10 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 	// fail to transfer
 	if (!response.ok) {
 		createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
-		if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance") {
-			result.transferDetails.status = "NOT_INITIATED"
-			result.transferDetails.failedReason = "Transfer amount exceeds balance"
-			// throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
-		} else {
-			result.transferDetails.status = "NOT_INITIATED"
-			result.transferDetails.failedReason = "Not enough gas, please contact HIFI for more information"
-			// throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, responseBody.message)
-		}
-
+        const { message, type } = getMappedError(responseBody.message)
+		result.transferDetails.status = "NOT_INITIATED"
+        result.transferDetails.failedReason = message
+		
 		const { error: updateError } = await supabase
 			.from('offramp_transactions')
 			.update({
