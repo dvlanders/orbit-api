@@ -2,6 +2,12 @@ const supabase = require("../supabaseClient")
 
 
 async function createLog(source, userId, log, response) {
+
+	// don't log in test environment
+	if(process.env.NODE_TEST){
+		console.log("Logging disabled in test environment")
+		return
+	}
 	
 	if (!userId) {
 		const { data, error } = await supabase
