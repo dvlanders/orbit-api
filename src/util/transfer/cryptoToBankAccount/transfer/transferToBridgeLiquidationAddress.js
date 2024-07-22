@@ -9,6 +9,7 @@ const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { chargeDeveloperFeeBastion } = require("../../fee/chargeDeveloperFeeBastion");
 const { getFeeConfig } = require("../../fee/utils");
+const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -58,10 +59,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 		contractAddress: contractAddress,
 		actionName: "transfer",
 		chain: chain,
-		actionParams: [
-			{ name: "to", value: liquidationAddress },
-			{ name: "value", value: transferAmount }
-		],
+		actionParams: erc20Transfer(sourceCurrency, liquidationAddress, transferAmount)
 	};
 
 	const url = `${BASTION_URL}/v1/user-actions`;

@@ -68,7 +68,7 @@ const bastionCryptoTransfer = async(fields) => {
             status: responseBody.status,
             transaction_hash: responseBody.transactionHash,
             failed_reason: failedReason,
-            developer_fee_id: fee.feeId
+            developer_fee_id: fee ? fee.feeId: null
         }
         
         record = await updateRequestRecord(requestRecord.id, toUpdate)

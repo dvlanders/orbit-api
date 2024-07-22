@@ -8,6 +8,7 @@ const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { v4 } = require('uuid');
+const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -64,10 +65,7 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 		contractAddress: contractAddress,
 		actionName: "transfer",
 		chain: chain,
-		actionParams: [
-			{ name: "to", value: process.env.CIRCLE_MASTER_WALLET_BLOCKCHAIN_ADDRESS },
-			{ name: "value", value: transferAmount }
-		],
+		actionParams: erc20Transfer(sourceCurrency, process.env.CIRCLE_MASTER_WALLET_BLOCKCHAIN_ADDRESS, transferAmount)
 	};
 
 	const url = `${BASTION_URL}/v1/user-actions`;
