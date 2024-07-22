@@ -1,5 +1,9 @@
+const { v4 } = require("uuid");
 const createJob = require("../../asyncJobs/createJob");
 const {sendMessage} = require("../../webhooks/sendWebhookMessage");
+const { submitUserAction } = require("../util/bastion/endpoints/submitUserAction");
+const { Chain } = require("../util/common/blockchain");
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveTokenBastion");
 const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken")
 
@@ -102,3 +106,40 @@ exports.testCreateJob = async(req, res) => {
 
 }
 
+exports.testApproveAsset = async(req, res) => {
+    if (req.method !== "POST"){
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    try{
+        const userId = "75d7c01f-5f93-4490-8b93-a62fd8020358"
+        await approveMaxTokenToPaymentProcessor(userId, Chain.POLYGON_MAINNET, "usdc")
+        return res.status(200).json({message: "success"})
+    }catch(error){
+        console.error(error)
+        return res.status(500).json({message: "Internal server error"})
+    }
+}
+
+exports.registerFeeWallet = async(req, res) => {
+    if (req.method !== "POST"){
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    try{
+        const bodyObject = {
+            requestId: v4(),
+            userId: "4fb4ef7b-5576-431b-8d88-ad0b962be1df",
+            contractAddress: paymentProcessorContractMap.production.POLYGON_MAINNET,
+            actionName: "registerFeeWallet",
+            chain: Chain.POLYGON_MAINNET,
+            actionParams: [
+                {name: "feeWallet", value: "0xaEE3fe8b412e63B5ec73236A292673917Cb254fB"},
+            ]
+        };
+        const response = await submitUserAction(bodyObject)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch(error){
+        console.error(error)
+        return res.status(500).json({message: "Internal server error"})
+    }
+}

@@ -70,7 +70,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// fetch sender wallet address information
 		const senderWalletInformation = await fetchUserWalletInformation(senderUserId, chain, walletProviderTable)
 		if (!senderWalletInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
-
+		fields.senderAddress = senderWalletInformation.address
 		// check privilege
 		if (!(await isBastionKycPassed(senderUserId)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
@@ -82,9 +82,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		// if (process.env.NODE_ENV === "development") {
-		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
-		// }
+		if (process.env.NODE_ENV === "development") {
+			return res.status(200).json({ message: "This endpoint is only available in production" });
+		}
 
 		// transfer
 		const receipt = await transferFunc(fields)

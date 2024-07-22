@@ -15,9 +15,9 @@ const paymentProcessorContractMap = {
     }
 }
 
-exports.MAX_APPROVE_TOKEN = "10000000000000"
+const MAX_APPROVE_TOKEN = "10000000000000"
 
-exports.approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
+const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
     const env = process.env.NODE_ENV
     // get paymentProcessor address
     const paymentProcessorContract = paymentProcessorContractMap[env][chain]
@@ -38,10 +38,7 @@ exports.approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
         contractAddress: currencyContract,
         walletAddress,
         provider: "BASTION",
-        actionInput: {
-            name: paymentProcessorContract,
-            value: MAX_APPROVE_TOKEN
-        },
+        actionInput: erc20Approve(currency, paymentProcessorContract, MAX_APPROVE_TOKEN),
         tag: "APPROVE_MAX_TO_PAYMENT_PROCESSOR"
     }
 
@@ -87,7 +84,13 @@ exports.approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
             updated_at: new Date().toISOString()
         }
         
-        const updatedRecord = await updateRequestRecord(record.id, toUpdate)
+        const updatedRecord = await updateContractActionRecord(record.id, toUpdate)
     }
 
+}
+
+module.exports = {
+    MAX_APPROVE_TOKEN,
+    approveMaxTokenToPaymentProcessor,
+    paymentProcessorContractMap
 }

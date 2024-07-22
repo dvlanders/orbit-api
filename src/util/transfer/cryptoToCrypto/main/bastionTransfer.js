@@ -2,7 +2,9 @@ const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transf
 const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
-const { chargeDeveloperFeeBastion } = require("../../fee/chargeDeveloperFeeBastion")
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveTokenBastion")
+const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
+const { CryptoToCryptoWithFeeBastion } = require("../../fee/CryptoToCryptoWithFeeBastion")
 const { getFeeConfig } = require("../../fee/utils")
 const { transferType } = require("../../utils/transfer")
 const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer")
@@ -19,88 +21,125 @@ const bastionCryptoTransfer = async(fields) => {
     const contractAddress = currencyContractAddress[fields.chain][fields.currency]
     fields.contractAddress = contractAddress
     fields.provider = "BASTION"
-    
-    let record
-    let failedReason
+
     // insert request record
     const requestRecord = await insertRequestRecord(fields)
-    
-    // transfer
-    const response = await bastionTransfer(requestRecord.id, fields)
-    const responseBody = await response.json()
-    let fee
-    if (!response.ok) {
-        createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
-        if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
-            failedReason = "Transfer amount exceeds balance"
-            // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
-        }else{
-            failedReason = "Not enough gas, please contact HIFI for more information"
-            // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message)
-        }
 
-         // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: "FAILED",
-            failed_reason: failedReason
-        }
-        record = await updateRequestRecord(requestRecord.id, toUpdate)
-    }else{
-        //charge fee when is not failed
-        if (responseBody.status != "FAILED"){
-            // charge fee
-            if (fields.feeType && parseFloat(fields.feeValue) > 0){
-                const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, fields.amount)
-                const developer_fee_id = await chargeDeveloperFeeBastion(requestRecord.id, "CRYPTO_TO_CRYPTO", feeType, feePercent, feeAmount, fields.senderUserId, fields.profileId, fields.chain, fields.currency)
-                fee = {
-                    feeId: developer_fee_id,
-                    feeType,
-                    feePercent,
-                    feeAmount
+    if (fields.feeType && parseFloat(fields.feeValue) > 0){
+        // transfer with fee charged
+        // check if allowance is enough 
+        const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][fields.chain]
+        if (!paymentProcessorContractAddress) {
+            // no paymentProcessorContract available
+            const toUpdate = {
+                status: "FAILED",
+                failed_reason: `Fee feature not available for ${fields.currency} on ${fields.chain}`
+            }
+            record = await updateRequestRecord(requestRecord.id, toUpdate)
+            return {
+                transferType: transferType.CRYPTO_TO_CRYPTO,
+                transferDetails: {
+                    id: record.id,
+                    requestId: fields.requestId,
+                    senderUserId: fields.senderUserId,
+                    recipientUserId: fields.recipientUserId || null,
+                    recipientAddress: fields.recipientAddress,
+                    chain: fields.chain,
+                    currency: fields.currency,
+                    amount: fields.amount,
+                    transactionHash: null,
+                    createdAt: record.created_at,
+                    updatedAt: record.updatedAt,
+                    status: "FAILED",
+                    contractAddress: contractAddress,
+                    failedReason: toUpdate.failed_reason,
+                    fee: {
+                        feeId: null,
+                        feeType,
+                        feeAmount,
+                        feePercent,
+                        status: "FAILED",
+                        transactionHash: null,
+                        failedReason: `Fee feature not available for ${fields.currency} on ${fields.chain}`
+                    },
                 }
             }
         }
-        
-        // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: responseBody.status,
-            transaction_hash: responseBody.transactionHash,
-            failed_reason: failedReason,
-            developer_fee_id: fee ? fee.feeId: null
+        const allowance = await getTokenAllowance(fields.chain, fields.currency, fields.senderAddress, paymentProcessorContractAddress)
+        const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, fields.amount)
+        if (allowance < unitsAmount){
+            // not enough allowance, perform a token allowance job and then schedule a token transfer job
+
+        }else{
+            // perfrom transfer with fee
+            const receipt = await CryptoToCryptoWithFeeBastion(requestRecord.id, paymentProcessorContractAddress, feeType, feePercent, feeAmount, fields.profileId, fields)
+            // gas check
+            await bastionGasCheck(fields.senderUserId, fields.chain)
+            return receipt
         }
-        
-        record = await updateRequestRecord(requestRecord.id, toUpdate)
-    }
 
-    // gas check
-    await bastionGasCheck(fields.senderUserId, fields.chain)
-
-
-    // return receipt
-    const receipt =  {
-        transferType: transferType.CRYPTO_TO_CRYPTO,
-        transferDetails: {
-            id: record.id,
-            requestId: fields.requestId,
-            senderUserId: fields.senderUserId,
-            recipientUserId: fields.recipientUserId || null,
-            recipientAddress: fields.recipientAddress,
-            chain: fields.chain,
-            currency: fields.currency,
-            amount: record.amount,
-            transactionHash: record.transaction_hash,
-            createdAt: record.created_at,
-            updatedAt: record.updatedAt,
-            status: record.status,
-            contractAddress: contractAddress,
-            fee,
-            failedReason
+    }else{
+        // transfer without fee
+        let record
+        let failedReason
+        const response = await bastionTransfer(requestRecord.id, fields)
+        const responseBody = await response.json()
+        if (!response.ok) {
+            createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
+            if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
+                failedReason = "Transfer amount exceeds balance"
+            }else if (responseBody.message == "gas required exceeds allowance (7717)"){
+                failedReason = "Not enough gas, please contact HIFI for more information"
+            }else{
+                failedReason = "Please contact HIFI for more information"
+            }
+             // update to database
+            const toUpdate = {
+                bastion_response: responseBody,
+                status: "FAILED",
+                failed_reason: failedReason
+            }
+            record = await updateRequestRecord(requestRecord.id, toUpdate)
+        }else{
+            // update to database
+            const toUpdate = {
+                bastion_response: responseBody,
+                status: responseBody.status,
+                transaction_hash: responseBody.transactionHash,
+                failed_reason: responseBody.failureDetails,
+            }
+            
+            record = await updateRequestRecord(requestRecord.id, toUpdate)
         }
+    
+        // gas check
+        await bastionGasCheck(fields.senderUserId, fields.chain)
+    
+    
+        // return receipt
+        const receipt =  {
+            transferType: transferType.CRYPTO_TO_CRYPTO,
+            transferDetails: {
+                id: record.id,
+                requestId: fields.requestId,
+                senderUserId: fields.senderUserId,
+                recipientUserId: fields.recipientUserId || null,
+                recipientAddress: fields.recipientAddress,
+                chain: fields.chain,
+                currency: fields.currency,
+                amount: fields.amount,
+                transactionHash: record.transaction_hash,
+                createdAt: record.created_at,
+                updatedAt: record.updatedAt,
+                status: record.status,
+                contractAddress: fields.contractAddress,
+                failedReason: record.failed_reason
+            }
+        }
+    
+        return receipt
     }
-
-    return receipt
+    
 }
 
 

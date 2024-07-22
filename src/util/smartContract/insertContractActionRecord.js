@@ -1,5 +1,5 @@
-const supabase = require("../../../supabaseClient");
-const { supabaseCall } = require("../../../supabaseWithRetry");
+const supabase = require("../supabaseClient");
+const { supabaseCall } = require("../supabaseWithRetry");
 
 exports.insertContractActionRecord = async(requestInfo) => {
     const { data, error } = await supabaseCall(() => supabase

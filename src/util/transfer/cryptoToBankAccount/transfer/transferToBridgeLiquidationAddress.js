@@ -7,7 +7,7 @@ const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } =
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
-const { chargeDeveloperFeeBastion } = require("../../fee/chargeDeveloperFeeBastion");
+const { chargeDeveloperFeeBastion } = require("../../fee/CryptoToCryptoWithFeeBastion");
 const { getFeeConfig } = require("../../fee/utils");
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
 
