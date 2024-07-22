@@ -5,10 +5,14 @@ const { transferType } = require("../../utils/transfer");
 const bridgePlaidRailCheck = require("../railCheck/bridgePlaidRailCheck");
 const { getLastBridgeVirtualAccountActivity } = require("../utils/getLastBridgeVirtualAccountActivity");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../utils/utils");
+const { isValidAmount } = require("../../../common/transferValidation");
+const { getMappedError } = require("../utils/errorMappings")
+
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId) => {
     try{
+        if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const transferInfo = await bridgePlaidRailCheck(sourceAccountId, sourceCurrency, destinationCurrency, chain, sourceUserId, destinationUserId)
         // get the last virtual account activity
         const lastBridgeVirtualAccountActivity = await getLastBridgeVirtualAccountActivity(destinationUserId, transferInfo.bridge_virtual_account_id)
@@ -68,7 +72,9 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 })
                 .eq("id", initialRecord.id)
             createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, responseBody.message, responseBody)
-            throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
+
+            const { message, type } = getMappedError(responseBody.error)
+            throw new CreateFiatToCryptoTransferError(type, message, responseBody)
         }
         // update record
         const {data: updatedRecord, error: updatedRecordError} = await supabaseCall(() => supabase
