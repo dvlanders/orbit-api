@@ -74,6 +74,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.eq("crypto_provider", "BASTION")
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
+		.neq('transaction_status', "CREATED")
 		.order('updated_at', { ascending: true })
 	)
 
