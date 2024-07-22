@@ -8,7 +8,7 @@ const argLen = process.argv.length;
 // Check if no argument is provided
 if (!arg) {
   console.error(
-    `Error: No environment argument provided. Please specify 'prod' or 'sandbox'. eg. "npm test -- prod/user/ping" for production or "npm test -- sandbox/user/ping" for sandbox`
+    `Error: No environment argument provided. Please specify 'prod' or 'sandbox'. eg. "npm test prod -- user/ping" for production or "npm test sandbox -- user/ping" for sandbox, or "npm test unit" for unit tests.`
   );
   return; // Exit early
 }
@@ -19,17 +19,23 @@ const nodeEnv = arg === "prod" ? "production" : "development";
 // Construct the test command with the appropriate NODE_ENV
 let command = `cross-env DOTENV_CONFIG_PATH=./.env.local NODE_ENV=${nodeEnv} NODE_TEST=True jest --forceExit -- `;
 
-if (argLen == 3) {
-  if (arg === "prod") {
-    command += "prod/user/ prod/account/ prod/transfer/";
-  } else if (arg === "sandbox") {
-    command += "sandbox/";
-  }
-} else if (argLen == 4 && test) {
-  if (arg === "prod") {
-    command += "prod/" + test;
-  } else if (arg === "sandbox") {
-    command += "sandbox/" + test;
+if (arg === "unit") {
+  // If the argument is "unit", run all tests in the test/unit folder
+  command += "unit/";
+} else {
+  command += "api/";
+  if (argLen == 3) {
+    if (arg === "prod") {
+      command += "prod/user/ prod/account/ prod/transfer/";
+    } else if (arg === "sandbox") {
+      command += "sandbox/";
+    }
+  } else if (argLen == 4 && test) {
+    if (arg === "prod") {
+      command += "prod/" + test;
+    } else if (arg === "sandbox") {
+      command += "sandbox/" + test;
+    }
   }
 }
 
