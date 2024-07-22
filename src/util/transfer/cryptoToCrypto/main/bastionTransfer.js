@@ -1,8 +1,10 @@
+const createJob = require("../../../../../asyncJobs/createJob")
 const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transfer")
+const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck")
 const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
-const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveTokenBastion")
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion")
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
 const { CryptoToCryptoWithFeeBastion } = require("../../fee/CryptoToCryptoWithFeeBastion")
 const { getFeeConfig } = require("../../fee/utils")
@@ -13,7 +15,7 @@ const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
 
 
-const bastionCryptoTransfer = async(fields) => {
+const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
     const unitsAmount = toUnitsString(fields.amount, decimal) 
@@ -21,9 +23,23 @@ const bastionCryptoTransfer = async(fields) => {
     const contractAddress = currencyContractAddress[fields.chain][fields.currency]
     fields.contractAddress = contractAddress
     fields.provider = "BASTION"
-
-    // insert request record
-    const requestRecord = await insertRequestRecord(fields)
+ 
+    let requestRecord
+    // insert or fetch request record
+    if (!createdRecordId) {
+        requestRecord = await insertRequestRecord(fields)
+    }else{
+        const {data: record, error} = await supabase
+            .from("crypto_to_crypto")
+            .select("*")
+            .eq("id", createdRecordId)
+            .eq("status", "CREATED")
+            .maybeSingle()
+        
+        if (error) throw error
+        if (!record) throw new Error(`No record found for ${createdRecordId} or status is not CREATED`)
+        requestRecord = record
+    }
 
     if (fields.feeType && parseFloat(fields.feeValue) > 0){
         // transfer with fee charged
@@ -67,9 +83,39 @@ const bastionCryptoTransfer = async(fields) => {
         }
         const allowance = await getTokenAllowance(fields.chain, fields.currency, fields.senderAddress, paymentProcessorContractAddress)
         const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, fields.amount)
-        if (allowance < unitsAmount){
+        if (allowance < BigInt(unitsAmount)){
             // not enough allowance, perform a token allowance job and then schedule a token transfer job
-
+            await approveMaxTokenToPaymentProcessor(fields.senderUserId, fields.chain, fields.currency)
+            await createJob("cryptoToCryptoTransfer", {recordId: requestRecord.id}, fields.senderUserId, fields.profileId, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
+            // return creatred record
+            return {
+                transferType: transferType.CRYPTO_TO_CRYPTO,
+                transferDetails: {
+                    id: requestRecord.id,
+                    requestId: fields.requestId,
+                    senderUserId: fields.senderUserId,
+                    recipientUserId: fields.recipientUserId || null,
+                    recipientAddress: fields.recipientAddress,
+                    chain: fields.chain,
+                    currency: fields.currency,
+                    amount: fields.amount,
+                    transactionHash: null,
+                    createdAt: requestRecord.created_at,
+                    updatedAt: requestRecord.updatedAt,
+                    status: requestRecord.status,
+                    contractAddress: requestRecord.contract_address,
+                    failedReason: null,
+                    fee: {
+                        feeId: null,
+                        feeType,
+                        feeAmount,
+                        feePercent,
+                        status: "CREATED",
+                        transactionHash: null,
+                        failedReason: null,
+                    },
+                }
+            }
         }else{
             // perfrom transfer with fee
             const receipt = await CryptoToCryptoWithFeeBastion(requestRecord.id, paymentProcessorContractAddress, feeType, feePercent, feeAmount, fields.profileId, fields)
@@ -114,6 +160,8 @@ const bastionCryptoTransfer = async(fields) => {
     
         // gas check
         await bastionGasCheck(fields.senderUserId, fields.chain)
+        // allowance check
+        await allowanceCheck(fields.senderUserId, fields.senderAddress, fields.chain, fields.currency)
     
     
         // return receipt

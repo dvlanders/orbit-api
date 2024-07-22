@@ -1,7 +1,8 @@
 const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
 const { supabaseCall } = require("../src/util/supabaseWithRetry");
-const jobMapping = require("./jobMapping");
+const { jobMapping } = require("./jobMapping");
+
 
 const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
 const defalutRetryDeadline = 7 * 86400 * 1000 // 7days

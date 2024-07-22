@@ -1,7 +1,7 @@
 
 const { Chain } = require("../../src/util/common/blockchain")
 const createLog = require("../../src/util/logger/supabaseLogger")
-const { MAX_APPROVE_TOKEN, approveMaxTokenToPaymentProcessor } = require("../../src/util/smartContract/approve/approveTokenBastion")
+const { MAX_APPROVE_TOKEN, approveMaxTokenToPaymentProcessor, paymentProcessorContractMap } = require("../../src/util/smartContract/approve/approveTokenBastion")
 const { getTokenAllowance } = require("../../src/util/smartContract/approve/getApproveAmount")
 const supabase = require("../../src/util/supabaseClient")
 const { JobError, JobErrorType } = require("../error")
@@ -15,7 +15,8 @@ const approveMaxTokenToPaymentProcessorAsyncCheck = async(job, config, userId, p
         .eq("user_id", userId)
 
     // check the approve amount 
-    const allowance = await getTokenAllowance(config.chain, config.currency, config.owner, config.spender)
+    const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][config.chain]
+    const allowance = await getTokenAllowance(config.chain, config.currency, config.owner, paymentProcessorContractAddress)
     if (allowance < (MAX_APPROVE_TOKEN / 2)) return true
 
     // check double schedule

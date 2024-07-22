@@ -2,10 +2,11 @@ const { v4 } = require("uuid");
 const createJob = require("../../asyncJobs/createJob");
 const {sendMessage} = require("../../webhooks/sendWebhookMessage");
 const { submitUserAction } = require("../util/bastion/endpoints/submitUserAction");
-const { Chain } = require("../util/common/blockchain");
+const { Chain, currencyContractAddress } = require("../util/common/blockchain");
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveTokenBastion");
 const supabase = require("../util/supabaseClient");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
 
 const uploadFile = async (file, path) => {
     
@@ -100,7 +101,7 @@ exports.testCreateJob = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    await createJob("fundGas", {userid: "123", amount: "123"}, undefined, undefined)
+    await createJob("testJob", {userid: "123", amount: "123"}, undefined, undefined)
 
     return res.status(200).json({message: "success"})
 
@@ -112,8 +113,21 @@ exports.testApproveAsset = async(req, res) => {
     }
     try{
         const userId = "75d7c01f-5f93-4490-8b93-a62fd8020358"
-        await approveMaxTokenToPaymentProcessor(userId, Chain.POLYGON_MAINNET, "usdc")
-        return res.status(200).json({message: "success"})
+        const currencyContract = currencyContractAddress.POLYGON_MAINNET.usdc
+        // await approveMaxTokenToPaymentProcessor(userId, Chain.POLYGON_MAINNET, "usdc")
+        const paymentProcessorContract = paymentProcessorContractMap.production.POLYGON_MAINNET
+        const bodyObject = {
+            requestId: v4(),
+            userId: userId,
+            contractAddress: currencyContract,
+            actionName: "approve",
+            chain: Chain.POLYGON_MAINNET,
+            actionParams: erc20Approve("usdc", paymentProcessorContract, 0)
+        };
+    
+        const response = await submitUserAction(bodyObject)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
     }catch(error){
         console.error(error)
         return res.status(500).json({message: "Internal server error"})

@@ -22,7 +22,6 @@ const { v4: uuidv4 } = require("uuid");
 const getAllUsers = require('../util/user/getAllUsers');
 const { CustomerStatus } = require('../util/user/common');
 const createJob = require('../../asyncJobs/createJob');
-const jobMapping = require('../../asyncJobs/jobMapping');
 const { getRawUserObject } = require('../util/user/getRawUserObject');
 
 

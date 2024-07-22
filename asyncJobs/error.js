@@ -1,5 +1,6 @@
 const JobErrorType = {
 	INTERNAL_ERROR: "INTERNAL_ERROR",
+	RESCHEDULE: "RESCHEDULE"
 };
 
 class JobError extends Error {
