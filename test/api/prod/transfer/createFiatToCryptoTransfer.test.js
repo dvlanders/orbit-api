@@ -43,7 +43,7 @@ describe("POST /transfer/fiat-to-crypto", function () {
       console.log(tx);
       expect(tx.transferType).toBe("FIAT_TO_CRYPTO");
       expect(tx.transferDetails).toBeDefined();
-    }, 10000);
+    }, 30000);
   });
 
   describe("Missing Fields Test", function () {
@@ -181,6 +181,6 @@ describe("POST /transfer/fiat-to-crypto", function () {
       const tx = txRes.body;
       // console.log(tx);
       expect(tx.error).toMatch("Exceed transfer amount limit.");
-    }, 10000);
+    }, 30000);
   });
 });

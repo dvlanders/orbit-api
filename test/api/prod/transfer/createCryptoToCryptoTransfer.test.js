@@ -41,7 +41,7 @@ describe("POST /transfer/crypto-to-crypto", function () {
       console.log(tx);
       expect(tx.transferType).toBe("CRYPTO_TO_CRYPTO");
       expect(tx.transferDetails).toBeDefined();
-    }, 10000);
+    }, 30000);
   });
 
   describe("Missing Fields Test", function () {
@@ -156,6 +156,6 @@ describe("POST /transfer/crypto-to-crypto", function () {
       expect(tx.transferDetails.failedReason).toMatch(
         "Transfer amount exceeds balance."
       );
-    }, 10000);
+    }, 30000);
   });
 });

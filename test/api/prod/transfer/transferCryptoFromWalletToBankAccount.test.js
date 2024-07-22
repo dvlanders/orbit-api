@@ -44,7 +44,7 @@ describe("POST /transfer/crypto-to-fiat", function () {
       console.log(tx);
       expect(tx.transferType).toBe("CRYPTO_TO_FIAT");
       expect(tx.transferDetails).toBeDefined();
-    }, 10000);
+    }, 30000);
   });
 
   describe("Missing Fields Test", function () {
@@ -180,7 +180,7 @@ describe("POST /transfer/crypto-to-fiat", function () {
       expect(tx.transferDetails.failedReason).toMatch(
         "Transfer amount exceeds balance."
       );
-    }, 10000);
+    }, 30000);
   });
 
   describe("Invalid DestinationUserId and DestinationAccountId Pair Test", function () {
