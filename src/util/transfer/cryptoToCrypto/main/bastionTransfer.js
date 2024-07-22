@@ -1,6 +1,8 @@
 const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transfer")
 const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
+const { isValidAmount } = require("../../../common/transferValidation")
+const { getMappedError } = require("../utils/errorMappings")
 const createLog = require("../../../logger/supabaseLogger")
 const { transferType } = require("../../utils/transfer")
 const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer")
@@ -10,6 +12,7 @@ const { updateRequestRecord } = require("./updateRequestRecord")
 
 
 const bastionCryptoTransfer = async(fields) => {
+    if (!isValidAmount(fields.amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
     const unitsAmount = toUnitsString(fields.amount, decimal) 
@@ -32,13 +35,8 @@ const bastionCryptoTransfer = async(fields) => {
 
     if (!response.ok) {
         createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
-        if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
-            failedReason = "Transfer amount exceeds balance"
-            // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "transfer amount exceeds balance")
-        }else{
-            failedReason = "Not enough gas, please contact HIFI for more information"
-            // throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, responseBody.message)
-        }
+        const { message, type } = getMappedError(responseBody.message)
+        failedReason = message
 
          // update to database
         const toUpdate = {
