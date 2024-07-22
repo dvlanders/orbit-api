@@ -70,20 +70,18 @@ describe("GET /transfer/crypto-to-fiat/all", function () {
       }, 10000);
     });
 
-    // TODO: when user input limit is negative, we should let them know instead of just returning Unexpected error happened
     invalidLimits.forEach((limit) => {
       it(`should return status code 400 for invalid limit: ${limit}`, async () => {
         const params = { ...validParams(), limit };
         const txsRes = await endpointCall(params);
-        expect(statusChecker(txsRes, 500)).toBe(true);
+        expect(statusChecker(txsRes, 400)).toBe(true);
         const txs = txsRes.body;
         console.log(txs);
-        expect(txs.error).toBe("Unexpected error happened");
+        expect(txs.error).toBe("Invalid limit");
       }, 10000);
     });
   });
 
-  // TODO: invalid created dates should be client issue, not unexpected error
   describe("Created Dates Test", function () {
     const invalidDates = [
       "1999-Jan-0",
@@ -97,19 +95,19 @@ describe("GET /transfer/crypto-to-fiat/all", function () {
       it(`should return status code 400 for invalid created after date ${date}`, async () => {
         const params = { ...validParams(), createdAfter: date };
         const txsRes = await endpointCall(params);
-        expect(statusChecker(txsRes, 500)).toBe(true);
+        expect(statusChecker(txsRes, 400)).toBe(true);
         const txs = txsRes.body;
         console.log(txs);
-        expect(txs.error).toBe("Unexpected error happened");
+        expect(txs.error).toBe("Invalid date range");
       }, 10000);
 
       it(`should return status code 400 for invalid created before date ${date}`, async () => {
         const params = { ...validParams(), createdBefore: date };
         const txsRes = await endpointCall(params);
-        expect(statusChecker(txsRes, 500)).toBe(true);
+        expect(statusChecker(txsRes, 400)).toBe(true);
         const txs = txsRes.body;
         console.log(txs);
-        expect(txs.error).toBe("Unexpected error happened");
+        expect(txs.error).toBe("Invalid date range");
       }, 10000);
     });
   });

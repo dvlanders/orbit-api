@@ -10,7 +10,7 @@ const { statusChecker } = require("@/test/testUtils");
 
 const validParams = () => ({
   senderUserId: createCryptoToCryptoTransferParams.SENDER_USER_ID,
-  amount: 0.0,
+  amount: 0.01,
   requestId: uuidv4(),
   currency: "usdc",
   chain: "POLYGON_MAINNET",
@@ -133,16 +133,18 @@ describe("POST /transfer/crypto-to-crypto", function () {
     }, 10000);
   });
   describe("Invalid Amount Test", function () {
-    it(`should return status code 200 with failed status for negative amount`, async () => {
-      const params = { ...validParams(), amount: -1 };
-      const txRes = await endpointCall(params);
-      expect(statusChecker(txRes, 200)).toBe(true);
-      const tx = txRes.body;
-      // console.log(tx);
-      expect(tx.transferDetails).toBeDefined();
-      expect(tx.transferDetails.status).toBe("FAILED");
-      expect(tx.transferDetails.failedReason).toBeDefined();
-    }, 10000);
+    const invalidAmounts = [0, "one", -1];
+    invalidAmounts.forEach((amount) => {
+      it(`should return status code 400 with failed status for invalid amount`, async () => {
+        const params = { ...validParams(), amount: amount };
+        const txRes = await endpointCall(params);
+        expect(statusChecker(txRes, 400)).toBe(true);
+        const tx = txRes.body;
+        console.log(tx);
+        expect(tx.error).toBe("Transfer amount must be greater than or equal to 0.01.");
+      }, 10000);
+    });
+
     it(`should return status code 200 with failed status for exceed balance amount`, async () => {
       const params = { ...validParams(), amount: 100 };
       const txRes = await endpointCall(params);
@@ -152,7 +154,7 @@ describe("POST /transfer/crypto-to-crypto", function () {
       expect(tx.transferDetails).toBeDefined();
       expect(tx.transferDetails.status).toBe("FAILED");
       expect(tx.transferDetails.failedReason).toMatch(
-        "Transfer amount exceeds balance"
+        "Transfer amount exceeds balance."
       );
     }, 10000);
   });

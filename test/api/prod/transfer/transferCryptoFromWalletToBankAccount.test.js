@@ -158,21 +158,28 @@ describe("POST /transfer/crypto-to-fiat", function () {
   });
 
   describe("Invalid Amount Test", function () {
-    it(`should return status code 400 with failed status for negative amount`, async () => {
-      const params = { ...validParams(), amount: -1 };
+    const invalidAmounts = [0, "one", -1, 0.9];
+    invalidAmounts.forEach((amount) => {
+      it(`should return status code 400 with failed status for invalid amount`, async () => {
+        const params = { ...validParams(), amount: amount };
+        const txRes = await endpointCall(params);
+        expect(statusChecker(txRes, 400)).toBe(true);
+        const tx = txRes.body;
+        console.log(tx);
+        expect(tx.error).toBe("Transfer amount must be greater than or equal to 1.");
+      }, 10000);
+    });
+    it(`should return status code 200 with failed status for exceed balance amount`, async () => {
+      const params = { ...validParams(), amount: 100 };
       const txRes = await endpointCall(params);
-      expect(statusChecker(txRes, 400)).toBe(true);
+      expect(statusChecker(txRes, 200)).toBe(true);
       const tx = txRes.body;
       // console.log(tx);
-      expect(tx.error).toMatch("amount should be at least 1");
-    }, 10000);
-    it(`should return status code 400 with failed status sending less than $1`, async () => {
-      const params = { ...validParams(), amount: 0.9 };
-      const txRes = await endpointCall(params);
-      expect(statusChecker(txRes, 400)).toBe(true);
-      const tx = txRes.body;
-      // console.log(tx);
-      expect(tx.error).toMatch("amount should be at least 1");
+      expect(tx.transferDetails).toBeDefined();
+      expect(tx.transferDetails.status).toBe("NOT_INITIATED");
+      expect(tx.transferDetails.failedReason).toMatch(
+        "Transfer amount exceeds balance."
+      );
     }, 10000);
   });
 

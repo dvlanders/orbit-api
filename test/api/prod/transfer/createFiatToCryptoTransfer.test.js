@@ -162,24 +162,25 @@ describe("POST /transfer/fiat-to-crypto", function () {
     }, 10000);
   });
 
-  // TODO: it returns unexpected error, but should let users know that the amount they input is invalid
-  // TODO: sending limit exceeded
   describe("Invalid Amount Test", function () {
-    it(`should return status code 500 with failed status for negative amount`, async () => {
-      const params = { ...validParams(), amount: -1 };
-      const txRes = await endpointCall(params);
-      expect(statusChecker(txRes, 500)).toBe(true);
-      const tx = txRes.body;
-      // console.log(tx);
-      expect(tx.error).toMatch("Unexpected error happened");
-    }, 10000);
-    it(`should return status code 500 with failed status sending limit exceeded`, async () => {
+    const invalidAmounts = [0, "one", -1];
+    invalidAmounts.forEach((amount) => {
+      it(`should return status code 400 with failed status for invalid amount`, async () => {
+        const params = { ...validParams(), amount: amount };
+        const txRes = await endpointCall(params);
+        expect(statusChecker(txRes, 400)).toBe(true);
+        const tx = txRes.body;
+        console.log(tx);
+        expect(tx.error).toBe("Transfer amount must be greater than or equal to 1.");
+      }, 10000);
+    });
+    it(`should return status code 400 with failed status sending limit exceeded`, async () => {
       const params = { ...validParams(), amount: 1000000 };
       const txRes = await endpointCall(params);
-      expect(statusChecker(txRes, 500)).toBe(true);
+      expect(statusChecker(txRes, 400)).toBe(true);
       const tx = txRes.body;
       // console.log(tx);
-      expect(tx.error).toMatch("Unexpected error happened");
+      expect(tx.error).toMatch("Exceed transfer amount limit.");
     }, 10000);
   });
 });
