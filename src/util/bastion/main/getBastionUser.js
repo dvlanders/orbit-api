@@ -72,7 +72,7 @@ const getBastionUser = async(userId) => {
             }
         }
     }catch (error){
-        createLog("user/util/getBastionUser", userId, error.message, error.rawResponse)
+        await createLog("user/util/getBastionUser", userId, error.message, error.rawResponse)
         if (error.type == GetBastionErrorType.INTERNAL_ERROR){
             return {
                 status: 500,

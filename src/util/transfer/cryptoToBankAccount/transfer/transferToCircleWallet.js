@@ -47,7 +47,7 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 
 	if (initialBastionTransfersInsertError) {
 		console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
-		createLog("transfer/util/transferToCircleWallet", sourceUserId, initialBastionTransfersInsertError.message)
+		await createLog("transfer/util/transferToCircleWallet", sourceUserId, initialBastionTransfersInsertError.message, initialBastionTransfersInsertError)
 		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 	}
 
@@ -116,11 +116,11 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 			.match({ id: initialBastionTransfersInsertData.id })
 
 		if (updateError) {
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message, updateError)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "An unexpected error occurred")
 		}
 
-		createLog("transfer/util/transfer", sourceUserId, responseBody.message, responseBody)
+		await createLog("transfer/util/transfer", sourceUserId, responseBody.message, responseBody)
 		if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance") {
 			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = "transfer amount exceeds balance"
@@ -146,7 +146,7 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 			.match({ id: initialBastionTransfersInsertData.id })
 
 		if (updateError) {
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message, updateError)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "An unexpected error occurred")
 		}
 	}

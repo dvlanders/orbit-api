@@ -72,7 +72,7 @@ const updateCheckbookUser = async(userId) => {
         
     }catch(error){
         //  log
-		createLog("user/util/updateCheckbookUser", userId, error.message, error.rawResponse)
+		await createLog("user/util/updateCheckbookUser", userId, error.message, error.rawResponse)
 		// process error
 		if (error.type == UpdateCheckbookUserErrorType.INTERNAL_ERROR) {
 			return {

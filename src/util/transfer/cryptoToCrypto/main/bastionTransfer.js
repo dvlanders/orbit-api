@@ -34,7 +34,7 @@ const bastionCryptoTransfer = async(fields) => {
     await bastionGasCheck(fields.senderUserId, fields.chain)
 
     if (!response.ok) {
-        createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
+        await createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
         const { message, type } = getMappedError(responseBody.message)
         failedReason = message
 

@@ -16,7 +16,7 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
     .maybeSingle())
 
     if (checkbookAccountForPlaidError) {
-        createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, checkbookAccountForPlaidError.message)
+        await createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, checkbookAccountForPlaidError.message, checkbookAccountForPlaidError)
         throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, checkbookAccountForPlaidError.message)
     }
     // client provide the wrong id
@@ -35,7 +35,7 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
         .maybeSingle())
     
     if (bridgeVirtualAccountError) {
-        createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, bridgeVirtualAccountError.message)
+        await createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, bridgeVirtualAccountError.message, bridgeVirtualAccountError)
         throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, bridgeVirtualAccountError.message)
     }
 
@@ -52,7 +52,7 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
     .single())
 
     if (checkbookAccountForBridgeVirtualAccountError) {
-        createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, checkbookAccountForBridgeVirtualAccountError.message)
+        await createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, checkbookAccountForBridgeVirtualAccountError.message, checkbookAccountForBridgeVirtualAccountError)
         throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, checkbookAccountForBridgeVirtualAccountError.message)
     }
 
@@ -64,9 +64,9 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
         .eq("type", "SOURCE")
         .single())
 
-    if (checkbookAccountForBridgeVirtualAccountError) {
-        createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, checkbookAccountForBridgeVirtualAccountError.message)
-        throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, checkbookAccountForBridgeVirtualAccountError.message)
+    if (checkbookUserError) {
+        await createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, checkbookUserError.message, checkbookUserError)
+        throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, checkbookUserError.message)
     }
     
         

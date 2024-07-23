@@ -46,7 +46,7 @@ exports.updateIndividualBridgeCustomer = async(userId) => {
 
     }catch(error){
         //  log
-		createLog("user/util/updateIndividualBridgeCustomer", userId, error.message, error.rawResponse)
+		await createLog("user/util/updateIndividualBridgeCustomer", userId, error.message, error.rawResponse)
 		// process error
 		if (error.type == UpdateBridgeCustomerErrorType.INTERNAL_ERROR) {
 			return {

@@ -1,11 +1,11 @@
 const { user } = require("../controllers");
 const multer = require('multer');
-const { authorize } = require("../util/middleware");
+const { authorize, logRequestResponse } = require("../util/middleware");
 
 module.exports = (router) => {
 
 
-	router.get("/ping", authorize, user.getPing);
+	router.get("/ping", authorize, logRequestResponse, user.getPing);
 
 	router.post("/user/create", authorize, user.createHifiUser);
 	router.post("/user/create/async", authorize, user.createHifiUserAsync);

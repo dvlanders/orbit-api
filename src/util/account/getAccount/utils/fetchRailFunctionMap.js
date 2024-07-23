@@ -17,7 +17,7 @@ const getFetchOnRampVirtualAccountFunctions = (rail, destinationCurrency, destin
 }
 
 const fetchOnRampVirtualAccountFunctionsMap = {
-	US_ACH: {
+	US_ACH_WIRE: {
 		POLYGON_MAINNET: { 
 			usdc: async(userId, limit, createdBefore, createdAfter) => await fetchBridgeVirtualAccount(userId, "usd", "usdc", "POLYGON_MAINNET", limit, createdBefore, createdAfter),
 		},

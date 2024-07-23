@@ -20,7 +20,7 @@ const bastionGasCheck = async(userId, chain) => {
         const responseBody = await response.json()
 
         if (!response.ok){
-            createLog("transfer/util/bastionGasCheck", userId, "error happened when checking gas", responseBody)
+            await createLog("transfer/util/bastionGasCheck", userId, "error happened when checking gas", responseBody)
             return
         }
 
@@ -32,7 +32,7 @@ const bastionGasCheck = async(userId, chain) => {
 
         return
     }catch(error){
-        createLog("transfer/util/bastionGasCheck", userId, error.message)
+        await createLog("transfer/util/bastionGasCheck", userId, error.message, error)
         return
     }
 }

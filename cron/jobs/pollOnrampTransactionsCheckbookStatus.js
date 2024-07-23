@@ -15,11 +15,11 @@ const updateStatus = async (onrampTransaction) => {
 		.maybeSingle())
 
     if (checkbookUserError) {
-        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message)
+        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message, checkbookUserError)
         return
     }
     if (!checkbookUser){
-        createLog("pollOnrampTransactionsCheckbookStatus", `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
+        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
         return
     }
     
@@ -90,7 +90,7 @@ async function pollOnrampTransactionsCheckbookStatus() {
 
 	if (onRampTransactionStatusError) {
 		console.error('Failed to fetch transactions for pollOnrampTransactionsCheckbookStatus', onRampTransactionStatusError);
-		createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message);
+		createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message, onRampTransactionStatusError);
 		return;
 	}
 	await Promise.all(onRampTransactionStatus.map(async (onrampTransaction) => await updateStatus(onrampTransaction)))
