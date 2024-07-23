@@ -3,8 +3,6 @@ const app = require("@/app");
 const { authTestParams, userInfo } = require("../testConfig");
 const { statusChecker } = require("@/test/testUtils");
 
-const USER_ID = "9708a575-5ff9-4008-8ff3-93d1b145d46e"
-
 const activateOnRampRail = async (
   rail,
   destinationCurrency,
@@ -12,7 +10,7 @@ const activateOnRampRail = async (
 ) => {
   const accountRes = await supertest(app)
     .post(
-      `/account/activateOnRampRail?apiKeyId=${authTestParams.API_KEY}&userId=${USER_ID}`
+      `/account/activateOnRampRail?apiKeyId=${authTestParams.API_KEY}&userId=${userInfo.USER_ID}`
     )
     .set({
       "zuplo-secret": authTestParams.ZUPLO_SECRET,
@@ -36,7 +34,7 @@ const activateOnRampRail = async (
       expect(account.account).toBeDefined();
       const vAccount = account.account;
       expect(vAccount.virtualAccountId).toBeDefined();
-      expect(vAccount.userId).toBe(USER_ID);
+      expect(vAccount.userId).toBe(userInfo.USER_ID);
       expect(vAccount.destinationCurrency).toBe(destinationCurrency)
       expect(vAccount.destinationChain).toBe(destinationChain)
       expect(vAccount.railStatus).toBe("activated")
