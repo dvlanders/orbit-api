@@ -7,7 +7,7 @@ const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCrypto
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async (transaction) => {
-	const url = `${BASTION_URL}/v1/user-actions/${transaction.id}?userId=${transaction.user_id}`;
+	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${transaction.user_id}`;
 	const options = {
 		method: 'GET',
 		headers: {
