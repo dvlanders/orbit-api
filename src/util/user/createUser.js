@@ -228,7 +228,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		if (newUserError) throw newUserError;
 		userId = newUser.id;
 	} catch (error) {
-		createLog("user/util/informationUploadForCreateUser", "", error.message, error);
+		await createLog("user/util/informationUploadForCreateUser", null, error.message, error, profileId);
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 
@@ -244,7 +244,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		if (newBridgeRecordError) throw newBridgeRecordError
 
 	} catch (error) {
-		createLog("user/util/informationUploadForCreateUser", "", error.message, error)
+		await createLog("user/util/informationUploadForCreateUser", userId, error.message, error, profileId)
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -289,7 +289,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		}))
 
 	} catch (error) {
-		createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
+		await createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
 		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE || fileUploadErrorType.FAILED_TO_FETCH)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
@@ -323,7 +323,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 
 	if (error) {
 		console.error(error);
-		createLog("user/util/informationUploadForCreateUser", userId, error.message, error);
+		await createLog("user/util/informationUploadForCreateUser", userId, error.message, error);
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 
@@ -413,7 +413,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 			}
 		} catch (error) {
 			console.error(error)
-			createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
+			await createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
 			if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 				throw new InformationUploadError(error.type, 400, "", { error: error.message })
 			}
@@ -486,7 +486,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 		}))
 
 	} catch (error) {
-		createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
+		await createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
 		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
@@ -504,7 +504,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 	)
 	if (error) {
 		console.error(error)
-		createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
+		await createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
 		throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -523,7 +523,7 @@ const ipCheck = async (ip) => {
 		}
 	} else {
 		console.error(locaionData)
-		createLog("user/util/ipCheck", "", "failed to get ip information")
+		await createLog("user/util/ipCheck", null, "failed to get ip information", locaionData)
 		throw new Error("failed to get ip information")
 	}
 

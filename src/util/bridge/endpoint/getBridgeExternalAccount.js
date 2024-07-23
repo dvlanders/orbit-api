@@ -93,7 +93,7 @@ exports.getBridgeExternalAccount = async (userId, accountId) => {
 
 	} catch (error) {
 
-		createLog("user/util/getBridgeExternalAccount", userId, error.message, error)
+		await createLog("user/util/getBridgeExternalAccount", userId, error.message, error)
 		return {
 			error: error
 		}

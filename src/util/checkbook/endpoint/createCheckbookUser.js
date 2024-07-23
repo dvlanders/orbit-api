@@ -132,7 +132,7 @@ const createCheckbookUser = async (userId) => {
 
 
 	} catch (error) {
-		createLog("user/util/createCheckbookUser", userId, error.message, error)
+		await createLog("user/util/createCheckbookUser", userId, error.message, error)
 		if (error.type == createCheckbookErrorType.INVALID_FIELD) {
 			return {
                 status: 200,

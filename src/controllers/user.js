@@ -59,7 +59,7 @@ exports.createHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			createLog("user/create", "", error.message, error)
+			createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}`, error)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -241,7 +241,7 @@ exports.createHifiUser = async (req, res) => {
 
 		return res.status(status).json(createHifiUserResponse);
 	} catch (error) {
-		createLog("user/create", userId, error.message, error)
+		await createLog("user/create", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -272,7 +272,7 @@ exports.getHifiUser = async (req, res) => {
 		return res.status(status).json(getHifiUserResponse);
 	} catch (error) {
 		console.error(error)
-		createLog("user/get", userId, error.message, error)
+		await createLog("user/get", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -282,11 +282,10 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	const { userId } = req.query
+	const fields = req.body
+
 	try {
-
-		const { userId } = req.query
-		const fields = req.body
-
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
 		// check if user is created
@@ -303,11 +302,11 @@ exports.updateHifiUser = async (req, res) => {
 		try {
 			await informationUploadForUpdateUser(userId, fields)
 		} catch (error) {
-			if (!(error instanceof InformationUploadError)) {
-				createLog("user/utils/informationUploadForUpdateUser", error.message, error)
-				return res.status(500).json({ error: "Unexpected error happened" })
+			if (error instanceof InformationUploadError) {
+				return res.status(error.status).json(error.rawResponse)
 			}
-			return res.status(error.status).json(error.rawResponse)
+			createLog("user/get", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 		// STEP 2: Update the 3rd party providers with the new information
 
@@ -494,9 +493,8 @@ exports.updateHifiUser = async (req, res) => {
 
 		return res.status(status).json(updateHifiUserResponse);
 	} catch (error) {
-		const { user_id: userId } = req.query
 		console.log(error)
-		createLog("user/update", userId, error.message, error)
+		await createLog("user/update", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -518,7 +516,7 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(200).json({count: users.length, users})
 	}catch (error){
 		console.error(error)
-		createLog("user/getAllHifiUser", "", error.message)
+		await createLog("user/getAllHifiUser", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -529,10 +527,11 @@ exports.generateToSLink = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	const DASHBOARD_URL = process.env.DASHBOARD_URL
+	const { profileId } = req.query
+	let { redirectUrl, idempotencyKey, templateId } = req.body
+
 	try {
-		const DASHBOARD_URL = process.env.DASHBOARD_URL
-		const { profileId } = req.query
-		let { redirectUrl, idempotencyKey, templateId } = req.body
 
 		// Validate idempotencyKey directly using regex for UUID v4
 		if (!isUUID(idempotencyKey)) return res.status(404).json({ error: "idempotencyKey must be a uuid v4" })
@@ -565,7 +564,7 @@ exports.generateToSLink = async (req, res) => {
 
 		return res.status(200).json({ url: tosLink, sessionToken: signedAgreementInfo.session_token })
 	} catch (error) {
-		createLog("user/generateToSLink", "", error.message, error)
+		await createLog("user/generateToSLink", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -576,9 +575,9 @@ exports.acceptToSLink = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	const { profileId } = req.query
+	const { sessionToken } = req.body
 	try {
-		const { profileId } = req.query
-		const { sessionToken } = req.body
 		if (!sessionToken) return res.status(400).json({ error: "Session token is required" })
 		const signedAgreementId = await updateSignedAgreementRecord(sessionToken)
 		if (!signedAgreementId) return res.status(400).json({ error: "Session token is invalid" })
@@ -588,7 +587,7 @@ exports.acceptToSLink = async (req, res) => {
 
 
 	} catch (error) {
-		createLog("user/acceptToSLink", "", error.message, error)
+		await createLog("user/acceptToSLink", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -606,9 +605,9 @@ exports.createHifiUserAsync = async(req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	let userId
+	const profileId = req.query.profileId
+	const fields = req.body
 	try {
-		const profileId = req.query.profileId
-		const fields = req.body
 
 		if (!profileId) {
 			return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
@@ -621,7 +620,7 @@ exports.createHifiUserAsync = async(req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			createLog("user/create", "", error.message, error)
+			await createLog("user/createHifiUserAsync", null, `Failed to Information Upload For CreateUser for profile Id ${profileId}`, error, profileId)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -700,7 +699,7 @@ exports.createHifiUserAsync = async(req, res) => {
 		return res.status(200).json(createHifiUserResponse)
 
 	}catch (error){
-		createLog("user/createHifiUserAsync", userId, error.message, error)
+		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
@@ -717,10 +716,10 @@ exports.updateHifiUserAsync = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	try {
+	const { userId, profileId } = req.query
+	const fields = req.body
 
-		const { userId, profileId } = req.query
-		const fields = req.body
+	try {
 
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
@@ -737,11 +736,11 @@ exports.updateHifiUserAsync = async (req, res) => {
 		try {
 			await informationUploadForUpdateUser(userId, fields)
 		} catch (error) {
-			if (!(error instanceof InformationUploadError)) {
-				createLog("user/utils/informationUploadForUpdateUser", error.message, error)
-				return res.status(500).json({ error: "Unexpected error happened" })
+			if (error instanceof InformationUploadError) {
+				return res.status(error.status).json(error.rawResponse)
 			}
-			return res.status(error.status).json(error.rawResponse)
+			createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 		// insert async jobs
 		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
@@ -816,8 +815,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
-		const { user_id: userId } = req.query
-		createLog("user/updateHifiUserAsync", userId, error.message, error)
+		await createLog("user/updateHifiUserAsync", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -842,7 +840,7 @@ exports.getUserKycInformation = async(req, res) => {
 		
 
 	}catch(error){
-		createLog("/user/getUserKycInformation", userId, error.message)
+		await createLog("user/getUserKycInformation", userId, error.message, error, profileId)
 		return res.status(500).json({error: `Unexpected error happened`})
 	}
 }

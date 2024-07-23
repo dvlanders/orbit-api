@@ -35,7 +35,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
             .select()
             .single())
         if (initialRecordError) {
-            createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, initialRecordError.message)
+            await createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, initialRecordError.message, initialRecordError)
             throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, initialRecordError.message)
         } 
         // execute checkbook payment
@@ -71,7 +71,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                     status: "SUBMISSION_FAILED"
                 })
                 .eq("id", initialRecord.id)
-            createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, responseBody.message, responseBody)
+            await createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, responseBody.message, responseBody)
 
             const { message, type } = getMappedError(responseBody.error)
             throw new CreateFiatToCryptoTransferError(type, message, responseBody)
@@ -90,7 +90,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
             .single())
         
         if (updatedRecordError) {
-            createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, updatedRecordError.message)
+            await createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, updatedRecordError.message, updatedRecordError)
             throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, updatedRecordError.message)
         } 
 
@@ -120,7 +120,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
 
     }catch (error){
         if (! (error instanceof CreateFiatToCryptoTransferError)){
-            createLog("transfer/util/transferFromPlaidToBridge", sourceUserId, error.message)
+            await createLog("transfer/util/transferFromPlaidToBridge", sourceUserId, error.message, error)
         }
         throw error
     }

@@ -82,7 +82,7 @@ const submitBastionKyc = async (userId) => {
 		}
 
 	} catch (error) {
-		createLog("user/util/submitBastionKyc", userId, error.message, error)
+		await createLog("user/util/submitBastionKyc", userId, error.message, error)
 		return {
 			status: 500,
 			walletStatus: CustomerStatus.INACTIVE,
