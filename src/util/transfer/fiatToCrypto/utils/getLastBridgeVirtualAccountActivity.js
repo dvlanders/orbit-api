@@ -25,7 +25,7 @@ exports.getLastBridgeVirtualAccountActivity = async (userId, bridgeVirtualAccoun
         const responseBody = await response.json()
 
         if (!response.ok){
-            createLog("transfer/fiatToCrypto/utils/getLastBridgeVirtualAccountActivity", userId, responseBody.error, responseBody)
+            await createLog("transfer/fiatToCrypto/utils/getLastBridgeVirtualAccountActivity", userId, responseBody.error, responseBody)
             return null
         }
 
@@ -37,7 +37,7 @@ exports.getLastBridgeVirtualAccountActivity = async (userId, bridgeVirtualAccoun
 
 
     }catch (error){
-        createLog("transfer/fiatToCrypto/utils/getLastBridgeVirtualAccountActivity", userId, error.message)
+        await createLog("transfer/fiatToCrypto/utils/getLastBridgeVirtualAccountActivity", userId, error.message, error)
         return null
     }
 }

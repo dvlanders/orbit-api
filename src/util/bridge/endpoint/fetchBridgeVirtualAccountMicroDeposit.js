@@ -20,7 +20,7 @@ const fetchBridgeVirtualAccountMicroDeposit = async(userId, virtualAccountId, li
 
         if (!response.ok) {
             console.error(responseBody)
-            createLog("bridge/fetchBridgeVirtualAccountMicroDeposit", userId, "Fail to fetch Bridge Virtual Account Micro Deposit", responseBody)
+            await createLog("bridge/fetchBridgeVirtualAccountMicroDeposit", userId, "Fail to fetch Bridge Virtual Account Micro Deposit", responseBody)
             return {count: 0, data: [], message: "something went wrong, please contact HIFI for more information"}
         }
 
@@ -45,7 +45,7 @@ const fetchBridgeVirtualAccountMicroDeposit = async(userId, virtualAccountId, li
 
     }catch (error){
         console.error(error)
-        createLog("bridge/fetchBridgeVirtualAccountMicroDeposit", userId, error.message)
+        await createLog("bridge/fetchBridgeVirtualAccountMicroDeposit", userId, error.message, error)
         return {count: 0, data: [], message: "something went wrong, please contact HIFI for more information"}
     }
 

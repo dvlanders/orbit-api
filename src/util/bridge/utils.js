@@ -224,7 +224,7 @@ const getBridgeUserId = async(userId) => {
 		if (error) throw error
 		return data.bridge_id
 	}catch (error){
-		createLog("utils/getBridgeUserId", userId, error.message)
+		await createLog("utils/getBridgeUserId", userId, error.message, error)
 		throw new Error("Fail to getBridgeUserId")
 	}
 }

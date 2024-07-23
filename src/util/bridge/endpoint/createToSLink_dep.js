@@ -51,7 +51,7 @@ exports.createToSLink = async(redirectUrl) => {
 	} catch (error) {
         // should always be server error
         console.error(error)
-		createLog("create/tos_link", "", error.message, error.rawResponse)
+		await createLog("create/tos_link", null, error.message, error.rawResponse)
         throw new Error("Fail to create ToS link due to server error")
 	}
 }

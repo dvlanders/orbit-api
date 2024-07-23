@@ -60,8 +60,9 @@
     "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.0",
     "web3": "^1.10.4",
-    "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1"
+    "winston": "^3.13.1",
+    "winston-daily-rotate-file": "^4.7.1",
+    "winston-loki": "^6.1.2"
   },
   "devDependencies": {
     "@types/node": "^20.14.2",

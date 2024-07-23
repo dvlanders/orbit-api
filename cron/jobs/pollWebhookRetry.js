@@ -17,7 +17,7 @@ const pollWebhookRetry = async() => {
     .order('next_retry', {ascending: true})
 
     if (error) {
-        await createLog("pollWebhookRetry", "", error.message)
+        await createLog("pollWebhookRetry", null, error.message, error)
         return
     }
 

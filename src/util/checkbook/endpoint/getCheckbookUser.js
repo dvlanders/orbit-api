@@ -81,7 +81,7 @@ const getCheckbookUser = async(userId) => {
 
 
     }catch (error){
-        createLog("user/util/getCheckbookUser", userId, error.message, error.rawResponse)
+        await createLog("user/util/getCheckbookUser", userId, error.message, error.rawResponse)
         if (error.type == GetCheckbookUserErrorType.INTERNAL_ERROR){
             return {
                 status: 500,

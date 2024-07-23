@@ -13,6 +13,8 @@ exports.createApiKey = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	let profileId
+
 	try {
 		// // this token will be supabase auth token
 		const token = req.headers.authorization?.split(" ")[1];
@@ -25,7 +27,7 @@ exports.createApiKey = async (req, res) => {
 		if (!user || !user.sub) {
 			return res.status(401).json({ error: "Not authorized" });
 		}
-		const profileId = user.sub;
+		profileId = user.sub;
 
 		// const profileId = "c354949f-7962-446c-915d-156fdc606100"
 
@@ -81,7 +83,7 @@ exports.createApiKey = async (req, res) => {
 
 	} catch (error) {
 		console.error(error);
-		createLog("auth/createApiKey", "", error.message, error);
+		await createLog("auth/createApiKey", null, error.message, error, profileId);
 		return res.status(500).json({ error: "Internal server error" });
 	}
 
@@ -91,6 +93,8 @@ exports.getApiKey = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+	let profileId
 
 	try {
 		// this token will be supabase auth token
@@ -105,7 +109,7 @@ exports.getApiKey = async (req, res) => {
 			return res.status(401).json({ error: "Not authorized" });
 		};
 
-		const profileId = user.sub
+		profileId = user.sub
 
 		// get from sandbox
 		let supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
@@ -150,7 +154,7 @@ exports.getApiKey = async (req, res) => {
 		return res.status(200).json({ keys })
 
 	} catch (error) {
-		createLog("auth/getWebhook", "", error.message)
+		await createLog("auth/getApiKey", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Internal server error" })
 	}
 }
@@ -160,10 +164,11 @@ exports.createProfileInSandbox = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+	const { record } = req.body
+	if (!record) return res.status(400).json({ error: 'record required' });
 	try {
 		const supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
 		// insert new profile
-		const { record } = req.body
 		const { data, error } = await supabaseCall(() => supabase
 			.from("profiles")
 			.insert({
@@ -173,7 +178,7 @@ exports.createProfileInSandbox = async (req, res) => {
 		return res.status(200).json({ message: "sandbox profiles create successfully" })
 
 	} catch (error) {
-		createLog("auth/createProfileInSandbox", "", `Fail to create profile for: ${record.id}, ${error.message}`)
+		await createLog("auth/createProfileInSandbox", null, `Fail to create sandbox profile for: ${record.id}`, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -183,6 +188,7 @@ exports.createWebhook = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	let profileId
 	try {
 		// this token will be supabase auth token
 		const token = req.headers.authorization?.split(" ")[1];
@@ -196,7 +202,7 @@ exports.createWebhook = async (req, res) => {
 			return res.status(401).json({ error: "Not authorized" });
 		};
 
-		const profileId = user.sub
+		profileId = user.sub
 		const { webhookUrl, env } = req.body
 		// filed validation
 		if (!webhookUrl || !env) return res.status(400).json({ error: "webhookUrl and env is required" })
@@ -254,7 +260,7 @@ exports.createWebhook = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		createLog("auth/createWebhookUrl", "", error.message, error)
+		await createLog("auth/createWebhook", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Internal server error" })
 	}
 }
@@ -264,6 +270,7 @@ exports.getWebhook = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	let profileId
 	try {
 		// this token will be supabase auth token
 		const token = req.headers.authorization?.split(" ")[1];
@@ -277,7 +284,7 @@ exports.getWebhook = async (req, res) => {
 			return res.status(401).json({ error: "Not authorized" });
 		};
 
-		const profileId = user.sub
+		profileId = user.sub
 		const webhookInfo = {
 			production: {
 				webhookUrl: "",
@@ -319,7 +326,7 @@ exports.getWebhook = async (req, res) => {
 		return res.status(200).json(webhookInfo)
 
 	} catch (error) {
-		createLog("auth/getWebhook", "", error.message)
+		await createLog("auth/getWebhook", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Internal server error" })
 	}
 }
