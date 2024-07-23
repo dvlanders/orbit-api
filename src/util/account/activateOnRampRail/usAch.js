@@ -1,6 +1,7 @@
 const { createBridgeVirtualAccount } = require("../../bridge/endpoint/createBridgeVirtualAccount")
 const { BridgeCustomerStatus, chainToVirtualAccountPaymentRail } = require("../../bridge/utils")
 const { createCheckbookBankAccountForVirtualAccount } = require("../../checkbook/endpoint/createCheckbookBankAccount")
+const { virtualAccountPaymentRailToChain } = require("../../bridge/utils")
 const { createSingleCheckbookUser } = require("../../checkbook/endpoint/createCheckbookUser")
 const createLog = require("../../logger/supabaseLogger")
 const supabase = require("../../supabaseClient")
@@ -56,10 +57,10 @@ const activateUsAchOnRampRail = async(config) => {
         // every time create a virtual account pairs will create a new checkbook user
         const checkbookUserId = `${userId}-${destinationChain}-${destinationCurrency}`
         // check if record is already exist
-        if (await checkUsAchOnRampRail(checkbookUserId)) return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false}
+        if (await checkUsAchOnRampRail(checkbookUserId)) return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false, virtualAccountInfo: null}
         // check if user is allowed to create 
         const userBridgeInfo = await getUserBridgeInfo(userId)
-        if (!userBridgeInfo || userBridgeInfo.status != BridgeCustomerStatus.ACTIVE || userBridgeInfo.base_status != "approved") return {isCreated: false, alreadyExisted: false, isAllowedTocreate: false}
+        if (!userBridgeInfo || userBridgeInfo.status != BridgeCustomerStatus.ACTIVE || userBridgeInfo.base_status != "approved") return {isCreated: false, alreadyExisted: false, isAllowedTocreate: false, virtualAccountInfo: null}
         //create bridge virtual account
         const rail = {
             sourceCurrency: "usd",
@@ -82,7 +83,25 @@ const activateUsAchOnRampRail = async(config) => {
         await insertPreCheckbookAccountRecord(userId, virtualAccount)
         const result = await createCheckbookBankAccountForVirtualAccount(checkbookUserId, virtualAccount.virtual_account_id, virtualAccount.deposit_institutions_bank_account_number, virtualAccount.deposit_institutions_bank_routing_number)
         if (result.status != 200) throw new Error(result.message)
-        return {isCreated: true, alreadyExisted: false, isAllowedTocreate: true}
+
+        const virtualAccountInfo = {
+            virtualAccountId: virtualAccount.id,
+            userId: virtualAccount.user_id,
+            paymentRail: virtualAccount.source_payment_rail,
+            sourceCurrency: virtualAccount.source_currency,
+            destinationChain: virtualAccountPaymentRailToChain[virtualAccount.destination_payment_rail],
+            destinationCurrency: virtualAccount.destination_currency,
+            destinationWalletAddress: virtualAccount.destination_wallet_address,
+            railStatus: virtualAccount.status,
+            depositInstructions: {
+                bankName: virtualAccount.deposit_institutions_bank_name,
+                routingNumber: virtualAccount.deposit_institutions_bank_routing_number,
+                accountNumber: virtualAccount.deposit_institutions_bank_account_number,
+                bankAddress: virtualAccount.deposit_institutions_bank_address
+            }
+        }
+
+        return {isCreated: true, alreadyExisted: false, isAllowedTocreate: true, virtualAccountInfo}
     }catch(error){
         console.error(error)
         await createLog("account/util/activateUsAchOnRampRail", userId, error.message, error.rawResponse)

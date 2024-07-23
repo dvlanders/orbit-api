@@ -460,7 +460,7 @@ exports.activateOnRampRail = async (req, res) => {
 		if (result.alreadyExisted) return res.status(200).json({ message: `rail already activated` })
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create the rail` })
 
-		return res.status(200).json({ message: `${rail} create successfully` })
+		return res.status(200).json({ message: `${rail} create successfully`, account: result.virtualAccountInfo})
 
 	} catch (error) {
 		await createLog("account/activateOnRampRail", userId, error.message, error)
