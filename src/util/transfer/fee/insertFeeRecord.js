@@ -5,7 +5,7 @@ exports.insertFeeRecord = async(record) => {
         const {data: feeRecord, error: feeRecordError} = await  supabaseCall(() => supabase
         .from("developer_fees")
         .insert(record)
-        .select("id")
+        .select("*")
         .single()
     )
     if (feeRecordError) throw feeRecordError

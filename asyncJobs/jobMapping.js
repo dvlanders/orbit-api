@@ -5,6 +5,8 @@ const {createDeveloperUserAsyncCheck, createDeveloperUserAsync} = require("./use
 const {approveMaxTokenToPaymentProcessorAsyncCheck, approveMaxTokenToPaymentProcessorAsync} = require("./wallets/approveMaxToPaymentProcessor");
 const { cryptoToCryptoTransferScheduleCheck } = require("./transfer/cryptoTocryptoTransfer/scheduleCheck");
 const { cryptoToCryptoTransferAsync } = require("./transfer/cryptoTocryptoTransfer/cryptoToCryptoTransfer");
+const { cryptoToFiatTransferScheduleCheck } = require("./transfer/cryptoToFiatTransfer/scheduleCheck");
+const { cryptoToFiatTransferAsync } = require("./transfer/cryptoToFiatTransfer/cryptoToFiatTransfer");
 
 
 exports.jobMapping = {
@@ -32,9 +34,9 @@ exports.jobMapping = {
         scheduleCheck: cryptoToCryptoTransferScheduleCheck,
         execute: cryptoToCryptoTransferAsync
     },
-    testJob: {
-        scheduleCheck: () => {return true},
-        execute: () => {return true},
+    cryptoToFiatTransfer: {
+        scheduleCheck: cryptoToFiatTransferScheduleCheck,
+        execute: cryptoToFiatTransferAsync,
     }
 }
 

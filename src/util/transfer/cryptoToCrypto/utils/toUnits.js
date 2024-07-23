@@ -1,5 +1,5 @@
 const toUnitsString = (amount, decimal) => {
-    return BigInt(parseFloat(amount) * Math.pow(10, decimal)).toString()
+    return BigInt(Math.floor(parseFloat(amount) * Math.pow(10, decimal))).toString()
 }
 
 module.exports = {

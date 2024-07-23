@@ -15,7 +15,7 @@ const { insertFeeRecord } = require("./insertFeeRecord");
 const chargedStatusMap = {
     ACCEPTED: "SUBMITTED",
     SUBMITTED: "SUBMITTED",
-    CONFIRMED: "COMPLETE",
+    CONFIRMED: "CONFIRMED",
     FAILED: "FAILED",
     PENDING: "PENDING"
 }
