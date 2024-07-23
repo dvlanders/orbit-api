@@ -1,9 +1,9 @@
 const { supabaseCall } = require('../../src/util/supabaseWithRetry');
 const supabase = require('../../src/util/supabaseClient');
 const { BastionTransferStatus } = require('../../src/util/bastion/utils/utils');
-const { createLog } = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
+const createLog = require('../../src/util/logger/supabaseLogger');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async (transaction) => {
@@ -19,8 +19,6 @@ const updateStatus = async (transaction) => {
 	try {
 		const response = await fetch(url, options);
 		const data = await response.json();
-
-		console.log('data', data);
 
 		if (response.status === 404 || !response.ok) {
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
@@ -70,7 +68,7 @@ async function pollOfframpTransactionsBastionStatus() {
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
-		.select('id, user_id, transaction_status, bastion_transaction_status')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id')
 		.eq("crypto_provider", "BASTION")
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
