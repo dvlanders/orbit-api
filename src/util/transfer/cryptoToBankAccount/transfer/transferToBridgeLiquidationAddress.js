@@ -53,7 +53,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 	const decimals = currencyDecimal[sourceCurrency]
 	const transferAmount = toUnitsString(amount, decimals)
 	const bodyObject = {
-		requestId: initialBastionTransfersInsertData.id,
+		requestId: initialBastionTransfersInsertData.bastion_request_id,
 		userId: sourceUserId,
 		contractAddress: contractAddress,
 		actionName: "transfer",
