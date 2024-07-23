@@ -7,19 +7,19 @@ module.exports = (router) => {
 
 	router.get("/ping", authorize, logRequestResponse, user.getPing);
 
-	router.post("/user/create", authorize, user.createHifiUser);
-	router.post("/user/create/async", authorize, user.createHifiUserAsync);
+	router.post("/user/create", authorize, logRequestResponse, user.createHifiUser);
+	router.post("/user/create/async", authorize, logRequestResponse, user.createHifiUserAsync);
 
-	router.get("/user/all", authorize, user.getAllHifiUser)
+	router.get("/user/all", authorize, logRequestResponse, user.getAllHifiUser)
 
-	router.get("/user", authorize, user.getHifiUser);
+	router.get("/user", authorize, logRequestResponse, user.getHifiUser);
 
-	router.put("/user", authorize, user.updateHifiUser);
-	router.put("/user/async", authorize, user.updateHifiUserAsync);
+	router.put("/user", authorize, logRequestResponse, user.updateHifiUser);
+	router.put("/user/async", authorize, logRequestResponse, user.updateHifiUserAsync);
 
-	router.post("/tos-link", authorize, user.generateToSLink)
+	router.post("/tos-link", authorize, logRequestResponse, user.generateToSLink)
 
-	router.put("/tos-link", user.acceptToSLink)
+	router.put("/tos-link", logRequestResponse, user.acceptToSLink)
 
 };
 
