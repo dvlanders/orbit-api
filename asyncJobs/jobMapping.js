@@ -2,8 +2,10 @@ const { createUserAsyncCheck, createUserAsync } = require("./user/createUser");
 const {fundGas, fundGasScheduleCheck} = require("./wallets/fundGas");
 const {updateUserAsyncCheck, updateUserAsync} = require("./user/updateUser");
 const {createDeveloperUserAsyncCheck, createDeveloperUserAsync} = require("./user/createDeveloperUser")
-const {approveMaxTokenToPaymentProcessorAsyncCheck, approveMaxTokenToPaymentProcessorAsync} = require("./wallets/approveMaxToPaymentProcessor")
-const {cryptoToCryptoTransferAsync, cryptoToCryptoTransferScheduleCheck} = require("./transfer/cryptoToCryptoTransfer")
+const {approveMaxTokenToPaymentProcessorAsyncCheck, approveMaxTokenToPaymentProcessorAsync} = require("./wallets/approveMaxToPaymentProcessor");
+const { cryptoToCryptoTransferScheduleCheck } = require("./transfer/cryptoTocryptoTransfer/scheduleCheck");
+const { cryptoToCryptoTransferAsync } = require("./transfer/cryptoTocryptoTransfer/cryptoToCryptoTransfer");
+
 
 exports.jobMapping = {
     fundGas: {

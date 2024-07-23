@@ -10,6 +10,7 @@ const { submitUserAction } = require("../../bastion/endpoints/submitUserAction")
 const { updateFeeRecord } = require("./updateFeeRecord");
 const { updateRequestRecord } = require("../cryptoToCrypto/main/updateRequestRecord");
 const { transferType } = require("../utils/transfer");
+const { insertFeeRecord } = require("./insertFeeRecord");
 
 const chargedStatusMap = {
     ACCEPTED: "SUBMITTED",
@@ -19,7 +20,7 @@ const chargedStatusMap = {
     PENDING: "PENDING"
 }
 
-exports.CryptoToCryptoWithFeeBastion = async(transferId, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, fields) => {
+exports.CryptoToCryptoWithFeeBastion = async(requestRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, fields) => {
     let feeRecordId
     try{
         // get fee_collection_user_id
@@ -50,22 +51,17 @@ exports.CryptoToCryptoWithFeeBastion = async(transferId, paymentProcessorContrac
             fee_collection_currency: fields.currency,
             crypto_provider: "BASTION",
             charged_status: "CREATED",
-            charged_transfer_id: transferId,
+            charged_transfer_id: requestRecord.id,
             charged_transfer_type: transferType.CRYPTO_TO_CRYPTO,
             charged_wallet_address: fields.senderAddress,
         }
-        const {data: feeRecord, error: feeRecordError} = await  supabaseCall(() => supabase
-            .from("developer_fees")
-            .insert(record)
-            .select("id")
-            .single()
-        )
-        if (feeRecordError) throw feeRecordError
+        
+        const feeRecord = await insertFeeRecord(record)
         feeRecordId = feeRecord.id
         
         // transfer
         const bodyObject = {
-            requestId: transferId,
+            requestId: requestRecord.bastion_request_id,
             userId: fields.senderUserId,
             contractAddress: paymentProcessorContractAddress,
             actionName: "processPayment",
@@ -130,11 +126,9 @@ exports.CryptoToCryptoWithFeeBastion = async(transferId, paymentProcessorContrac
             }
         }
 
-        if (feeRecordError) throw feeRecordError
-
         // update record
         const updatedFeeRecord = await updateFeeRecord(feeRecord.id, feeToUpdate)
-        const updatedTransferRecord = await updateRequestRecord(transferId, transferToUpdate)
+        const updatedTransferRecord = await updateRequestRecord(requestRecord.id, transferToUpdate)
 
         const receipt =  {
             transferType: transferType.CRYPTO_TO_CRYPTO,
@@ -187,11 +181,11 @@ exports.CryptoToCryptoWithFeeBastion = async(transferId, paymentProcessorContrac
         if (feeRecordId) {
             const updatedFeeRecord = await updateFeeRecord(feeRecordId, feeToUpdate)
         }
-        const updatedTransferRecord = await updateRequestRecord(transferId, transferToUpdate)
+        const updatedTransferRecord = await updateRequestRecord(requestRecord.id, transferToUpdate)
         const receipt =  {
             transferType: transferType.CRYPTO_TO_CRYPTO,
             transferDetails: {
-                id: transferId,
+                id: requestRecord.id,
                 requestId: fields.requestId,
                 senderUserId: fields.senderUserId,
                 recipientUserId: fields.recipientUserId || null,

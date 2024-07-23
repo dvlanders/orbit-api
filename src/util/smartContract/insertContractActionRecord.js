@@ -6,7 +6,7 @@ exports.insertContractActionRecord = async(requestInfo) => {
     .from('contract_actions')
     .insert(
         { 
-            request_id: requestInfo.requestId, 
+            bastion_request_id: requestInfo.bastionRequestId, 
             user_id: requestInfo.userId,
             wallet_address: requestInfo.walletAddress,
             contract_address: requestInfo.contractAddress,

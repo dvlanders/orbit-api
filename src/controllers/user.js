@@ -23,6 +23,10 @@ const getAllUsers = require('../util/user/getAllUsers');
 const { CustomerStatus } = require('../util/user/common');
 const createJob = require('../../asyncJobs/createJob');
 const { getRawUserObject } = require('../util/user/getRawUserObject');
+const { jobMapping } = require('../../asyncJobs/jobMapping');
+const { createUserAsyncCheck } = require('../../asyncJobs/user/createUser');
+const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
+const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
 
 
 const Status = {
@@ -700,6 +704,8 @@ exports.createHifiUserAsync = async(req, res) => {
 		}
 
 		// insert async jobs
+		const canSchedule = await createUserAsyncCheck("createUser", {userId, userType: fields.userType}, userId, profileId)
+        if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createUser", {userId, userType: fields.userType}, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
@@ -750,8 +756,6 @@ exports.updateHifiUserAsync = async (req, res) => {
 			}
 			return res.status(error.status).json(error.rawResponse)
 		}
-		// insert async jobs
-		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
 
 		let updateHifiUserResponse = {
 			user: {
@@ -820,6 +824,11 @@ exports.updateHifiUserAsync = async (req, res) => {
 				},
 			},
 		}
+
+		// insert async jobs
+		const canSchedule = await updateUserAsyncCheck("updateUser", {userId, userType: user.user_type}, userId, profileId)
+        if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
+		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
@@ -953,8 +962,6 @@ exports.createDeveloperUser = async(req, res) => {
 			}
 		}
 
-		// insert async jobs
-		await createJob("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
 		// update developer user id into profile
 		const {data, error} = await supabaseCall(() => supabase
 			.from("profiles")
@@ -977,6 +984,11 @@ exports.createDeveloperUser = async(req, res) => {
 		)
 
 		if (error) throw error
+
+		// insert async jobs
+		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
+		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
+		await createJob("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
 

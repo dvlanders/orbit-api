@@ -87,9 +87,6 @@ exports.testwebhook = async(req, res) => {
                 console.log('Token is valid. Decoded payload:', decoded);
             }
         });
-
-
-
         return res.status(200).json({message: "Success"})
     }catch (error){
         return res.status(401).json({message: "Wrong token"})

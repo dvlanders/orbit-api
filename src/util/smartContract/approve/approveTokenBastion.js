@@ -32,7 +32,7 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
 
     // insert initial record
     const requestInfo = {
-        requestId,
+        bastionRequestId: requestId,
         userId,
         chain,
         contractAddress: currencyContract,

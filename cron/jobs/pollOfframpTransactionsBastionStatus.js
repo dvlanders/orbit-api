@@ -21,7 +21,7 @@ const updateStatus = async (transaction) => {
 		const data = await response.json();
 
 		if (response.status === 404 || !response.ok) {
-			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.bastion_request_id}`;
 			console.error(errorMessage);
 			createLog('pollOfframpTransactionsBastionStatus', null, errorMessage);
 			return

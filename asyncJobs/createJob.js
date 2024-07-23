@@ -1,7 +1,5 @@
 const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
-const { supabaseCall } = require("../src/util/supabaseWithRetry");
-const { jobMapping } = require("./jobMapping");
 
 
 const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
@@ -9,10 +7,10 @@ const defalutRetryDeadline = 7 * 86400 * 1000 // 7days
 
 const createJob = async(job, config, userId, profileId, createdAt=new Date().toISOString(), numberOfRetries=0, nextRetry=new Date().toISOString(), retryDeadline=new Date(new Date().getTime() + defalutRetryDeadline).toISOString(), retryInterval=60 * 1000) => {
     try{
-        if (! (job in jobMapping)) throw new Error(`Job: ${job} not registered`)
-        // check if the job can be insert
-        const scheduleCheck = jobMapping[job].scheduleCheck
-        if (!await scheduleCheck(job, config, userId, profileId)) return
+        // if (! (job in jobMapping)) throw new Error(`Job: ${job} not registered`)
+        // // check if the job can be insert
+        // const scheduleCheck = jobMapping[job].scheduleCheck
+        // if (!await scheduleCheck(job, config, userId, profileId)) return
 
         // insert job
         const {data, error} = await supabase

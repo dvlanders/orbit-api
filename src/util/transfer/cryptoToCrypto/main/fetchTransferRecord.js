@@ -23,9 +23,18 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
             updatedAt: record.updated_at,
             status: record.status,
             contractAddress: record.contract_address,
-            sender: record.sender.user_kyc,
+            failedReason: record.failed_reason,
             recipient: record.recipient?.user_kyc,
-            failedReason: record.failed_reason
+            sender: record.sender.user_kyc,
+            fee: {
+                feeId: record.developer_fees.id,
+                feeType: record.developer_fees.fee_type,
+                feeAmount: record.developer_fees.fee_amount,
+                feePercent: record.developer_fees.fee_percent,
+                status: record.developer_fees.charged_status,
+                transactionHash: record.developer_fees.transaction_hash,
+                failedReason: record.developer_fees.failed_reason
+            }
         }
     }
 

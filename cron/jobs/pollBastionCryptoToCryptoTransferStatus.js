@@ -21,7 +21,7 @@ const updateStatus = async (transaction) => {
 		const data = await response.json();
 
 		if (response.status === 404 || !response.ok) {
-			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.bastion_request_id}`;
 			console.error(errorMessage);
 			createLog('pollCryptoToCryptoTransferStatus/updateStatus', null, errorMessage);
 			return
@@ -44,6 +44,28 @@ const updateStatus = async (transaction) => {
 			createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update transaction status', updateError);
 			return
 		}
+
+		if (transaction.developer_fee_id){
+			// update fee charged
+			const { data: updateFeeData, error: updateFeeError } = await supabaseCall(() => supabase
+				.from('developer_fees')
+				.update({
+					charged_status: data.status,
+					bastion_status: data.status,
+					bastion_response: data,
+					updated_at: new Date().toISOString()
+				})
+				.eq('id', transaction.developer_fee_id)
+				.select()
+				.single())
+	
+			if (updateFeeError) {
+				console.error('Failed to update fee status', updateError);
+				createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update fee status', updateError);
+				return
+			}
+		}
+
 
 		console.log('Updated transaction status for transaction ID', transaction.id, 'to', data.status);
 		await notifyCryptoToCryptoTransfer(updateData)
