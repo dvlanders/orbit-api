@@ -27,7 +27,7 @@ const bastionCryptoTransfer = async(fields) => {
     const requestRecord = await insertRequestRecord(fields)
     
     // transfer
-    const response = await bastionTransfer(requestRecord.id, fields)
+    const response = await bastionTransfer(requestRecord.bastion_request_id, fields)
     const responseBody = await response.json()
 
     // gas check
