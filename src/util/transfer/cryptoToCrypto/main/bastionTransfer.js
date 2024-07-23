@@ -101,7 +101,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
             .single()
         
             if (error) throw error
-            if (!record) throw new Error(`No fee record found for ${createdRecordId}`)
+            if (!record) throw new Error(`No fee record found for ${requestRecord.developer_fee_id}`)
             feeRecord = record
         }else{
             const info = {

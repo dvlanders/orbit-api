@@ -53,6 +53,31 @@ const updateStatus = async (transaction) => {
 				createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to update transaction status', updateError);
 				return
 			}
+
+			if (transaction.developer_fee_id){
+				// update fee charged
+				const { data: updateFeeData, error: updateFeeError } = await supabaseCall(() => supabase
+					.from('developer_fees')
+					.update({
+						charged_status: data.status,
+						bastion_status: data.status,
+						bastion_response: data,
+						updated_at: new Date().toISOString()
+					})
+					.eq('id', transaction.developer_fee_id)
+					.select()
+					.single())
+		
+				if (updateFeeError) {
+					console.error('Failed to update fee status', updateError);
+					createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update fee status', updateError);
+					return
+				}
+			}
+
+
+
+
 			console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 			await notifyCryptoToFiatTransfer(updateData)
 
@@ -68,7 +93,7 @@ async function pollOfframpTransactionsBastionStatus() {
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id')
 		.eq("crypto_provider", "BASTION")
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)

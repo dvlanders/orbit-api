@@ -21,45 +21,10 @@ const chargedStatusMap = {
     PENDING: "PENDING"
 }
 
-exports.CryptoToFiatWithFeeBastion = async(requestRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, fields) => {
-    let feeRecordId
+exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, fields) => {
+    const feeRecordId = feeRecord.id
     try{
-        // get fee_collection_user_id
-        const {data: feeCollectionUser, error: feeCollectionUserError} = await supabase
-            .from("profiles")
-            .select("developer_user_id")
-            .eq("id", profileId)
-            .single()
-
-        if (feeCollectionUserError) throw feeCollectionUserError
-        if (!feeCollectionUser.developer_user_id) throw new Error("Developer user account is not created")
-
-        // get fee_collection_wallet_address
-		const feeCollectionWalletAddress = await getBastionWallet(feeCollectionUser.developer_user_id, fields.chain, "FEE_COLLECTION")
-		if (!feeCollectionWalletAddress) throw new Error (`No feeCollectionWalletAddress wallet found`)
-        const decimals = currencyDecimal[fields.sourceCurrency]
-        const feeUnitAmount = toUnitsString(feeAmount, decimals)
-
-        // insert fee record
-        const record = {
-            fee_type: feeType,
-            fee_percent: feePercent,
-            fee_amount: feeAmount,
-            charged_user_id: fields.sourceUserId,
-            fee_collection_user_id: feeCollectionUser.developer_user_id,
-            fee_collection_wallet_address: feeCollectionWalletAddress,
-            fee_collection_chain: fields.chain,
-            fee_collection_currency: fields.sourceCurrency,
-            crypto_provider: "BASTION",
-            charged_status: "CREATED",
-            charged_transfer_id: requestRecord.id,
-            charged_transfer_type: transferType.CRYPTO_TO_FIAT,
-            charged_wallet_address: fields.sourceWalletAddress,
-        }
-        
-        const feeRecord = await insertFeeRecord(record)
-        feeRecordId = feeRecord.id
-        
+        const feeUnitAmount = toUnitsString(feeAmount, currencyDecimal[feeRecord.fee_collection_currency])
         // transfer
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
@@ -70,7 +35,7 @@ exports.CryptoToFiatWithFeeBastion = async(requestRecord, paymentProcessorContra
             actionParams: [
                 {name: "token", value: fields.contractAddress},
                 {name: "to", value: fields.liquidationAddress},
-                {name: "feeWallet", value: feeCollectionWalletAddress},
+                {name: "feeWallet", value: feeRecord.fee_collection_wallet_address},
                 {name: "amount", value: fields.transferAmount},
                 {name: "fee", value: feeUnitAmount},
             ]

@@ -17,6 +17,7 @@ const { submitUserAction } = require("../../../bastion/endpoints/submitUserActio
 const bastionGasCheck = require("../../../bastion/utils/gasCheck");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
+const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -60,7 +61,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				to_wallet_address: getAddress(liquidationAddress),
 				to_bridge_liquidation_address_id: liquidationAddressId, // actual id that bridge return to us
 				to_bridge_external_account_id: bridgeExternalAccountId, // actual id that bridge return to us
-				transaction_status: 'NOT_INITIATED',
+				transaction_status: 'CREATED',
 				contract_address: contractAddress,
 				action_name: "transfer",
 				fiat_provider: "BRIDGE",
@@ -115,6 +116,31 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
         let {feePercent, feeAmount} = getFeeConfig(feeType, feeValue, amount)
 		const decimals = currencyDecimal[sourceCurrency]
 		const transferAmount = toUnitsString(amount, decimals)
+
+		// fetch fee record if not create one
+		let feeRecord
+		if (initialBastionTransfersInsertData.developer_fee_id){
+			const {data: record, error} = await supabase
+			.from("developer_fees")
+			.select("*")
+			.eq("id", initialBastionTransfersInsertData.developer_fee_id)
+			.single()
+		
+			if (error) throw error
+			if (!record) throw new Error(`No fee record found for ${initialBastionTransfersInsertData.developer_fee_id}`)
+			feeRecord = record
+		}else{
+			const info = {
+				chargedUserId: sourceUserId,
+				chain: chain,
+				currency: sourceCurrency,
+				chargedWalletAddress: sourceWalletAddress
+			}
+			feeRecord = await createNewFeeRecord(initialBastionTransfersInsertData.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION")
+			// update into crypto to crypto table
+			await updateRequestRecord(initialBastionTransfersInsertData.id, {developer_fee_id: feeRecord.id})
+		}
+
         if (allowance < BigInt(transferAmount)){
             // not enough allowance, perform a token allowance job and then schedule a token transfer job
             await approveMaxTokenToPaymentProcessor(sourceUserId, chain, sourceCurrency)
@@ -141,7 +167,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 					contractAddress: contractAddress,
 					failedReason: null,
                     fee: {
-                        feeId: null,
+                        feeId: feeRecord.id,
                         feeType,
                         feeAmount,
                         feePercent,
@@ -165,7 +191,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				transferAmount,
 				destinationAccountId
 			}
-            const result = await CryptoToFiatWithFeeBastion(initialBastionTransfersInsertData, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, info)
+            const result = await CryptoToFiatWithFeeBastion(initialBastionTransfersInsertData, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, info)
             // gas check
             await bastionGasCheck(sourceUserId, chain)
 			return { isExternalAccountExist: true, transferResult: result }
