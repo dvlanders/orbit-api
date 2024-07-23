@@ -45,7 +45,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 
 	if (initialBastionTransfersInsertError) {
 		console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
-		createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, initialBastionTransfersInsertError.message)
+		await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, initialBastionTransfersInsertError.message, initialBastionTransfersInsertError)
 		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 	}
 
@@ -98,7 +98,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 
 	// fail to transfer
 	if (!response.ok) {
-		createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
+		await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
         const { message, type } = getMappedError(responseBody.message)
 		result.transferDetails.status = "NOT_INITIATED"
         result.transferDetails.failedReason = message
@@ -114,7 +114,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 			.match({ id: initialBastionTransfersInsertData.id })
 
 		if (updateError) {
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message, updateError)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 
@@ -135,7 +135,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 			.match({ id: initialBastionTransfersInsertData.id })
 
 		if (updateError) {
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message, updateError)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 	}

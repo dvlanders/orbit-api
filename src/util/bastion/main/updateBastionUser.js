@@ -53,7 +53,7 @@ const updateBastionUser = async (userId) => {
 		return await getBastionUser(userId)
 
 	} catch (error) {
-		createLog("user/util/updateBastionUser", userId, error.message, error)
+		await createLog("user/util/updateBastionUser", userId, error.message, error)
 		return {
 			status: 500,
 			walletStatus: CustomerStatus.INACTIVE,

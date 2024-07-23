@@ -85,7 +85,7 @@ const activateUsAchOnRampRail = async(config) => {
         return {isCreated: true, alreadyExisted: false, isAllowedTocreate: true}
     }catch(error){
         console.error(error)
-        createLog("account/util/activateUsAchOnRampRail", userId, error.message, error.rawResponse)
+        await createLog("account/util/activateUsAchOnRampRail", userId, error.message, error.rawResponse)
         throw error
     }
 }

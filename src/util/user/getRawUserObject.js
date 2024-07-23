@@ -181,7 +181,7 @@ exports.getRawUserObject = async(userId, profileId) => {
 
 
     }catch (error){
-        createLog("user/getRawUserObject", userId, error.message)
+        await createLog("user/getRawUserObject", userId, error.message, error)
         throw new Error("Error happened in getRawUserObject")
     }
 

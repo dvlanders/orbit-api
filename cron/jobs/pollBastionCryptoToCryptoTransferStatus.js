@@ -21,9 +21,9 @@ const updateStatus = async (transaction) => {
 		const data = await response.json();
 
 		if (response.status === 404 || !response.ok) {
-			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
+			const errorMessage = `Failed to get user-action from Bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}`;
 			console.error(errorMessage);
-			createLog('pollCryptoToCryptoTransferStatus/updateStatus', null, errorMessage);
+			await createLog('pollCryptoToCryptoTransferStatus/updateStatus', transaction.sender_user_id, errorMessage, data);
 			return
 		}
 		if (data.status == transaction.status) return
@@ -41,7 +41,7 @@ const updateStatus = async (transaction) => {
 
 		if (updateError) {
 			console.error('Failed to update transaction status', updateError);
-			createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update transaction status', updateError);
+			await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.sender_user_id, 'Failed to update transaction status', updateError);
 			return
 		}
 
@@ -51,7 +51,7 @@ const updateStatus = async (transaction) => {
 
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Bastion API', error);
-		createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to fetch transaction status from Bastion API', error);
+		await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.sender_user_id, 'Failed to fetch transaction status from Bastion API', error);
 	}
 }
 
@@ -73,14 +73,14 @@ async function pollBastionCryptoToCryptoTransferStatus() {
 
 		if (cryptoTransactionDataError) {
 			console.error('Failed to fetch transactions for pollCryptoToCryptoTransferStatus', cryptoTransactionDataError);
-			createLog('pollCryptoToCryptoTransferStatus', null, 'Failed to fetch transactions', cryptoTransactionDataError);
+			await createLog('pollCryptoToCryptoTransferStatus', null, 'Failed to fetch transactions', cryptoTransactionDataError);
 			return;
 		}
 
 		// For each transaction, get the latest status from the Bastion API and update the db
 		await Promise.all(cryptoTransactionData.map(async (transaction) => await updateStatus(transaction)))
 	} catch (error) {
-		createLog("pollOfframpTransactionsBastionStatus", null, error.message)
+		await createLog("pollBastionCryptoToCryptoTransferStatus", null, "Failed to poll Bastion crypto to crypto transfer status", error.message)
 	}
 }
 

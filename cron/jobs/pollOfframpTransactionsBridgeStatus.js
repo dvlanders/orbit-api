@@ -17,7 +17,7 @@ const updateStatus = async (transaction) => {
 
 	if (destnationBridgeCustomerDataError) {
 		console.error('Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
-		createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
+		await createLog('pollOfframpTransactionsBridgeStatus/updateStatus', transaction.user_id, 'Failed to fetch a single bridge id for the given user id', destnationBridgeCustomerDataError);
 		return;
 	}
 
@@ -31,7 +31,7 @@ const updateStatus = async (transaction) => {
 
 		const responseBody = await response.json();
 		if (!response.ok) {
-			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch response from bridge', responseBody);
+			await createLog('pollOfframpTransactionsBridgeStatus/updateStatus', transaction.user_id, 'Failed to fetch response from bridge', responseBody);
 			return
 		}
 
@@ -66,7 +66,7 @@ const updateStatus = async (transaction) => {
 
 		if (updateError) {
 			console.error('Failed to update transaction status', updateError);
-			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to update transaction status', updateError);
+			await createLog('pollOfframpTransactionsBridgeStatus/updateStatus', transaction.user_id, 'Failed to update transaction status', updateError);
 			return
 		}
 
@@ -75,7 +75,7 @@ const updateStatus = async (transaction) => {
 
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Bridge API', error);
-		createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transaction status from Bridge API', error);
+		await createLog('pollOfframpTransactionsBridgeStatus/updateStatus', transaction.user_id, 'Failed to fetch transaction status from Bridge API', error);
 	}
 }
 
@@ -94,7 +94,7 @@ async function pollOfframpTransactionsBridgeStatus() {
 	)
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
-		createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);
+		await createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);
 		return;
 	}
 

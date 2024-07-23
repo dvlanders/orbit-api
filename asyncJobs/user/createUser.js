@@ -37,7 +37,7 @@ const createUserAsync = async(config) => {
         ]);
 
     }catch (error){
-        await createLog("createUserAsync", config.userId, error.message)
+        await createLog("createUserAsync", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, "", "", true)
     }
 }

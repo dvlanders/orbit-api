@@ -382,9 +382,8 @@ exports.getAccount = async (req, res) => {
 	console.log("accountId", accountId, "railType", railType, "userId", userId, "profileId", profileId)
 	if (!userId || !railType || !accountId) return res.status(400).json({ error: 'userId, railType and accountId are required' });
 
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
-
 	try {
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		if (!(railType in fetchRailFunctionsMap)) {
 			return res.status(400).json({ error: 'Invalid railType' });
 		}
@@ -397,7 +396,7 @@ exports.getAccount = async (req, res) => {
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
-		createLog("account", null, error.message, error)
+		await createLog("account/getAccount", userId, error.message, error)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
@@ -413,9 +412,8 @@ exports.getAllAccounts = async (req, res) => {
 	const requiredFields = ["railType"]
 	const acceptedFields = { railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
 
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
-
 	try {
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		const func = fetchRailFunctionsMap[railType]
@@ -424,7 +422,7 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
-		createLog("account", null, error.message, error)
+		await createLog("account/getAllAccounts", userId, error.message, error)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
@@ -448,10 +446,9 @@ exports.activateOnRampRail = async (req, res) => {
 	if (invalidFields.length > 0) {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
 	}
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
-
 
 	try {
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
 		if (!activateFunction) return res.status(400).json({ error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported` })
 		const config = {
@@ -466,7 +463,7 @@ exports.activateOnRampRail = async (req, res) => {
 		return res.status(200).json({ message: `${rail} create successfully` })
 
 	} catch (error) {
-		createLog("account/activateOnRampRail", userId, error.message, error.rawResponse)
+		await createLog("account/activateOnRampRail", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -710,7 +707,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 
 		if (response.status === 400 || response.status === 401) {
 			const responseData = await response.json();
-			createLog("account/createCircleWireBankAccount", userId, responseData.message, responseData)
+			await createLog("account/createCircleWireBankAccount", userId, responseData.message, responseData)
 			return res.status(400).json({
 				error: responseData.message
 			});
@@ -768,7 +765,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		createLog("account/createCircleWireBankAccount", userId, error.message, error.rawResponse)
+		await createLog("account/createCircleWireBankAccount", userId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -803,7 +800,7 @@ exports.getVirtualAccount = async(req, res) => {
 		return res.status(200).json(virtualAccount)
 
 	} catch (error){
-		createLog("account/getVirtualAccount", userId, error.message)
+		await createLog("account/getVirtualAccount", userId, error.message, error)
 		return res.status(500).json({error: "Unexpected error happened"})
 	}
 	
@@ -834,7 +831,7 @@ exports.getVirtualAccountMicroDepositInstructions = async(req, res) => {
 		return res.status(200).json(despositInformation)
 
 	} catch (error){
-		createLog("account/getVirtualAccount", userId, error.message)
+		await createLog("account/getVirtualAccount", userId, error.message, error)
 		return res.status(500).json({error: "Unexpected error happened"})
 	}
 }

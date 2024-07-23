@@ -17,7 +17,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         .maybeSingle())
     
     if (webhookUrlError) {
-        createLog("webhook/sendMessage", "",webhookUrlError.message)
+        await createLog("webhook/sendMessage", null, webhookUrlError.message, webhookUrlError, profileId)
         return
     }
     if (!webhookUrl) return
@@ -54,7 +54,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
             .select()
         )
         if (webhookHistoryError) {
-            createLog("webhook/sendMessage", "",webhookHistoryError.message)
+            await createLog("webhook/sendMessage", null, webhookHistoryError.message, webhookHistoryError, profileId)
             return
         }
 
@@ -74,7 +74,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
             .select())
 
             if (webhookQueueError) {
-                createLog("webhook/sendMessage", "",webhookQueueError.message)
+                await createLog("webhook/sendMessage", null, webhookQueueError.message, webhookQueueError, profileId)
                 return
             }
         }
@@ -82,7 +82,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
     }catch (error){
         const now = new Date()
         const jitter = Math.random() * Math.min(initialRetryInterval * numberOfRetries, maxRetryInterval)
-        createLog("webhook/sendMessage", "", error.message)
+        await createLog("webhook/sendMessage", null, error.message, error, profileId)
         // queue the message
         // insert record in queue
         const { data: webhookQueue, error: webhookQueueError } = await supabaseCall(() => supabase
@@ -97,7 +97,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         .select())
 
         if (webhookQueueError) {
-            createLog("webhook/sendMessage", "", webhookQueueError.message)
+            await createLog("webhook/sendMessage", null, webhookQueueError.message, webhookQueueError, profileId)
             return
         }
     }

@@ -29,7 +29,7 @@ const fundGas = async(config) => {
             throw new Error("Chain not found")
         }
     }catch (error){
-        createLog("asyncJob/fundGas", config.userId, error.message)
+        await createLog("asyncJob/fundGas", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, undefined, undefined, true)
     }
 }

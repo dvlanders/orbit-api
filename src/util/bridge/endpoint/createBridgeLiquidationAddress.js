@@ -95,7 +95,7 @@ exports.createBridgeLiquidationAddress = async (
 
 	} catch (error) {
 		// logger 
-		createLog("bridge/createBridgeLiquidationAddress", userId, error.message, error);
+		await createLog("bridge/createBridgeLiquidationAddress", userId, error.message, error);
 		console.error(`Error occurred in bridge/createBridgeExternalAccount `, error);
 		return {
 			status: 500,
