@@ -26,7 +26,7 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
             failedReason: record.failed_reason,
             recipient: record.recipient?.user_kyc,
             sender: record.sender.user_kyc,
-            fee: {
+            fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,
                 feeType: record.developer_fees.fee_type,
                 feeAmount: record.developer_fees.fee_amount,
@@ -34,7 +34,7 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
                 status: record.developer_fees.charged_status,
                 transactionHash: record.developer_fees.transaction_hash,
                 failedReason: record.developer_fees.failed_reason
-            }
+            } : null
         }
     }
 
