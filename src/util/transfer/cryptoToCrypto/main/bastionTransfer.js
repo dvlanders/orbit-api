@@ -3,6 +3,8 @@ const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transf
 const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck")
 const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
+const { isValidAmount } = require("../../../common/transferValidation")
+const { getMappedError } = require("../utils/errorMappings")
 const createLog = require("../../../logger/supabaseLogger")
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion")
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
@@ -15,7 +17,9 @@ const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
 
 
+
 const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
+    if (!isValidAmount(fields.amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
     const unitsAmount = toUnitsString(fields.amount, decimal) 

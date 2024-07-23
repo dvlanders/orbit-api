@@ -1,5 +1,6 @@
 const supabase = require("../util/supabaseClient");
 const { fieldsValidation, isUUID } = require("../util/common/fieldsValidation");
+const { isValidLimit, isValidDateRange, isValidDate } = require("../util/common/transferValidation");
 const { requiredFields, acceptedFields, supportedCurrency } = require("../util/transfer/cryptoToCrypto/utils/createTransfer");
 const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
@@ -62,6 +63,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!(chain in cryptoToCryptoSupportedFunctions)) return res.status(400).json({ error: `Chain ${chain} is not supported` })
 		// check if currency is supported
 		if (!(currency in cryptoToCryptoSupportedFunctions[chain])) return res.status(400).json({ error: `Currency ${currency} is not supported` })
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
@@ -118,6 +121,12 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
+		if (limit && !isValidLimit(limit)) return res.status(400).json({error: "Invalid limit"})
+		if ((createdAfter && !isValidDate(createdAfter)) || 
+			(createdBefore && !isValidDate(createdBefore)) || 
+			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
+				return res.status(400).json({ error: "Invalid date range" });
+		}
 
 		// get all records
 		const records = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
@@ -173,7 +182,6 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 
 	try {
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		// filed validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail"]
 		const acceptedFields = {
@@ -184,6 +192,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
@@ -246,7 +255,12 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-
+		if (limit && !isValidLimit(limit)) return res.status(400).json({error: "Invalid limit"})
+		if ((createdAfter && !isValidDate(createdAfter)) || 
+			(createdBefore && !isValidDate(createdBefore)) || 
+			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
+				return res.status(400).json({ error: "Invalid date range" });
+		}
 		// get all records
 		const records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(records)
@@ -314,7 +328,6 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 
 	try {
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "amount", "sourceCurrency", "destinationCurrency", "chain", "sourceAccountId", "isInstant"]
 		const acceptedFields = {
 			"requestId": "string",
@@ -331,10 +344,11 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
-		//FIXME
 		//check if sender is under profileId
-		// if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request id valid
 		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
@@ -416,6 +430,12 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+		if (limit && !isValidLimit(limit)) return res.status(400).json({error: "Invalid limit"})
+		if ((createdAfter && !isValidDate(createdAfter)) || 
+			(createdBefore && !isValidDate(createdBefore)) || 
+			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
+			return res.status(400).json({ error: "Invalid date range" });
 		}
 
 		// get all records

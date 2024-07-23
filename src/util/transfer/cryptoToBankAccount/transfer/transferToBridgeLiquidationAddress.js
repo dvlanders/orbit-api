@@ -10,6 +10,8 @@ const { transferType } = require("../../utils/transfer");
 const { chargeDeveloperFeeBastion } = require("../../fee/CryptoToCryptoWithFeeBastion");
 const { getFeeConfig } = require("../../fee/utils");
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
+const { isValidAmount } = require("../../../common/transferValidation")
+const { getMappedError } = require("../utils/errorMappings")
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -54,7 +56,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 	const decimals = currencyDecimal[sourceCurrency]
 	const transferAmount = toUnitsString(amount, decimals)
 	const bodyObject = {
-		requestId: initialBastionTransfersInsertData.id,
+		requestId: initialBastionTransfersInsertData.bastion_request_id,
 		userId: sourceUserId,
 		contractAddress: contractAddress,
 		actionName: "transfer",
@@ -98,14 +100,10 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 	if (!response.ok) {
 		// fail to transfer
 		createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
-		if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance") {
-			result.transferDetails.status = "NOT_INITIATED"
-			result.transferDetails.failedReason = "Transfer amount exceeds balance"
-		} else {
-			result.transferDetails.status = "NOT_INITIATED"
-			result.transferDetails.failedReason = "Not enough gas, please contact HIFI for more information"
-		}
-
+        const { message, type } = getMappedError(responseBody.message)
+		result.transferDetails.status = "NOT_INITIATED"
+        result.transferDetails.failedReason = message
+		
 		const { error: updateError } = await supabase
 			.from('offramp_transactions')
 			.update({
