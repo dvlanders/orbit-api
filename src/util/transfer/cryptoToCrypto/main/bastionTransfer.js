@@ -4,7 +4,6 @@ const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck")
 const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const { isValidAmount } = require("../../../common/transferValidation")
-const { getMappedError } = require("../utils/errorMappings")
 const createLog = require("../../../logger/supabaseLogger")
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion")
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
@@ -18,6 +17,7 @@ const { updateRequestRecord } = require("./updateRequestRecord")
 const { cryptoToCryptoTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoTocryptoTransfer/scheduleCheck")
 const supabase = require("../../../supabaseClient")
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
+const { getMappedError } = require("../../../bastion/utils/errorMappings")
 
 
 
@@ -162,18 +162,11 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
     }else{
         // transfer without fee
         let record
-        let failedReason
         const response = await bastionTransfer(requestRecord.bastion_request_id, fields)
         const responseBody = await response.json()
         if (!response.ok) {
             createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
-            if (responseBody.message == "execution reverted: ERC20: transfer amount exceeds balance"){
-                failedReason = "Transfer amount exceeds balance"
-            }else if (responseBody.message == "gas required exceeds allowance (7717)"){
-                failedReason = "Not enough gas, please contact HIFI for more information"
-            }else{
-                failedReason = "Please contact HIFI for more information"
-            }
+            const failedReason = getMappedError(responseBody.message)
              // update to database
             const toUpdate = {
                 bastion_response: responseBody,

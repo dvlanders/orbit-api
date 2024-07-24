@@ -29,6 +29,7 @@ const fetchAllCryptoToFiatTransferRecord = require("../util/transfer/cryptoToBan
 const fetchAllFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchAllFiatToCryptoTransferRecords");
 const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { acceptedFeeType, canChargeFee } = require("../util/transfer/fee/utils");
+const { isNumberOrNumericString } = require("../util/helper/numberCheck");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -52,8 +53,10 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 		fields.profileId = profileId
 		// check if fee config is correct
-		const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
-		if (!valid) return res.status(400).json({error})
+		if (feeType || feeValue){
+			const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({error})
+		}
 		//check if sender is under profileId
 		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		// check if provide either recipientUserId or recipientAddress
@@ -199,9 +202,15 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
+		// FIX ME SHOULD put it in the field validation 
+		if (!isNumberOrNumericString(amount)) return res.status(400).json({error: "Invalid amount"})
+
+
 		// check if fee config is correct
-		const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
-		if (!valid) return res.status(400).json({error})
+		if (feeType || feeValue){
+			const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({error})
+		}
 		
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
@@ -357,6 +366,12 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		//check is source-destination pair supported
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
+
+		// check fee config
+		if (feeType || feeValue){
+			const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({error})
+		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
 		if (process.env.NODE_ENV === "development") {
