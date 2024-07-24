@@ -10,6 +10,9 @@ const FiatToCryptoSupportedPairFunctionsCheck = (sourceCurrency, destinationChai
 
 const FiatToCryptoSupportedPairFunctions = {
     usd:{
+        POLYGON_AMOY: {
+            usdc: transferFromPlaidToBridge
+        },
         ETHEREUM_MAINNET: {
             usdc: transferFromPlaidToBridge,
             usdt: transferFromPlaidToBridge

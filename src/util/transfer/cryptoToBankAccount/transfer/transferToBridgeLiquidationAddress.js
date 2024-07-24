@@ -1,7 +1,7 @@
 const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
 const supabase = require("../../../supabaseClient");
 const bridgeRailCheck = require("../railCheck/bridgeRailCheck");
-const { getAddress } = require("ethers");
+const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
@@ -17,7 +17,7 @@ const bastionGasCheck = require("../../../bastion/utils/gasCheck");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
-const { getMappedError } = require("../../../bastion/utils/errorMappings");
+const { getMappedError } = require("../utils/errorMappings");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -57,8 +57,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				destination_user_id: destinationUserId,
 				amount: amount,
 				chain: chain,
-				from_wallet_address: getAddress(sourceWalletAddress),
-				to_wallet_address: getAddress(liquidationAddress),
+				from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
+				to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress,
 				to_bridge_liquidation_address_id: liquidationAddressId, // actual id that bridge return to us
 				to_bridge_external_account_id: bridgeExternalAccountId, // actual id that bridge return to us
 				transaction_status: 'CREATED',
