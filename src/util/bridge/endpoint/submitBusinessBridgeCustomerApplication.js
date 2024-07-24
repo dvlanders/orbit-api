@@ -283,7 +283,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		}
 	} catch (error) {
 		//  log
-		createLog("user/util/createBusinessBridgeCustomer", userId, error.message, error.rawResponse)
+		await createLog("user/util/createBusinessBridgeCustomer", userId, error.message, error.rawResponse)
 		console.error(`Error occurred in create business bridge user `, error)
 		// process error
 		if (error.type == createBridgeCustomerErrorType.INTERNAL_ERROR) {

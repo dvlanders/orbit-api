@@ -23,7 +23,7 @@ const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId=null) => {
-	// if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
+	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
 	const { isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId } = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
@@ -41,7 +41,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 			.single()
 		
 		if (error) {
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, error.message)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, error.message)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 
@@ -72,7 +72,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 
 		if (initialBastionTransfersInsertError) {
 			console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, initialBastionTransfersInsertError.message)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, initialBastionTransfersInsertError.message)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 

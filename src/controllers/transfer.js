@@ -101,7 +101,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error)
+		await createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -134,7 +134,7 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		createLog("transfer/getAllCryptoToCryptoTransfer", "", error.message)
+		await createLog("transfer/getAllCryptoToCryptoTransfer", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -158,7 +158,7 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		createLog("transfer/getCryptoToCryptoTransfer", null, error.message)
+		await createLog("transfer/getCryptoToCryptoTransfer", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -234,7 +234,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 				return res.status(500).json({ error: "An unexpected error occurred" })
 			}
 		}
-		createLog("transfer/crypto-to-fiat", sourceUserId, error.message)
+		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
@@ -267,7 +267,7 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		createLog("transfer/getAllCryptoToFiatTransfer", "", error.message)
+		await createLog("transfer/getAllCryptoToFiatTransfer", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -305,7 +305,7 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		createLog("transfer/getCryptoToFiatTransfer", null, error.message)
+		await createLog("transfer/getCryptoToFiatTransfer", null, error.message, error, profileId)
 		return res.status(500).json({ error: `Unexpected error happened` })
 	}
 
@@ -374,7 +374,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		createLog("transfer/createFiatToCryptoTransfer", sourceUserId, error.message)
+		await createLog("transfer/createFiatToCryptoTransfer", sourceUserId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -412,7 +412,7 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		createLog("transfer/getCryptoToFiatTransfer", null, error.message)
+		await createLog("transfer/getCryptoToFiatTransfer", null, error.message, error, profileId)
 		return res.status(500).json({ error: `Unexpected error happened` })
 	}
 
@@ -446,7 +446,7 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		createLog("transfer/getAllFiatToCryptoTransfer", "", error.message)
+		await createLog("transfer/getAllFiatToCryptoTransfer", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 

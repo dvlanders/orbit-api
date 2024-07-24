@@ -169,7 +169,7 @@ const getBridgeCustomer = async(userId) => {
             customerStatus = CustomerStatus.PENDING
         }else {
             // unable to map existing status 
-            createLog("user/utils/getBridgeCustomer", userId, `Unmatched bridge customer status ${responseBody.status}`, null)
+            await createLog("user/utils/getBridgeCustomer", userId, `Unmatched Bridge customer status ${responseBody.status}`, responseBody)
             return {
                 status: 200,
                 customerStatus: {
@@ -276,7 +276,7 @@ const getBridgeCustomer = async(userId) => {
         
     }catch (error){
 
-        createLog("user/util/getBridgeCustomer", userId, error.message, error.rawResponse)
+        await createLog("user/util/getBridgeCustomer", userId, error.message, error.rawResponse)
         if (error.type == getBridgeCustomerErrorType.INTERNAL_ERROR){
             return {
                 status: 500,

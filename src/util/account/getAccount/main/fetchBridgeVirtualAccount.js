@@ -44,7 +44,7 @@ const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurre
         return virtualAccountInfo
 
     }catch (error){
-        createLog("/getAccount/fetchBridgeVirtualAccount", userId, error.message)
+        await createLog("account/getAccount/fetchBridgeVirtualAccount", userId, error.message, error)
         throw new Error("Something went wrong when performing fetchBridgeVirtualAccount")
     }
 }

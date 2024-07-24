@@ -23,7 +23,7 @@ const updateStatus = async (transaction) => {
 		if (response.status === 404 || !response.ok) {
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.bastion_request_id}`;
 			console.error(errorMessage);
-			createLog('pollOfframpTransactionsBastionStatus', null, errorMessage);
+			createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, errorMessage, data);
 			return
 		}
 
@@ -50,7 +50,7 @@ const updateStatus = async (transaction) => {
 
 			if (updateError) {
 				console.error('Failed to update transaction status', updateError);
-				createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to update transaction status', updateError);
+				createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to update transaction status', updateError);
 				return
 			}
 
@@ -84,7 +84,7 @@ const updateStatus = async (transaction) => {
 		}
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Bastion API', error);
-		createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to fetch transaction status from Bastion API', error);
+		createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to fetch transaction status from Bastion API', error);
 	}
 }
 

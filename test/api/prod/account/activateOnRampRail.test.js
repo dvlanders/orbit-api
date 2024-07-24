@@ -28,17 +28,29 @@ const activateOnRampRail = async (
   console.log(
     `Account activated on ${rail} rail for ${destinationCurrency} on ${destinationChain}`
   );
-  expect(account.message).toBeDefined();
-  expect(account.message).toMatch(/(successfully|activated)$/);
+
+    if (account.message.includes("successfully")) {
+      expect(account.message).toBe(`${rail} create successfully`)
+      expect(account.account).toBeDefined();
+      const vAccount = account.account;
+      expect(vAccount.virtualAccountId).toBeDefined();
+      expect(vAccount.userId).toBe(userInfo.USER_ID);
+      expect(vAccount.destinationCurrency).toBe(destinationCurrency)
+      expect(vAccount.destinationChain).toBe(destinationChain)
+      expect(vAccount.railStatus).toBe("activated")
+    } else if (account.message.includes("activated")) {
+      expect(account.message).toBe("rail already activated");
+    }
+
 };
 
 describe("POST /account/activateOnRampRail", function () {
   it("it should has status code 200", async () => {
-    await activateOnRampRail("US_ACH", "usdc", "POLYGON_MAINNET");
-    await activateOnRampRail("US_ACH", "usdc", "ETHEREUM_MAINNET");
-    await activateOnRampRail("US_ACH", "usdt", "ETHEREUM_MAINNET");
-    await activateOnRampRail("US_ACH", "usdc", "OPTIMISM_MAINNET");
+    await activateOnRampRail("US_ACH_WIRE", "usdc", "POLYGON_MAINNET");
+    await activateOnRampRail("US_ACH_WIRE", "usdc", "ETHEREUM_MAINNET");
+    await activateOnRampRail("US_ACH_WIRE", "usdt", "ETHEREUM_MAINNET");
+    await activateOnRampRail("US_ACH_WIRE", "usdc", "OPTIMISM_MAINNET");
     // TODO: is base mainnet supported?
-    // await activateOnRampRail("US_ACH", "usdc", "BASE_MAINNET");
+    // await activateOnRampRail("US_ACH_WIRE", "usdc", "BASE_MAINNET");
   }, 30000);
 });

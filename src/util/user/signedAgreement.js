@@ -11,7 +11,7 @@ const checkSignedAgreementId = async(signedAgreementId) => {
     )
 
     if (error){
-        createLog("user/util/checkSignedAgreementId", "", error.message, error)
+        await createLog("user/util/checkSignedAgreementId", null, error.message, error)
         throw error
     }
 
@@ -36,7 +36,7 @@ const checkIsSignedAgreementIdSigned = async(signedAgreementId) => {
     )
 
     if (error){
-        createLog("user/util/checkSignedAgreementId", "", error.message, error)
+        await createLog("user/util/checkIsSignedAgreementIdSigned", null, error.message, error)
         throw error
     }
 
@@ -46,11 +46,11 @@ const checkIsSignedAgreementIdSigned = async(signedAgreementId) => {
     // check if signedAgreementId is used
     const { data: userKyc, error: userKycError } = await supabaseCall( () =>  supabase
         .from('user_kyc')
-        .select('id')
+        .select('id, user_id')
         .eq('signed_agreement_id', signedAgreementId)
     )
     if (userKycError){
-        createLog("user/util/checkSignedAgreementId", "", userKycError.message, userKycError)
+        await createLog("user/util/checkIsSignedAgreementIdSigned", userKyc.user_id, userKycError.message, userKycError)
         throw error
     }
     if (userKyc && userKyc.length > 0) return false
@@ -68,7 +68,7 @@ const checkToSTemplate = async(templateId) => {
     )
 
     if (error) {
-        createLog("user/util/checkToSTemplate", "", error.message, error)
+        await createLog("user/util/checkToSTemplate", null, error.message, error, tos_template.profile_id)
         throw error
     }
 
@@ -92,7 +92,7 @@ const generateNewSignedAgreementRecord = async(signedAgreementId, templateId) =>
     )
 
     if (error){
-        createLog("user/util/generateNewSignedAgreementRecord", "", error.message, error)
+        await createLog("user/util/generateNewSignedAgreementRecord", null, error.message, error)
         throw error
     }
 
@@ -109,7 +109,7 @@ const updateSignedAgreementRecord = async(sessionToken) => {
     )
 
     if (recordError) {
-        createLog("user/util/updateSignedAgreementRecord", "", recordError.message, recordError)
+        await createLog("user/util/updateSignedAgreementRecord", null, recordError.message, recordError)
         throw recordError
     }
     // session token not found
@@ -129,7 +129,7 @@ const updateSignedAgreementRecord = async(sessionToken) => {
     )
 
     if (updatedRecordError) {
-        createLog("user/util/updateSignedAgreementRecord", "", updatedRecordError.message, updatedRecordError)
+        await createLog("user/util/updateSignedAgreementRecord", null, updatedRecordError.message, updatedRecordError)
         throw updatedRecordError
     }
 

@@ -40,7 +40,7 @@ const updateUserAsync = async(config) => {
 
 
     }catch (error){
-        await createLog("updateUserAsync", config.userId, error.message)
+        await createLog("updateUserAsync", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, "", "", true)
     }
 }

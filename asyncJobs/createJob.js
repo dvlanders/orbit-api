@@ -13,7 +13,7 @@ const createJob = async(job, config, userId, profileId, createdAt=new Date().toI
         // if (!await scheduleCheck(job, config, userId, profileId)) return
 
         // insert job
-        const {data, error} = await supabase
+        const { error } = await supabase
             .from("jobs_queue")
             .insert({
                 job,
@@ -32,7 +32,7 @@ const createJob = async(job, config, userId, profileId, createdAt=new Date().toI
         return
 
     }catch (error){
-        await createLog("asyncJob/createJob", userId, error.message)
+        await createLog("asyncJob/createJob", userId, error.message, error)
     }
 }
 

@@ -40,7 +40,7 @@ const updateStatus = async(onrampTransaction) => {
 
 		const responseBody = await response.json();
 		if (!response.ok) {
-			createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch response from bridge', responseBody);
+			createLog('pollOfframpTransactionsBridgeStatus', onrampTransaction.user_id, 'Failed to fetch response from bridge', responseBody);
 			return
 		}
 
@@ -102,7 +102,7 @@ async function pollOnrampTransactionsBridgeStatus() {
 
 	if (onRampTransactionStatusError) {
 		console.error('Failed to fetch transactions for pollOnrampTransactionsBridgeStatus', onRampTransactionStatusError);
-		createLog('pollOnrampTransactionsBridgeStatus', null, onRampTransactionStatusError.message);
+		createLog('pollOnrampTransactionsBridgeStatus', null, onRampTransactionStatusError.message, onRampTransactionStatusError);
 		return;
 	}
     await Promise.all(onRampTransactionStatus.map(async(onrampTransaction) => await updateStatus(onrampTransaction)))

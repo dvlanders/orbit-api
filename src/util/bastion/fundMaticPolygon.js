@@ -74,7 +74,7 @@ async function fundMaticPolygon(userId, amount, type="INDIVIDUAL") {
 		return data;
 
 	} catch (error) {
-		createLog("user/util/fundMaticPolygon", userId, error, error)
+		await createLog("user/util/fundMaticPolygon", userId, error.message, error)
 		return null
 		// throw JSON.stringify(error);
 	}
