@@ -1,10 +1,9 @@
-const jobMapping = require("../../../asyncJobs/jobMapping")
+const { createUserAsyncCheck } = require("../../../asyncJobs/user/createUser")
 const getBastionUser = require("../bastion/main/getBastionUser")
 const getBridgeCustomer = require("../bridge/endpoint/getBridgeCustomer")
 const getCheckbookUser = require("../checkbook/endpoint/getCheckbookUser")
 const createLog = require("../logger/supabaseLogger")
 const { CustomerStatus } = require("./common")
-
 
 exports.getRawUserObject = async(userId, profileId) => {
     try{
@@ -78,7 +77,7 @@ exports.getRawUserObject = async(userId, profileId) => {
 		}
 
 		// check if the userCreation is in the job queue, if yes return pending response
-		const canScheduled = await jobMapping.createUser.scheduleCheck("createUser", {}, userId, profileId)
+		const canScheduled = await createUserAsyncCheck("createUser", {}, userId, profileId)
 		if (!canScheduled) return {status: 200 , getHifiUserResponse}
         
         // get status

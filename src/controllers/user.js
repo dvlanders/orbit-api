@@ -22,8 +22,11 @@ const { v4: uuidv4 } = require("uuid");
 const getAllUsers = require('../util/user/getAllUsers');
 const { CustomerStatus } = require('../util/user/common');
 const createJob = require('../../asyncJobs/createJob');
-const jobMapping = require('../../asyncJobs/jobMapping');
 const { getRawUserObject } = require('../util/user/getRawUserObject');
+const { jobMapping } = require('../../asyncJobs/jobMapping');
+const { createUserAsyncCheck } = require('../../asyncJobs/user/createUser');
+const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
+const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
 
 
 const Status = {
@@ -264,6 +267,9 @@ exports.getHifiUser = async (req, res) => {
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+		
+		// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
 
 		// get status
 		const {status, getHifiUserResponse} = await getRawUserObject(userId, profileId)
@@ -295,9 +301,12 @@ exports.updateHifiUser = async (req, res) => {
 			.eq("id", userId)
 			.maybeSingle()
 		)
-		console.log("*************user", user)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+
+		// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use PUT user/developer" })
+
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
@@ -694,6 +703,8 @@ exports.createHifiUserAsync = async(req, res) => {
 		}
 
 		// insert async jobs
+		const canSchedule = await createUserAsyncCheck("createUser", {userId, userType: fields.userType}, userId, profileId)
+        if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createUser", {userId, userType: fields.userType}, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
@@ -732,6 +743,8 @@ exports.updateHifiUserAsync = async (req, res) => {
 		)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+			// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
@@ -742,8 +755,6 @@ exports.updateHifiUserAsync = async (req, res) => {
 			createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
-		// insert async jobs
-		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
 
 		let updateHifiUserResponse = {
 			user: {
@@ -813,6 +824,11 @@ exports.updateHifiUserAsync = async (req, res) => {
 			},
 		}
 
+		// insert async jobs
+		const canSchedule = await updateUserAsyncCheck("updateUser", {userId, userType: user.user_type}, userId, profileId)
+        if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
+		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
+
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
 		await createLog("user/updateHifiUserAsync", userId, error.message, error, profileId)
@@ -842,5 +858,140 @@ exports.getUserKycInformation = async(req, res) => {
 	}catch(error){
 		await createLog("user/getUserKycInformation", userId, error.message, error, profileId)
 		return res.status(500).json({error: `Unexpected error happened`})
+	}
+}
+
+exports.createDeveloperUser = async(req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	let userId
+	try {
+		const profileId = req.query.profileId
+		const fields = req.body
+		// user type should always be business
+		// if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
+		if (fields.userType != "individual") return res.status(400).json({error: "Developer user type must be individual for the current statge, will be switched to business"})
+		// check if developer user is already created
+		const {data: profile, error: profileError} = await supabaseCall(() => supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", profileId)
+			.single()
+		)
+		if (profile.developer_user_id) return res.status(400).json({error: "Developer user is already created"})
+		// upload information and create new user
+		try {
+			userId = await informationUploadForCreateUser(profileId, fields)
+		} catch (error) {
+			if (error instanceof InformationUploadError) {
+				return res.status(error.status).json(error.rawResponse)
+			}
+			createLog("user/create", "", error.message, error)
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		}
+
+		let createHifiUserResponse = {
+			wallet: {
+				walletStatus: CustomerStatus.PENDING,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: "",
+				walletAddress: {}
+			},
+			user_kyc: {
+				status: CustomerStatus.PENDING, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: CustomerStatus.PENDING, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+
+						},
+					},
+					offRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onRamp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offRamp: {
+						status: CustomerStatus.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+			user: {
+				id: userId,
+			}
+		}
+
+		// update developer user id into profile
+		const {data, error} = await supabaseCall(() => supabase
+			.from("profiles")
+			.update({
+				developer_user_id: userId,
+				fee_collection_enabled: true
+			})
+			.eq("id", profileId)
+		)
+
+		if (error) throw error
+
+		// update user account type to is_developer
+		const {data: user, error: userError} = await supabaseCall(() => supabase
+			.from("users")
+			.update({
+				is_developer: true
+			})
+			.eq("id", userId)
+		)
+
+		if (error) throw error
+
+		// insert async jobs
+		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
+		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
+		await createJob("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
+
+		return res.status(200).json(createHifiUserResponse)
+
+	}catch (error){
+		createLog("user/createHifiUserAsync", userId, error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }

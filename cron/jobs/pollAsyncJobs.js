@@ -2,11 +2,9 @@ const createJob = require("../../asyncJobs/createJob");
 const { deleteJob } = require("../../asyncJobs/deleteJob");
 const { JobError } = require("../../asyncJobs/error");
 const insertJobHistory = require("../../asyncJobs/insertJobHistory");
-const jobMapping = require("../../asyncJobs/jobMapping");
+const { jobMapping } = require("../../asyncJobs/jobMapping");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
-const { supabaseCall } = require("../../src/util/supabaseWithRetry");
-
 
 const dayAfterCreated = 3
 const initialRetryInterval = 60 * 1000 // 60 secs
@@ -40,7 +38,7 @@ const pollAsyncJobs = async() => {
             let jobError
             try{
                 const jobFunc = jobMapping[job.job].execute
-                await jobFunc(job.config)
+                await jobFunc({...job.config, userId: job.user_id, profileId: job.profile_id})
                 await deleteJob(job.id)
                 success = true
             }catch(error){
@@ -67,7 +65,7 @@ const pollAsyncJobs = async() => {
             }
         }))
     }catch (error){
-        createLog("pollAsyncJobs", null, error.message, error)
+        await createLog("pollAsyncJobs", null, error.message, error)
     }
 }
 

@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const supabase = require('../supabaseClient');
 const { Chain } = require('../common/blockchain');
 const createLog = require('../logger/supabaseLogger');
+const { getBastionWallet } = require('./utils/getBastionWallet');
 
 /**
  * Uses Bastion to send MATIC on Polygon Mainnet
@@ -15,17 +16,11 @@ const BASTION_URL = process.env.BASTION_URL;
 const chain = process.env.NODE_ENV == "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with MATIC to serve as gas station wallet
 const gasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
-async function fundMaticPolygon(userId, amount) {
+async function fundMaticPolygon(userId, amount, type="INDIVIDUAL") {
 	try {
-		console.log("amount: ", amount)
-		const { data: walletData, error: walletError } = await supabase
-			.from('bastion_wallets')
-			.select('address')
-			.eq('user_id', userId)
-			.eq('chain', chain)
-			.single();
-
-		if (walletError) throw walletError
+		// get user wallet
+		const walletAddress = await getBastionWallet(userId, chain, type)
+		if (!walletAddress) throw new Error (`No user wallet found`)
 
 		const requestId = uuidv4();
 		const fromMerchantId = gasStation; // samuelyoon0 merchantId which has been prefunded with MATIC to serve as gas station wallet
@@ -35,7 +30,7 @@ async function fundMaticPolygon(userId, amount) {
 			chain: chain,
 			currencySymbol: 'MATIC',
 			amount: amount,
-			recipientAddress: walletData.address,
+			recipientAddress: walletAddress,
 
 		};
 
@@ -53,7 +48,6 @@ async function fundMaticPolygon(userId, amount) {
 		const response = await fetch(url, options);
 		const data = await response.json();
 		if (!response.ok) {
-			console.error("Error during MATIC transfer:", JSON.stringify(data));
 			throw JSON.stringify(data);
 		}
 
@@ -64,7 +58,7 @@ async function fundMaticPolygon(userId, amount) {
 				// source_user_id: fromMerchantId,
 				destination_user_id: userId,
 				source_wallet_address: gasStationWalletAddress,
-				destination_wallet_address: walletData.address,
+				destination_wallet_address: walletAddress,
 				amount: amount,
 				chain: chain,
 				bastion_response: data,
@@ -80,7 +74,6 @@ async function fundMaticPolygon(userId, amount) {
 		return data;
 
 	} catch (error) {
-		console.error("Error during MATIC transfer:", error);
 		await createLog("user/util/fundMaticPolygon", userId, error.message, error)
 		return null
 		// throw JSON.stringify(error);

@@ -9,6 +9,7 @@ module.exports = (router) => {
 
 	router.post("/user/create", authorize, logRequestResponse, user.createHifiUser);
 	router.post("/user/create/async", authorize, logRequestResponse, user.createHifiUserAsync);
+	router.post("/user/developer/create", authorize, logRequestResponse, user.createDeveloperUser)
 
 	router.get("/user/all", authorize, logRequestResponse, user.getAllHifiUser)
 

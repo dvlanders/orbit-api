@@ -7,10 +7,15 @@ const { getLastBridgeVirtualAccountActivity } = require("../utils/getLastBridgeV
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../utils/utils");
 const { isValidAmount } = require("../../../common/transferValidation");
 const { getMappedError } = require("../utils/errorMappings")
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveTokenBastion");
+const { updateRequestRecord } = require("../utils/updateRequestRecord");
+const { getFeeConfig } = require("../../fee/utils");
+const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
+const { v4 } = require("uuid");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
-const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId) => {
+const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId) => {
     try{
         if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const transferInfo = await bridgePlaidRailCheck(sourceAccountId, sourceCurrency, destinationCurrency, chain, sourceUserId, destinationUserId)
@@ -38,6 +43,61 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
             await createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, initialRecordError.message, initialRecordError)
             throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, initialRecordError.message)
         } 
+
+        // create fee record
+        let feeRecord
+        if (feeType && parseFloat(feeValue) > 0){
+            const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][chain]
+            const {feePercent, feeAmount} = getFeeConfig(feeType, feeValue, amount)
+
+            if (!paymentProcessorContractAddress) {
+                // no paymentProcessorContract available
+                const toUpdate = {
+                    status: "FAILED",
+                    failed_reason: `Fee feature not available for ${destinationCurrency} on ${chain}`
+                }
+                updatedRecord = await updateRequestRecord(initialRecord.id, toUpdate)
+                return {
+                    transferType: transferType.FIAT_TO_CRYPTO,
+                    transferDetails: {
+                        id: initialRecord.id,
+                        requestId,
+                        sourceUserId,
+                        destinationUserId,
+                        chain,
+                        sourceCurrency,
+                        amount,
+                        destinationCurrency,
+                        sourceAccountId,
+                        createdAt: updatedRecord.created_at,
+                        updatedAt: updatedRecord.updated_at,
+                        status: updatedRecord.status,
+                        isInstant,
+                        failedReason: updatedRecord.failed_reason,
+                        fee: {
+                            feeId: null,
+                            feeType,
+                            feeAmount,
+                            feePercent,
+                            status: "FAILED",
+                            transactionHash: null,
+                            failedReason: `Fee feature not available for ${destinationCurrency} on ${chain}`
+                        },
+                    }
+                }
+            }
+            const info = {
+                chargedUserId: destinationUserId,
+                chain,
+                currency: destinationCurrency,
+                chargedWalletAddress: transferInfo.destinationWalletAddress
+            }
+            feeRecord = await createNewFeeRecord(initialRecord.id, feeType, feePercent, feeAmount, profileId, info, transferType.FIAT_TO_CRYPTO, "BASTION", v4())
+            // update into crypto to crypto table
+            await updateRequestRecord(initialRecord.id, {developer_fee_id: feeRecord.id})
+        }
+
+
         // execute checkbook payment
         const createDigitalPaymentUrl = `${CHECKBOOK_URL}/check/direct`;
         const body = {
@@ -113,6 +173,15 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 createdAt: updatedRecord.created_at,
                 status: "FIAT_SUBMITTED",
                 isInstant,
+                fee: feeRecord ? {
+                    feeId: feeRecord.id,
+                    feeType: feeRecord.fee_type,
+                    feeAmount: feeRecord.fee_amount,
+                    feePercent: feeRecord.fee_percent,
+                    status: "CREATED",
+                    transactionHash: null,
+                    failedReason: null
+                }: null
             }
         }
 

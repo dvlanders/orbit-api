@@ -1,8 +1,17 @@
 const { createUserAsyncCheck, createUserAsync } = require("./user/createUser");
 const {fundGas, fundGasScheduleCheck} = require("./wallets/fundGas");
-const {updateUserAsyncCheck, updateUserAsync} = require("./user/updateUser")
+const {updateUserAsyncCheck, updateUserAsync} = require("./user/updateUser");
+const {createDeveloperUserAsyncCheck, createDeveloperUserAsync} = require("./user/createDeveloperUser")
+const {approveMaxTokenToPaymentProcessorAsyncCheck, approveMaxTokenToPaymentProcessorAsync} = require("./wallets/approveMaxToPaymentProcessor");
+const { cryptoToCryptoTransferScheduleCheck } = require("./transfer/cryptoTocryptoTransfer/scheduleCheck");
+const { cryptoToCryptoTransferAsync } = require("./transfer/cryptoTocryptoTransfer/cryptoToCryptoTransfer");
+const { cryptoToFiatTransferScheduleCheck } = require("./transfer/cryptoToFiatTransfer/scheduleCheck");
+const { cryptoToFiatTransferAsync } = require("./transfer/cryptoToFiatTransfer/cryptoToFiatTransfer");
+const { chargeFeeOnFundReceivedScheduleCheck } = require("./transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
+const { chargeFeeOnFundReceivedBastionAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
 
-const jobMapping = {
+
+exports.jobMapping = {
     fundGas: {
         scheduleCheck: fundGasScheduleCheck,
         execute: fundGas
@@ -14,7 +23,26 @@ const jobMapping = {
     updateUser: {
         scheduleCheck: updateUserAsyncCheck,
         execute: updateUserAsync
+    },
+    createDeveloperUser: {
+        scheduleCheck: createDeveloperUserAsyncCheck,
+        execute: createDeveloperUserAsync
+    },
+    approveMaxTokenToPaymentProcessor: {
+        scheduleCheck: approveMaxTokenToPaymentProcessorAsyncCheck,
+        execute: approveMaxTokenToPaymentProcessorAsync
+    },
+    cryptoToCryptoTransfer: {
+        scheduleCheck: cryptoToCryptoTransferScheduleCheck,
+        execute: cryptoToCryptoTransferAsync
+    },
+    cryptoToFiatTransfer: {
+        scheduleCheck: cryptoToFiatTransferScheduleCheck,
+        execute: cryptoToFiatTransferAsync,
+    },
+    chargeFeeOnFundReceivedBastion:{
+        scheduleCheck: chargeFeeOnFundReceivedScheduleCheck,
+        execute: chargeFeeOnFundReceivedBastionAsync,
     }
 }
 
-module.exports = jobMapping

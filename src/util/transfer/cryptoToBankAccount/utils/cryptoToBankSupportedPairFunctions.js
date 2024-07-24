@@ -1,31 +1,6 @@
 const transferToBridgeLiquidationAddress = require("../transfer/transferToBridgeLiquidationAddress");
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
-
-// const CryptoToBankSupportedPairFunctions = {
-//     "usdc-usd": {
-//         "ach":{
-//             transferFunc: transferToBridgeLiquidationAddress,
-//         },
-//         "wire":{
-//             transferFunc: null,
-//         }
-//     }, 
-//     "usdc-eur":{
-//         "sepa":{
-//             transferFunc: transferToBridgeLiquidationAddress,
-//         },
-//         "wire":{
-//             transferFunc: null,
-//         }
-//     },
-//     "usdt-usd":{
-//         "wire":{
-//             transferFunc: null,
-//         }
-//     }
-// }
-
 const CryptoToBankSupportedPairCheck = (paymentRail, sourceCurrency, destinationCurrency) => {
 	try {
 		return CryptoToBankSupportedPairFunctions[paymentRail][sourceCurrency][destinationCurrency]

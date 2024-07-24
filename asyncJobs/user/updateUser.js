@@ -38,6 +38,7 @@ const updateUserAsync = async(config) => {
 			updateCheckbookUser(config.userId) // TODO: implement this function in utils and import before using it here
 		])
 
+
     }catch (error){
         await createLog("updateUserAsync", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, "", "", true)
