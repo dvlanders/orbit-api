@@ -7,6 +7,8 @@ const { cryptoToCryptoTransferScheduleCheck } = require("./transfer/cryptoTocryp
 const { cryptoToCryptoTransferAsync } = require("./transfer/cryptoTocryptoTransfer/cryptoToCryptoTransfer");
 const { cryptoToFiatTransferScheduleCheck } = require("./transfer/cryptoToFiatTransfer/scheduleCheck");
 const { cryptoToFiatTransferAsync } = require("./transfer/cryptoToFiatTransfer/cryptoToFiatTransfer");
+const { chargeFeeOnFundReceivedScheduleCheck } = require("./transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
+const { chargeFeeOnFundReceivedBastionAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
 
 
 exports.jobMapping = {
@@ -37,6 +39,10 @@ exports.jobMapping = {
     cryptoToFiatTransfer: {
         scheduleCheck: cryptoToFiatTransferScheduleCheck,
         execute: cryptoToFiatTransferAsync,
+    },
+    chargeFeeOnFundReceivedBastion:{
+        scheduleCheck: chargeFeeOnFundReceivedScheduleCheck,
+        execute: chargeFeeOnFundReceivedBastionAsync,
     }
 }
 

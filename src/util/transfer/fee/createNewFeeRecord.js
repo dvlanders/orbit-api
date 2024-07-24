@@ -4,7 +4,7 @@ const supabase = require("../../supabaseClient");
 const { toUnitsString } = require("../cryptoToCrypto/utils/toUnits");
 const { insertFeeRecord } = require("./insertFeeRecord");
 
-exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, profileId, info, transferType, cryptoProvider) => {
+exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, profileId, info, transferType, cryptoProvider, requestId) => {
     // get fee_collection_user_id
     const {data: feeCollectionUser, error: feeCollectionUserError} = await supabase
     .from("profiles")
@@ -33,6 +33,7 @@ exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, p
         charged_transfer_id: transferId,
         charged_transfer_type: transferType,
         charged_wallet_address: info.chargedWalletAddress,
+        request_id: requestId
     }
     
     const feeRecord = await insertFeeRecord(record)

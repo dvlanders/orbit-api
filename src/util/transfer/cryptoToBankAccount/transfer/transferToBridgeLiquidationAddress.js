@@ -136,7 +136,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				currency: sourceCurrency,
 				chargedWalletAddress: sourceWalletAddress
 			}
-			feeRecord = await createNewFeeRecord(initialBastionTransfersInsertData.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION")
+			feeRecord = await createNewFeeRecord(initialBastionTransfersInsertData.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION", initialBastionTransfersInsertData.bastion_request_id)
 			// update into crypto to crypto table
 			await updateRequestRecord(initialBastionTransfersInsertData.id, {developer_fee_id: feeRecord.id})
 		}

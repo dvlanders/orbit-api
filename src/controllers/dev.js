@@ -7,6 +7,7 @@ const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = requi
 const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken");
 const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
+const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 
 const uploadFile = async (file, path) => {
     
@@ -152,5 +153,15 @@ exports.registerFeeWallet = async(req, res) => {
     }catch(error){
         console.error(error)
         return res.status(500).json({message: "Internal server error"})
+    }
+}
+
+exports.triggerOnRampFeeCharge = async(req, res) => {
+    try{
+        await chargeFeeOnFundReceivedBastion("ae1a8634-4c7c-4c7c-b3f1-c090411340b1")
+        return res.status(200).json({message: "ok"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
     }
 }
