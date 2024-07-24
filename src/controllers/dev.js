@@ -1,7 +1,13 @@
+const { v4 } = require("uuid");
 const createJob = require("../../asyncJobs/createJob");
 const {sendMessage} = require("../../webhooks/sendWebhookMessage");
+const { submitUserAction } = require("../util/bastion/endpoints/submitUserAction");
+const { Chain, currencyContractAddress } = require("../util/common/blockchain");
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveTokenBastion");
 const supabase = require("../util/supabaseClient");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
+const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 
 const uploadFile = async (file, path) => {
     
@@ -82,9 +88,6 @@ exports.testwebhook = async(req, res) => {
                 console.log('Token is valid. Decoded payload:', decoded);
             }
         });
-
-
-
         return res.status(200).json({message: "Success"})
     }catch (error){
         return res.status(401).json({message: "Wrong token"})
@@ -96,9 +99,69 @@ exports.testCreateJob = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    await createJob("fundGas", {userid: "123", amount: "123"}, undefined, undefined)
+    await createJob("testJob", {userid: "123", amount: "123"}, undefined, undefined)
 
     return res.status(200).json({message: "success"})
 
 }
 
+exports.testApproveAsset = async(req, res) => {
+    if (req.method !== "POST"){
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    try{
+        const userId = "75d7c01f-5f93-4490-8b93-a62fd8020358"
+        const currencyContract = currencyContractAddress.POLYGON_MAINNET.usdc
+        // await approveMaxTokenToPaymentProcessor(userId, Chain.POLYGON_MAINNET, "usdc")
+        const paymentProcessorContract = paymentProcessorContractMap.production.POLYGON_MAINNET
+        const bodyObject = {
+            requestId: v4(),
+            userId: userId,
+            contractAddress: currencyContract,
+            actionName: "approve",
+            chain: Chain.POLYGON_MAINNET,
+            actionParams: erc20Approve("usdc", paymentProcessorContract, 0)
+        };
+    
+        const response = await submitUserAction(bodyObject)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch(error){
+        console.error(error)
+        return res.status(500).json({message: "Internal server error"})
+    }
+}
+
+exports.registerFeeWallet = async(req, res) => {
+    if (req.method !== "POST"){
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    try{
+        const bodyObject = {
+            requestId: v4(),
+            userId: "4fb4ef7b-5576-431b-8d88-ad0b962be1df",
+            contractAddress: paymentProcessorContractMap.production.POLYGON_MAINNET,
+            actionName: "registerFeeWallet",
+            chain: Chain.POLYGON_MAINNET,
+            actionParams: [
+                {name: "feeWallet", value: "0xaEE3fe8b412e63B5ec73236A292673917Cb254fB"},
+            ]
+        };
+        const response = await submitUserAction(bodyObject)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch(error){
+        console.error(error)
+        return res.status(500).json({message: "Internal server error"})
+    }
+}
+
+exports.triggerOnRampFeeCharge = async(req, res) => {
+    try{
+        await chargeFeeOnFundReceivedBastion("ae1a8634-4c7c-4c7c-b3f1-c090411340b1")
+        return res.status(200).json({message: "ok"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}

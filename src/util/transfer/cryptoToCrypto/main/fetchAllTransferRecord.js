@@ -19,9 +19,18 @@ const filledInfo = (record) => {
             updatedAt: record.updated_at,
             status: record.status,
             contractAddress: record.contract_address,
+            failedReason: record.failed_reason,
             sender: record.sender_user.user_kyc,
             recipient: record.recipient_user?.user_kyc,
-            failedReason: record.failed_reason
+            fee: record.developer_fees ? {
+                feeId: record.developer_fees.id,
+                feeType: record.developer_fees.fee_type,
+                feeAmount: record.developer_fees.fee_amount,
+                feePercent: record.developer_fees.fee_percent,
+                status: record.developer_fees.charged_status,
+                transactionHash: record.developer_fees.transaction_hash,
+                failedReason: record.developer_fees.failed_reason
+            } : null
         }
     }
 }
@@ -30,7 +39,7 @@ const fetchAllCryptoToCryptoTransferRecord = async (profileId, userId, limit=10,
     if (userId) {
         const {data: records, error} = await supabaseCall(() => supabase
             .from("crypto_to_crypto")
-            .select("*, sender_user: sender_user_id!inner(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient_user: recipient_user_id(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))")
+            .select("*, sender_user: sender_user_id!inner(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient_user: recipient_user_id(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)),developer_fees(id, fee_type, fee_amount, fee_percent, charged_status, transaction_hash, failed_reason)")
             .eq("sender_user_id", userId)
             .lt("created_at", createdBefore)
             .gt("created_at", createdAfter)
@@ -42,7 +51,7 @@ const fetchAllCryptoToCryptoTransferRecord = async (profileId, userId, limit=10,
     }else {
         const {data: records, error} = await  supabase
             .from("crypto_to_crypto")
-            .select("*, sender_user: sender_user_id!inner(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient_user: recipient_user_id(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email))")
+            .select("*, sender_user: sender_user_id!inner(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)), recipient_user: recipient_user_id(id, profile_id, user_kyc(legal_first_name, legal_last_name, business_name, compliance_email)),developer_fees(id, fee_type, fee_amount, fee_percent, charged_status, transaction_hash, failed_reason)")
             .eq("sender_user.profile_id", profileId)
             .lt("created_at", createdBefore)
             .gt("created_at", createdAfter)

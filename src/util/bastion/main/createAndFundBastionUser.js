@@ -6,7 +6,7 @@ const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
 const { CustomerStatus } = require("../../user/common");
 const { Chain } = require("../../common/blockchain");
-const { getAddress } = require("ethers")
+const { getAddress, isAddress } = require("ethers")
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -47,7 +47,7 @@ async function createUserCore(userId) {
 					.insert([{
 						user_id: userId,
 						chain: chain,
-						address: getAddress(addressEntry.address)
+						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address
 					}])
 					.select();
 

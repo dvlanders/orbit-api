@@ -2,6 +2,7 @@ const { virtualAccountPaymentRailToChain } = require("../../src/util/bridge/util
 const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
 const { supabaseCall } = require("../../src/util/supabaseWithRetry")
+const fetchBridgeCryptoToFiatTransferRecord = require("../../src/util/transfer/cryptoToBankAccount/transfer/fetchBridgeCryptoToFiatTransferRecord")
 const { transferType } = require("../../src/util/transfer/utils/transfer")
 const { sendMessage } = require("../sendWebhookMessage")
 const { webhookEventType, webhookEventActionType } = require("../webhookConfig")
@@ -22,45 +23,7 @@ const notifyCryptoToFiatTransfer = async (record) => {
 		return
 	}
 
-
-	// get rail information
-	let { data: bridgeLiquidationAddress, error: bridgeLiquidationAddressError } = await supabaseCall(() => supabase
-		.from('bridge_liquidation_addresses')
-		.select('chain, currency, destination_currency')
-		.eq("liquidation_address_id", record.to_bridge_liquidation_address_id)
-		.single())
-
-	if (bridgeLiquidationAddressError) throw bridgeLiquidationAddressError
-
-	// get external account information
-
-	let { data: bridgeExternalAccount, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
-		.from('bridge_external_accounts')
-		.select('id')
-		.eq("bridge_external_account_id", record.to_bridge_external_account_id)
-		.single())
-
-	if (bridgeExternalAccountError) throw bridgeExternalAccountError
-
-	const receipt = {
-		transferType: transferType.CRYPTO_TO_FIAT,
-		transferDetails: {
-			id: record.id,
-			requestId: record.request_id,
-			sourceUserId: record.user_id,
-			destinationUserId: record.destination_user_id,
-			chain: virtualAccountPaymentRailToChain[bridgeLiquidationAddress.chain],
-			sourceCurrency: bridgeLiquidationAddress.currency,
-			amount: record.amount,
-			destinationCurrency: bridgeLiquidationAddress.destination_currency,
-			destinationAccountId: bridgeExternalAccount.id,
-			transactionHash: record.transaction_hash,
-			createdAt: record.created_at,
-			updatedAt: record.updated_at,
-			status: record.transaction_status,
-			contractAddress: record.contract_address,
-		}
-	}
+	const receipt = await fetchBridgeCryptoToFiatTransferRecord(record.id, user.profile_id)
 
 	const message = {
 		eventAction: webhookEventActionType.UPDATE,

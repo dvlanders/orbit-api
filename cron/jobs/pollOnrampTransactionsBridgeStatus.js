@@ -3,6 +3,7 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
+const { chargeFeeOnFundReceivedBastion } = require("../../src/util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -71,6 +72,11 @@ const updateStatus = async(onrampTransaction) => {
                 .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id")
                 .single()
             if (updateError) throw updateError
+
+            if (onrampTransaction.developer_fee_id){
+                await chargeFeeOnFundReceivedBastion(onrampTransaction.id)
+            }
+            
             await notifyFiatToCryptoTransfer(update)
             break
         }
@@ -88,7 +94,7 @@ async function pollOnrampTransactionsBridgeStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
-		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id')
+		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id, developer_fee_id')
         .eq("crypto_provider", "BRIDGE")
         .or('status.eq.FIAT_PROCESSED,status.eq.FIAT_CONFIRMED,status.eq.CRYPTO_SUBMITTED,status.eq.CRYPTO_IN_REVIEW')
         .order('updated_at', {ascending: true})

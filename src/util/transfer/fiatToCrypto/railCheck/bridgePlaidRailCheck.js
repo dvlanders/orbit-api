@@ -27,7 +27,7 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
     // get bridge virtual account that has the corresponding rail
     let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
         .from('bridge_virtual_accounts')
-        .select('virtual_account_id, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number')
+        .select('virtual_account_id, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number, destination_wallet_address')
         .eq("user_id", destinationUserId)
         .eq("source_currency", sourceCurrency)
         .eq("destination_currency", destinationCurrency)
@@ -79,7 +79,8 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
         plaid_account_type: checkbookAccountForPlaid.account_type, //source
         api_key: checkbookUser.api_key, // source
         api_secret: checkbookUser.api_secret, // source
-        recipient_checkbook_user_id:  checkbookAccountForBridgeVirtualAccount.checkbook_user_id// FIXME could be different in the future
+        recipient_checkbook_user_id:  checkbookAccountForBridgeVirtualAccount.checkbook_user_id,// FIXME could be different in the future
+        destinationWalletAddress: bridgeVirtualAccount.destination_wallet_address
     }
 
     return transferInfo
