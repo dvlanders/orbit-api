@@ -45,7 +45,16 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
             status: record.status,
             sourceUser: record.source_user.user_kyc,
             destinationUser: record.destination_user.user_kyc,
-            sourceAccount: plaidAccount
+            sourceAccount: plaidAccount,
+            fee: record.developer_fees ? {
+                feeId: record.developer_fees.id,
+                feeType: record.developer_fees.fee_type,
+                feeAmount: record.developer_fees.fee_amount,
+                feePercent: record.developer_fees.fee_percent,
+                status: record.developer_fees.charged_status,
+                transactionHash: record.developer_fees.transaction_hash,
+                failedReason: record.developer_fees.failed_reason
+            } : null
         }
     }
 
