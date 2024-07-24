@@ -1,4 +1,5 @@
 const { currencyContractAddress } = require("../../common/blockchain");
+const { erc20Transfer } = require("../utils/erc20FunctionMap");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -11,10 +12,7 @@ exports.transfer = async(id, requestRecord) => {
 		contractAddress: requestRecord.contractAddress,
 		actionName: "transfer",
 		chain: requestRecord.chain,
-		actionParams: [
-			{ name: "to", value: requestRecord.recipientAddress },
-			{ name: "value", value: requestRecord.unitsAmount }
-		],
+		actionParams: erc20Transfer(requestRecord.currency, requestRecord.recipientAddress, requestRecord.unitsAmount)
 	};
 
     const url = `${BASTION_URL}/v1/user-actions`;

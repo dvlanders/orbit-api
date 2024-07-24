@@ -1,8 +1,10 @@
 const createJob = require("../../../../asyncJobs/createJob");
+const { fundGasScheduleCheck } = require("../../../../asyncJobs/wallets/fundGas");
 const createLog = require("../../logger/supabaseLogger");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
+const GAS_THRESHOLD = BigInt(5 * Math.pow(10, 16))
 
 const bastionGasCheck = async(userId, chain) => {
     try{
@@ -26,8 +28,11 @@ const bastionGasCheck = async(userId, chain) => {
 
         const gasLeft = responseBody.baseAssetBalance.quantity
         // fund 0.1 eth when gas is less than 0.01
-        if (BigInt(gasLeft) < BigInt(Math.pow(10, 16))){
-            await createJob("fundGas", {userId, chain, amount: "0.1"}, userId)
+        if (BigInt(gasLeft) < GAS_THRESHOLD){
+            const canSchedule = await fundGasScheduleCheck("fundGas", {userId, chain, amount: "0.1"}, userId)
+            if (canSchedule){
+                await createJob("fundGas", {userId, chain, amount: "0.1"}, userId)
+            }
         }
 
         return

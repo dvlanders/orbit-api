@@ -15,7 +15,8 @@ const hifiSupportedChain = NODE_ENV == "development" ?
  [Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET]
 
 const currencyDecimal = {
-	"usdc": 6
+	"usdc": 6,
+	"usdt": 6
 }
 
 const currencyContractAddress = {

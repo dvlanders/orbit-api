@@ -10,4 +10,7 @@ module.exports = (router) => {
 	router.post("/dev/privateRoute", authorize, dev.privateRoute)
 	router.post("/dev/webhook-receiver", dev.testwebhook)
 	router.post("/dev/testCreateJob", dev.testCreateJob)
+	router.post("/dev/testApproveAsset", dev.testApproveAsset)
+	router.post("/dev/registerFeeWallet", dev.registerFeeWallet)
+	router.post("/dev/triggerOnRampFeeCharge", dev.triggerOnRampFeeCharge)
 };
