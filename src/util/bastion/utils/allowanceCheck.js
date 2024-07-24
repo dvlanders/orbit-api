@@ -2,6 +2,7 @@ const createJob = require("../../../../asyncJobs/createJob")
 const { approveMaxTokenToPaymentProcessorAsyncCheck } = require("../../../../asyncJobs/wallets/approveMaxToPaymentProcessor")
 const createLog = require("../../logger/supabaseLogger")
 const { paymentProcessorContractMap, MAX_APPROVE_TOKEN } = require("../../smartContract/approve/approveTokenBastion")
+const { getTokenAllowance } = require("../../smartContract/approve/getApproveAmount")
 
 exports.allowanceCheck = async(userId, walletAddress, chain, currency) => {
     try{
@@ -15,7 +16,7 @@ exports.allowanceCheck = async(userId, walletAddress, chain, currency) => {
             }
         }
     }catch (error){
-        createLog("allowanceCheck", userId, error.message)
+        await createLog("allowanceCheck", userId, error.message)
         return 
     }
 }
