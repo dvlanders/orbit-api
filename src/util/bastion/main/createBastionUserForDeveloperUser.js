@@ -6,7 +6,7 @@ const { createUser } = require("../endpoints/createUser");
 const { getAllUserWallets } = require("../utils/getAllUserWallets");
 const { CustomerStatus } = require("../../user/common");
 const { Chain } = require("../../common/blockchain");
-const { getAddress } = require("ethers")
+const { getAddress, isAddress } = require("ethers")
 const { BastionSupportedEVMChainSandbox, BastionSupportedEVMChainProd } = require("../utils/utils");
 const submitBastionKycForDeveloper = require("./submitBastionKycForDeveloperUser");
 const chains = process.env.NODE_ENV == "development"? BastionSupportedEVMChainSandbox : BastionSupportedEVMChainProd
@@ -49,7 +49,7 @@ async function createBastionDeveloperWallet(userId, type) {
 					.insert([{
 						user_id: userId,
 						chain: chain,
-						address: getAddress(addressEntry.address),
+						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address,
                         type: type
 					}])
 					.select();
