@@ -58,7 +58,7 @@ async function createUserCore(userId) {
 				}
 				console.log()
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
-				if (chain === Chain.POLYGON_MAINNET || chain === Chain.POLYGON_AMOY) {
+				if (chain === Chain.POLYGON_MAINNET) {
 					console.log("fund account")
 					await fundMaticPolygon(userId, preFundAmount);
 				}
