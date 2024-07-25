@@ -244,6 +244,15 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				transaction_status: "NOT_INITIATED",
 				failed_reason: message
 			}
+
+			// in sandbox, just return SUBMITTED_ONCHAIN status
+			if(process.env.NODE_ENV == "development"){
+				result.transferDetails.status = "SUBMITTED_ONCHAIN"
+				result.transferDetails.failedReason = "This is a simulated success response for sandbox environment only."
+				toUpdate.bastion_transaction_status = "CONFIRMED"
+				toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
+				toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
+			}
 			
 			const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
 		}else{
@@ -263,12 +272,6 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 
 		// gas check
 		await bastionGasCheck(sourceUserId, chain)
-
-		// in sandbox, just return SUBMITTED_ONCHAIN status
-		if(process.env.NODE_ENV == "development"){
-			result.transferDetails.status = "SUBMITTED_ONCHAIN"
-			result.transferDetails.failedReason = ""
-		}
 
 		return { isExternalAccountExist: true, transferResult: result }
 
