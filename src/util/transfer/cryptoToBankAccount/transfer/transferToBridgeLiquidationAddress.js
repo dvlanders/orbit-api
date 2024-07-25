@@ -1,7 +1,7 @@
 const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
 const supabase = require("../../../supabaseClient");
 const bridgeRailCheck = require("../railCheck/bridgeRailCheck");
-const { getAddress } = require("ethers");
+const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
@@ -57,8 +57,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				destination_user_id: destinationUserId,
 				amount: amount,
 				chain: chain,
-				from_wallet_address: getAddress(sourceWalletAddress),
-				to_wallet_address: getAddress(liquidationAddress),
+				from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
+				to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress,
 				to_bridge_liquidation_address_id: liquidationAddressId, // actual id that bridge return to us
 				to_bridge_external_account_id: bridgeExternalAccountId, // actual id that bridge return to us
 				transaction_status: 'CREATED',
@@ -243,6 +243,15 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				bastion_transaction_status: "FAILED",
 				transaction_status: "NOT_INITIATED",
 				failed_reason: message
+			}
+
+			// in sandbox, just return SUBMITTED_ONCHAIN status
+			if(process.env.NODE_ENV == "development"){
+				result.transferDetails.status = "SUBMITTED_ONCHAIN"
+				result.transferDetails.failedReason = "This is a simulated success response for sandbox environment only."
+				toUpdate.bastion_transaction_status = "CONFIRMED"
+				toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
+				toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 			}
 			
 			const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
