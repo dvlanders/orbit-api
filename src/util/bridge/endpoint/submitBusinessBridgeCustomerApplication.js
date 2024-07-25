@@ -40,7 +40,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 	}
 
 	try {
-		// check if user exist
+		// check if user exists
 		let { data: user, error: user_error } = await supabaseCall(() => supabase
 			.from('users')
 			.select('profile_id, user_type')
@@ -142,7 +142,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			type: "business",
 			name: userKyc.business_name,
 			description: userKyc.business_description,
-			email: `${userId}@hifi.com`,
+			email: `${userId}@hifibridge.com`,
 			source_of_funds: userKyc.source_of_funds,
 			business_type: userKyc.business_type,
 			address: {
@@ -165,7 +165,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		};
 
 		// delete compliance_screening_explanation if not provide
-		if (!userKyc.compliance_screening_explanation || userKyc.compliance_screening_explanation == "" || userKyc.compliance_screening_explanation == "None"){
+		if (!userKyc.compliance_screening_explanation || userKyc.compliance_screening_explanation == "" || userKyc.compliance_screening_explanation == "None") {
 			delete requestBody["compliance_screening_explanation"]
 		}
 
@@ -262,13 +262,13 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		} else if (response.status == 400) {
 			// EXPERIMENTAL
 			const { error: bridge_customers_error } = await supabase
-			.from('bridge_customers')
-			.update({
-				bridge_response: responseBody,
-				status: "invalid_fields",
-			})
-			.eq("user_id", userId)
-			.single()
+				.from('bridge_customers')
+				.update({
+					bridge_response: responseBody,
+					status: "invalid_fields",
+				})
+				.eq("user_id", userId)
+				.single()
 
 			if (bridge_customers_error) {
 				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
