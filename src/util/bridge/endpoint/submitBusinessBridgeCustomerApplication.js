@@ -106,11 +106,13 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 				return fileToBase64(data.signedUrl);
 			}) : null;
 
+
 			// Fetch and convert base64 for proof_of_residency
-			const proofOfResidency = ubo.proof_of_address_document ? await supabase.storage.from('proof_of_residency').createSignedUrl(ubo.proof_of_residency_path, 200).then(({ data, error }) => {
+			const proofOfResidency = ubo.proof_of_residency_path ? await supabase.storage.from('proof_of_residency').createSignedUrl(ubo.proof_of_residency_path, 200).then(({ data, error }) => {
 				if (error || !data) return null;
 				return fileToBase64(data.signedUrl);
 			}) : null;
+
 
 			return {
 				first_name: ubo.legal_first_name,
@@ -173,7 +175,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		const files = [
 			{ bucket: 'formation_doc', path: userKyc.formation_doc_path, field: "formation_document" },
 			{ bucket: 'proof_of_ownership', path: userKyc.proof_of_ownership_path, field: "ownership_document" },
-			{ bucket: 'proof_of_address', path: userKyc.proof_of_residency_path, field: "proof_of_address_document" },
+			{ bucket: 'proof_of_residency', path: userKyc.proof_of_residency_path, field: "proof_of_address_document" },
 
 		];
 
@@ -184,8 +186,6 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			}
 			requestBody[field] = await fileToBase64(data.signedUrl);
 		}));
-
-
 
 		let url = `${BRIDGE_URL}/v0/customers`
 		let options = {
@@ -209,10 +209,10 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 				body: JSON.stringify(requestBody)
 			}
 		}
-
 		// call bridge endpoint
 		const response = await fetch(url, options);
 		const responseBody = await response.json();
+
 
 		if (response.ok) {
 			// extract rejections
