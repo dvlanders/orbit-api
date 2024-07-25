@@ -44,7 +44,7 @@ const updateStatus = async (customer) => {
 
 			if (updateError) {
 				console.error('Failed to update bridge customer status', updateError);
-				createLog('pollBridgeCustomerStatus', customer.user_id, 'Failed to update bridge customer status', updateError);
+				await createLog('pollBridgeCustomerStatus', customer.user_id, 'Failed to update bridge customer status', updateError);
 				return
 			}
 			console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
@@ -52,7 +52,7 @@ const updateStatus = async (customer) => {
 		}
 	} catch (error) {
 		console.error('Failed to fetch customer status from Bridge API', error);
-		createLog('pollBridgeCustomerStatus', customer.user_id, 'Failed to fetch customer status from Bridge API', error);
+		await createLog('pollBridgeCustomerStatus', customer.user_id, 'Failed to fetch customer status from Bridge API', error);
 	}
 }
 
@@ -72,7 +72,7 @@ async function pollBridgeCustomerStatus() {
 
 	if (bridgeCustomerError) {
 		console.error('Failed to fetch customers for pollBridgeCustomerStatus', bridgeCustomerError);
-		createLog('pollBridgeCustomerStatus', null, 'Failed to fetch customers', bridgeCustomerError);
+		await createLog('pollBridgeCustomerStatus', null, 'Failed to fetch customers', bridgeCustomerError);
 		return;
 	}
 

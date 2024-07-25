@@ -54,7 +54,7 @@ exports.chargeFeeOnFundReceivedBastionAsync = async(config) => {
     }catch (error){
         console.error(error)
         if (error instanceof JobError) throw error
-        createLog("job/transfer/chargeFeeOnFundReceivedBastionAsync", config.userId, error.message)
+        await createLog("job/transfer/chargeFeeOnFundReceivedBastionAsync", config.userId, error.message, error)
         // don't reSchedule
         throw new JobError(JobErrorType.RESCHEDULE, error.message, null, error.message, false)
     }

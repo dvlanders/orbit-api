@@ -49,7 +49,7 @@ exports.chargeFeeBastion = async(requestRecord, feeRecord, paymentProcessorContr
             }
             
         }else{
-            createLog("transfer/chargeFeeBastion", feeRecord.charged_user_id, responseBody.message, responseBody)
+            await createLog("transfer/chargeFeeBastion", feeRecord.charged_user_id, responseBody.message, responseBody)
             // update fee record
             feeToUpdate = {
                 bastion_response: responseBody,
@@ -70,7 +70,7 @@ exports.chargeFeeBastion = async(requestRecord, feeRecord, paymentProcessorContr
         const updatedFeeRecord = await updateFeeRecord(feeRecord.id, feeToUpdate)
         return updatedFeeRecord
     }catch (error){
-        createLog("transfer/fee/chargeFeeBastion", feeRecord.charged_user_id, error.message)
+        await createLog("transfer/fee/chargeFeeBastion", feeRecord.charged_user_id, error.message)
         // update fee record
         const feeToUpdate = {
             bastion_status: "FAILED",

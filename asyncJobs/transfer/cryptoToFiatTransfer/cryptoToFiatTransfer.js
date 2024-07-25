@@ -35,7 +35,7 @@ exports.cryptoToFiatTransferAsync = async(config) => {
     }catch (error){
         console.error(error)
         if (error instanceof JobError) throw error
-        createLog("job/transfer/cryptoToFiatTransferAsync", config.userId, error.message)
+        await createLog("job/transfer/cryptoToFiatTransferAsync", config.userId, error.message, error)
         // don't reSchedule
         throw new JobError(JobErrorType.RESCHEDULE, error.message, null, error.message, false)
     }

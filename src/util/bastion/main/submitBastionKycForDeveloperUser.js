@@ -111,7 +111,7 @@ const submitBastionKycForDeveloper = async (userId, type) => {
 		}
 
 	} catch (error) {
-		createLog("user/util/submitBastionKyc", userId, error.message, error)
+		await createLog("user/util/submitBastionKyc", userId, error.message, error)
 		return
 	}
 

@@ -75,7 +75,7 @@ const createCircleDepositAddresses = async (userId, currency) => {
 			}
 
 		} catch (error) {
-			createLog("user/util/createCircleDepositAddresses", userId, error.message, error);
+			await createLog("user/util/createCircleDepositAddresses", userId, error.message, error);
 			results[chain] = {
 				status: "INACTIVE",
 				message: "Failed to create deposit address. Please try again later.",
