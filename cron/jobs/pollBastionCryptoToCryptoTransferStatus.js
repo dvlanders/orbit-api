@@ -61,7 +61,7 @@ const updateStatus = async (transaction) => {
 	
 			if (updateFeeError) {
 				console.error('Failed to update fee status', updateError);
-				createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update fee status', updateError);
+				await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.sender_user_id, 'Failed to update fee status', updateError);
 				return
 			}
 		}

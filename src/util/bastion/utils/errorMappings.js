@@ -1,4 +1,4 @@
-
+const { CreateCryptoToBankTransferErrorType } = require("../../../util/transfer/cryptoToBankAccount/utils/createTransfer");
 
 // Bastion API error mappings
 const errorMappings = {
@@ -14,8 +14,8 @@ const errorMappings = {
 };
 
 const getMappedError = (externalErrorMessage) => {
-    return errorMappings[externalErrorMessage] || {message: "Please contact HIFI for more information", type: CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR};
-  }
+    return errorMappings[externalErrorMessage] || {message: "Please contact HIFI for more information", type: CreateCryptoToBankTransferErrorType.INTERNAL_ERROR};
+}
   
 
 module.exports = {

@@ -20,7 +20,7 @@ const insertJobHistory = async(job, config, userId, profileId, success, jobError
         return
 
     }catch (error){
-        createLog("asyncJob/insertJobHistory", userId, error.message)
+        await createLog("asyncJob/insertJobHistory", userId, error.message, error)
         return
     }
 }

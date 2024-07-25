@@ -91,6 +91,11 @@ exports.authorizeDashboard = async (req, res, next) => {
 
 exports.logRequestResponse = (req, res, next) => {
 
+	// don't log in test environment
+	if (process.env.NODE_TEST) {
+		console.log("logRequestResponse middleware disabled in test environment");
+		return next();
+	}
 	console.log('logRequestResponse middleware triggered');
 
 	const oldWrite = res.write;
