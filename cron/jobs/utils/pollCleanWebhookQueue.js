@@ -17,7 +17,7 @@ const pollCleanWebhookQueue = async() => {
         .select()
     
         if (error) {
-            createLog("pollCleanWebhookQueue", "", error.message)
+            await createLog("pollCleanWebhookQueue", null, error.message)
             return
         }
         if (!webhookQueue || webhookQueue.length <= 0) break

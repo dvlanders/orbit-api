@@ -28,7 +28,7 @@ const getRequestRecord = async(requestRecord) => {
         const response = await getUserActions(requestRecord.id, requestRecord.sender_user_id)
         const responseBody = await response.json()
         if (!response.ok) {
-            createLog("transfer/util/getRequestRecord", requestRecord.sender_user_id, responseBody.message, responseBody)
+            await createLog("transfer/util/getRequestRecord", requestRecord.sender_user_id, responseBody.message, responseBody)
             throw new Error("Something went wrong when getting request record")
         }
         // update to database

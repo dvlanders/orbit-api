@@ -58,7 +58,7 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
     const responseBody = await response.json()
     // map response
     if (!response.ok) {
-        createLog("smartContract/approve", userId, responseBody.message, responseBody)
+        await createLog("smartContract/approve", userId, responseBody.message, responseBody)
          // update to database
          const toUpdate = {
             response: responseBody,

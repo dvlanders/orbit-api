@@ -34,7 +34,7 @@ exports.getTokenAllowance = async(chain, currency, owner, spender) => {
     const response = await fetch(url, options)
     const responseBody = await response.json()
     if (!response.ok){
-        createLog("smartContract/approve/getAllowance", "", responseBody.message || responseBody.error, responseBody)
+        await createLog("smartContract/approve/getAllowance", null, responseBody.message || responseBody.error, responseBody)
         throw new Error("Something happened when try to get token allowance from alchemy")
     }
 
