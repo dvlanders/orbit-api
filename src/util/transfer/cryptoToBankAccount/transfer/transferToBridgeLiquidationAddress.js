@@ -17,7 +17,7 @@ const bastionGasCheck = require("../../../bastion/utils/gasCheck");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
-const { getMappedError } = require("../utils/errorMappings");
+const { getMappedError } = require("../../../bastion/utils/errorMappings");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -263,6 +263,12 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 
 		// gas check
 		await bastionGasCheck(sourceUserId, chain)
+
+		// in sandbox, just return SUBMITTED_ONCHAIN status
+		if(process.env.NODE_ENV == "development"){
+			result.transferDetails.status = "SUBMITTED_ONCHAIN"
+			result.transferDetails.failedReason = ""
+		}
 
 		return { isExternalAccountExist: true, transferResult: result }
 
