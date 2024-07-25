@@ -173,6 +173,8 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		const files = [
 			{ bucket: 'formation_doc', path: userKyc.formation_doc_path, field: "formation_document" },
 			{ bucket: 'proof_of_ownership', path: userKyc.proof_of_ownership_path, field: "ownership_document" },
+			{ bucket: 'proof_of_address', path: userKyc.proof_of_residency_path, field: "proof_of_address_document" },
+
 		];
 
 		await Promise.all(files.map(async ({ bucket, path, field }) => {
