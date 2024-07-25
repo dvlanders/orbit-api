@@ -12,7 +12,6 @@ exports.createApiKey = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	return res.status(503).json({ error: 'Down for maintenance' });
 	let profileId
 
 	try {
@@ -28,8 +27,6 @@ exports.createApiKey = async (req, res) => {
 			return res.status(401).json({ error: "Not authorized" });
 		}
 		profileId = user.sub;
-
-		// const profileId = "c354949f-7962-446c-915d-156fdc606100"
 
 		const fields = req.body;
 		const { apiKeyName, expiredAt, env } = fields;
