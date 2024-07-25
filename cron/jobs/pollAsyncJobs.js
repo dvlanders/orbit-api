@@ -29,7 +29,7 @@ const pollAsyncJobs = async() => {
         .order('next_retry', {ascending: true})
     
         if (error) {
-            createLog("pollAsyncJobs", null, error.message, error)
+            await createLog("pollAsyncJobs", null, error.message, error)
             return
         }
     

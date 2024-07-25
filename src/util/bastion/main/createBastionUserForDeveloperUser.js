@@ -61,7 +61,7 @@ async function createBastionDeveloperWallet(userId, type) {
 				}
 				console.log()
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
-				if (chain === Chain.POLYGON_MAINNET || chain === Chain.POLYGON_AMOY) {
+				if (chain === Chain.POLYGON_MAINNET) {
 					await fundMaticPolygon(userId, preFundAmount, type);
 				}
 			}
@@ -92,7 +92,7 @@ async function createBastionDeveloperUser(userId) {
         ])
 
 	} catch (error) {
-        createLog("bastion/createBastionDeveloperUser", userId, error.message)
+        await createLog("bastion/createBastionDeveloperUser", userId, error.message)
     }
 }
 

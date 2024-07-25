@@ -17,7 +17,7 @@ const notifyCryptoToCryptoTransfer = async (record) => {
 	)
 
 	if (userError) {
-		createLog("webhook/notifyCryptoToCryptoTransfer", record.sender_user_id, userError.message)
+		await createLog("webhook/notifyCryptoToCryptoTransfer", record.sender_user_id, userError.message)
 		return
 	}
 
