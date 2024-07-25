@@ -7,6 +7,7 @@ module.exports = (app, express) => {
 	const auth = require("./auth")
 	const dashboardTransfer = require("./dashboard/transfer")
 	const dashboardUser = require("./dashboard/user")
+	const dashboardUtils = require("./dashboard/utils")
 
 	user(router);
 	dev(router);
@@ -15,6 +16,7 @@ module.exports = (app, express) => {
 	auth(router)
 	dashboardTransfer(router)
 	dashboardUser(router)
+	dashboardUtils(router)
 
 
 	app.use("/", router);
