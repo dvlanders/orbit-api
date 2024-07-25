@@ -165,7 +165,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
         const response = await bastionTransfer(requestRecord.bastion_request_id, fields)
         const responseBody = await response.json()
         if (!response.ok) {
-            createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
+            await createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
             const failedReason = getMappedError(responseBody.message)
              // update to database
             const toUpdate = {

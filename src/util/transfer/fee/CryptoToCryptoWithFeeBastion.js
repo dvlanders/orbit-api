@@ -65,7 +65,7 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
             }
             
         }else{
-            createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.senderUserId, responseBody.message, responseBody)
+            await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.senderUserId, responseBody.message, responseBody)
             // update fee record
             feeToUpdate = {
                 bastion_response: responseBody,
@@ -127,7 +127,7 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
         return receipt
 
     }catch (error){
-        createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.senderUserId, error.message)
+        await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.senderUserId, error.message)
         // update fee record
         const feeToUpdate = {
             bastion_status: "FAILED",

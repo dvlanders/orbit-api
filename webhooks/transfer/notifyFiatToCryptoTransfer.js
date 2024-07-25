@@ -18,7 +18,7 @@ const notifyFiatToCryptoTransfer = async (record) => {
 	)
 
 	if (userError) {
-		createLog("webhook/notifyCryptoToFiatTransfer", record.user_id, userError.message)
+		await createLog("webhook/notifyCryptoToFiatTransfer", record.user_id, userError.message)
 		return
 	}
 

@@ -62,7 +62,7 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 		if (!circlePayoutsUrlResponse.ok) {
 			const circlePayoutsUrlResponseBody = await circlePayoutsUrlResponse.json();
 			console.error('circlePayoutsUrlResponseBody', circlePayoutsUrlResponseBody); // FIXME: uncomment once we have the circle prod keys and we resolve this issue
-			createLog("transfer/util/executeCircleWirePayout", user_id, circlePayoutsUrlResponseBody.message);
+			await createLog("transfer/util/executeCircleWirePayout", user_id, circlePayoutsUrlResponseBody.message);
 			return
 		}
 
@@ -77,7 +77,7 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 			.eq('id', id);
 
 		if (updateError) {
-			createLog('transfer/util/executeCircleWirePayout', user_id, 'Failed to update transaction status', updateError);
+			await createLog('transfer/util/executeCircleWirePayout', user_id, 'Failed to update transaction status', updateError);
 			return
 		}
 
@@ -87,7 +87,7 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 		};
 	} catch (error) {
 		console.error("Error in executeCircleWirePayout:", error);
-		createLog("transfer/util/executeCircleWirePayout", user_id, error.message || "Unexpected error");
+		await createLog("transfer/util/executeCircleWirePayout", user_id, error.message || "Unexpected error");
 		return {
 			status: error.status || 500,
 			error: error.message || "An error occurred during the payout process"

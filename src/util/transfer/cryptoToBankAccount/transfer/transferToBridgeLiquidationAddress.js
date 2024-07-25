@@ -233,7 +233,7 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 		// map status
 		if (!response.ok) {
 			// fail to transfer
-			createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
+			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
 			const { message, type } = getMappedError(responseBody.message)
 			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = message

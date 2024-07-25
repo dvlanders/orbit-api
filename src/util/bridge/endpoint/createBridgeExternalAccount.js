@@ -162,7 +162,7 @@ exports.createBridgeExternalAccount = async (
 
 	} catch (error) {
 		// logger 
-		createLog("bridge/createBridgeExternalAccount", userId, error.message, error.rawResponse);
+		await createLog("bridge/createBridgeExternalAccount", userId, error.message, error.rawResponse);
 		console.error(`Error occurred in bridge/createBridgeExternalAccount `, error);
 		return {
 			status: 500,

@@ -23,7 +23,7 @@ const updateStatus = async (transaction) => {
 		if (response.status === 404 || !response.ok) {
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.bastion_request_id}`;
 			console.error(errorMessage);
-			createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, errorMessage, data);
+			await createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, errorMessage, data);
 			return
 		}
 
@@ -50,7 +50,7 @@ const updateStatus = async (transaction) => {
 
 			if (updateError) {
 				console.error('Failed to update transaction status', updateError);
-				createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to update transaction status', updateError);
+				await createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to update transaction status', updateError);
 				return
 			}
 
@@ -70,7 +70,7 @@ const updateStatus = async (transaction) => {
 		
 				if (updateFeeError) {
 					console.error('Failed to update fee status', updateError);
-					createLog('pollOfframpTransactionsBastionStatus/updateStatus', null, 'Failed to update fee status', updateError);
+					await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.user_id, 'Failed to update fee status', updateError);
 					return
 				}
 			}
@@ -84,7 +84,7 @@ const updateStatus = async (transaction) => {
 		}
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Bastion API', error);
-		createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to fetch transaction status from Bastion API', error);
+		await createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to fetch transaction status from Bastion API', error);
 	}
 }
 
@@ -104,7 +104,7 @@ async function pollOfframpTransactionsBastionStatus() {
 
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollBastionStatus', offrampTransactionError);
-		createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to fetch transactions', offrampTransactionError);
+		await createLog('pollOfframpTransactionsBastionStatus', null, 'Failed to fetch transactions', offrampTransactionError);
 		return;
 	}
 

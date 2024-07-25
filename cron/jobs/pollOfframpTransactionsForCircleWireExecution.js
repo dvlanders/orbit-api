@@ -22,7 +22,7 @@ async function pollOfframpTransactionsForCircleWireExecution() {
 
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsForCircleWireExecution', offrampTransactionError);
-		createLog('pollOfframpTransactionsForCircleWireExecution', offrampTransactionData.user_id, 'Failed to fetch transactions', offrampTransactionError);
+		await createLog('pollOfframpTransactionsForCircleWireExecution', offrampTransactionData.user_id, 'Failed to fetch transactions', offrampTransactionError);
 		return;
 	}
 

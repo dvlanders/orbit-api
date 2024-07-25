@@ -15,11 +15,11 @@ const updateStatus = async (onrampTransaction) => {
 		.maybeSingle())
 
     if (checkbookUserError) {
-        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message, checkbookUserError)
+        await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, checkbookUserError.message, checkbookUserError)
         return
     }
     if (!checkbookUser){
-        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
+        await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
         return
     }
     
@@ -36,7 +36,7 @@ const updateStatus = async (onrampTransaction) => {
     const response = await fetch(url, options)
     const responseBody = await response.json()
     if (!response.ok) {
-        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
+        await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
         return
     }
     // map status
@@ -49,7 +49,7 @@ const updateStatus = async (onrampTransaction) => {
         status = "REFUNDED"
     }else{
         status = "UNKNOWN"
-        createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
+        await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
     }
 
 	if (status == onrampTransaction.status) return
@@ -68,7 +68,7 @@ const updateStatus = async (onrampTransaction) => {
 		.single())
 
 	if (updateError) {
-		createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
+		await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
 		return
 	}
 
@@ -90,7 +90,7 @@ async function pollOnrampTransactionsCheckbookStatus() {
 
 	if (onRampTransactionStatusError) {
 		console.error('Failed to fetch transactions for pollOnrampTransactionsCheckbookStatus', onRampTransactionStatusError);
-		createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message, onRampTransactionStatusError);
+		await createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message, onRampTransactionStatusError);
 		return;
 	}
 	await Promise.all(onRampTransactionStatus.map(async (onrampTransaction) => await updateStatus(onrampTransaction)))
