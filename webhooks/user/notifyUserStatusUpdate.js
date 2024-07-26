@@ -180,7 +180,7 @@ const notifyUserStatusUpdate = async (userId) => {
 
 	let { data: user, error: userError } = await supabaseCall(() => supabase
 		.from('users')
-		.select('profile_id')
+		.select('profile_id, is_developer')
 		.eq("id", userId)
 		.single()
 	)
@@ -189,6 +189,8 @@ const notifyUserStatusUpdate = async (userId) => {
 		await createLog("webhook/notifyUserStatusUpdate", userId, userError.message)
 		return
 	}
+
+	if (user.is_developer) return
 
 	const userStatus = await getUserStatus(userId)
 	const message = {
