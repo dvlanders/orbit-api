@@ -5,6 +5,7 @@ module.exports = (router) => {
 
 	router.post("/dashboard/user/create", authorizeDashboard, user.createHifiUser);
 	router.post("/dashboard/user/create/async", authorizeDashboard, user.createHifiUserAsync);
+	router.post("/dashboard/user/developer/create", authorizeDashboard, user.createDeveloperUser)
 
 	router.get("/dashboard/user/all", authorizeDashboard, user.getAllHifiUser)
 
