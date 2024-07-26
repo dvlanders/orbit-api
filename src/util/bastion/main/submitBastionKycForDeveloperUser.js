@@ -23,7 +23,7 @@ class submitBastionKycError extends Error {
 	}
 }
 
-const submitKycData = async (userId, type) => {
+const submitKycDataBusiness = async (userId, type) => {
 
 	// get primary ubo information
 	const { data: primaryUbo, error: uboError } = await supabaseCall(() => supabase
@@ -73,6 +73,46 @@ const submitKycData = async (userId, type) => {
 	return response;
 };
 
+const submitKycDataIndividual = async (userId, type) => {
+
+	// Get user kyc data regardless of type bc we need the ip_address at minimum
+	const { data: userKycData, error: userKycError } = await supabaseCall(() => supabase
+		.from("user_kyc")
+		.select('legal_first_name, legal_last_name, date_of_birth, ip_address')
+		.eq("user_id", userId)
+		.maybeSingle()
+	);
+
+
+	if (userKycError) throw new submitBastionKycError(submitBastionKycErrorType.INTERNAL_ERROR, userKycError.message, userKycError);
+	if (!userKycData) throw new submitBastionKycError(submitBastionKycErrorType.RECORD_NOT_FOUND, "User kyc record not found");
+
+	let requestBody = {
+		firstName: userKycData.legal_first_name,
+		lastName: userKycData.legal_last_name,
+		dateOfBirth: formatDate(userKycData.date_of_birth),
+		ipAddress: userKycData.ip_address
+	};
+
+
+	// Perform the KYC submission
+	const url = `${BASTION_URL}/v1/users/${`${userId}-${type}`}/kyc`;
+	const options = {
+		method: 'POST',
+		headers: {
+			accept: 'application/json',
+			'content-type': 'application/json',
+			Authorization: `Bearer ${BASTION_API_KEY}`
+		},
+		body: JSON.stringify(requestBody)
+	};
+
+	const response = await fetch(url, options);
+	return response;
+};
+
+
+
 // Helper function to format the date
 function formatDate(dateString) {
 	const birthDate = new Date(dateString);
@@ -82,7 +122,7 @@ function formatDate(dateString) {
 
 const submitBastionKycForDeveloper = async (userId, type) => {
 	try {
-		const response = await submitKycData(userId, type)
+		const response = await submitKycDataIndividual(userId, type)
 		const responseBody = await response.json();
 
 		if (response.ok) {
