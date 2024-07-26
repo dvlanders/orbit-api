@@ -16,7 +16,7 @@ const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAc
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
-const {fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions} = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const { fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions } = require('../util/account/getAccount/utils/fetchRailFunctionMap');
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
@@ -460,7 +460,7 @@ exports.activateOnRampRail = async (req, res) => {
 		if (result.alreadyExisted) return res.status(200).json({ message: `rail already activated` })
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create the rail` })
 
-		return res.status(200).json({ message: `${rail} create successfully`, account: result.virtualAccountInfo})
+		return res.status(200).json({ message: `${rail} create successfully`, account: result.virtualAccountInfo })
 
 	} catch (error) {
 		await createLog("account/activateOnRampRail", userId, error.message, error)
@@ -771,12 +771,12 @@ exports.createCircleWireBankAccount = async (req, res) => {
 
 }
 
-exports.getVirtualAccount = async(req, res) => {
+exports.getVirtualAccount = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fileds = req.query
-	const {profileId, rail, destinationCurrency, destinationChain, userId, limit, createdBefore, createdAfter} = fileds
+	const { profileId, rail, destinationCurrency, destinationChain, userId, limit, createdBefore, createdAfter } = fileds
 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
 	const acceptedFields = {
 		profileId: "string",
@@ -784,34 +784,34 @@ exports.getVirtualAccount = async(req, res) => {
 		destinationCurrency: "string",
 		userId: "string",
 		destinationChain: "string",
-		limit: "string", 
-		createdBefore: "string", 
+		limit: "string",
+		createdBefore: "string",
 		createdAfter: "string"
 	}
 
-	try{
-		if (parseInt(limit) <= 0 || parseInt(limit) > 100) return res.status(400).json({error: "Limit should be between 1 to 100"}) 
-		const { missingFields, invalidFields} = fieldsValidation(fileds, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either invalid or missing", invalidFields, missingFields})
+	try {
+		if (parseInt(limit) <= 0 || parseInt(limit) > 100) return res.status(400).json({ error: "Limit should be between 1 to 100" })
+		const { missingFields, invalidFields } = fieldsValidation(fileds, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
-		if (!fetchFunc) return res.status(501).json({message: "Rail is not yet available"})
+		if (!fetchFunc) return res.status(501).json({ message: "Rail is not yet available" })
 		const virtualAccount = await fetchFunc(userId, limit, createdBefore, createdAfter)
-		if (!virtualAccount) return res.status(404).json({message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first"})
+		if (!virtualAccount) return res.status(404).json({ message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first" })
 		return res.status(200).json(virtualAccount)
 
-	} catch (error){
+	} catch (error) {
 		await createLog("account/getVirtualAccount", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
-	
+
 }
 
-exports.getVirtualAccountMicroDepositInstructions = async(req, res) => {
+exports.getVirtualAccountMicroDepositInstructions = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fileds = req.query
-	const {profileId, rail, destinationCurrency, destinationChain, userId} = fileds
+	const { profileId, rail, destinationCurrency, destinationChain, userId } = fileds
 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
 	const acceptedFields = {
 		profileId: "string",
@@ -821,17 +821,142 @@ exports.getVirtualAccountMicroDepositInstructions = async(req, res) => {
 		destinationChain: "string"
 	}
 
-	try{
-		const { missingFields, invalidFields} = fieldsValidation(fileds, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either invalid or missing", invalidFields, missingFields})
+	try {
+		const { missingFields, invalidFields } = fieldsValidation(fileds, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
-		if (!fetchFunc) return res.status(400).json({message: "Rail is not yet available"})
+		if (!fetchFunc) return res.status(400).json({ message: "Rail is not yet available" })
 		const despositInformation = await fetchFunc(userId)
-		if (!despositInformation) return res.status(404).json({message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first"})
+		if (!despositInformation) return res.status(404).json({ message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first" })
 		return res.status(200).json(despositInformation)
 
-	} catch (error){
+	} catch (error) {
 		await createLog("account/getVirtualAccount", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
+}
+
+exports.createBlindpayBankAccount = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId } = req.query;
+
+
+	const fields = req.body;
+
+	const requiredFields = [
+		'name', 'currency', 'bankCountry', 'pixKey', "receiverId", "userId"
+	];
+
+	const acceptedFields =
+	{
+		'name': "string", 'currency': "string", 'bankCountry': "string", 'pixKey': "string", "receiverId": "string", "userId": "string"
+	};
+
+
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	}
+
+	if (invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+	}
+
+
+	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
+	const headers = {
+		'Accept': 'application/json',
+		'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
+		'Content-Type': 'application/json'
+	};
+
+	const requestBody = {
+		"name": fields.name,
+		"currency": fields.currency,
+		"bank_country": fields.bankCountry,
+		"bank_details": {
+			"pix_key": fields.pixKey
+		}
+	};
+
+	try {
+		//get the record on the blindpay_receivers table for a given receiverId
+		const { data: blindpayReceiverData, error: blindpayReceiverError } = await supabase
+			.from('blindpay_receivers')
+			.select()
+			.match({ id: fields.receiverId })
+			.maybeSingle();
+
+		// if error or no receiver is found
+		if (blindpayReceiverError || !blindpayReceiverData) {
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+		const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers/${blindpayReceiverData.blindpay_receiver_id}/bank-accounts`;
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(requestBody)
+		});
+
+		// Check if the response is successful
+		if (response.status !== 200) {
+			const errorData = await response.text();
+			await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error)
+
+			return res.status(400).json({ error: `An error occurred while creating your bank account. Please try again later.` }); // TODO: test for blindpay error types
+		}
+
+		const responseData = await response.json();
+
+
+
+		// insert the record to the blindpay_accounts table
+		const { data: blindpayAccountData, error: blindpayAccountError } = await supabase
+			.from('blindpay_accounts')
+			.insert({
+				name: fields.name,
+				currency: fields.currency,
+				bank_country: fields.bankCountry,
+				pix_key: fields.pixKey,
+				blindpay_receiver_id: blindpayReceiverData.blindpay_receiver_id,
+				blindpay_account_id: responseData.id,
+				user_id: fields.userId,
+				blockchain_address: responseData.blockchain_address,
+				// brex_vendor_id: responseData.brexVendorId,
+			}).select();
+
+		if (blindpayAccountError) {
+			console.log('blindpayAccountError', blindpayAccountError)
+			await createLog("account/createBlindpayBankAccount", fields.userId, blindpayAccountError.message, blindpayAccountError)
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+
+		// structure a responseObject with the id from the supabase table, name, currency, bank country, pix key, and receiver id
+		const responseObject = {
+			id: blindpayAccountData[0].id,
+			name: fields.name,
+			currency: fields.currency,
+			bankCountry: fields.bankCountry,
+			pixKey: fields.pixKey,
+			receiverId: fields.receiverId
+		};
+
+
+
+		// return response object wiht success code
+		return res.status(200).json(responseObject);
+
+	} catch (error) {
+		await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error)
+		return res.status(500).json({ error: "An error occurred while creating the BR bank account. Please try again later." })
+	}
+
 }
