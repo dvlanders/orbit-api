@@ -995,3 +995,59 @@ exports.createDeveloperUser = async(req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
+
+exports.getDeveloperUserStatus = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const { userId, profileId } = req.query
+	try{
+		//invalid user_id
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
+		// check if user is created
+		let { data: user, error: userError } = await supabaseCall(() => supabase
+			.from('users')
+			.select('*')
+			.eq("id", userId)
+			.maybeSingle()
+		)
+
+		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		if (!user) return res.status(200).json({status: "NOT_CREATED", message: "Developer user is not yet created"})
+		// check is developer user
+		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use GET user" })
+		// check if the developeruserCreation is in the job queue, if yes return pending response
+		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.userType}, userId, profileId)
+		if (!canScheduled) return {status: 200 , status: "PENDING"}
+		
+		// get bridge kyc status
+		// check if the application is submitted
+		const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
+		.from('bridge_customers')
+		.select('*')
+		.eq('user_id', userId)
+		.maybeSingle()
+		)
+		if (bridgeCustomerError) throw bridgeCustomerError
+		if (!bridgeCustomer) return res.status(200).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+		const bridgeKycPassed = bridgeCustomer.status == "active"
+
+		// get bastion kyc status
+		let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
+        .from('bastion_users')
+        .select('kyc_passed, jurisdiction_check_passed, kyc_level')
+        .eq("developer_user_id", `${userId}-FEE_COLLECTION`)
+        .maybeSingle())
+
+		if (bastionUserError) throw bastionUserError
+		if (!bastionUser) return res.status(200).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+		const bastionKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
+		const status = bastionKycPassed && bridgeKycPassed ? "ACTIVE" : "INACTIVE"
+		return res.status(200).json({status})
+
+
+	}catch (error){
+		createLog("user/getDeveloperUserFeeChargeStatus", userId, error.message)
+		return res.status(500).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+	}
+}

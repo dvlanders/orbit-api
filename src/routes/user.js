@@ -14,6 +14,7 @@ module.exports = (router) => {
 	router.get("/user/all", authorize, logRequestResponse, user.getAllHifiUser)
 
 	router.get("/user", authorize, logRequestResponse, user.getHifiUser);
+	router.get("/user/developer", authorize, logRequestResponse, user.getDeveloperUserStatus);
 
 	router.put("/user", authorize, logRequestResponse, user.updateHifiUser);
 	router.put("/user/async", authorize, logRequestResponse, user.updateHifiUserAsync);
