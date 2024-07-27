@@ -16,5 +16,6 @@ module.exports = (router) => {
 
 
 	router.get("/transfer/test", authorize, logRequestResponse, transfer.test)
+	console.log('Transfer routes loaded');
 
 };
