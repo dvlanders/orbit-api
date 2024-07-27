@@ -53,9 +53,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 		fields.profileId = profileId
 		// check if fee config is correct
-		if (feeType || feeValue){
-			const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
-			if (!valid) return res.status(400).json({error})
+		if (feeType || feeValue) {
+			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({ error })
 		}
 		//check if sender is under profileId
 		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
@@ -124,11 +124,11 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (limit && !isValidLimit(limit)) return res.status(400).json({error: "Invalid limit"})
-		if ((createdAfter && !isValidDate(createdAfter)) || 
-			(createdBefore && !isValidDate(createdBefore)) || 
+		if (limit && !isValidLimit(limit)) return res.status(400).json({ error: "Invalid limit" })
+		if ((createdAfter && !isValidDate(createdAfter)) ||
+			(createdBefore && !isValidDate(createdBefore)) ||
 			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
-				return res.status(400).json({ error: "Invalid date range" });
+			return res.status(400).json({ error: "Invalid date range" });
 		}
 
 		// get all records
@@ -203,22 +203,22 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
 		// FIX ME SHOULD put it in the field validation 
-		if (!isNumberOrNumericString(amount)) return res.status(400).json({error: "Invalid amount"})
+		if (!isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
 
 
 		// check if fee config is correct
-		if (feeType || feeValue){
-			const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
-			if (!valid) return res.status(400).json({error})
+		if (feeType || feeValue) {
+			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({ error })
 		}
-		
+
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-		
+
 		// get user wallet
 		const walletAddress = await getBastionWallet(sourceUserId, chain)
 		if (!walletAddress) {
@@ -264,11 +264,11 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (limit && !isValidLimit(limit)) return res.status(400).json({error: "Invalid limit"})
-		if ((createdAfter && !isValidDate(createdAfter)) || 
-			(createdBefore && !isValidDate(createdBefore)) || 
+		if (limit && !isValidLimit(limit)) return res.status(400).json({ error: "Invalid limit" })
+		if ((createdAfter && !isValidDate(createdAfter)) ||
+			(createdBefore && !isValidDate(createdBefore)) ||
 			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
-				return res.status(400).json({ error: "Invalid date range" });
+			return res.status(400).json({ error: "Invalid date range" });
 		}
 		// get all records
 		const records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
@@ -284,6 +284,7 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 }
 
 exports.getCryptoToFiatTransfer = async (req, res) => {
+	console.log("getCryptoToFiatTransfer")
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -368,9 +369,9 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
 		// check fee config
-		if (feeType || feeValue){
-			const {valid, error} = await canChargeFee(profileId, feeType, feeValue)
-			if (!valid) return res.status(400).json({error})
+		if (feeType || feeValue) {
+			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({ error })
 		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
@@ -396,6 +397,8 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 }
 
 exports.getFiatToCryptoTransfer = async (req, res) => {
+
+	console.log("getFiatToCryptoTransfer")
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -448,9 +451,9 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (limit && !isValidLimit(limit)) return res.status(400).json({error: "Invalid limit"})
-		if ((createdAfter && !isValidDate(createdAfter)) || 
-			(createdBefore && !isValidDate(createdBefore)) || 
+		if (limit && !isValidLimit(limit)) return res.status(400).json({ error: "Invalid limit" })
+		if ((createdAfter && !isValidDate(createdAfter)) ||
+			(createdBefore && !isValidDate(createdBefore)) ||
 			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
 			return res.status(400).json({ error: "Invalid date range" });
 		}
