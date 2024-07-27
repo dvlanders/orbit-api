@@ -12,5 +12,9 @@ module.exports = (router) => {
 	// router.get("/transfer/fiat-to-crypto", authorize, logRequestResponse, transfer.getFiatToCryptoTransfer)
 	router.get("/transfer/fiatToCrypto", authorize, logRequestResponse, transfer.getFiatToCryptoTransfer)
 	router.get("/transfer/fiat-to-crypto/all", authorize, logRequestResponse, transfer.getAllFiatToCryptoTransfer)
+	router.get("/transfer/fiat-to-crypto/all", authorize, logRequestResponse, transfer.getAllFiatToCryptoTransfer)
+
+
+	router.get("/transfer/test", authorize, logRequestResponse, transfer.test)
 
 };
