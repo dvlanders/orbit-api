@@ -1,9 +1,13 @@
 
+const { transaction } = require("dynamoose");
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { currencyContractAddress } = require("../util/common/blockchain");
 const { generateDailyTimeRanges, formatDateFromISOString, transformData } = require("../util/helper/dateTimeUtils");
 const createLog = require("../util/logger/supabaseLogger");
 const supabase = require("../util/supabaseClient");
+const { feeMap } = require("../util/billing/feeRateMap");
+const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCalculator");
+const { supabaseCall } = require("../util/supabaseWithRetry");
 
 exports.getWalletBalance = async(req, res) => {
     if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
@@ -511,4 +515,58 @@ exports.getTotalDeveloperFeeVolumeHistory = async(req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 
+}
+
+exports.getCurrentBillingInformation = async(req, res) => {
+    if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
+
+    const {profileId, startDate, endDate} = req.query
+    try{
+        
+        const billingInfo = await calculateCustomerMonthlyBill(profileId, startDate, endDate)
+
+        return res.status(200).json(billingInfo)
+    }catch (error){
+        console.error(error)
+        await createLog("dashboard/utils/getCurrentBillingInformation", null, error.message, null, profileId)
+        return res.status(500).json({error: "Internal server error"})
+    }
+
+}
+
+exports.getInvoiceHistory = async(req, res) => {
+    if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
+
+    const {profileId, createdAfter, createdBefore, limit} = req.query
+    try{
+        const invoiceCreatedAfter = createdAfter || new Date("1900-01-01").toISOString()
+        const invoiceCreatedBefore= createdBefore || new Date("2200-01-01").toISOString()
+        const invoiceLimit = limit || 10
+        const {data, error} = await supabaseCall(() => supabase
+            .from("billing_history")
+            .select("id, created_at, final_billable_fee_amount, billing_documentation_url, hosted_billing_page_url, status, billing_email")
+            .eq("profile_id", profileId)
+            .lt("created_at", invoiceCreatedBefore)
+            .gt("created_at", invoiceCreatedAfter)
+            .order("created_at", {ascending: false})
+            .limit(invoiceLimit))
+
+        const records = data.map((d) => {
+            return {
+                id: d.id,
+                createdAt: d.created_at,
+                paymentAmount: d.final_billable_fee_amount,
+                status: d.status,
+                billingEmail: d.billing_email,
+                billingDocumentationUrl: d.billing_documentation_url,
+                hostedBillingPageUrl: d.hosted_billing_page_url
+            }
+        })
+
+        return res.status(200).json({records: records})
+    }catch (error){
+        console.error(error)
+        await createLog("dashboard/utils/getInvoiceHistory", null, error.message, null, profileId)
+        return res.status(500).json({error: "Internal server error"})
+    }
 }

@@ -8,6 +8,7 @@ const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken");
 const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
 const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
+const { createStripeBill } = require("../util/billing/createBill");
 
 const uploadFile = async (file, path) => {
     
@@ -163,5 +164,22 @@ exports.triggerOnRampFeeCharge = async(req, res) => {
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testCreateBill = async(req, res) => {
+    try{
+        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
+        const {data: billingInformation, error: billingInformationError} = await supabase
+            .from("billing_information")
+            .select("*")
+            .eq("profile_id", profileId)
+            .single()
+        
+        await createStripeBill(billingInformation)
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        return res.status(500).json({error: "Internal server error"})
+
     }
 }
