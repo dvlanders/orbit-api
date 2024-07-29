@@ -522,8 +522,14 @@ exports.getCurrentBillingInformation = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
-        
-        const billingInfo = await calculateCustomerMonthlyBill(profileId, startDate, endDate)
+        // get user billing period
+        const {data: billingInformation, error: billingInformationError} = await supabase
+            .from("billing_information")
+            .select("next_billing_period_start, next_billing_period_end")
+            .eq("profile_id", profileId)
+            .single()
+        if (billingInformationError) throw billingInformationError
+        const billingInfo = await calculateCustomerMonthlyBill(profileId, billingInformation.next_billing_period_start, billingInformation.next_billing_period_end)
 
         return res.status(200).json(billingInfo)
     }catch (error){
@@ -544,7 +550,7 @@ exports.getInvoiceHistory = async(req, res) => {
         const invoiceLimit = limit || 10
         const {data, error} = await supabaseCall(() => supabase
             .from("billing_history")
-            .select("id, created_at, final_billable_fee_amount, billing_documentation_url, hosted_billing_page_url, status, billing_email")
+            .select("id, created_at, final_billable_fee_amount, billing_documentation_url, hosted_billing_page_url, status, billing_email, billable_payout_fee, billable_deposit_fee, billable_active_virtual_account_fee")
             .eq("profile_id", profileId)
             .neq("status", "CREATED")
             .lt("created_at", invoiceCreatedBefore)
@@ -557,6 +563,9 @@ exports.getInvoiceHistory = async(req, res) => {
                 id: d.id,
                 createdAt: d.created_at,
                 paymentAmount: d.final_billable_fee_amount,
+                payoutFee: d.billable_payout_fee,
+                depositFee: d.billable_deposit_fee,
+                virtualAccountFee: d.billable_active_virtual_account_fee,
                 status: d.status,
                 billingEmail: d.billing_email,
                 billingDocumentationUrl: d.billing_documentation_url,
