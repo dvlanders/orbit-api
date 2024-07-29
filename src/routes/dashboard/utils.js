@@ -12,5 +12,7 @@ module.exports = (router) => {
     router.get("/dashboard/utils/getAverageTransactionValueHistory", authorizeDashboard, dashboard.getAverageTransactionValueHistory)
     router.get("/dashboard/utils/getTotalDeveloperFeeVolume", authorizeDashboard, dashboard.getTotalDeveloperFeeVolume)
     router.get("/dashboard/utils/getTotalDeveloperFeeVolumeHistory", authorizeDashboard, dashboard.getTotalDeveloperFeeVolumeHistory)
+    router.get("/dashboard/utils/getCurrentBillingInformation", authorizeDashboard, dashboard.getCurrentBillingInformation)
+    router.get("/dashboard/utils/getInvoiceHistory", authorizeDashboard, dashboard.getInvoiceHistory)
 
 }
