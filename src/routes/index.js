@@ -8,6 +8,7 @@ module.exports = (app, express) => {
 	const dashboardTransfer = require("./dashboard/transfer")
 	const dashboardUser = require("./dashboard/user")
 	const dashboardUtils = require("./dashboard/utils")
+	const billing = require("./billing")
 
 	user(router);
 	dev(router);
@@ -17,7 +18,7 @@ module.exports = (app, express) => {
 	dashboardTransfer(router)
 	dashboardUser(router)
 	dashboardUtils(router)
-
+	billing(router)
 
 	app.use("/", router);
 };
