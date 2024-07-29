@@ -18,8 +18,8 @@ exports.stripeWebhook = async(req, res) => {
             console.log(`⚠️  Webhook signature verification failed.`, err.message);
             return res.status(400).json({error: "Failed to verify"})
         }
-
-        if (event.type == "invoice"){
+        
+        if (event.type.split(".")[0] == "invoice"){
             // update to paid
             await updateBillStatus(event)
         }

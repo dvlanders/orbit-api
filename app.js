@@ -47,7 +47,7 @@ const options = {
 };
 
 // for stripe webhook
-app.use('/dev/testStripeWebwook', express.raw({ type: 'application/json' }));
+app.use('/webhook/stripe', express.raw({ type: 'application/json' }));
 
 // Initialize swagger-jsdoc
 const specs = swaggerJsdoc(options);
