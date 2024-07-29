@@ -1,6 +1,7 @@
 const createJob = require("../../../../asyncJobs/createJob");
 const { fundGasScheduleCheck } = require("../../../../asyncJobs/wallets/fundGas");
 const createLog = require("../../logger/supabaseLogger");
+const { Chain } = require("../../common/blockchain");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -8,6 +9,11 @@ const GAS_THRESHOLD = BigInt(5 * Math.pow(10, 16))
 
 const bastionGasCheck = async(userId, chain) => {
     try{
+        if(chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET){
+            console.log(`Don't check gas for TESTNET ${chain}`);
+            return;
+        }
+
         const url = `${BASTION_URL}/v1/users/${userId}/balances?chain=${chain}`
         const options = {
 			method: 'GET',

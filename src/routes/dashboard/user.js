@@ -5,10 +5,12 @@ module.exports = (router) => {
 
 	router.post("/dashboard/user/create", authorizeDashboard, user.createHifiUser);
 	router.post("/dashboard/user/create/async", authorizeDashboard, user.createHifiUserAsync);
+	router.post("/dashboard/user/developer/create", authorizeDashboard, user.createDeveloperUser)
 
 	router.get("/dashboard/user/all", authorizeDashboard, user.getAllHifiUser)
 
 	router.get("/dashboard/user", authorizeDashboard, user.getHifiUser);
+	router.get("/dashboard/user/developer", authorizeDashboard, user.getDeveloperUserStatus);
 
 	router.put("/dashboard/user", authorizeDashboard, user.updateHifiUser);
 	router.put("/dashboard/user/async", authorizeDashboard, user.updateHifiUserAsync);

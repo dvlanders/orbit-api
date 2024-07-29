@@ -62,4 +62,21 @@ exports.transformData = (data, targetColumn) => {
     
     return result;
 }
+
+exports.getNextCycleEnd = (lastCycleEnd) => {
+  // Parse the input ISO date string
+  let date = new Date(lastCycleEnd);
+  
+  // Add one month to the date
+  let nextMonth = new Date(date);
+  nextMonth.setMonth(date.getMonth() + 1);
+
+  // Handle the edge case where the month changes the number of days (e.g., January 31 to February 28/29)
+  if (nextMonth.getDate() < date.getDate()) {
+      nextMonth.setDate(0);
+  }
+  
+  // Convert the date back to ISO string
+  return nextMonth.toISOString();
+}
   

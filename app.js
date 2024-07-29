@@ -46,6 +46,9 @@ const options = {
 	apis: ['./src/routes/*.js'], // Adjust the path according to your project structure
 };
 
+// for stripe webhook
+app.use('/webhook/stripe', express.raw({ type: 'application/json' }));
+
 // Initialize swagger-jsdoc
 const specs = swaggerJsdoc(options);
 
@@ -60,6 +63,7 @@ let port = process.env.PORT || 5000;
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 const cors = require("cors");
 app.use(cors());
+
 
 /* This is a middleware function that allows the server to accept the data that is being sent to it. */
 app.use(express.json());
