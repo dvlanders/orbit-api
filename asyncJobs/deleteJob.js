@@ -11,7 +11,7 @@ exports.deleteJob = async(jobId) => {
         if (error) throw error
         return
     }catch (error){
-        createLog("asyncJobs/deleteJob", "", error.message, {jobId: jobId})
+        await createLog("asyncJobs/deleteJob", null, error.message, {jobId: jobId})
         return
     }
 }

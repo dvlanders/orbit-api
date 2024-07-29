@@ -88,9 +88,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		if (process.env.NODE_ENV === "development") {
-			return res.status(200).json({ message: "This endpoint is only available in production" });
-		}
+		// if (process.env.NODE_ENV === "development") {
+		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+		// }
 
 		// transfer
 		const receipt = await transferFunc(fields)
@@ -226,9 +226,9 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		if (process.env.NODE_ENV === "development") {
-			return res.status(200).json({ message: "This endpoint is only available in production" });
-		}
+		// if (process.env.NODE_ENV === "development") {
+		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+		// }
 
 		const { transferFunc } = funcs
 		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress, profileId, feeType, feeValue)
@@ -290,9 +290,9 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 
 
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
+	// if (process.env.NODE_ENV === "development") {
+	// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+	// }
 
 	const { id, profileId } = req.query
 
@@ -374,9 +374,9 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		}
 
 		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		if (process.env.NODE_ENV === "development") {
-			return res.status(200).json({ message: "This endpoint is only available in production" });
-		}
+		// if (process.env.NODE_ENV === "development") {
+		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+		// }
 		// onramp
 		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
 		return res.status(200).json(transferResult);
@@ -401,9 +401,9 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 	}
 
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-	if (process.env.NODE_ENV === "development") {
-		return res.status(200).json({ message: "This endpoint is only available in production" });
-	}
+	// if (process.env.NODE_ENV === "development") {
+	// 	return res.status(200).json({ message: "This endpoint is only available in production" });
+	// }
 
 	const { id, profileId } = req.query
 

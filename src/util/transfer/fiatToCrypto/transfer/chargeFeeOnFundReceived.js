@@ -59,7 +59,7 @@ exports.chargeFeeOnFundReceivedBastion = async(transferRecordId) => {
 
     }catch(error){
         console.error(error)
-        createLog("transfer/fiatToCrypto/chargeFeeOnFundReceivedBastion", userId, error.message)
+        await createLog("transfer/fiatToCrypto/chargeFeeOnFundReceivedBastion", userId, error.message)
         throw new Error("Error happened in chargeFeeOnFundReceivedBastion")
     }
 }

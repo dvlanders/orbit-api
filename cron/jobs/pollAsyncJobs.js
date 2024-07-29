@@ -9,6 +9,7 @@ const supabase = require("../../src/util/supabaseClient");
 const dayAfterCreated = 3
 const initialRetryInterval = 60 * 1000 // 60 secs
 const maxRetryInterval = 3600 * 1000 // 1 hr
+const retryAlertThreshold = 100
 
 const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
 
@@ -29,7 +30,7 @@ const pollAsyncJobs = async() => {
         .order('next_retry', {ascending: true})
     
         if (error) {
-            createLog("pollAsyncJobs", null, error.message, error)
+            await createLog("pollAsyncJobs", null, error.message, error)
             return
         }
     
@@ -50,6 +51,9 @@ const pollAsyncJobs = async() => {
                     if (error.needToReschedule) {
                         const newNextRetry = new Date(now.getTime() + job.retry_interval).toISOString()
                         await createJob(job.job, job.config, job.user_id, job.profile_id, job.created_at, job.number_of_retries, newNextRetry, job.retry_deadline, job.retry_interval)
+                        if(job.number_of_retries > retryAlertThreshold){
+                            await createLog("pollAsyncJobs", job.user_id, `Job has been retried ${job.number_of_retries} times`, error.message)
+                        }
                     }
                     jobError = {
                         type: error.type,

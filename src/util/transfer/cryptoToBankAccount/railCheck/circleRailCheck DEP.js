@@ -51,7 +51,7 @@ const circleRailCheck = async (sourceUserId, externalAccountId, sourceCurrency, 
 		if (!circleDepositAddressResponse.ok) {
 			const circleDepositAddressResponseData = await circleDepositAddressResponse.json();
 			console.log('circleDepositAddressResponseData error', circleDepositAddressResponseData)
-			createLog("account/createCircleWireBankAccount", userId, circleDepositAddressResponseData.message, circleDepositAddressResponseData)
+			await createLog("account/createCircleWireBankAccount", userId, circleDepositAddressResponseData.message, circleDepositAddressResponseData)
 			return { circleAccountExists: false, circleDepositAddress: null }
 		}
 
@@ -63,7 +63,7 @@ const circleRailCheck = async (sourceUserId, externalAccountId, sourceCurrency, 
 		return { circleAccountExists: true, circleDepositAddress: circleDepositAddressResponse.data.address }
 	} catch (error) {
 		console.log('error', error)
-		createLog("account/createCircleWireBankAccount", userId, error.message, error)
+		await createLog("account/createCircleWireBankAccount", userId, error.message, error)
 		return { circleAccountExists: false, circleDepositAddress: null }
 	}
 

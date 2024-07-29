@@ -22,7 +22,7 @@ const fundGasScheduleCheck = async(job, config, userId, profileId) => {
 
 const fundGas = async(config) => {
     try{
-        if (config.chain == Chain.POLYGON_MAINNET || config.chain == Chain.POLYGON_AMOY){
+        if (config.chain == Chain.POLYGON_MAINNET){
             const result = await fundMaticPolygon(config.userId, config.amount)
             if (!result) throw new Error("Failed to fund Matic")
         }else {

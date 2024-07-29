@@ -47,9 +47,9 @@ exports.createHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	let userId
+	const profileId = req.query.profileId
+	const fields = req.body
 	try {
-		const profileId = req.query.profileId
-		const fields = req.body
 
 		if (!profileId) {
 			return res.status(401).json({ error: 'Unauthorized, please input valid api key' });
@@ -62,7 +62,7 @@ exports.createHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}`, error)
+			await createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}`, error, profileId)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -244,7 +244,7 @@ exports.createHifiUser = async (req, res) => {
 
 		return res.status(status).json(createHifiUserResponse);
 	} catch (error) {
-		await createLog("user/create", userId, error.message, error)
+		await createLog("user/create", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -314,7 +314,7 @@ exports.updateHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			createLog("user/get", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			await createLog("user/get", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 		// STEP 2: Update the 3rd party providers with the new information
@@ -752,7 +752,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			await createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
@@ -866,9 +866,9 @@ exports.createDeveloperUser = async(req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	let userId
+	const profileId = req.query.profileId
+	const fields = req.body
 	try {
-		const profileId = req.query.profileId
-		const fields = req.body
 		// user type should always be business
 		// if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
 		if (fields.userType != "individual") return res.status(400).json({error: "Developer user type must be individual for the current statge, will be switched to business"})
@@ -887,7 +887,7 @@ exports.createDeveloperUser = async(req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			createLog("user/create", "", error.message, error)
+			await createLog("user/create", null, error.message, error, profileId)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -991,7 +991,7 @@ exports.createDeveloperUser = async(req, res) => {
 		return res.status(200).json(createHifiUserResponse)
 
 	}catch (error){
-		createLog("user/createHifiUserAsync", userId, error.message, error)
+		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
