@@ -109,7 +109,6 @@ exports.createStripeBill = async(billingInformation) => {
             .from("billing_history")
             .update({
                 stripe_invoice_id: invoiceId,
-                status: "UNPAID",
                 billing_documentation_url: sentInvoice.invoice_pdf,
                 hosted_billing_page_url: sentInvoice.hosted_invoice_url,
                 stripe_response: {
