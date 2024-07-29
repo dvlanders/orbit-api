@@ -13,6 +13,7 @@ const retryAlertThreshold = 100
 
 const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
 
+
 const pollAsyncJobs = async() => {
     try{
         // get all the job that has next_retry smaller than currenct time and sort in asceding order

@@ -12,7 +12,7 @@ const Chain = {
 }
 
 const hifiSupportedChain = NODE_ENV == "development" ?
- [Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET]
+	[Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET] // FIXME: remove Chain.POLYGON_MAINNET from development
 
 const currencyDecimal = {
 	"usdc": 6,
@@ -36,7 +36,7 @@ const currencyContractAddress = {
 		usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", //registered
 		usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7" //registered
 	},
-	OPTIMISM_MAINNET:{
+	OPTIMISM_MAINNET: {
 		usdc: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85" //registered
 	}
 }

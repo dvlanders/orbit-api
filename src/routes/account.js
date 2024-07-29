@@ -11,4 +11,6 @@ module.exports = (router) => {
 	router.get("/account/all", authorize, logRequestResponse, account.getAllAccounts);
 	router.post("/account/wire/offramp", authorize, logRequestResponse, account.createCircleWireBankAccount);
 	router.get("/account/onRampRail/virtualAccount", authorize, logRequestResponse, account.getVirtualAccount)
+	router.post("/account/brl/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
+
 };
