@@ -546,6 +546,7 @@ exports.getInvoiceHistory = async(req, res) => {
             .from("billing_history")
             .select("id, created_at, final_billable_fee_amount, billing_documentation_url, hosted_billing_page_url, status, billing_email")
             .eq("profile_id", profileId)
+            .neq("status", "CREATED")
             .lt("created_at", invoiceCreatedBefore)
             .gt("created_at", invoiceCreatedAfter)
             .order("created_at", {ascending: false})
