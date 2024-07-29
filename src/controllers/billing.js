@@ -1,4 +1,5 @@
 const { updateBillStatus } = require('../util/billing/updateBillStatus');
+const createLog = require('../util/logger/supabaseLogger');
 
 const stripe = require('stripe')(process.env.STRIPE_TEST_SK_KEY);
 
@@ -25,7 +26,7 @@ exports.stripeWebhook = async(req, res) => {
         }
         return res.status(200).json({status: "OK"})
     }catch(error){
-        console.error(error)
+        await createLog("billing/stripeWebhook", null, error.message, error)
         return res.status(500).json({error: "Internal server error"})
     }
 }
