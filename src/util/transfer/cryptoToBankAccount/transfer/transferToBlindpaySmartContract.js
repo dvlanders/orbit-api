@@ -7,7 +7,7 @@ const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
-const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
+const { erc20Transfer, erc20Approve } = require("../../../bastion/utils/erc20FunctionMap");
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
@@ -19,15 +19,15 @@ const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
 const { ethers } = require("ethers");
+const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck");
 
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId = null) => {
-	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
+	if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
 	const { isExternalAccountExist, blindpayAccountId } = await blindpayRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
-
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
@@ -43,7 +43,7 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 			.single()
 
 		if (error) {
-			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, error.message)
+			await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, error.message)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 
@@ -60,7 +60,7 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 				amount: amount,
 				chain: chain,
 				from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
-				// to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress,
+				to_blindpay_account_id: blindpayAccountId,
 				transaction_status: 'CREATED',
 				contract_address: contractAddress,
 				action_name: "transfer",
@@ -72,14 +72,15 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 
 		if (initialBastionTransfersInsertError) {
 			console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
-			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, initialBastionTransfersInsertError.message)
+			await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, initialBastionTransfersInsertError.message)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 
 		initialBastionTransfersInsertData = data
 
 	}
-	// transfer
+
+	// TODO: Configure for Blindpay isntead of Bridge offramp
 	if (feeType && parseFloat(feeValue) > 0) {
 		// transfer with fee charged
 		// check if allowance is enough 
@@ -198,7 +199,35 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 		}
 
 	} else {
-		console.log('transferring without fee...')
+
+		// Step 1: generate the quote for approval
+		const headers = {
+			'Accept': 'application/json',
+			'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
+			'Content-Type': 'application/json'
+		};
+
+		let blindpayQuoteAmount = amount * 100
+		const quoteBody = {
+			"bank_account_id": blindpayAccountId,
+			"currency_type": "sender",
+			"cover_fees": false,
+			"request_amount": blindpayQuoteAmount,
+			// "network": chain == "POLYGON_MAINNET" ? "polygon" : chain.toLowerCase(),
+			"network": "base_sepolia", // "sepolia", "base_sepolia", "arbitrum_sepolia"
+			"token": "USDB" // on development instance is always "USDB"
+		}
+
+		const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/quotes`;
+		const blindpayQuoteResponse = await fetch(url, {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(quoteBody)
+		});
+
+		const blindpayQuoteResponseBody = await blindpayQuoteResponse.json();
+
+
 		//create transfer without fee
 		const decimals = currencyDecimal[sourceCurrency]
 		const transferAmount = toUnitsString(amount, decimals)
@@ -206,10 +235,12 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 			requestId: initialBastionTransfersInsertData.bastion_request_id,
 			userId: sourceUserId,
 			contractAddress: contractAddress,
-			actionName: "transfer",
+			actionName: "approve",
 			chain: chain,
-			actionParams: erc20Transfer(sourceCurrency, liquidationAddress, transferAmount)
+			actionParams: erc20Approve(sourceCurrency, blindpayQuoteResponseBody.contract.address, transferAmount)
 		};
+
+		console.log('bodyObject', bodyObject)
 
 		const response = await submitUserAction(bodyObject)
 		const responseBody = await response.json();
@@ -234,7 +265,7 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 		// map status
 		if (!response.ok) {
 			// fail to transfer
-			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
+			await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, responseBody.message, responseBody)
 			const { message, type } = getMappedError(responseBody.message)
 			result.transferDetails.status = "NOT_INITIATED"
 			result.transferDetails.failedReason = message
@@ -243,7 +274,9 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 				bastion_response: responseBody,
 				bastion_transaction_status: "FAILED",
 				transaction_status: "NOT_INITIATED",
-				failed_reason: message
+				failed_reason: message,
+				blindpay_quote_response: blindpayQuoteResponseBody
+
 			}
 
 			// in sandbox, just return SUBMITTED_ONCHAIN status
@@ -267,8 +300,19 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 				bastion_transaction_status: responseBody.status,
 				transaction_status: result.transferDetails.status,
 				failed_reason: responseBody.failureDetails,
+				blindpay_quote_response: blindpayQuoteResponseBody
 			}
 			const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
+
+
+			// If the bastion approval is SUBMITTED_ONCHAIN, then schedule the payout with Blindpay's payout endpoints
+			if (result.transferDetails.status == "SUBMITTED_ONCHAIN") {
+				console.log('scheduling payout...')
+				const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.user_id)
+				if (canSchedule) {
+					await createJob("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.destination_user_id, null, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
+				}
+			}
 		}
 
 		// gas check
