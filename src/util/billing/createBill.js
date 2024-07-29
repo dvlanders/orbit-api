@@ -135,8 +135,7 @@ exports.createStripeBill = async(billingInformation) => {
 
 
     }catch (error){
-        // await createLog("billing/createStripeBill", null, error.message, error, billingInformation.profile_id)
-        console.error(error)
-        throw new Error("Something went wrong in createStripeBill")
+        await createLog("billing/createStripeBill", null, error.message, error, billingInformation.profile_id)
+        throw new Error("Failed to create bill")
     }
 }

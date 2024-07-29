@@ -32,6 +32,8 @@ exports.updateBillStatus = async(event) => {
                 stripe_payment_id: event.data.object.payment_intent,
                 updated_at: new Date().toISOString(),
             }
+        }else {
+            return
         }
         // update billing history
         if (toUpdate != undefined) {

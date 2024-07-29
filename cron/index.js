@@ -10,6 +10,8 @@ const pollOnrampTransactionsBridgeStatus = require('./jobs/pollOnrampTransaction
 const pollAsyncJobs = require('./jobs/pollAsyncJobs');
 const pollOfframpTransactionsForCircleWireExecution = require('./jobs/pollOfframpTransactionsForCircleWireExecution');
 const pollDeveloperFeeStatus = require('./jobs/pollDeveloperFeeStatus');
+const pollBillingCreate = require('./jobs/pollBillingCreate');
+
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBastionStatus); // every 60 seconds
@@ -22,5 +24,5 @@ cron.schedule('*/60 * * * * *', pollOnrampTransactionsBridgeStatus)
 cron.schedule('*/10 * * * * *', pollAsyncJobs)
 cron.schedule('*/60 * * * * *', pollDeveloperFeeStatus)
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsForCircleWireExecution); // every 60 seconds
-
+cron.schedule('0 10 * * *', pollBillingCreate) // every day at 10 AM
 
