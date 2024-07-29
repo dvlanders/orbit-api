@@ -1,3 +1,4 @@
+const { uuidV4 } = require('ethers');
 const { getNextCycleEnd } = require('../helper/dateTimeUtils');
 const createLog = require('../logger/supabaseLogger');
 const supabase = require('../supabaseClient');
@@ -5,6 +6,11 @@ const { calculateCustomerMonthlyBill } = require('./customerBillCalculator');
 
 const STRIPE_SK_KEY = process.env.STRIPE_TEST_SK_KEY
 const stripe = require('stripe')(STRIPE_SK_KEY);
+
+function generateHifiInvoiceId(length = 10) {
+    const uuid = uuidV4().replace(/-/g, ''); // Remove hyphens to get a continuous string
+    return "HIFI_" + uuid.slice(0, length); // Truncate to the desired length
+  }
 
 exports.createStripeBill = async(billingInformation) => {
     try{
@@ -34,11 +40,14 @@ exports.createStripeBill = async(billingInformation) => {
         const billableIntegrationFee = Math.max(monthlyMinimum - (billablePayoutFee + billableDepositFee + billableVirtualAccountFee), 0)
         const finalBillableFee = Math.max(billablePayoutFee + billableDepositFee + billableVirtualAccountFee, monthlyMinimum)
 
+        const hifiBillingId = generateHifiInvoiceId()
+
         // insert billing history
         const {data: billingHistory, error: billingHistoryError} = await supabase
             .from("billing_history")
             .insert({
                 profile_id: billingInformation.profile_id,
+                hifi_billing_id: hifiBillingId,
                 crypto_payout_fee_percent: billingInformation.crypto_payout_fee_percent,
                 monthly_minimum: billingInformation.monthly_minimum,
                 active_virtual_account_fee: billingInformation.active_virtual_account_fee,
@@ -76,7 +85,7 @@ exports.createStripeBill = async(billingInformation) => {
             {productName: "active_virtual_account_fee", fee: billableVirtualAccountFee}, 
             {productName: "integration_fee", fee: billableIntegrationFee}, 
         ]
-        console.log(products)
+
         await Promise.all(products.map(async(product) => {
             // get stripe product id
             const {data: productId, error: productIdError} = await supabase
