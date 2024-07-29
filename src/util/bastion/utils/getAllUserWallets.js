@@ -12,8 +12,11 @@ exports.getAllUserWallets = async(userId) => {
 
     const wallets = {}
     bastion_wallets.map((wallet) => {
-        wallets[wallet.chain] = {
-            address: wallet.address
+        if((process.env.NODE_ENV == "production" && wallet.chain == "POLYGON_MAINNET") ||
+           (process.env.NODE_ENV == "development" && wallet.chain == "POLYGON_AMOY")){
+            wallets[wallet.chain] = {
+                address: wallet.address
+            }
         }
     })
 
