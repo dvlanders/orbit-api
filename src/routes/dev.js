@@ -3,6 +3,9 @@ const multer = require('multer');
 const { authorize } = require("../util/middleware");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+const express = require('express');
+const bodyParser = require('body-parser');
+
 
 module.exports = (router) => {
 
@@ -14,4 +17,5 @@ module.exports = (router) => {
 	router.post("/dev/registerFeeWallet", dev.registerFeeWallet)
 	router.post("/dev/triggerOnRampFeeCharge", dev.triggerOnRampFeeCharge)
 	router.post("/dev/testCreateBill", dev.testCreateBill)
+	router.post("/dev/testStripeWebwook", dev.testStripeWebwook)
 };
