@@ -960,3 +960,112 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	}
 
 }
+
+exports.createBlindpayReceiver = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId } = req.query;
+	const fields = req.body;
+
+
+	// TODO: Blindpay is in the process of updating their API to include more fields. Update this function when the new API is available
+	const requiredFields = [
+		'email', 'tax_id', 'type', 'address_line_1', 'city', 'state_province_region', 'country', 'postal_code', 'image_url', 'userId', "firstName", "lastName", "dateOfBirth"
+	];
+
+	const acceptedFields = {
+		'email': "string", 'tax_id': "string", 'type': "string", 'address_line_1': "string", 'address_line_2': "string",
+		'city': "string", 'state_province_region': "string", 'country': "string", 'postal_code': "string", 'image_url': "string",
+		'userId': "string", "firstName": "string", "lastName": "string", "dateOfBirth": "string"
+	};
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	}
+
+	if (invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+	}
+
+	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+
+	const headers = {
+		'Accept': 'application/json',
+		'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
+		'Content-Type': 'application/json'
+	};
+
+
+	try {
+		// Create Blindpay Receiver
+		const receiverRequestBody = {
+			email: fields.email,
+			tax_id: fields.tax_id,
+			type: fields.type,
+			country: fields.country,
+			individual: {
+				first_name: fields.firstName,
+				last_name: fields.lastName,
+				date_of_birth: fields.dateOfBirth
+			},
+			// address_line_1: fields.address_line_1,
+			// address_line_2: fields.address_line_2,
+			// city: fields.city,
+			// state_province_region: fields.state_province_region,
+			// postal_code: fields.postal_code,
+			// image_url: fields.image_url
+		};
+
+
+		const receiverResponse = await fetch(`${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers`, {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(receiverRequestBody)
+		});
+
+		if (receiverResponse.status !== 200) {
+			const errorData = await receiverResponse.json();
+			await createLog("account/createBlindpayReceiver", fields.userId, errorData, receiverResponse);
+			return res.status(400).json({ error: `An error occurred while creating the receiver. Please try again later.`, message: errorData.message, path: errorData.errors });
+		}
+
+		const receiverData = await receiverResponse.json();
+
+
+		// Insert receiver data into blindpay_receivers table
+		const { data: receiverRecord, error: receiverError } = await supabase
+			.from('blindpay_receivers')
+			.insert({
+				email: fields.email,
+				type: fields.type,
+				country: fields.country,
+				blindpay_receiver_id: receiverData.id,
+				user_id: fields.userId
+			}).select().single();
+
+		if (receiverError) {
+			console.log('receiverError', receiverError)
+			await createLog("account/createBlindpayReceiver", fields.userId, receiverError.message, receiverError);
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+
+		const responseObject = {
+			id: receiverRecord.id,
+			email: fields.email,
+			type: fields.type,
+			country: fields.country,
+
+		};
+
+		return res.status(200).json(responseObject);
+
+	} catch (error) {
+		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error);
+		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
+	}
+}
