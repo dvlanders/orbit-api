@@ -34,38 +34,41 @@ exports.createApiKey = async (req, res) => {
 		const getProfile = async (supabaseClient, profileId) => {
 			const { data, error } = await supabaseCall(() => supabaseClient
 				.from("profiles")
-				.select("*")
+				.select("*, organization: organization_id(*)")
 				.eq("id", profileId)
 				.maybeSingle());
 			if (error) throw error;
 			return data;
 		};
 
+		let organizationId
+
 		if (env === "production") {
 			const profile = await getProfile(supabase, profileId);
-			if (!profile.prod_enabled) {
+			if (!profile.organization.prod_enabled) {
 				return res.status(401).json({ error: "Please contact HIFI for activating the production environment" });
 			}
+			organizationId = profile.organization_id
 		}
 
 		if (env === "sandbox") {
 			let sandboxProfile = await getProfile(supabaseSandbox, profileId);
-
 			if (!sandboxProfile) {
+				// insert sandbox profile
 				const prodProfile = await getProfile(supabase, profileId);
-
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
+				// delete extra information before insert
+				delete prodProfile.organization
 
-				const { id, ...rest } = prodProfile;
 				const { data: newSandboxProfile, error: newSandboxProfileError } = await supabaseCall(() => supabaseSandbox
 					.from("profiles")
-					.insert({
-						id: profileId,
-						...rest
-					}));
+					.insert(prodProfile));
 				if (newSandboxProfileError) throw newSandboxProfileError;
+				organizationId = prodProfile.organization_id
+			}else{
+				organizationId = sandboxProfile.organization_id
 			}
 		}
 
@@ -73,9 +76,7 @@ exports.createApiKey = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(fields, ["apiKeyName", "expiredAt", "env"], { "apiKeyName": "string", "expiredAt": "string", "env": "string" });
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `Fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields });
 
-		console.log("createApiKey", profileId, apiKeyName, expiredAt, env);
-
-		const apikeyInfo = await createApiKeyFromProvider(profileId, apiKeyName, expiredAt, env);
+		const apikeyInfo = await createApiKeyFromProvider(organizationId, apiKeyName, expiredAt, env);
 		return res.status(200).json(apikeyInfo);
 
 	} catch (error) {
@@ -107,13 +108,20 @@ exports.getApiKey = async (req, res) => {
 		};
 
 		profileId = user.sub
+		//get profile and organization
+		const { data: profile, error: profileError } = await supabase
+			.from("profiles")
+			.select("organization_id, organization: organization_id(*)")
+			.eq("id", profileId)
+			.maybeSingle()
+
+		if (profileError) throw profileError
 
 		// get from sandbox
-		let supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
-		let { data: sandboxKeys, error: sandboxKeysError } = await supabase
+		let { data: sandboxKeys, error: sandboxKeysError } = await supabaseSandbox
 			.from("api_keys")
 			.select()
-			.eq("profile_id", profileId)
+			.eq("profile_id", profile.organization_id)
 			.is("active", true)
 
 		if (sandboxKeysError) throw sandboxKeysError
@@ -125,11 +133,10 @@ exports.getApiKey = async (req, res) => {
 		})
 
 		// get from production
-		supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 		let { data: prodKeys, error: prodKeysError } = await supabase
 			.from("api_keys")
 			.select()
-			.eq("profile_id", profileId)
+			.eq("profile_id", profile.organization_id)
 			.is("active", true)
 
 		if (prodKeysError) throw prodKeysError
@@ -156,29 +163,28 @@ exports.getApiKey = async (req, res) => {
 	}
 }
 
+// exports.createProfileInSandbox = async (req, res) => {
+// 	if (req.method !== 'POST') {
+// 		return res.status(405).json({ error: 'Method not allowed' });
+// 	}
+// 	const { record } = req.body
+// 	if (!record) return res.status(400).json({ error: 'record required' });
+// 	try {
+// 		const supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
+// 		// insert new profile
+// 		const { data, error } = await supabaseCall(() => supabase
+// 			.from("profiles")
+// 			.insert({
+// 				id: record.id
+// 			}))
+// 		if (error) throw error
+// 		return res.status(200).json({ message: "sandbox profiles create successfully" })
 
-exports.createProfileInSandbox = async (req, res) => {
-	if (req.method !== 'POST') {
-		return res.status(405).json({ error: 'Method not allowed' });
-	}
-	const { record } = req.body
-	if (!record) return res.status(400).json({ error: 'record required' });
-	try {
-		const supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
-		// insert new profile
-		const { data, error } = await supabaseCall(() => supabase
-			.from("profiles")
-			.insert({
-				id: record.id
-			}))
-		if (error) throw error
-		return res.status(200).json({ message: "sandbox profiles create successfully" })
-
-	} catch (error) {
-		await createLog("auth/createProfileInSandbox", null, `Fail to create sandbox profile for: ${record.id}`, error)
-		return res.status(500).json({ error: "Unexpected error happened" })
-	}
-}
+// 	} catch (error) {
+// 		await createLog("auth/createProfileInSandbox", null, `Fail to create sandbox profile for: ${record.id}`, error)
+// 		return res.status(500).json({ error: "Unexpected error happened" })
+// 	}
+// }
 
 exports.createWebhook = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -200,15 +206,16 @@ exports.createWebhook = async (req, res) => {
 		};
 
 		profileId = user.sub
+		let organizationId
+
 		const { webhookUrl, env } = req.body
 		// filed validation
 		if (!webhookUrl || !env) return res.status(400).json({ error: "webhookUrl and env is required" })
 
-		const createClientInstance = (url, key) => createClient(url, key);
-		const getProfile = async (supabase, profileId) => {
-			const { data, error } = await supabaseCall(() => supabase
+		const getProfile = async (supabaseClient, profileId) => {
+			const { data, error } = await supabaseCall(() => supabaseClient
 				.from("profiles")
-				.select("*")
+				.select("*, organization: organization_id(*)")
 				.eq("id", profileId)
 				.maybeSingle());
 			if (error) throw error;
@@ -216,39 +223,36 @@ exports.createWebhook = async (req, res) => {
 		};
 
 		if (env === "production") {
-			const supabase = createClientInstance(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 			const profile = await getProfile(supabase, profileId);
-			if (!profile.prod_enabled) {
+			if (!profile.organization.prod_enabled) {
 				return res.status(401).json({ error: "Please contact HIFI for activating the production environment" });
 			}
+			organizationId = profile.organization_id
 		}
 
 		if (env === "sandbox") {
-			const sandboxSupabase = createClientInstance(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY);
-			let sandboxProfile = await getProfile(sandboxSupabase, profileId);
+			const sandboxProfile = await getProfile(supabaseSandbox, profileId);
 
 			if (!sandboxProfile) {
-				const prodSupabase = createClientInstance(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-				const prodProfile = await getProfile(prodSupabase, profileId);
-
+				// insert sandbox profile
+				const prodProfile = await getProfile(supabase, profileId);
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
+				// delete extra information before insert
+				delete prodProfile.organization
 
-				console.log('prod profile', prodProfile);
-
-				const { id, ...rest } = prodProfile;
-				const { data: newSandboxProfile, error: newSandboxProfileError } = await supabaseCall(() => sandboxSupabase
+				const { data: newSandboxProfile, error: newSandboxProfileError } = await supabaseCall(() => supabaseSandbox
 					.from("profiles")
-					.insert({
-						id: profileId,
-						...rest
-					}));
+					.insert(prodProfile));
 				if (newSandboxProfileError) throw newSandboxProfileError;
+				organizationId = prodProfile.organization_id
+			}else{
+				organizationId = sandboxProfile.organization_id
 			}
 		}
 
-		const secretKey = await activateWebhook(webhookUrl, profileId, env)
+		const secretKey = await activateWebhook(webhookUrl, organizationId, env)
 		const result = {
 			webhookUrl,
 			secretKey
@@ -282,6 +286,16 @@ exports.getWebhook = async (req, res) => {
 		};
 
 		profileId = user.sub
+		//get profile and organization
+		const { data: profile, error: profileError } = await supabase
+			.from("profiles")
+			.select("organization_id, organization: organization_id(*)")
+			.eq("id", profileId)
+			.maybeSingle()
+
+		if (profileError) throw profileError
+
+		
 		const webhookInfo = {
 			production: {
 				webhookUrl: "",
@@ -293,11 +307,10 @@ exports.getWebhook = async (req, res) => {
 			}
 		}
 		// get from sandbox
-		let supabase = createClient(process.env.SUPABASE_SANDBOX_URL, process.env.SUPABASE_SANDBOX_SERVICE_ROLE_KEY)
-		const { data: sandboxWebhook, error: sandboxWebhookError } = await supabase
+		const { data: sandboxWebhook, error: sandboxWebhookError } = await supabaseSandbox
 			.from("webhook_urls")
 			.select()
-			.eq("profile_id", profileId)
+			.eq("profile_id", profile.organization_id)
 			.maybeSingle()
 
 		if (sandboxWebhookError) throw sandboxWebhookError
@@ -307,11 +320,10 @@ exports.getWebhook = async (req, res) => {
 		}
 
 		// get from production
-		supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 		const { data: prodWebhook, error: prodWebhookError } = await supabase
 			.from("webhook_urls")
 			.select()
-			.eq("profile_id", profileId)
+			.eq("profile_id", profile.organization_id)
 			.maybeSingle()
 
 		if (prodWebhookError) throw prodWebhookError
