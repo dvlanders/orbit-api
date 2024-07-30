@@ -550,7 +550,7 @@ exports.getInvoiceHistory = async(req, res) => {
         const invoiceLimit = limit || 10
         const {data, error} = await supabaseCall(() => supabase
             .from("billing_history")
-            .select("id, created_at, final_billable_fee_amount, billing_documentation_url, hosted_billing_page_url, status, billing_email, billable_payout_fee, billable_deposit_fee, billable_active_virtual_account_fee")
+            .select("id, hifi_billing_id,created_at, final_billable_fee_amount, billing_documentation_url, hosted_billing_page_url, status, billing_email, billable_payout_fee, billable_deposit_fee, billable_active_virtual_account_fee")
             .eq("profile_id", profileId)
             .neq("status", "CREATED")
             .lt("created_at", invoiceCreatedBefore)
@@ -561,6 +561,7 @@ exports.getInvoiceHistory = async(req, res) => {
         const records = data.map((d) => {
             return {
                 id: d.id,
+                hifiBillingId: d.hifi_billing_id,
                 createdAt: d.created_at,
                 paymentAmount: d.final_billable_fee_amount,
                 payoutFee: d.billable_payout_fee,
