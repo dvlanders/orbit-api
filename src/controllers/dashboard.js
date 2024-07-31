@@ -674,16 +674,14 @@ exports.sendInvitation = async(req, res) => {
 
         //  create a profile if it's not created
         if (!profileToInvite) {
-            const { data: newRecipientUserData, error: newRecipientUserError } =
-            await supabase.auth.signInWithOtp({
-                email: emailAddress,
-                options: {
-                    shouldCreateUser: true,
-                    emailRedirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
-                },
-            });
-
-            if (newRecipientUserError) throw newRecipientUserError
+            const { data, error } = await supabase.auth.admin.inviteUserByEmail(emailAddress, {
+                redirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
+            })
+            if (error){
+                await createLog("ashboard/sendInvitation", null, error.message, error, originProfileId)
+                console.error(error)
+                return res.status(500).json({error: "Internal server error"})
+            }
 
         }else{
             // send Invitation email
