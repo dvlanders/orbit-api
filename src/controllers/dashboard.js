@@ -8,6 +8,7 @@ const supabase = require("../util/supabaseClient");
 const { feeMap } = require("../util/billing/feeRateMap");
 const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCalculator");
 const { supabaseCall } = require("../util/supabaseWithRetry");
+const { v4 } = require('uuid');
 
 exports.getWalletBalance = async(req, res) => {
     if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
@@ -578,6 +579,168 @@ exports.getInvoiceHistory = async(req, res) => {
     }catch (error){
         console.error(error)
         await createLog("dashboard/utils/getInvoiceHistory", null, error.message, null, profileId)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.getOrganization = async(req, res) => {
+    if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
+
+    const {profileId} = req.query
+    try{
+        const {data: organization, error: organizationError} = await supabase
+            .from("profiles")
+            .select("organization: organization_id(prod_enabled, kyb_status, developer_user_id, prefunded_account_enabled, fee_collection_enabled, billing_enabled)")
+            .eq("id", profileId)
+            .single()
+
+        if (organizationError) throw organizationError
+        return res.status(200).json({organization: organization.organization})
+        
+    }catch(error){
+        await createLog("dashboard/getOrganization", null, error.message, error, profileId)
+        return res.status(500).json({error: "Internal server error"})
+    }
+    
+}
+
+exports.sendInvitation = async(req, res) => {
+    if (req.method !== "POST") return res.status(405).json({ error: 'Method not allowed' });
+
+    const {originProfileId, profileId} = req.query
+    const {emailAddress, role} = req.body
+    try{
+        // get customer profile
+        const {data: profile, error: profileError} = await supabase
+            .from("profiles")
+            .select("organization_role, email, full_name")
+            .eq("id", originProfileId)
+            .single()
+        if (profileError) throw profileError
+        if (profile.organization_role != "ADMIN") return res.status(401).json({error: "Only ADMIN is allow to send invitation"})
+
+        // check if email is already in profile table
+        const {data: profileToInvite, error: profileToInviteError} = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("email", emailAddress)
+            .maybeSingle()
+
+        if (profileToInviteError) throw profileToInviteError
+
+        // insert Invitation record
+        let expiredAt = new Date();
+        expiredAt.setTime(expiredAt.getTime() + (24 * 60 * 60 * 1000));
+        let expiredAtISO = expiredAt.toISOString();
+        const {data: invitationRecord, error: invitationRecordError} = await supabase
+            .from("organization_invitations")
+            .insert({
+                expired_at: expiredAtISO,
+                organization_id: profileId,
+                recipient_email: emailAddress,
+                role: role,
+                sender: profile.full_name || profile.email
+            })
+            .select("session_token")
+            .single()
+        if (invitationRecordError) throw invitationRecordError
+
+        //  create a profile if it's not created
+        if (!profileToInvite) {
+            const { data: newRecipientUserData, error: newRecipientUserError } =
+            await supabase.auth.signInWithOtp({
+                email: emailAddress,
+                options: {
+                    shouldCreateUser: true,
+                    emailRedirectTo: `https://dashboard.hifibridge.com/auth/invitation?sessionToken=${invitationRecord.session_token}`
+                },
+            });
+
+            if (newRecipientUserError) throw newRecipientUserError
+
+        }else{
+            // send Invitation email
+            const sender = profile.full_name || profile.email
+            const form = new FormData();
+            form.append('from', `HIFI Developer Dashboard <noreply@${process.env.MAILGUN_DOMAIN}>`);
+            form.append('to', emailAddress);
+            form.append('template', 'organization invitation');
+            form.append('v:redirect_to', `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`);
+            form.append('v:from_email', `${sender}`);
+
+            const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
+            const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': authHeader
+                },
+                body: form
+            });
+            const responseBody = await response.json()
+            if (!response.ok){
+                await createLog("ashboard/sendInvitation", null, "Failed to send invitaion emailvia mailgun", responseBody, originProfileId)
+                return res.status(500).json({error: "Internal server error"})
+            }
+        }
+
+        return res.status(200).json({message: "Invitation sent"})
+    }catch(error){
+        await createLog("dashboard/sendInvitation", null, error.message, error, originProfileId)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.acceptInvitation = async(req, res) => {
+    if (req.method !== "POST") return res.status(405).json({ error: 'Method not allowed' });
+
+    const {sessionToken} = req.body
+    const {originProfileId} = req.query
+
+    try{
+        // get recipient profile info
+        const {data: profile, error: profileError} = await supabase
+            .from("profiles")
+            .select("email")
+            .eq("id", originProfileId)
+            .single()
+        if (profileError) throw profileError
+
+        // get invitation record
+        const {data: invitationRecord, error: invitationRecordError} = await supabase
+            .from("organization_invitations")
+            .select("*")
+            .eq("session_token", sessionToken)
+            .eq("recipient_email", profile.email)
+            .maybeSingle()
+        if (invitationRecordError) throw invitationRecordError
+        if (!invitationRecord || !invitationRecord.valid) return res.status(403).json({error: "Invalid invitation"})
+        
+        if (new Date() > new Date(invitationRecord.expired_at)) return res.status(403).json({error: "Expired invitation"})
+        
+        // update profile
+        const {data: updatedProfile, error: updatedProfileError } = await supabase
+            .from("profiles")
+            .update({
+                organization_id: invitationRecord.organization_id,
+                organization_role: invitationRecord.role
+            })
+            .eq("id", originProfileId)
+        
+        if (updatedProfileError) throw updatedProfileError
+
+        // update invitation
+        const {data: updateInvitationRecord, error: updateInvitationRecordError} = await supabase
+            .from("organization_invitations")
+            .update({
+                valid: false
+            })
+            .eq("id", invitationRecord.id)
+        if (updateInvitationRecordError) throw updateInvitationRecordError
+
+
+        return res.status(200).json({message: "Success"})
+    }catch(error){
+        await createLog("dashboard/utils/acceptInvitation", null, error.message, error, originProfileId)
         return res.status(500).json({error: "Internal server error"})
     }
 }

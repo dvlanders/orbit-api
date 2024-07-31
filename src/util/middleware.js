@@ -69,11 +69,23 @@ exports.authorizeDashboard = async (req, res, next) => {
 
 		if (error) throw error
 		if (!data || !data.organization) return res.status(401).json({ error: "Not authorized" });
-		if (!data.organization.prod_enabled) return res.status(401).json({ error: "Not authorized" });
+		// if (!data.organization.prod_enabled) return res.status(401).json({ error: "Not authorized" });
 
-		req.query.profileId = data.organization_id
+		req.query.profileId = data.organization_id // customers's organization id
+		req.query.originProfileId = user.sub // customers's profile id
+		req.query.prod_enabled = data.organization.prod_enabled
 		next()
 	} catch (error) {
+		console.error(error)
+		return res.status(500).json({ error: "Unexpected error happened" });
+	}
+}
+
+exports.requiredProdDashboard = async(req, res, next) => {
+	try{
+		if (!req.query.prod_enabled) return res.status(401).json({ error: "Not authorized" });
+		next()
+	}catch (error){
 		console.error(error)
 		return res.status(500).json({ error: "Unexpected error happened" });
 	}
