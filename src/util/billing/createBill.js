@@ -1,14 +1,14 @@
-const { uuidV4 } = require('ethers');
+const { v4 } = require('uuid');
 const { getNextCycleEnd } = require('../helper/dateTimeUtils');
 const createLog = require('../logger/supabaseLogger');
 const supabase = require('../supabaseClient');
 const { calculateCustomerMonthlyBill } = require('./customerBillCalculator');
 
-const STRIPE_SK_KEY = process.env.STRIPE_TEST_SK_KEY
+const STRIPE_SK_KEY = process.env.STRIPE_SK_KEY
 const stripe = require('stripe')(STRIPE_SK_KEY);
 
 function generateHifiInvoiceId(length = 10) {
-    const uuid = uuidV4().replace(/-/g, ''); // Remove hyphens to get a continuous string
+    const uuid = v4().replace(/-/g, ''); // Remove hyphens to get a continuous string
     return "HIFI_" + uuid.slice(0, length); // Truncate to the desired length
   }
 
@@ -39,7 +39,6 @@ exports.createStripeBill = async(billingInformation) => {
         const monthlyMinimum = parseFloat(billingInfo.monthlyMinimum.toFixed(2))
         const billableIntegrationFee = Math.max(monthlyMinimum - (billablePayoutFee + billableDepositFee + billableVirtualAccountFee), 0)
         const finalBillableFee = Math.max(billablePayoutFee + billableDepositFee + billableVirtualAccountFee, monthlyMinimum)
-
         const hifiBillingId = generateHifiInvoiceId()
 
         // insert billing history
