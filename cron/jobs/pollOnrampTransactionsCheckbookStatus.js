@@ -52,8 +52,6 @@ const updateStatus = async (onrampTransaction) => {
         await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
     }
 
-	if (status == onrampTransaction.status) return
-
 	//update status
 	const { data: update, error: updateError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
@@ -72,7 +70,9 @@ const updateStatus = async (onrampTransaction) => {
 		return
 	}
 
-	await notifyFiatToCryptoTransfer(update)
+    if (status != onrampTransaction.status){
+        await notifyFiatToCryptoTransfer(update)
+    }
 
 }
 
@@ -84,9 +84,9 @@ async function pollOnrampTransactionsCheckbookStatus() {
 		.from('onramp_transactions')
 		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id, status')
         .eq('fiat_provider', "CHECKBOOK")
-        .or('status.eq.FIAT_SUBMITTED,checkbook_status.eq.IN_PROCESS')
+        .or('status.eq.FIAT_SUBMITTED, checkbook_status.eq.IN_PROCESS')
         .order('updated_at', {ascending: true})
-	)
+    )
 
 	if (onRampTransactionStatusError) {
 		console.error('Failed to fetch transactions for pollOnrampTransactionsCheckbookStatus', onRampTransactionStatusError);

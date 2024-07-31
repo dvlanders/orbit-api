@@ -25,6 +25,9 @@ exports.chargeFeeOnFundReceivedBastion = async(transferRecordId) => {
         if (onrampRecordError) throw onrampRecordError
 
         const feeRecord = onrampRecord.developer_fees
+        // fee already charged
+        if (feeRecord.bastion_status == "CONFIRMED" || feeRecord.charged_status == "CONFIRMED") return 
+
         userId = onrampRecord.destination_user_id
         //get destination wallet address
         const {data: bridgeVirtualAccount, error: bridgeVirtualAccountError} = await supabase

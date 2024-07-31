@@ -93,12 +93,13 @@ async function pollOfframpTransactionsBastionStatus() {
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id')
+		.update({updated_at: new Date().toISOString()})
 		.eq("crypto_provider", "BASTION")
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.neq('transaction_status', "CREATED")
 		.order('updated_at', { ascending: true })
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id')
 	)
 
 
