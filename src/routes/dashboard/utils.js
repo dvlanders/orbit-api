@@ -17,5 +17,5 @@ module.exports = (router) => {
     router.get("/dashboard/utils/getOrganization", authorizeDashboard, dashboard.getOrganization)
     router.post("/dashboard/utils/sendInvitation", authorizeDashboard, dashboard.sendInvitation)
     router.post("/dashboard/utils/acceptInvitation", authorizeDashboard, dashboard.acceptInvitation)
-
+    router.put("/dashboard/utils/editOrganizationMember", authorizeDashboard, dashboard.editOrganizationMember)
 }

@@ -588,6 +588,7 @@ exports.getOrganization = async(req, res) => {
 
     const {profileId} = req.query
     try{
+        // get org config
         const {data: organization, error: organizationError} = await supabase
             .from("profiles")
             .select("organization: organization_id(prod_enabled, kyb_status, developer_user_id, prefunded_account_enabled, fee_collection_enabled, billing_enabled)")
@@ -595,7 +596,33 @@ exports.getOrganization = async(req, res) => {
             .single()
 
         if (organizationError) throw organizationError
-        return res.status(200).json({organization: organization.organization})
+        // get all members
+        const {data: members, error: membersError} = await supabase
+            .from("profiles")
+            .select("id, full_name, email, organization_role, avatar_url")
+            .eq("organization_id", profileId)
+
+        if (membersError) throw membersError
+
+        members.sort((a, b) => {
+            if (a.organization_role < b.organization_role) {
+              return -1;
+            }
+            if (a.organization_role > b.organization_role) {
+              return 1;
+            }
+            return 0;
+          });
+
+
+        const result = {
+            ...organization,
+            members
+        }
+
+
+
+        return res.status(200).json(result)
         
     }catch(error){
         await createLog("dashboard/getOrganization", null, error.message, error, profileId)
@@ -652,7 +679,7 @@ exports.sendInvitation = async(req, res) => {
                 email: emailAddress,
                 options: {
                     shouldCreateUser: true,
-                    emailRedirectTo: `https://dashboard.hifibridge.com/auth/invitation?sessionToken=${invitationRecord.session_token}`
+                    emailRedirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
                 },
             });
 
@@ -741,6 +768,54 @@ exports.acceptInvitation = async(req, res) => {
         return res.status(200).json({message: "Success"})
     }catch(error){
         await createLog("dashboard/utils/acceptInvitation", null, error.message, error, originProfileId)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.editOrganizationMember = async(req, res) => {
+    if (req.method !== "PUT") return res.status(405).json({ error: 'Method not allowed' });
+
+    const {originProfileId, profileId} = req.query
+    const {newRole, isDelete, userId} = req.body
+
+    try{
+        // get customer profile
+        const {data: profile, error: profileError} = await supabase
+            .from("profiles")
+            .select("organization_role, email, full_name")
+            .eq("id", originProfileId)
+            .single()
+        if (profileError) throw profileError
+        if (profile.organization_role != "ADMIN") return res.status(401).json({error: "Only ADMIN is allow to edit and remove team member"})
+
+        if (isDelete){
+            // remove profile form organization
+            const {data: updatedProfile, error: updatedProfileError } = await supabase
+            .from("profiles")
+            .update({
+                organization_id: userId,
+                organization_role: "ADMIN"
+            })
+            .eq("id", userId)
+            .eq("organization_id", profileId)
+        
+            if (updatedProfileError) throw updatedProfileError
+            return res.status(200).json({message: "Remove member success"})
+        }
+
+        // update role
+        const {data: updatedProfile, error: updatedProfileError } = await supabase
+            .from("profiles")
+            .update({
+                organization_role: newRole
+            })
+            .eq("id", userId)
+            .eq("organization_id", profileId)
+        
+        if (updatedProfileError) throw updatedProfileError
+        return res.status(200).json({message: "update member success"})
+    }catch(error){
+        await createLog("dashboard/utils/editOrganizationMember", null, error.message, error, originProfileId)
         return res.status(500).json({error: "Internal server error"})
     }
 }
