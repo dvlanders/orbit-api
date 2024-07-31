@@ -84,13 +84,14 @@ async function pollOfframpTransactionsBridgeStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
-		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id')
+		.update({updated_at: new Date().toISOString()})
 		.eq("fiat_provider", "BRIDGE")
 		.neq("transaction_status", "NOT_INITIATED")
 		.neq("transaction_status", "FAILED_ONCHAIN")
 		.neq("transaction_status", "FAILED_FIAT_REFUNDED")
 		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
 		.order('updated_at', { ascending: true })
+		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id')
 	)
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
