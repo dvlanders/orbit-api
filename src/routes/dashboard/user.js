@@ -1,22 +1,22 @@
 const { user } = require("../../controllers");
-const { authorizeDashboard } = require("../../util/middleware");
+const { authorizeDashboard, requiredProdDashboard } = require("../../util/middleware");
 
 module.exports = (router) => {
 
-	router.post("/dashboard/user/create", authorizeDashboard, user.createHifiUser);
-	router.post("/dashboard/user/create/async", authorizeDashboard, user.createHifiUserAsync);
-	router.post("/dashboard/user/developer/create", authorizeDashboard, user.createDeveloperUser)
+	router.post("/dashboard/user/create", authorizeDashboard, requiredProdDashboard,user.createHifiUser);
+	router.post("/dashboard/user/create/async", authorizeDashboard, requiredProdDashboard,user.createHifiUserAsync);
+	router.post("/dashboard/user/developer/create", authorizeDashboard, requiredProdDashboard,user.createDeveloperUser)
 
-	router.get("/dashboard/user/all", authorizeDashboard, user.getAllHifiUser)
+	router.get("/dashboard/user/all", authorizeDashboard, requiredProdDashboard,user.getAllHifiUser)
 
-	router.get("/dashboard/user", authorizeDashboard, user.getHifiUser);
-	router.get("/dashboard/user/developer", authorizeDashboard, user.getDeveloperUserStatus);
+	router.get("/dashboard/user", authorizeDashboard, requiredProdDashboard,user.getHifiUser);
+	router.get("/dashboard/user/developer", authorizeDashboard, requiredProdDashboard,user.getDeveloperUserStatus);
 
-	router.put("/dashboard/user", authorizeDashboard, user.updateHifiUser);
-	router.put("/dashboard/user/async", authorizeDashboard, user.updateHifiUserAsync);
+	router.put("/dashboard/user", authorizeDashboard, requiredProdDashboard,user.updateHifiUser);
+	router.put("/dashboard/user/async", authorizeDashboard, requiredProdDashboard,user.updateHifiUserAsync);
 
-	router.post("/dashboard/tos-link", authorizeDashboard, user.generateToSLink)
-	router.get("/dashboard/user/userKyc", authorizeDashboard, user.getUserKycInformation)
+	router.post("/dashboard/tos-link", authorizeDashboard, requiredProdDashboard,user.generateToSLink)
+	router.get("/dashboard/user/userKyc", authorizeDashboard, requiredProdDashboard, user.getUserKycInformation)
 };
 
 

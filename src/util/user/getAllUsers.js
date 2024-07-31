@@ -1,3 +1,4 @@
+const { getAllUserWallets } = require("../bastion/utils/getAllUserWallets");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { CustomerStatus } = require("./common");
@@ -60,7 +61,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
         users = data
     }
 
-    const result = users.map((user) => {
+    const result = await Promise.all(users.map(async(user) => {
         const name = user.user_kyc ? (user.user_type == "business" ? user.user_kyc.business_name : user.user_kyc.legal_first_name + " " + user.user_kyc.legal_last_name) : null
         const bridgeKycStatus = user.bridge_customers? (user.bridge_customers.status == "active" ? CustomerStatus.ACTIVE : user.bridge_customers.status == "not_started"? CustomerStatus.PENDING : CustomerStatus.INACTIVE) : CustomerStatus.INACTIVE
         const walletstatus = user.bastion_users ? (user.bastion_users.kyc_passed && user.bastion_users.jurisdiction_check_passed ? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE) : CustomerStatus.INACTIVE
@@ -75,13 +76,13 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
             createdAt: new Date(user.created_at),
             userKycStatus: bridgeKycStatus, // now only represent bridge, which has the most functionality
             walletStatus: walletstatus, // only represent bastion now
-            walletAddress: user.bastion_wallets,
+            walletAddress: await getAllUserWallets(user.id),
         }
         if (user.user_type == "business") {
             userInfo.ultimateBeneficialOwners = user.ultimate_beneficial_owners
         }
         return userInfo
-    })
+    }))
 
     return result
 
