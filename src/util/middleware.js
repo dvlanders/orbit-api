@@ -45,16 +45,6 @@ exports.authorize = async (req, res, next) => {
 	}
 };
 
-exports.authorizeSupabase = async (req, res, next) => {
-	try {
-		const token = req.headers['supabase-webhook-secret'];
-		if (token !== SUPABASE_WEBHOOK_SECRET) return res.status(401).json({ error: "Not authorized" });
-		next()
-	} catch (error) {
-		console.error(err)
-		return res.status(500).json({ error: "Unexpected error happened" });
-	}
-}
 
 exports.authorizeDashboard = async (req, res, next) => {
 	try {
@@ -73,17 +63,29 @@ exports.authorizeDashboard = async (req, res, next) => {
 		//check is prod enable
 		const { data, error } = await supabase
 			.from("profiles")
-			.select("prod_enabled")
+			.select("organization_id, organization: organization_id(*)")
 			.eq("id", user.sub)
 			.maybeSingle()
 
 		if (error) throw error
-		if (!data) return res.status(401).json({ error: "Not authorized" });
-		if (!data.prod_enabled) return res.status(401).json({ error: "Not authorized" });
+		if (!data || !data.organization) return res.status(401).json({ error: "Not authorized" });
+		// if (!data.organization.prod_enabled) return res.status(401).json({ error: "Not authorized" });
 
-		req.query.profileId = user.sub
+		req.query.profileId = data.organization_id // customers's organization id
+		req.query.originProfileId = user.sub // customers's profile id
+		req.query.prod_enabled = data.organization.prod_enabled
 		next()
 	} catch (error) {
+		console.error(error)
+		return res.status(500).json({ error: "Unexpected error happened" });
+	}
+}
+
+exports.requiredProdDashboard = async(req, res, next) => {
+	try{
+		if (!req.query.prod_enabled) return res.status(401).json({ error: "Not authorized" });
+		next()
+	}catch (error){
 		console.error(error)
 		return res.status(500).json({ error: "Unexpected error happened" });
 	}
