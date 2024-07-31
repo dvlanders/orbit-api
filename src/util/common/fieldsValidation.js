@@ -40,7 +40,14 @@ const isUUID = (uuid) => {
 	return regex.test(uuid);
 }
 
+const isValidISODateFormat = (dateString) => {
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const date = new Date(dateString);
+    return isoDateRegex.test(dateString) && !isNaN(date.getTime());
+}
+
 module.exports = {
 	isUUID,
+	isValidISODateFormat,
 	fieldsValidation
 }

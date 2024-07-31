@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-const { fieldsValidation } = require("../util/common/fieldsValidation");
+const { fieldsValidation, isValidISODateFormat } = require("../util/common/fieldsValidation");
 const createAndFundBastionUser = require('../util/bastion/fundMaticPolygon');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
@@ -991,6 +991,8 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
 	}
 
+	if (fields.dateOfBirth && !isValidISODateFormat(fields.dateOfBirth)) return res.status(400).json({ error: "Invalid date of birth" });
+
 	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 
 	const headers = {
@@ -1010,7 +1012,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 			individual: {
 				first_name: fields.firstName,
 				last_name: fields.lastName,
-				date_of_birth: fields.dateOfBirth
+				date_of_birth: new Date(fields.dateOfBirth).toISOString()
 			},
 			// address_line_1: fields.address_line_1,
 			// address_line_2: fields.address_line_2,
