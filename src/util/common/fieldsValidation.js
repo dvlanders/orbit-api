@@ -14,6 +14,8 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 	fieldsKey.forEach((key) => {
 		if (key == "apiKeyId") return
 		if (key == "profileId") return
+		if (key == "prod_enabled") return
+		if (key == "originProfileId") return
 
 		if (!(key in acceptedFields)) {
 			invalidFields.push(key);
