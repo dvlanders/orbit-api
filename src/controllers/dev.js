@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
 const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { createStripeBill } = require("../util/billing/createBill");
-const stripe = require('stripe')(process.env.STRIPE_TEST_SK_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
     

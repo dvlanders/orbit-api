@@ -4,6 +4,7 @@ const supabase = require("../../src/util/supabaseClient")
 
 const pollBillingCreate = async() => {
     try{
+        if (process.env.NODE_ENV != "production") return
         // get all billable customers
         const {data: customers, error: customersError} = await supabase
             .from("billing_information")

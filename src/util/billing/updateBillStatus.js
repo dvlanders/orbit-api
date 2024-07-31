@@ -21,7 +21,8 @@ exports.updateBillStatus = async(event) => {
                 stripe_response: {
                     history: [event, ...billingHistory.stripe_response.history]
                 },
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                billing_due_date: new Date(event.data.object.due_date * 1000).toISOString()
             }
         }else if (event.type == "invoice.paid" && event.data.object.paid ){
             toUpdate = {

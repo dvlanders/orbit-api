@@ -1,7 +1,7 @@
 const { updateBillStatus } = require('../util/billing/updateBillStatus');
 const createLog = require('../util/logger/supabaseLogger');
 
-const stripe = require('stripe')(process.env.STRIPE_TEST_SK_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 exports.stripeWebhook = async(req, res) => {
     if (req.method !== "POST") return res.status(405).json({ error: 'Method not allowed' });
