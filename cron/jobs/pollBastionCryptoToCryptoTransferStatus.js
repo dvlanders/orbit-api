@@ -84,12 +84,13 @@ async function pollBastionCryptoToCryptoTransferStatus() {
 		// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 		const { data: cryptoTransactionData, error: cryptoTransactionDataError } = await supabaseCall(() => supabase
 			.from('crypto_to_crypto')
-			.select('*')
+			.update({updated_at: new Date().toISOString()})
 			.eq('provider', "BASTION")
 			.neq('status', BastionTransferStatus.CONFIRMED)
 			.neq('status', BastionTransferStatus.FAILED)
 			.neq('status', "CREATED")
 			.order('updated_at', { ascending: true })
+			.select('*')
 		)
 
 
