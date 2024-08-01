@@ -4,15 +4,17 @@ const supabase = require("../supabaseClient")
 exports.updateBillStatus = async(event) => {
     
     try{
-        const invoiceId = event.data.object.id
+        const hifiInternalBillingId = event.data.object.metadata.hifiInternalBillingId
+        if (!hifiInternalBillingId) return
         // fetch history
         const {data: billingHistory, error: billingHistoryError} = await supabase
         .from("billing_history")
         .select("stripe_response")
-        .eq("stripe_invoice_id", invoiceId)
-        .single()
-    
+        .eq("id", hifiInternalBillingId)
+        .maybeSingle()
+        
         if (billingHistoryError) throw billingHistoryError
+        if (!billingHistory) return
         // update 
         let toUpdate
         if (event.type == "invoice.sent"){
@@ -41,7 +43,7 @@ exports.updateBillStatus = async(event) => {
             const {data: updatedBillingHistory, error: updatedBillingHistoryError} = await supabase
                 .from("billing_history")
                 .update(toUpdate)
-                .eq("stripe_invoice_id", invoiceId)
+                .eq("id", hifiInternalBillingId)
     
             if (updatedBillingHistoryError) throw updatedBillingHistoryError
         }
