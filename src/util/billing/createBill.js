@@ -70,11 +70,23 @@ exports.createStripeBill = async(billingInformation) => {
 
         // send invoice
         // Create an Invoice
-        const invoice = await stripe.invoices.create({
+        const createConfig = {
             customer: customerId,
-            collection_method: 'send_invoice',
-            days_until_due: 30,
-        });
+            metadata:{
+                hifiInternalBillingId: billingHistory.id,
+                hifiBillingId
+            }
+        }
+        if (billingInformation.stripe_default_payment_method_id){
+            // auto charge
+            createConfig.default_payment_method = billingInformation.stripe_default_payment_method_id,
+            createConfig.collection_method = 'charge_automatically'
+        }else{
+            // send invoice reqyest
+            createConfig.collection_method = 'send_invoice',
+            createConfig.days_until_due = 30
+        }
+        const invoice = await stripe.invoices.create(createConfig);
         const invoiceId = invoice.id
 
         // create invoice items
@@ -106,24 +118,31 @@ exports.createStripeBill = async(billingInformation) => {
                 invoice: invoiceId
             });
 
-
         }))
 
+        let sentInvoice
+        if (!billingInformation.stripe_default_payment_method_id){
+            sentInvoice = await stripe.invoices.sendInvoice(invoiceId);
+        }else{
+            sentInvoice = await stripe.invoices.pay(invoiceId);
+        }
 
-        const sentInvoice = await stripe.invoices.sendInvoice(invoiceId);
-
+        const toUpdate = {
+            stripe_invoice_id: invoiceId,
+            billing_documentation_url: sentInvoice.invoice_pdf,
+            hosted_billing_page_url: sentInvoice.hosted_invoice_url,
+            stripe_response: {
+                history: [sentInvoice]
+            },
+            billing_email: sentInvoice.customer_email,
+            status: sentInvoice.paid? "PAID" : "UNPAID",
+            stripe_payment_id: sentInvoice.payment_intent,
+            updated_at: new Date().toISOString()
+        }
         // update billing history
         const {data: updatedBillingHistory, error: updatedBillingHistoryError} = await supabase
             .from("billing_history")
-            .update({
-                stripe_invoice_id: invoiceId,
-                billing_documentation_url: sentInvoice.invoice_pdf,
-                hosted_billing_page_url: sentInvoice.hosted_invoice_url,
-                stripe_response: {
-                    history: [sentInvoice]
-                },
-                billing_email: sentInvoice.customer_email
-            })
+            .update(toUpdate)
             .eq("id", billingHistory.id)
         
         if (updatedBillingHistoryError) throw updatedBillingHistoryError
