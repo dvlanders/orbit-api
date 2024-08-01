@@ -7,6 +7,8 @@ const { supabaseCall } = require("../util/supabaseWithRetry");
 const activateWebhook = require("../util/auth/webhook/createWebhookUrl");
 const supabase = require("../util/supabaseClient");
 const supabaseSandbox = require("../util/sandboxSupabaseClient");
+const { deleteZuploApiKey } = require("../util/auth/deleteApiKey/deleteZuploApiKey");
+const deleteWebhookUrl = require("../util/auth/webhook/deleteWebhookUrl");
 
 exports.createApiKey = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -15,21 +17,9 @@ exports.createApiKey = async (req, res) => {
 	let profileId
 
 	try {
-		// // this token will be supabase auth token
-		const token = req.headers.authorization?.split(" ")[1];
-		if (!token) {
-			return res.status(401).json({ error: "Not authorized" });
-		}
-
-		// get user info (user_id)
-		const user = await verifyToken(token);
-		if (!user || !user.sub) {
-			return res.status(401).json({ error: "Not authorized" });
-		}
-		profileId = user.sub;
-
 		const fields = req.body;
 		const { apiKeyName, expiredAt, env } = fields;
+		const {profileId, originProfileId} = req.query
 
 		const getProfile = async (supabaseClient, profileId) => {
 			const { data, error } = await supabaseCall(() => supabaseClient
@@ -44,18 +34,21 @@ exports.createApiKey = async (req, res) => {
 		let organizationId
 
 		if (env === "production") {
-			const profile = await getProfile(supabase, profileId);
+			const profile = await getProfile(supabase, originProfileId);
 			if (!profile.organization.prod_enabled) {
 				return res.status(401).json({ error: "Please contact HIFI for activating the production environment" });
+			}
+			if (profile.organization_role != "ADMIN") {
+				return res.status(401).json({ error: "Only Admin can create production key" });
 			}
 			organizationId = profile.organization_id
 		}
 
 		if (env === "sandbox") {
-			let sandboxProfile = await getProfile(supabaseSandbox, profileId);
+			let sandboxProfile = await getProfile(supabaseSandbox, originProfileId);
 			if (!sandboxProfile) {
 				// insert sandbox profile
-				const prodProfile = await getProfile(supabase, profileId);
+				const prodProfile = await getProfile(supabase, originProfileId);
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
@@ -81,7 +74,7 @@ exports.createApiKey = async (req, res) => {
 
 	} catch (error) {
 		console.error(error);
-		await createLog("auth/createApiKey", null, error.message, error, profileId);
+		await createLog("auth/createApiKey", null, error.message, error, originProfileId);
 		return res.status(500).json({ error: "Internal server error" });
 	}
 
@@ -191,23 +184,9 @@ exports.createWebhook = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	let profileId
+	const {profileId, originProfileId} = req.query
 	try {
-		// this token will be supabase auth token
-		const token = req.headers.authorization?.split(" ")[1];
-		if (!token) {
-			return res.status(401).json({ error: "Not authorized" });
-		};
-
-		// get user info (user_id)
-		const user = await verifyToken(token);
-		if (!user && !user?.sub) {
-			return res.status(401).json({ error: "Not authorized" });
-		};
-
-		profileId = user.sub
 		let organizationId
-
 		const { webhookUrl, env } = req.body
 		// filed validation
 		if (!webhookUrl || !env) return res.status(400).json({ error: "webhookUrl and env is required" })
@@ -222,8 +201,13 @@ exports.createWebhook = async (req, res) => {
 			return data;
 		};
 
+		const profile = await getProfile(supabase, originProfileId);
+		if (profile.organization_role != "ADMIN") {
+			return res.status(401).json({ error: "Only admin is allowed to modify webhook" });
+		}
+
 		if (env === "production") {
-			const profile = await getProfile(supabase, profileId);
+			const profile = await getProfile(supabase, originProfileId);
 			if (!profile.organization.prod_enabled) {
 				return res.status(401).json({ error: "Please contact HIFI for activating the production environment" });
 			}
@@ -231,11 +215,11 @@ exports.createWebhook = async (req, res) => {
 		}
 
 		if (env === "sandbox") {
-			const sandboxProfile = await getProfile(supabaseSandbox, profileId);
+			const sandboxProfile = await getProfile(supabaseSandbox, originProfileId);
 
 			if (!sandboxProfile) {
 				// insert sandbox profile
-				const prodProfile = await getProfile(supabase, profileId);
+				const prodProfile = await getProfile(supabase, originProfileId);
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
@@ -261,8 +245,33 @@ exports.createWebhook = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		await createLog("auth/createWebhook", null, error.message, error, profileId)
+		await createLog("auth/createWebhook", null, error.message, error, originProfileId)
 		return res.status(500).json({ error: "Internal server error" })
+	}
+}
+
+exports.deleteWebhook = async(req, res) => {
+	if (req.method !== 'DELETE') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const {profileId, originProfileId, env} = req.query
+	try{
+		// get requester profile
+		const {data: profile, error: profileError} = await supabase
+		.from("profiles")
+		.select("organization_role")
+		.eq("id", originProfileId)
+		.single()
+		if (profileError) throw profileError
+		if (profile.organization_role != "ADMIN") return res.status(401).json({error: "Only ADMIN is allow to delete webhook"})
+
+		await deleteWebhookUrl(profileId, env)
+		return res.status(200).json({message: "Webhook deleted"})
+
+	}catch (error){
+		await createLog("dashboard/utils/deleteWebhook", null, error.message, error, originProfileId)
+		return res.status(500).json({error: "Internal server error"})
 	}
 }
 
@@ -337,5 +346,61 @@ exports.getWebhook = async (req, res) => {
 	} catch (error) {
 		await createLog("auth/getWebhook", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Internal server error" })
+	}
+}
+
+exports.deleteApiKey = async(req, res) => {
+	if (req.method !== 'DELETE') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const {profileId, originProfileId, apiKeyId, env} = req.query
+	try{
+		// get requester profile
+        const {data: profile, error: profileError} = await supabase
+            .from("profiles")
+            .select("organization_role, email, full_name")
+            .eq("id", originProfileId)
+            .single()
+        if (profileError) throw profileError
+        if (profile.organization_role != "ADMIN") return res.status(401).json({error: "Only ADMIN is allow to delete keys"})
+
+		//sandbox
+		if (env == "sandbox"){
+			// delete from database
+			const {data, error} = await supabaseSandbox
+				.from("api_keys")
+				.delete()
+				.eq("id", apiKeyId)
+				.eq("profile_id", profileId)
+				.select("id")
+				.maybeSingle()
+
+			if (error) throw error
+			if (!data) return res.status(400).json({error: "Key doesn't exist"})
+			// delete from zuplo
+			await deleteZuploApiKey(apiKeyId, env)
+
+		}else if (env == "production"){
+			// delete from database
+			const {data, error} = await supabase
+			.from("api_keys")
+			.delete()
+			.eq("id", apiKeyId)
+			.eq("profile_id", profileId)
+			.select("id")
+			.maybeSingle()
+			if (error) throw error
+			if (!data) return res.status(400).json({error: "Key doesn't exist"})
+			// delete from zuplo
+			await deleteZuploApiKey(apiKeyId, env)
+		}else{
+			return res.status(400).json({error: "Uknown ENV"})
+		}
+
+		return res.status(200).json({message: "Delete success"})
+	}catch (error){
+		await createLog("dashboard/utils/deleteApiKey", null ,error.message, error, originProfileId)
+		return res.status(500).json({error: "Internal Server error"})
 	}
 }
