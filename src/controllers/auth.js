@@ -46,9 +46,10 @@ exports.createApiKey = async (req, res) => {
 
 		if (env === "sandbox") {
 			let sandboxProfile = await getProfile(supabaseSandbox, originProfileId);
+			const prodProfile = await getProfile(supabase, originProfileId);
+			organizationId = prodProfile.organization_id
 			if (!sandboxProfile) {
 				// insert sandbox profile
-				const prodProfile = await getProfile(supabase, originProfileId);
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
@@ -59,9 +60,6 @@ exports.createApiKey = async (req, res) => {
 					.from("profiles")
 					.insert(prodProfile));
 				if (newSandboxProfileError) throw newSandboxProfileError;
-				organizationId = prodProfile.organization_id
-			}else{
-				organizationId = sandboxProfile.organization_id
 			}
 		}
 
@@ -216,10 +214,10 @@ exports.createWebhook = async (req, res) => {
 
 		if (env === "sandbox") {
 			const sandboxProfile = await getProfile(supabaseSandbox, originProfileId);
-
+			const prodProfile = await getProfile(supabase, originProfileId);
+			organizationId = prodProfile.organization_id
 			if (!sandboxProfile) {
 				// insert sandbox profile
-				const prodProfile = await getProfile(supabase, originProfileId);
 				if (!prodProfile) {
 					return res.status(404).json({ error: "Production profile not found" });
 				}
@@ -230,9 +228,6 @@ exports.createWebhook = async (req, res) => {
 					.from("profiles")
 					.insert(prodProfile));
 				if (newSandboxProfileError) throw newSandboxProfileError;
-				organizationId = prodProfile.organization_id
-			}else{
-				organizationId = sandboxProfile.organization_id
 			}
 		}
 
