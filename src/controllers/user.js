@@ -27,6 +27,8 @@ const { jobMapping } = require('../../asyncJobs/jobMapping');
 const { createUserAsyncCheck } = require('../../asyncJobs/user/createUser');
 const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
 const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
+const { Chain } = require('../util/common/blockchain');
+const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 
 
 const Status = {
@@ -1009,6 +1011,7 @@ exports.getDeveloperUserStatus = async(req, res) => {
 			.from('users')
 			.select('*')
 			.eq("id", userId)
+			.eq("profile_id", profileId)
 			.maybeSingle()
 		)
 
@@ -1043,11 +1046,39 @@ exports.getDeveloperUserStatus = async(req, res) => {
 		if (!bastionUser) return res.status(200).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
 		const bastionKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
 		const status = bastionKycPassed && bridgeKycPassed ? "ACTIVE" : "INACTIVE"
-		return res.status(200).json({status})
+
+		// get user kyc_information
+		const {data: kycInformation, error: kycInformationError} = await supabase
+			.from("user_kyc")
+			.select("legal_first_name, legal_last_name, compliance_email, compliance_phone")
+			.eq("user_id", userId)
+			.single()
+		if (kycInformationError) throw kycInformationError
+
+		// get user wallet information, only polygon for now
+		const feeCollectionWalletAddress = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
+		const prefundedWalletAddress = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
+
+		const userInformation = {
+			legalFirstName: kycInformation.legal_first_name,
+			legalLastName: kycInformation.legal_last_name,
+			phone: kycInformation.compliance_phone,
+			email: kycInformation.compliance_email,
+			wallet:{
+				FEE_COLLECTION: {
+					POLYGON_MAINNET: feeCollectionWalletAddress
+				},
+				PREFUNDED:{
+					POLYGON_MAINNET: prefundedWalletAddress
+				}
+			}
+		}
+
+		return res.status(200).json({status, user: userInformation})
 
 
 	}catch (error){
-		createLog("user/getDeveloperUserFeeChargeStatus", userId, error.message)
+		createLog("user/getDeveloperUser", userId, error.message)
 		return res.status(500).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
 	}
 }
