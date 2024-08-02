@@ -30,6 +30,7 @@ const fetchAllFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypt
 const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { acceptedFeeType, canChargeFee } = require("../util/transfer/fee/utils");
 const { isNumberOrNumericString } = require("../util/helper/numberCheck");
+const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversionRate/utils/cryptoToFiatConversionRateProvider");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -478,4 +479,25 @@ exports.test = async (req, res) => {
 	}
 	return res.status(200).json({ message: "This is a test endpoint" });
 
+}
+
+exports.cryptoToFiatConversionRate = async(req, res) => {
+	if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+
+	const {fromCurrency, toCurrency, profileId} = req.query
+	
+	try{
+		const requiredFields = ["fromCurrency", "toCurrency"]
+		const acceptedFields = {fromCurrency: "string", toCurrency: "string"}
+		const {missingFields, invalidFields} = fieldsValidation(req.query, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({error: "Fields provided are either missing or invalid", missingFields, invalidFields})
+		const func = getCryptoToFiatConversionRateFunction(fromCurrency, toCurrency)
+		if (!func) return res.status(400).json({error: `No available coversion rate from ${fromCurrency} to ${toCurrency}`})
+		const conversionRate = await func(fromCurrency, toCurrency, profileId)
+		if (!conversionRate) throw new Error("Failed to get coversion rate from provider")
+		return res.status(200).json(conversionRate)
+	}catch(error){
+		await createLog("transfer/cryptoToFiatConversionRate", null, error.message, error, profileId)
+		return res.status(500).json({error: "Unexpected error happened"})
+	}
 }
