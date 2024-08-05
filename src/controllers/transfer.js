@@ -76,7 +76,7 @@ exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 		// get transfer function
-		const { developerFeeWithdrawFunc , walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const { developerWithdrawFunc , walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
 		// fetch sender wallet address information
 		const senderWalletInformation = await fetchUserWalletInformation(senderUserId, chain, walletProviderTable, walletType)
 		if (!senderWalletInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
@@ -85,7 +85,7 @@ exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
 		if (!(await isBastionKycPassedDeveloperUser(senderUserId, walletType)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
 		// transfer
-		const receipt = await developerFeeWithdrawFunc(fields)
+		const receipt = await developerWithdrawFunc(fields)
 
 		return res.status(200).json(receipt)
 	} catch (error) {

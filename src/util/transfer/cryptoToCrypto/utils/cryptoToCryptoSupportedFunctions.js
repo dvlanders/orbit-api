@@ -9,21 +9,21 @@ const cryptoToCryptoSupportedFunctions = {
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: bastionCryptoTransfer,
-            developerFeeWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
+            developerWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
         }
     },
     POLYGON_AMOY: {
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: bastionCryptoTransfer,
-            developerFeeWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
+            developerWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
         }
     },
     ETHEREUM_TESTNET:{
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: bastionCryptoTransfer,
-            developerFeeWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
+            developerWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
         }
     }
 }

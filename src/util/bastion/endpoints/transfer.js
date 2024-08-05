@@ -15,8 +15,6 @@ exports.transfer = async(id, requestRecord) => {
 		actionParams: erc20Transfer(requestRecord.currency, requestRecord.recipientAddress, requestRecord.unitsAmount)
 	};
 
-	console.log(bodyObject)
-
     const url = `${BASTION_URL}/v1/user-actions`;
 	const options = {
 		method: 'POST',
