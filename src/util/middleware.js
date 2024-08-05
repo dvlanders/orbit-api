@@ -6,6 +6,7 @@ const { isUUID } = require("./common/fieldsValidation");
 const { verifyApiKey } = require("./helper/verifyApiKey");
 const { logger } = require('../util/logger/logger');
 const readme = require('readmeio');
+const { sendSlackMessage } = require('../util/logger/slackLogger');
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
 const README_API_KEY = process.env.README_API_KEY
@@ -38,6 +39,7 @@ exports.authorize = async (req, res, next) => {
 		});
 
 		req.query.profileId = keyInfo.profile_id
+		req.query.profileEmail = keyInfo.profiles.email
 		next();
 	} catch (err) {
 		console.error(err)
@@ -139,6 +141,21 @@ exports.logRequestResponse = (req, res, next) => {
 				statusCode: res.statusCode,
 				response: responseBody
 			});
+			const reqQuery = { ...req.query };
+			delete reqQuery.apiKeyId;
+			const reqObject = {
+				method: req.method,
+				route: req.path,
+				query: reqQuery,
+				body: req.body,
+				params: req.params
+			}
+			const resObject = {
+				statusCode: res.statusCode,
+				body: responseBody
+			}
+			sendSlackMessage(reqObject, resObject)
+
 		});
 
 		oldEnd.apply(res, arguments);

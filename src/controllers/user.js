@@ -270,12 +270,12 @@ exports.getHifiUser = async (req, res) => {
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
-		
+
 		// check is developer user
 		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
 
 		// get status
-		const {status, getHifiUserResponse} = await getRawUserObject(userId, profileId)
+		const { status, getHifiUserResponse } = await getRawUserObject(userId, profileId)
 
 
 		return res.status(status).json(getHifiUserResponse);
@@ -516,17 +516,17 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const {profileId, limit, createdAfter, createdBefore, userType, userId} = fields
+	const { profileId, limit, createdAfter, createdBefore, userType, userId } = fields
 	const requiredFields = []
-	const acceptedFields = {limit: "string", createdAfter: "string", createdBefore: "string", userType: "string", userId: "string"}
-	try{
+	const acceptedFields = { limit: "string", createdAfter: "string", createdBefore: "string", userType: "string", userId: "string" }
+	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		if (limit && limit > 100) return res.status(400).json({error: "At most request 100 users at a time"})
-		if (userId && !isUUID(userId)) return res.status(404).json({error: "User not found"})
+		if (limit && limit > 100) return res.status(400).json({ error: "At most request 100 users at a time" })
+		if (userId && !isUUID(userId)) return res.status(404).json({ error: "User not found" })
 		const users = await getAllUsers(userId, profileId, userType, limit, createdAfter, createdBefore)
-		return res.status(200).json({count: users.length, users})
-	}catch (error){
+		return res.status(200).json({ count: users.length, users })
+	} catch (error) {
 		console.error(error)
 		await createLog("user/getAllHifiUser", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
@@ -574,7 +574,7 @@ exports.generateToSLink = async (req, res) => {
 		// generate hosted tos page
 		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}&templateId=${templateId}`
 
-		return res.status(200).json({ url: tosLink, sessionToken: signedAgreementInfo.session_token })
+		return res.status(200).json({ url: tosLink, signedAgreementId: idempotencyKey })
 	} catch (error) {
 		await createLog("user/generateToSLink", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
@@ -612,7 +612,7 @@ exports.acceptToSLink = async (req, res) => {
  * @param {*} res 
  * @returns 
  */
-exports.createHifiUserAsync = async(req, res) => {
+exports.createHifiUserAsync = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -706,13 +706,13 @@ exports.createHifiUserAsync = async(req, res) => {
 		}
 
 		// insert async jobs
-		const canSchedule = await createUserAsyncCheck("createUser", {userId, userType: fields.userType}, userId, profileId)
-        if (!canSchedule) return res.status(200).json(createHifiUserResponse)
-		await createJob("createUser", {userId, userType: fields.userType}, userId, profileId)
+		const canSchedule = await createUserAsyncCheck("createUser", { userId, userType: fields.userType }, userId, profileId)
+		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
+		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
 
-	}catch (error){
+	} catch (error) {
 		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
@@ -828,9 +828,9 @@ exports.updateHifiUserAsync = async (req, res) => {
 		}
 
 		// insert async jobs
-		const canSchedule = await updateUserAsyncCheck("updateUser", {userId, userType: user.user_type}, userId, profileId)
-        if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
-		await createJob("updateUser", {userId, userType: user.user_type}, userId, profileId)
+		const canSchedule = await updateUserAsyncCheck("updateUser", { userId, userType: user.user_type }, userId, profileId)
+		if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
+		await createJob("updateUser", { userId, userType: user.user_type }, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
@@ -839,32 +839,32 @@ exports.updateHifiUserAsync = async (req, res) => {
 	}
 };
 
-exports.getUserKycInformation = async(req, res) => {
+exports.getUserKycInformation = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const {userId, profileId} = req.query
+	const { userId, profileId } = req.query
 
-	try{
-		const {data, error} = await supabase
+	try {
+		const { data, error } = await supabase
 			.from("user_kyc")
 			.select("*, users(user_type)")
 			.eq("user_id", userId)
 			.maybeSingle()
-		
+
 
 		if (error) throw error
-		if (!data) return res.status(404).json({error: `user not found for id: ${userId}`})
+		if (!data) return res.status(404).json({ error: `user not found for id: ${userId}` })
 		return res.status(200).json(data)
-		
 
-	}catch(error){
+
+	} catch (error) {
 		await createLog("user/getUserKycInformation", userId, error.message, error, profileId)
-		return res.status(500).json({error: `Unexpected error happened`})
+		return res.status(500).json({ error: `Unexpected error happened` })
 	}
 }
 
-exports.createDeveloperUser = async(req, res) => {
+exports.createDeveloperUser = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -874,15 +874,15 @@ exports.createDeveloperUser = async(req, res) => {
 	try {
 		// user type should always be business
 		// if (fields.userType != "business") return res.status(400).json({error: "Developer user type must be bsuiness"})
-		if (fields.userType != "individual") return res.status(400).json({error: "Developer user type must be individual for the current statge, will be switched to business"})
+		if (fields.userType != "individual") return res.status(400).json({ error: "Developer user type must be individual for the current statge, will be switched to business" })
 		// check if developer user is already created
-		const {data: profile, error: profileError} = await supabaseCall(() => supabase
+		const { data: profile, error: profileError } = await supabaseCall(() => supabase
 			.from("profiles")
 			.select("*")
 			.eq("id", profileId)
 			.single()
 		)
-		if (profile.developer_user_id) return res.status(400).json({error: "Developer user is already created"})
+		if (profile.developer_user_id) return res.status(400).json({ error: "Developer user is already created" })
 		// upload information and create new user
 		try {
 			userId = await informationUploadForCreateUser(profileId, fields)
@@ -964,7 +964,7 @@ exports.createDeveloperUser = async(req, res) => {
 		}
 
 		// update developer user id into profile
-		const {data, error} = await supabaseCall(() => supabase
+		const { data, error } = await supabaseCall(() => supabase
 			.from("profiles")
 			.update({
 				developer_user_id: userId,
@@ -976,7 +976,7 @@ exports.createDeveloperUser = async(req, res) => {
 		if (error) throw error
 
 		// update user account type to is_developer
-		const {data: user, error: userError} = await supabaseCall(() => supabase
+		const { data: user, error: userError } = await supabaseCall(() => supabase
 			.from("users")
 			.update({
 				is_developer: true
@@ -987,24 +987,24 @@ exports.createDeveloperUser = async(req, res) => {
 		if (error) throw error
 
 		// insert async jobs
-		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
+		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
 		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
-		await createJob("createDeveloperUser", {userId, userType: fields.userType}, userId, profileId)
+		await createJob("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
 
-	}catch (error){
+	} catch (error) {
 		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
 
-exports.getDeveloperUserStatus = async(req, res) => {
+exports.getDeveloperUserStatus = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const { userId, profileId } = req.query
-	try{
+	try {
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
 		// check if user is created
@@ -1017,7 +1017,7 @@ exports.getDeveloperUserStatus = async(req, res) => {
 		)
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		if (!user) return res.status(200).json({status: "NOT_CREATED", message: "Developer user is not yet created"})
+		if (!user) return res.status(200).json({ status: "NOT_CREATED", message: "Developer user is not yet created" })
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use GET user" })
 		// check if the developeruserCreation is in the job queue, if yes return pending response
@@ -1062,7 +1062,7 @@ exports.getDeveloperUserStatus = async(req, res) => {
 		}
 		
 		// get user kyc_information
-		const {data: kycInformation, error: kycInformationError} = await supabase
+		const { data: kycInformation, error: kycInformationError } = await supabase
 			.from("user_kyc")
 			.select("legal_first_name, legal_last_name, compliance_email, compliance_phone")
 			.eq("user_id", userId)
@@ -1078,22 +1078,22 @@ exports.getDeveloperUserStatus = async(req, res) => {
 			legalLastName: kycInformation.legal_last_name,
 			phone: kycInformation.compliance_phone,
 			email: kycInformation.compliance_email,
-			wallet:{
+			wallet: {
 				FEE_COLLECTION: {
 					POLYGON_MAINNET: feeCollectionWalletAddress
 				},
-				PREFUNDED:{
+				PREFUNDED: {
 					POLYGON_MAINNET: prefundedWalletAddress
 				}
 			}
 		}
 
-		return res.status(200).json({status, user: userInformation})
+		return res.status(200).json({ status, user: userInformation })
 
 
-	}catch (error){
+	} catch (error) {
 		createLog("user/getDeveloperUser", userId, error.message)
-		return res.status(500).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+		return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
 	}
 }
 
