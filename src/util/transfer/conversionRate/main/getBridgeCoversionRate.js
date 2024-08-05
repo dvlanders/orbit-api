@@ -8,7 +8,7 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
         let vaildFrom = new Date();
         let vaildUntil = new Date(vaildFrom);
         vaildUntil.setSeconds(vaildUntil.getSeconds() + 30);
-        console.log(fromCurrency in ["usdc", "usdt"])
+        
         if (toCurrency == "usd") {
             return {
                 fromCurrency,

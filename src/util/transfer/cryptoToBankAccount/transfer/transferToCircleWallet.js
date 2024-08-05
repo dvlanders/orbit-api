@@ -114,7 +114,7 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 			.match({ id: initialBastionTransfersInsertData.id })
 
 		if (updateError) {
-			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message, updateError)
+			await createLog("transfer/util/transferToCircleWallet", sourceUserId, updateError.message, updateError)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "An unexpected error occurred")
 		}
 
@@ -144,7 +144,7 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 			.match({ id: initialBastionTransfersInsertData.id })
 
 		if (updateError) {
-			await createLog("transfer/util/transferToBridgeLiquidationAddress", sourceUserId, updateError.message, updateError)
+			await createLog("transfer/util/transferToCircleWallet", sourceUserId, updateError.message, updateError)
 			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "An unexpected error occurred")
 		}
 	}

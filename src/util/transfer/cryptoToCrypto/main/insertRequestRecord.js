@@ -20,6 +20,7 @@ exports.insertRequestRecord = async(requestInfo) => {
             currency: requestInfo.currency,
             contract_address: requestInfo.contractAddress,
             provider: requestInfo.provider,
+            transfer_from_wallet_type: requestInfo.walletType || "INDIVIDUAL",
             status: "CREATED"
         },
     )

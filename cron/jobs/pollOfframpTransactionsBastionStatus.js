@@ -4,10 +4,16 @@ const { BastionTransferStatus } = require('../../src/util/bastion/utils/utils');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const createLog = require('../../src/util/logger/supabaseLogger');
+const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async (transaction) => {
-	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${transaction.user_id}`;
+	let bastionUserId = transaction.user_id
+	// map userId if is fee collection or prefunded
+	if (transaction.transfer_from_wallet_type == "FEE_COLLECTION" || transaction.transfer_from_wallet_type == "PREFUNDED"){
+		bastionUserId = `${transaction.user_id}-${transaction.transfer_from_wallet_type}`
+	}
+	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
 		method: 'GET',
 		headers: {
@@ -75,11 +81,14 @@ const updateStatus = async (transaction) => {
 				}
 			}
 
-
-
-
 			console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
-			await notifyCryptoToFiatTransfer(updateData)
+
+			// send webhook message
+			if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
+				await notifyDeveloperCryptoToFiatWithdraw(updateData)
+			}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
+				await notifyCryptoToFiatTransfer(updateData)
+			}
 
 		}
 	} catch (error) {
@@ -99,7 +108,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.neq('transaction_status', "CREATED")
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type')
 	)
 
 

@@ -177,6 +177,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 					status: responseBody.status,
 					base_status: baseStatus,
 					sepa_status: sepaStatus,
+					updated_at: new Date().toISOString()
 				})
 				.eq("user_id", userId)
 				.single()
@@ -212,6 +213,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 			.update({
 				bridge_response: responseBody,
 				status: "invalid_fields",
+				updated_at: new Date().toISOString()
 			})
 			.eq("user_id", userId)
 			.single()

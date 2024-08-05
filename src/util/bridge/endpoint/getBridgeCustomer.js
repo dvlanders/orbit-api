@@ -150,6 +150,7 @@ const getBridgeCustomer = async(userId) => {
                 status: responseBody.status,
                 base_status: baseStatus,
                 sepa_status: sepaStatus,
+                updated_at: new Date().toISOString()
             })
 			.eq('user_id', userId)
 			.maybeSingle()

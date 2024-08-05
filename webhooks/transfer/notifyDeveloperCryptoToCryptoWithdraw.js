@@ -1,0 +1,36 @@
+const createLog = require("../../src/util/logger/supabaseLogger")
+const supabase = require("../../src/util/supabaseClient")
+const { supabaseCall } = require("../../src/util/supabaseWithRetry")
+const fetchCryptoToCryptoTransferRecord = require("../../src/util/transfer/cryptoToCrypto/main/fetchTransferRecord")
+const { transferType } = require("../../src/util/transfer/utils/transfer")
+const { sendMessage } = require("../sendWebhookMessage")
+const { webhookEventType, webhookEventActionType } = require("../webhookConfig")
+
+const notifyDeveloperCryptoToCryptoWithdraw = async (record) => {
+	// get profileId
+	let { data: user, error: userError } = await supabaseCall(() => supabase
+		.from('users')
+		.select('profile_id')
+		.eq("id", record.sender_user_id)
+		.single()
+	)
+
+	if (userError) {
+		await createLog("webhook/notifyCryptoToCryptoTransfer", record.sender_user_id, userError.message)
+		return
+	}
+
+	const receipt = await fetchCryptoToCryptoTransferRecord(record.id, user.profile_id)
+
+	const message = {
+		eventAction: webhookEventActionType.UPDATE,
+		eventType: webhookEventType["DEVELOPER.WITHDRAW.FEE_COLLECTION.CRYPTO_TO_CRYPTO"],
+		data: receipt
+	}
+
+	await sendMessage(user.profile_id, message)
+	console.log("message sent")
+}
+
+
+module.exports = notifyDeveloperCryptoToCryptoWithdraw

@@ -4,7 +4,7 @@ const { isValidLimit, isValidDateRange, isValidDate } = require("../util/common/
 const { requiredFields, acceptedFields, supportedCurrency } = require("../util/transfer/cryptoToCrypto/utils/createTransfer");
 const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
-const { isBastionKycPassed, isBridgeKycPassed } = require("../util/common/privilegeCheck");
+const { isBastionKycPassed, isBridgeKycPassed, isBastionKycPassedDeveloperUser } = require("../util/common/privilegeCheck");
 const { checkIsCryptoToCryptoRequestIdAlreadyUsed } = require("../util/transfer/cryptoToCrypto/utils/fetchRequestInformation");
 const { transfer, CreateCryptoToCryptoTransferErrorType, CreateCryptoToCryptoTransferError } = require("../util/transfer/cryptoToCrypto/main/bastionTransfer");
 const { fetchUserWalletInformation } = require("../util/transfer/cryptoToCrypto/utils/fetchUserWalletInformation");
@@ -34,6 +34,72 @@ const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversi
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
+
+exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	// should gather senderUserId, profileId, amount, requestId, recipientUserId, recipientAddress, chain
+	const { profileId } = req.query
+	const fields = req.body
+	const { senderUserId, amount, requestId, recipientAddress, chain, currency, walletType } = fields
+
+
+	try {
+		const requiredFields = ["senderUserId", "amount", "requestId", "recipientAddress", "chain", "currency", "walletType"]
+		const acceptedFields = {
+			"senderUserId": "string",
+			"amount": ["number", "string"],
+			"requestId": "string",
+			"recipientAddress": "string",
+			"chain": "string",
+			"currency": "string",
+			"walletType": "string"
+		};
+
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		// check if required fileds provided
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+		fields.profileId = profileId
+		//check if sender is under profileId
+		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		// check if chain is supported
+		if (!(chain in cryptoToCryptoSupportedFunctions)) return res.status(400).json({ error: `Chain ${chain} is not supported` })
+		// check if currency is supported
+		if (!(currency in cryptoToCryptoSupportedFunctions[chain])) return res.status(400).json({ error: `Currency ${currency} is not supported` })
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
+		// check is request_id exist
+		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+		// get transfer function
+		const { developerWithdrawFunc , walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
+		// fetch sender wallet address information
+		const senderWalletInformation = await fetchUserWalletInformation(senderUserId, chain, walletProviderTable, walletType)
+		if (!senderWalletInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+		fields.senderAddress = senderWalletInformation.address
+		// check privilege
+		if (!(await isBastionKycPassedDeveloperUser(senderUserId, walletType)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+
+		// transfer
+		const receipt = await developerWithdrawFunc(fields)
+
+		return res.status(200).json(receipt)
+	} catch (error) {
+		if (error instanceof CreateCryptoToCryptoTransferError) {
+			if (error.type == CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR) {
+				return res.status(400).json({ error: error.message })
+			} else {
+				return res.status(500).json({ error: "Unexpected error happened" })
+			}
+		}
+		await createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -164,6 +230,74 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 	} catch (error) {
 		await createLog("transfer/getCryptoToCryptoTransfer", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+
+}
+
+exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const fields = req.body;
+	const { profileId } = req.query
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment, walletType} = fields
+
+
+	try {
+		// filed validation
+		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail", "walletType"]
+		const acceptedFields = {
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "walletType": "string"
+		}
+		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
+
+		// check is record existed
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+
+		// FIX ME SHOULD put it in the field validation 
+		if (!isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
+
+		// check is chain supported
+		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+
+		// get user wallet
+		// FIXME what if we have multiple wallet provider
+		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain, walletType)
+		if (!sourceWalletAddress) {
+			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		}
+
+		// get withdraw function
+		const { developerWithdrawFunc } = funcs
+		if (!developerWithdrawFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+
+		// execute withdraw function
+		const { isExternalAccountExist, transferResult } = await developerWithdrawFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType, description, purposeOfPayment})
+		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+		return res.status(200).json(transferResult);
+
+	} catch (error) {
+		if (error instanceof CreateCryptoToBankTransferError) {
+			if (error.type == CreateCryptoToBankTransferErrorType.CLIENT_ERROR) {
+				return res.status(400).json({ error: error.message })
+			} else {
+				return res.status(500).json({ error: "An unexpected error occurred" })
+			}
+		}
+		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error)
+		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
 }
@@ -495,6 +629,7 @@ exports.cryptoToFiatConversionRate = async(req, res) => {
 		if (!func) return res.status(400).json({error: `No available coversion rate from ${fromCurrency} to ${toCurrency}`})
 		const conversionRate = await func(fromCurrency, toCurrency, profileId)
 		if (!conversionRate) throw new Error("Failed to get coversion rate from provider")
+
 		return res.status(200).json(conversionRate)
 	}catch(error){
 		await createLog("transfer/cryptoToFiatConversionRate", null, error.message, error, profileId)
