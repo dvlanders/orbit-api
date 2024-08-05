@@ -1,6 +1,6 @@
 
 const { dashboard } = require("../../controllers");
-const { authorize, authorizeDashboard, requiredProdDashboard } = require("../../util/middleware");
+const { authorize, authorizeDashboard, requiredProdDashboard, requiredAdmin } = require("../../util/middleware");
 
 module.exports = (router) => {
     router.get("/dashboard/utils/getWalletBalance", authorizeDashboard, requiredProdDashboard, dashboard.getWalletBalance)
@@ -15,7 +15,7 @@ module.exports = (router) => {
     router.get("/dashboard/utils/getCurrentBillingInformation", authorizeDashboard, requiredProdDashboard,dashboard.getCurrentBillingInformation)
     router.get("/dashboard/utils/getInvoiceHistory", authorizeDashboard, requiredProdDashboard, dashboard.getInvoiceHistory)
     router.get("/dashboard/utils/getOrganization", authorizeDashboard, dashboard.getOrganization)
-    router.post("/dashboard/utils/sendInvitation", authorizeDashboard, dashboard.sendInvitation)
+    router.post("/dashboard/utils/sendInvitation", authorizeDashboard, requiredAdmin, dashboard.sendInvitation)
     router.post("/dashboard/utils/acceptInvitation", authorizeDashboard, dashboard.acceptInvitation)
-    router.put("/dashboard/utils/editOrganizationMember", authorizeDashboard, dashboard.editOrganizationMember)
+    router.put("/dashboard/utils/editOrganizationMember", authorizeDashboard, requiredAdmin, dashboard.editOrganizationMember)
 }

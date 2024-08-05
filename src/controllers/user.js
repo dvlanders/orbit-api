@@ -29,6 +29,7 @@ const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
 const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
 const { Chain } = require('../util/common/blockchain');
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
+const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
 
 
 const Status = {
@@ -745,8 +746,8 @@ exports.updateHifiUserAsync = async (req, res) => {
 		)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
-		// check is developer user
-		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
+			// check is developer user
+		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use PUT user/developer" })
 		// upload all the information
 		try {
 			await informationUploadForUpdateUser(userId, fields)
@@ -1020,33 +1021,46 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use GET user" })
 		// check if the developeruserCreation is in the job queue, if yes return pending response
-		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: user.userType }, userId, profileId)
-		if (!canScheduled) return { status: 200, status: "PENDING" }
-
-		// get bridge kyc status
-		// check if the application is submitted
-		const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
+		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.userType}, userId, profileId)
+		let status
+		if (!canScheduled){
+			status = "PENDING"
+		}else{
+			// get bridge kyc status
+			// check if the application is submitted
+			const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
 			.from('bridge_customers')
 			.select('*')
 			.eq('user_id', userId)
 			.maybeSingle()
-		)
-		if (bridgeCustomerError) throw bridgeCustomerError
-		if (!bridgeCustomer) return res.status(200).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-		const bridgeKycPassed = bridgeCustomer.status == "active"
+			)
+			if (bridgeCustomerError) throw bridgeCustomerError
+			if (!bridgeCustomer) return res.status(500).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+			const bridgeKycPassed = bridgeCustomer.status == "active"
 
-		// get bastion kyc status
-		let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
+			// get bastion kyc status
+			let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
 			.from('bastion_users')
 			.select('kyc_passed, jurisdiction_check_passed, kyc_level')
 			.eq("developer_user_id", `${userId}-FEE_COLLECTION`)
 			.maybeSingle())
 
-		if (bastionUserError) throw bastionUserError
-		if (!bastionUser) return res.status(200).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-		const bastionKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
-		const status = bastionKycPassed && bridgeKycPassed ? "ACTIVE" : "INACTIVE"
-
+			if (bastionUserError) throw bastionUserError
+			if (!bastionUser) return res.status(200).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+			const bastionKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
+			
+			// get status
+			if (bridgeKycPassed && bastionKycPassed){
+				status = "ACTIVE"
+			}else if (!bastionKycPassed){
+				status = "INACTIVE"
+			}else if (bridgeCustomer.status = "not_started"){
+				status = "PENDING"
+			}else{
+				status = "INACTIVE"
+			}
+		}
+		
 		// get user kyc_information
 		const { data: kycInformation, error: kycInformationError } = await supabase
 			.from("user_kyc")
@@ -1082,3 +1096,117 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
 	}
 }
+
+exports.updateDeveloperUser = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { userId, profileId } = req.query
+	const fields = req.body
+
+	try {
+
+		//invalid user_id
+		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
+		// check if user is created
+		let { data: user, error: userError } = await supabaseCall(() => supabase
+			.from('users')
+			.select('*')
+			.eq("id", userId)
+			.maybeSingle()
+		)
+		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
+			// check is developer user
+		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use PUT user" })
+		// upload all the information
+		try {
+			await informationUploadForUpdateUser(userId, fields)
+		} catch (error) {
+			if (error instanceof InformationUploadError) {
+				return res.status(error.status).json(error.rawResponse)
+			}
+			await createLog("user/updateDeveloperUser", userId, `Failed to Information Upload For Update developer User user Id: ${userId}`, error)
+			return res.status(500).json({ error: "Unexpected error happened" })
+		}
+
+		let updateHifiUserResponse = {
+			user: {
+				id: userId
+			},
+			wallet: {
+				walletStatus: Status.PENDING,
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				walletMessage: "",
+				walletAddress: {}
+			},
+			user_kyc: {
+				status: Status.PENDING, // represent bridge
+				actionNeeded: {
+					actions: [],
+					fieldsToResubmit: [],
+				},
+				message: '',
+			},
+			ramps: {
+				usdAch: {
+					onRamp: {
+						status: Status.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: '',
+						achPull: {
+							achPullStatus: Status.PENDING, //represent bridge + checkbook
+							actionNeeded: {
+								actions: [],
+								fieldsToResubmit: [],
+							},
+						},
+					},
+					offRamp: {
+						status: Status.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+				euroSepa: {
+					onRamp: {
+						status: Status.INACTIVE, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: 'SEPA onRamp will be available in near future',
+					},
+					offRamp: {
+						status: Status.PENDING, // represent bridge
+						actionNeeded: {
+							actions: [],
+							fieldsToResubmit: [],
+						},
+						message: ''
+					},
+				},
+			},
+		}
+
+		// insert async jobs
+		const canSchedule = await updateDeveloperUserAsyncCheck("updateDeveloperUser", {userId, userType: user.user_type}, userId, profileId)
+        if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
+		await createJob("updateDeveloperUser", {userId, userType: user.user_type}, userId, profileId)
+
+		return res.status(200).json(updateHifiUserResponse);
+	} catch (error) {
+		await createLog("user/updateDeveloperUser", userId, error.message, error, profileId)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+	}
+};

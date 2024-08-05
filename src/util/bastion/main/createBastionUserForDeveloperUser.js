@@ -97,4 +97,4 @@ async function createBastionDeveloperUser(userId) {
 }
 
 
-module.exports = createBastionDeveloperUser;
+module.exports = {createBastionDeveloperUser, createBastionDeveloperWallet};

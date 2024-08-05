@@ -32,7 +32,23 @@ const isBastionKycPassed = async(userId) => {
     return bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
 }
 
+const isBastionKycPassedDeveloperUser = async(userId, type) => {
+    
+    const { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
+    .from('bastion_users')
+    .select('kyc_passed, jurisdiction_check_passed')
+    .eq('developer_user_id', `${userId}-${type}`)
+    .maybeSingle()
+    )
+
+    if (bastionUserError) throw bastionUserError
+    if (!bastionUser) return false
+
+    return bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
+}
+
 module.exports = {
     isBastionKycPassed,
-    isBridgeKycPassed
+    isBridgeKycPassed,
+    isBastionKycPassedDeveloperUser
 }
