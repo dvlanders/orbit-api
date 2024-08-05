@@ -11,6 +11,7 @@ const { chargeFeeOnFundReceivedScheduleCheck } = require("./transfer/chargeFeeOn
 const { chargeFeeOnFundReceivedBastionAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
 const { executeBlindpayPayoutScheduleCheck } = require("./transfer/executeBlindpayPayout/scheduleCheck");
 const { executeBlindpayPayout } = require("./transfer/executeBlindpayPayout/executeBlindpayPayout");
+const { updateDeveloperUserAsyncCheck, updateDeveloperUserAsync } = require("./user/updateDeveloperUser");
 
 exports.jobMapping = {
 	fundGas: {
@@ -48,6 +49,10 @@ exports.jobMapping = {
 	executeBlindpayPayout: {
 		scheduleCheck: executeBlindpayPayoutScheduleCheck,
 		execute: executeBlindpayPayout
+	},
+	updateDeveloperUser: {
+		scheduleCheck: updateDeveloperUserAsyncCheck,
+		execute: updateDeveloperUserAsync
 	}
 }
 

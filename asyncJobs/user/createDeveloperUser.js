@@ -1,5 +1,5 @@
 const createAndFundBastionUser = require("../../src/util/bastion/main/createAndFundBastionUser");
-const createBastionDeveloperUser = require("../../src/util/bastion/main/createBastionUserForDeveloperUser");
+const {createBastionDeveloperUser} = require("../../src/util/bastion/main/createBastionUserForDeveloperUser");
 const { createBusinessBridgeCustomer } = require("../../src/util/bridge/endpoint/submitBusinessBridgeCustomerApplication");
 const { createIndividualBridgeCustomer } = require("../../src/util/bridge/endpoint/submitIndividualBridgeCustomerApplication");
 const { createCheckbookUser } = require("../../src/util/checkbook/endpoint/createCheckbookUser");

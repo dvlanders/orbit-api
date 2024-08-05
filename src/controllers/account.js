@@ -417,6 +417,7 @@ exports.getAllAccounts = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		const func = fetchRailFunctionsMap[railType]
+		if (!func) return res.status(400).json({ error: `${railType} is not yet supported` });
 		const accountInfo = await func(undefined, profileId, userId, limit, createdAfter, createdBefore)
 		accountInfo.railType = railType
 		return res.status(200).json(accountInfo);

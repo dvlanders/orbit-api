@@ -3,11 +3,17 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
+const notifyDeveloperCryptoToCryptoWithdraw = require("../../webhooks/transfer/notifyDeveloperCryptoToCryptoWithdraw");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
 const updateStatus = async (transaction) => {
-	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${transaction.sender_user_id}`;
+	let bastionUserId = transaction.sender_user_id
+	// map userId if is fee collection or prefunded
+	if (transaction.transfer_from_wallet_type == "FEE_COLLECTION" || transaction.transfer_from_wallet_type == "PREFUNDED"){
+		bastionUserId = `${transaction.sender_user_id}-${transaction.transfer_from_wallet_type}`
+	}
+	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
 		method: 'GET',
 		headers: {
@@ -68,7 +74,11 @@ const updateStatus = async (transaction) => {
 
 
 		console.log('Updated transaction status for transaction ID', transaction.id, 'to', data.status);
-		await notifyCryptoToCryptoTransfer(updateData)
+		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
+			await notifyDeveloperCryptoToCryptoWithdraw(updateData)
+		}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
+			await notifyCryptoToCryptoTransfer(updateData)
+		}
 
 
 	} catch (error) {

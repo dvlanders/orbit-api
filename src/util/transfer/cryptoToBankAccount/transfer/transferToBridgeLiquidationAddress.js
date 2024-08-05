@@ -18,6 +18,7 @@ const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
+const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -194,6 +195,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
             const result = await CryptoToFiatWithFeeBastion(initialBastionTransfersInsertData, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, info)
             // gas check
             await bastionGasCheck(sourceUserId, chain)
+			// allowance check
+			await allowanceCheck(sourceUserId, sourceWalletAddress, chain, sourceCurrency)
 			return { isExternalAccountExist: true, transferResult: result }
         }
 

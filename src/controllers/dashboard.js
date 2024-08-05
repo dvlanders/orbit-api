@@ -13,9 +13,15 @@ const { v4 } = require('uuid');
 exports.getWalletBalance = async(req, res) => {
     if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
     
-        const {userId, chain, currency} = req.query
+        const {userId, chain, currency, walletType} = req.query
     try{
-        const response = await getUserBalance(userId, chain)
+        let bastionUserId = userId
+        if (walletType == "FEE_COLLECTION"){
+            bastionUserId = `${bastionUserId}-FEE_COLLECTION`
+        }else if (walletType == "PREFUNDED"){
+            bastionUserId = `${bastionUserId}-PREFUNDED`
+        }
+        const response = await getUserBalance(bastionUserId, chain)
         const responseBody = await response.json()
         if (!response.ok){
             createLog("dashboard/getWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody)
@@ -23,7 +29,7 @@ exports.getWalletBalance = async(req, res) => {
         }
         const currencyContract = currencyContractAddress[chain][currency].toLowerCase()
         const tokenInfo = responseBody.tokenBalances[currencyContract]
-        if (!tokenInfo) return res.status(200).json({balance: 0, tokenInfo: null})
+        if (!tokenInfo) return res.status(200).json({balance: "0", tokenInfo: null})
 
         return res.status(200).json({balance: tokenInfo.quantity, tokenInfo})
 
@@ -778,15 +784,6 @@ exports.editOrganizationMember = async(req, res) => {
     const {newRole, isDelete, userId} = req.body
 
     try{
-        // get customer profile
-        const {data: profile, error: profileError} = await supabase
-            .from("profiles")
-            .select("organization_role, email, full_name")
-            .eq("id", originProfileId)
-            .single()
-        if (profileError) throw profileError
-        if (profile.organization_role != "ADMIN") return res.status(401).json({error: "Only ADMIN is allow to edit and remove team member"})
-
         if (isDelete){
             // remove profile form organization
             const {data: updatedProfile, error: updatedProfileError } = await supabase
