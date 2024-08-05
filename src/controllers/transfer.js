@@ -234,6 +234,74 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 
 }
 
+exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const fields = req.body;
+	const { profileId } = req.query
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment, walletType} = fields
+
+
+	try {
+		// filed validation
+		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail", "walletType"]
+		const acceptedFields = {
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "walletType": "string"
+		}
+		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
+
+		// check is record existed
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+
+		// FIX ME SHOULD put it in the field validation 
+		if (!isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
+
+		// check is chain supported
+		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+
+		// get user wallet
+		// FIXME what if we have multiple wallet provider
+		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain, walletType)
+		if (!sourceWalletAddress) {
+			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		}
+
+		// get withdraw function
+		const { developerWithdrawFunc } = funcs
+		if (!developerWithdrawFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+
+		// execute withdraw function
+		const { isExternalAccountExist, transferResult } = await developerWithdrawFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType, description, purposeOfPayment})
+		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+		return res.status(200).json(transferResult);
+
+	} catch (error) {
+		if (error instanceof CreateCryptoToBankTransferError) {
+			if (error.type == CreateCryptoToBankTransferErrorType.CLIENT_ERROR) {
+				return res.status(400).json({ error: error.message })
+			} else {
+				return res.status(500).json({ error: "An unexpected error occurred" })
+			}
+		}
+		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error)
+		return res.status(500).json({ error: 'An unexpected error occurred' });
+	}
+
+}
+
 exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });

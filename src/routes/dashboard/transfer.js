@@ -7,6 +7,7 @@ module.exports = (router) => {
 	router.get("/dashboard/transfer/crypto-to-crypto", authorizeDashboard, requiredProdDashboard,transfer.getCryptoToCryptoTransfer)
 	router.get("/dashboard/transfer/crypto-to-crypto/all", authorizeDashboard, requiredProdDashboard,transfer.getAllCryptoToCryptoTransfer)
 	router.post("/dashboard/transfer/crypto-to-fiat", authorizeDashboard, requiredProdDashboard,transfer.transferCryptoFromWalletToBankAccount);
+	router.post("/dashboard/transfer/crypto-to-fiat/developer", authorizeDashboard, requiredProdDashboard, requiredAdmin, transfer.createCryptoToFiatWithdrawForDeveloperUser);
 	router.get("/dashboard/transfer/crypto-to-fiat", authorizeDashboard, requiredProdDashboard,transfer.getCryptoToFiatTransfer);
 	router.get("/dashboard/transfer/crypto-to-fiat/all", authorizeDashboard, requiredProdDashboard,transfer.getAllCryptoToFiatTransfer);
 	router.post("/dashboard/transfer/fiat-to-crypto", authorizeDashboard, requiredProdDashboard,transfer.createFiatToCryptoTransfer)

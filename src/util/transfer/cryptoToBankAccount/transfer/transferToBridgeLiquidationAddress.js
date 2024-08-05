@@ -282,4 +282,118 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 	}
 }
 
-module.exports = transferToBridgeLiquidationAddress
+const transferToBridgeLiquidationAddressDeveloperWithdraw = async (config) => {
+
+	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType} = config
+
+	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
+	const { isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId } = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
+
+	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
+
+	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+
+	//insert the initial record
+	const { data: initialBastionTransfersInsertData, error: initialBastionTransfersInsertError } = await supabase
+		.from('offramp_transactions')
+		.insert({
+			request_id: requestId,
+			user_id: sourceUserId,
+			destination_user_id: destinationUserId,
+			amount: amount,
+			chain: chain,
+			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
+			to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress,
+			to_bridge_liquidation_address_id: liquidationAddressId, // actual id that bridge return to us
+			to_bridge_external_account_id: bridgeExternalAccountId, // actual id that bridge return to us
+			transaction_status: 'CREATED',
+			contract_address: contractAddress,
+			action_name: "transfer",
+			fiat_provider: "BRIDGE",
+			crypto_provider: "BASTION",
+			transfer_from_wallet_type: walletType
+		})
+		.select()
+		.single()
+
+	if (initialBastionTransfersInsertError) {
+		console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
+		await createLog("transfer/util/transferToBridgeLiquidationAddressDeveloperWithdraw", sourceUserId, initialBastionTransfersInsertError.message)
+		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
+	}
+
+	//create transfer
+	const bastionUserId = `${sourceUserId}-${walletType}`
+	const decimals = currencyDecimal[sourceCurrency]
+	const transferAmount = toUnitsString(amount, decimals)
+	const bodyObject = {
+		requestId: initialBastionTransfersInsertData.bastion_request_id,
+		userId: bastionUserId,
+		contractAddress: contractAddress,
+		actionName: "transfer",
+		chain: chain,
+		actionParams: erc20Transfer(sourceCurrency, liquidationAddress, transferAmount)
+	};
+
+	const response = await submitUserAction(bodyObject)
+	const responseBody = await response.json();
+	const result = {
+		transferType: transferType.CRYPTO_TO_FIAT,
+		transferDetails: {
+			id: initialBastionTransfersInsertData.id,
+			requestId,
+			sourceUserId,
+			destinationUserId,
+			chain,
+			sourceCurrency,
+			amount,
+			destinationCurrency,
+			destinationAccountId,
+			createdAt: initialBastionTransfersInsertData.created_at,
+			contractAddress: contractAddress,
+			failedReason: "",
+			walletType
+		}
+	}
+
+	// map status
+	if (!response.ok) {
+		// fail to transfer
+		await createLog("transfer/util/transferToBridgeLiquidationAddressDeveloperWithdraw", sourceUserId, responseBody.message, responseBody)
+		const { message, type } = getMappedError(responseBody.message)
+		result.transferDetails.status = "NOT_INITIATED"
+		result.transferDetails.failedReason = message
+
+		const toUpdate = {
+			bastion_response: responseBody,
+			bastion_transaction_status: "FAILED",
+			transaction_status: "NOT_INITIATED",
+			failed_reason: message
+		}
+		
+		const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
+	}else{
+		// bastion might return 200 response with failed transaction
+		result.transferDetails.transactionHash = responseBody.transactionHash
+		result.transferDetails.status = responseBody.status == "FAILED" ? "NOT_INITIATED" : "SUBMITTED_ONCHAIN"
+
+		const toUpdate = {
+			bastion_response: responseBody,
+			transaction_hash: responseBody.transactionHash,
+			bastion_transaction_status: responseBody.status,
+			transaction_status: result.transferDetails.status,
+			failed_reason: responseBody.failureDetails,
+		}
+		const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
+	}
+
+	// gas check
+	await bastionGasCheck(bastionUserId, chain)
+
+	return { isExternalAccountExist: true, transferResult: result }
+}
+
+module.exports = {
+	transferToBridgeLiquidationAddress,
+	transferToBridgeLiquidationAddressDeveloperWithdraw
+}
