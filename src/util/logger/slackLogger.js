@@ -42,11 +42,11 @@ const blockBuilder = (caller, request, response) => {
         },
         {
           type: "mrkdwn",
-          text: caller.profileEmail,
+          text: caller.profileEmail || "N/A",
         },
         {
           type: "mrkdwn",
-          text: caller.profileId,
+          text: caller.profileId || "N/A",
         },
       ],
     },
