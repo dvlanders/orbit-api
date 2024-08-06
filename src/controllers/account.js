@@ -776,8 +776,9 @@ exports.getVirtualAccount = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const fileds = req.query
-	const { profileId, rail, destinationCurrency, destinationChain, userId, limit, createdBefore, createdAfter } = fileds
+
+	const fields = req.query
+	const { profileId, rail, destinationCurrency, destinationChain, userId, limit, createdBefore, createdAfter } = fields
 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
 	const acceptedFields = {
 		profileId: "string",
@@ -792,7 +793,7 @@ exports.getVirtualAccount = async (req, res) => {
 
 	try {
 		if (parseInt(limit) <= 0 || parseInt(limit) > 100) return res.status(400).json({ error: "Limit should be between 1 to 100" })
-		const { missingFields, invalidFields } = fieldsValidation(fileds, requiredFields, acceptedFields)
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
 		if (!fetchFunc) return res.status(501).json({ message: "Rail is not yet available" })
@@ -811,8 +812,8 @@ exports.getVirtualAccountMicroDepositInstructions = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
-	const fileds = req.query
-	const { profileId, rail, destinationCurrency, destinationChain, userId } = fileds
+	const fields = req.query
+	const { profileId, rail, destinationCurrency, destinationChain, userId } = fields
 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
 	const acceptedFields = {
 		profileId: "string",
@@ -823,7 +824,7 @@ exports.getVirtualAccountMicroDepositInstructions = async (req, res) => {
 	}
 
 	try {
-		const { missingFields, invalidFields } = fieldsValidation(fileds, requiredFields, acceptedFields)
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
 		if (!fetchFunc) return res.status(400).json({ message: "Rail is not yet available" })

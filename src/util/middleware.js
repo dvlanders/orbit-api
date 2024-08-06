@@ -7,6 +7,7 @@ const { verifyApiKey } = require("./helper/verifyApiKey");
 const { logger } = require('../util/logger/logger');
 const readme = require('readmeio');
 const { sendSlackMessage } = require('../util/logger/slackLogger');
+const cloneDeep = require('lodash.clonedeep');
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
 const README_API_KEY = process.env.README_API_KEY
@@ -118,6 +119,15 @@ exports.logRequestResponse = (req, res, next) => {
 	}
 	console.log('logRequestResponse middleware triggered');
 
+    // Create a deep copy of the req object
+    const originalReq = cloneDeep({
+        method: req.method,
+        path: req.path,
+        query: req.query,
+        params: req.params,
+        body: req.body
+    });
+
 	const oldWrite = res.write;
 	const oldEnd = res.end;
 	const chunks = [];
@@ -135,28 +145,27 @@ exports.logRequestResponse = (req, res, next) => {
 
 		res.on('finish', () => {
 			logger.info('Request and Response Details', {
-				method: req.method,
-				route: req.originalUrl,
-				query: req.query,
-				params: req.params,
+				method: originalReq.method,
+				route: originalReq.path,
+				query: originalReq.query,
+				params: originalReq.params,
 				statusCode: res.statusCode,
 				response: responseBody
 			});
-			const reqQuery = { ...req.query };
+			const reqQuery = { ...originalReq.query };
 			delete reqQuery.apiKeyId;
 			const reqObject = {
-				method: req.method,
-				route: req.path,
+				method: originalReq.method,
+				route: originalReq.path,
 				query: reqQuery,
-				body: req.body,
-				params: req.params
+				body: originalReq.body,
+				params: originalReq.params
 			}
 			const resObject = {
 				statusCode: res.statusCode,
 				body: responseBody
 			}
 
-			console.log('reqObject', reqObject.query.profileEmail);
 
 			//define list of emails where we dont want to send slack message
 			const excludedEmails = [
