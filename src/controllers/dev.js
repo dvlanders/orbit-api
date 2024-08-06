@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
 const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { createStripeBill } = require("../util/billing/createBill");
+const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -215,4 +216,20 @@ exports.testStripeWebwook = async(req, res) => {
     }
 
 
+}
+
+exports.testCheckList = async (req, res) => {
+    try{
+        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
+        const defaultCheckList = {
+            sandboxKeyCreated: false,
+            userCreated: false,
+            BankAccountAdded: false,
+            transfered: false,
+        }
+        const newCheckList = await tutorialCheckList(profileId, defaultCheckList)
+        return res.status(200).json(newCheckList)
+    }catch (error){
+        return res.status(500).json({error: error.message})
+    }
 }

@@ -18,4 +18,5 @@ module.exports = (router) => {
 	router.post("/dev/triggerOnRampFeeCharge", dev.triggerOnRampFeeCharge)
 	router.post("/dev/testCreateBill", dev.testCreateBill)
 	router.post("/dev/testStripeWebwook", dev.testStripeWebwook)
+	router.get("/dev/testCheckList", dev.testCheckList)
 };

@@ -9,6 +9,7 @@ const { feeMap } = require("../util/billing/feeRateMap");
 const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCalculator");
 const { supabaseCall } = require("../util/supabaseWithRetry");
 const { v4 } = require('uuid');
+const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 
 exports.getWalletBalance = async(req, res) => {
     if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
@@ -813,5 +814,20 @@ exports.editOrganizationMember = async(req, res) => {
     }catch(error){
         await createLog("dashboard/utils/editOrganizationMember", null, error.message, error, originProfileId)
         return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.tutorialCheckList = async(req, res) => {
+    if (req.method !== "POST") return res.status(405).json({ error: 'Method not allowed' });
+    const {profileId} = req.query
+    const {checkList} = req.body
+
+    try{
+        const newCheckList = await tutorialCheckList(profileId, checkList)
+        return res.status(200).json({checkList: newCheckList})
+    }catch (error){
+        console.error(error)
+        await createLog("dashboard/utils/tutorialCheckList", null, error.message, error, profileId)
+        return res.status(500).json({error: "Unexpected error happened"})
     }
 }
