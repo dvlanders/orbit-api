@@ -86,21 +86,21 @@ exports.authorizeDashboard = async (req, res, next) => {
 	}
 }
 
-exports.requiredAdmin = async(req, res, next) => {
-	try{
+exports.requiredAdmin = async (req, res, next) => {
+	try {
 		if (req.organization.organizationRole != "ADMIN") return res.status(401).json({ error: "Not authorized" });
 		next()
-	}catch (error){
+	} catch (error) {
 		console.error(error)
 		return res.status(500).json({ error: "Unexpected error happened" });
 	}
 }
 
-exports.requiredProdDashboard = async(req, res, next) => {
-	try{
+exports.requiredProdDashboard = async (req, res, next) => {
+	try {
 		if (!req.organization.prodEnabled) return res.status(401).json({ error: "Not authorized" });
 		next()
-	}catch (error){
+	} catch (error) {
 		console.error(error)
 		return res.status(500).json({ error: "Unexpected error happened" });
 	}
@@ -154,7 +154,22 @@ exports.logRequestResponse = (req, res, next) => {
 				statusCode: res.statusCode,
 				body: responseBody
 			}
-			sendSlackMessage(reqObject, resObject)
+
+			console.log('reqObject', reqObject.query.profileEmail);
+
+			//define list of emails where we dont want to send slack message
+			const excludedEmails = [
+				"test@gmail.com",
+				"willyyang.521@gmail.com",
+				"wy323@cornell.edu",
+				"sam@hifibridge.com",
+				"samyoon940@gmail.com"
+			]
+
+
+			if (!excludedEmails.includes(reqObject.query.profileEmail)) {
+				sendSlackMessage(reqObject, resObject);
+			}
 
 		});
 
