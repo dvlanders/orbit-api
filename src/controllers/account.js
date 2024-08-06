@@ -381,24 +381,17 @@ exports.getAccount = async (req, res) => {
 	}
 
 	// get user id from path parameter
-	const { accountId, rail, profileId } = req.query;
+	const { accountId, profileId } = req.query;
 
 	console.log(req.query)
-	console.log("accountId", accountId, "rail", rail, "profileId", profileId)
+	console.log("accountId", accountId, "profileId", profileId)
 	if (!accountId) return res.status(400).json({ error: 'accountId is required' });
 
 	try {
 
-		if(rail && !validateRailCompositeKey(rail)) return res.status(400).json({ error: 'Invalid rail' });
-
-		let railKey;
-		if(!rail){
-			const railMapping = await fetchAccountProviders(accountId, profileId);
-			if (!railMapping) return res.status(404).json({ error: "No accountId found" })
-			railKey = generateRailCompositeKey(railMapping.currency, railMapping.rail_type, railMapping.payment_rail)
-		}else{
-			railKey = rail
-		}
+		const railMapping = await fetchAccountProviders(accountId, profileId);
+		if (!railMapping) return res.status(404).json({ error: "No accountId found" })
+		const railKey = generateRailCompositeKey(railMapping.currency, railMapping.rail_type, railMapping.payment_rail)
 		
 		const func = getFetchRailFunctions(railKey);
 		let accountInfo = await func(accountId)
@@ -422,24 +415,23 @@ exports.getAllAccounts = async (req, res) => {
 
 	// get user id from path parameter
 	const fields = req.query
-	const { profileId, rail, currency, railType, paymentRail, limit, createdAfter, createdBefore, userId } = fields;
+	const { profileId, currency, railType, paymentRail, limit, createdAfter, createdBefore, userId } = fields;
 
-	let requiredFields = []
-	if (!rail && !currency && !railType) {
-		return res.status(400).json({ error: 'Please provide at least one of the following: rail, currency, or railType.' });
+	const requiredFields = []
+	if (!currency && !railType) {
+		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
-	const acceptedFields = { currency: "string", rail: "string", currency: "string", railType: "string", paymentRail: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
+	const acceptedFields = { currency: "string", currency: "string", railType: "string", paymentRail: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
 
 	try {
-
-		if(rail && !validateRailCompositeKey(rail)) return res.status(400).json({ error: 'Invalid Rail' });
-		if(!rail && !validateRailCompositeKey(generateRailCompositeKey(currency, railType, paymentRail))) return res.status(400).json({ error: `${currency}, ${railType}, ${paymentRail} are not supported` });
-
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+
+		const railKey = generateRailCompositeKey(currency, railType, paymentRail)
+		if(!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not supported` });
+
+		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		
-		const railKey = rail || generateRailCompositeKey(currency, railType, paymentRail)
 		const func = getFetchRailFunctions(railKey)
 		
 		const accountInfo = await func(null, profileId, userId, limit, createdAfter, createdBefore)
