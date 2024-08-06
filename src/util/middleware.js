@@ -65,7 +65,7 @@ exports.authorizeDashboard = async (req, res, next) => {
 		//check is prod enable
 		const { data, error } = await supabase
 			.from("profiles")
-			.select("organization_id, organization_role, organization: organization_id(*)")
+			.select("organization_id, organization_role, organization: organization_id(*), email")
 			.eq("id", user.sub)
 			.maybeSingle()
 
@@ -74,6 +74,7 @@ exports.authorizeDashboard = async (req, res, next) => {
 		// if (!data.organization.prod_enabled) return res.status(401).json({ error: "Not authorized" });
 
 		req.query.profileId = data.organization_id // customers's organization id
+		req.query.profileEmail = data.email
 		req.query.originProfileId = user.sub // customers's profile id
 		req.organization = {
 			prodEnabled: data.organization.prod_enabled,
