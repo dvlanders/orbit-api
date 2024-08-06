@@ -166,7 +166,6 @@ exports.logRequestResponse = (req, res, next) => {
 				body: responseBody
 			}
 
-			console.log('reqObject', reqObject.query.profileEmail);
 
 			//define list of emails where we dont want to send slack message
 			const excludedEmails = [
