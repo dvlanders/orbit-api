@@ -38,7 +38,7 @@ async function createLog(source, userId, log, response, profileId = null) {
 	}
 
 	let logTableName = "logs"
-	if (process.env.DEV_LOGGING.toUpperCase() === 'TRUE') {
+	if (process.env.DEV_LOGGING && process.env.DEV_LOGGING.toUpperCase() === 'TRUE') {
 		// log to dev table if is 
 		logTableName = "dev_logs"
 		newLog.log_origin = process.env.LOG_ORIGIN || "LOCAL"
