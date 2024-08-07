@@ -119,14 +119,14 @@ exports.logRequestResponse = (req, res, next) => {
 	}
 	console.log('logRequestResponse middleware triggered');
 
-    // Create a deep copy of the req object
-    const originalReq = cloneDeep({
-        method: req.method,
-        path: req.path,
-        query: req.query,
-        params: req.params,
-        body: req.body
-    });
+	// Create a deep copy of the req object
+	const originalReq = cloneDeep({
+		method: req.method,
+		path: req.path,
+		query: req.query,
+		params: req.params,
+		body: req.body
+	});
 
 	const oldWrite = res.write;
 	const oldEnd = res.end;
@@ -173,8 +173,12 @@ exports.logRequestResponse = (req, res, next) => {
 				"willyyang.521@gmail.com",
 				"wy323@cornell.edu",
 				"sam@hifibridge.com",
-				"samyoon940@gmail.com"
+				"samyoon940@gmail.com",
+				"samyoon941@gmail.com",
+				"william.yang@hifibridge.com"
+
 			]
+
 
 
 			if (!excludedEmails.includes(reqObject.query.profileEmail)) {
