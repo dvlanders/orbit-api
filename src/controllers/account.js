@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-const { fieldsValidation, isValidISODateFormat } = require("../util/common/fieldsValidation");
+const { fieldsValidation, isValidISODateFormat, isUUID } = require("../util/common/fieldsValidation");
 const createAndFundBastionUser = require('../util/bastion/fundMaticPolygon');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
@@ -16,7 +16,8 @@ const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAc
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
-const { fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions } = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const { fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions, getFetchRailFunctions, generateRailCompositeKey, validateRailCompositeKey} = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const { fetchAccountProviders, insertAccountProviders } = require('../util/account/accountProviders/accountProvidersService');
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
@@ -198,6 +199,8 @@ exports.createUsdOfframpDestination = async (req, res) => {
 			if (bridgeAccountInserterror) {
 				return res.status(500).json({ error: 'Internal Server Error' });
 			}
+
+			await insertAccountProviders(recordId, "usd", "offramp", "ach", "BRIDGE", userId)
 		}
 
 		// now create the liquidation address for the external account
@@ -343,6 +346,8 @@ exports.createEuroOfframpDestination = async (req, res) => {
 			if (bridgeAccountInserterror) {
 				return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 			}
+
+			await insertAccountProviders(recordId, "eur", "offramp", "sepa", "BRIDGE", userId)
 		}
 
 		// now create the liquidation address for the external account
@@ -376,23 +381,27 @@ exports.getAccount = async (req, res) => {
 	}
 
 	// get user id from path parameter
-	const { accountId, railType, userId, profileId } = req.query;
-
+	const { accountId, profileId } = req.query;
 	console.log(req.query)
-	console.log("accountId", accountId, "railType", railType, "userId", userId, "profileId", profileId)
-	if (!userId || !railType || !accountId) return res.status(400).json({ error: 'userId, railType and accountId are required' });
+
+	const requiredFields = ["accountId"]
+	const acceptedFields = {accountId: "string"}
 
 	try {
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
-		if (!(railType in fetchRailFunctionsMap)) {
-			return res.status(400).json({ error: 'Invalid railType' });
-		}
+		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if(!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
+		const railMapping = await fetchAccountProviders(accountId, profileId);
+		if (!railMapping) return res.status(404).json({ error: "No accountId found" })
+		const railKey = generateRailCompositeKey(railMapping.currency, railMapping.rail_type, railMapping.payment_rail)
+		
+		const func = getFetchRailFunctions(railKey);
+		let accountInfo = await func(accountId)
 
-		const func = fetchRailFunctionsMap[railType]
-		const accountInfo = await func(accountId)
+		if (accountInfo.count === 0) return res.status(404).json({ error: "No account found" })
+		if (accountInfo.count > 1) await createLog("account/getAccount", null, "Account Id exists at more than one place", null, profileId)
+		accountInfo = accountInfo.banks[0]
 
-		if (!accountInfo) return res.status(404).json({ error: "No account found" })
-		accountInfo.railType = railType
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
@@ -408,18 +417,26 @@ exports.getAllAccounts = async (req, res) => {
 
 	// get user id from path parameter
 	const fields = req.query
-	const { profileId, railType, limit, createdAfter, createdBefore, userId } = fields;
-	const requiredFields = ["railType"]
-	const acceptedFields = { railType: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
+	const { profileId, currency, railType, paymentRail, limit, createdAfter, createdBefore, userId } = fields;
+
+	const requiredFields = []
+	if (!currency && !railType) {
+		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
+	}
+	const acceptedFields = { currency: "string", currency: "string", railType: "string", paymentRail: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
 
 	try {
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		const func = fetchRailFunctionsMap[railType]
-		if (!func) return res.status(400).json({ error: `${railType} is not yet supported` });
-		const accountInfo = await func(undefined, profileId, userId, limit, createdAfter, createdBefore)
-		accountInfo.railType = railType
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+
+		const railKey = generateRailCompositeKey(currency, railType, paymentRail)
+		if(!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not a supported rail` });
+
+		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		
+		const func = getFetchRailFunctions(railKey)
+		
+		const accountInfo = await func(null, profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
@@ -739,8 +756,10 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
+		await insertAccountProviders(circleAccountData[0].id, "usd", "offramp", "wire", "CIRCLE", userId)
+
 		const responseObject = {};
-		if (responseObject.id) responseObject.id = circleAccountData[0].id;
+		if (circleAccountData[0].id) responseObject.id = circleAccountData[0].id;
 		if (responseData && responseData.data && responseData.data.status) responseObject.status = responseData.data.status;
 		if (circleAccountData[0].account_type) responseObject.accountType = circleAccountData[0].account_type;
 		if (circleAccountData[0].account_number) responseObject.accountNumber = circleAccountData[0].account_number;
@@ -931,6 +950,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 				blindpay_account_id: responseData.id,
 				user_id: fields.userId,
 				blockchain_address: responseData.blockchain_address,
+				receiver_id: fields.receiverId
 				// brex_vendor_id: responseData.brexVendorId,
 			}).select();
 
@@ -940,6 +960,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
+		await insertAccountProviders(blindpayAccountData[0].id, "brl", "offramp", "pix", "BLINDPAY", fields.userId)
 
 		// structure a responseObject with the id from the supabase table, name, currency, bank country, pix key, and receiver id
 		const responseObject = {

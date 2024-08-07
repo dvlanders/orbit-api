@@ -489,7 +489,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		}
 
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
 		//check if sender is under profileId
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
