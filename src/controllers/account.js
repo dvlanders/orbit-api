@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-const { fieldsValidation, isValidISODateFormat } = require("../util/common/fieldsValidation");
+const { fieldsValidation, isValidISODateFormat, isUUID } = require("../util/common/fieldsValidation");
 const createAndFundBastionUser = require('../util/bastion/fundMaticPolygon');
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
@@ -382,13 +382,15 @@ exports.getAccount = async (req, res) => {
 
 	// get user id from path parameter
 	const { accountId, profileId } = req.query;
-
 	console.log(req.query)
-	console.log("accountId", accountId, "profileId", profileId)
-	if (!accountId) return res.status(400).json({ error: 'accountId is required' });
+
+	const requiredFields = ["accountId"]
+	const acceptedFields = {accountId: "string"}
 
 	try {
-
+		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if(!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
 		const railMapping = await fetchAccountProviders(accountId, profileId);
 		if (!railMapping) return res.status(404).json({ error: "No accountId found" })
 		const railKey = generateRailCompositeKey(railMapping.currency, railMapping.rail_type, railMapping.payment_rail)
@@ -425,10 +427,10 @@ exports.getAllAccounts = async (req, res) => {
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
 		const railKey = generateRailCompositeKey(currency, railType, paymentRail)
-		if(!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not supported` });
+		if(!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not a supported rail` });
 
 		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
 		

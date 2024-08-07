@@ -45,7 +45,7 @@ const accountInfoAggregator = (funcs) => (async (accountId, profileId, userId, l
             let accountInfo = await func(accountId, profileId, userId, limit, createdAfter, createdBefore);
 			
 			if(!accountInfo)return { count: 0, banks: [] };
-			if(!accountInfo.count) accountInfo = { count: 1, banks: [accountInfo] };
+			if(!accountInfo.hasOwnProperty('count')) accountInfo = { count: 1, banks: [accountInfo] };
     
             const banksWithRail = accountInfo.banks.map(bank => ({
                 ...bank,
