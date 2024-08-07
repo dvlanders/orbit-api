@@ -2,6 +2,7 @@ const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const { createLog } = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
+const { insertAccountProviders } = require("../../account/accountProviders/accountProvidersService")
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -121,7 +122,8 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				.select("*")
 				.single()
 			if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
-
+			
+			await insertAccountProviders(checkbookAccountData.id, "usd", "onramp", "ach", "CHECKBOOK", userId)
 
 			return {
 				status: 200,
