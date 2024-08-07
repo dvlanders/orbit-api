@@ -10,6 +10,7 @@ const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
 const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { createStripeBill } = require("../util/billing/createBill");
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
+const createLog = require("../util/logger/supabaseLogger");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -231,5 +232,15 @@ exports.testCheckList = async (req, res) => {
         return res.status(200).json(newCheckList)
     }catch (error){
         return res.status(500).json({error: error.message})
+    }
+}
+
+exports.testDevLogging = async (req, res) => {
+    try{
+        await createLog("test", null, "test", {error: "test"}, "3b8be475-1b32-4ff3-9384-b6699c139869")
+        return res.status(200).json({message: "success"})
+    }catch(error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
     }
 }

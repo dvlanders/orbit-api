@@ -19,4 +19,5 @@ module.exports = (router) => {
 	router.post("/dev/testCreateBill", dev.testCreateBill)
 	router.post("/dev/testStripeWebwook", dev.testStripeWebwook)
 	router.get("/dev/testCheckList", dev.testCheckList)
+	router.get("/dev/testDevLogging", dev.testDevLogging)
 };
