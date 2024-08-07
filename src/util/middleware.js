@@ -174,7 +174,8 @@ exports.logRequestResponse = (req, res, next) => {
 				"wy323@cornell.edu",
 				"sam@hifibridge.com",
 				"samyoon940@gmail.com",
-				"samyoon941@gmail.com"
+				"samyoon941@gmail.com",
+				"william.yang@hifibridge.com"
 
 			]
 
