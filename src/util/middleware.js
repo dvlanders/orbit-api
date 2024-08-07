@@ -119,14 +119,14 @@ exports.logRequestResponse = (req, res, next) => {
 	}
 	console.log('logRequestResponse middleware triggered');
 
-    // Create a deep copy of the req object
-    const originalReq = cloneDeep({
-        method: req.method,
-        path: req.path,
-        query: req.query,
-        params: req.params,
-        body: req.body
-    });
+	// Create a deep copy of the req object
+	const originalReq = cloneDeep({
+		method: req.method,
+		path: req.path,
+		query: req.query,
+		params: req.params,
+		body: req.body
+	});
 
 	const oldWrite = res.write;
 	const oldEnd = res.end;
@@ -176,8 +176,11 @@ exports.logRequestResponse = (req, res, next) => {
 				"samyoon940@gmail.com"
 			]
 
+			console.log("profileEmail in middleware", reqObject.query.profileEmail)
+
 
 			if (!excludedEmails.includes(reqObject.query.profileEmail)) {
+				console.log('*****************about to send slack message')
 				sendSlackMessage(reqObject, resObject);
 			}
 
