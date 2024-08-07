@@ -109,17 +109,12 @@ exports.requiredProdDashboard = async (req, res, next) => {
 }
 
 
-
 exports.logRequestResponse = (req, res, next) => {
-
-	// don't log in test environment
 	if (process.env.NODE_TEST) {
 		console.log("logRequestResponse middleware disabled in test environment");
 		return next();
 	}
-	console.log('logRequestResponse middleware triggered');
 
-	// Create a deep copy of the req object
 	const originalReq = cloneDeep({
 		method: req.method,
 		path: req.path,
@@ -141,54 +136,84 @@ exports.logRequestResponse = (req, res, next) => {
 		if (chunk) {
 			chunks.push(chunk);
 		}
-		const responseBody = Buffer.concat(chunks).toString('utf8');
-
-		res.on('finish', () => {
-			logger.info('Request and Response Details', {
-				method: originalReq.method,
-				route: originalReq.path,
-				query: originalReq.query,
-				params: originalReq.params,
-				statusCode: res.statusCode,
-				response: responseBody
-			});
-			const reqQuery = { ...originalReq.query };
-			delete reqQuery.apiKeyId;
-			const reqObject = {
-				method: originalReq.method,
-				route: originalReq.path,
-				query: reqQuery,
-				body: originalReq.body,
-				params: originalReq.params
-			}
-			const resObject = {
-				statusCode: res.statusCode,
-				body: responseBody
-			}
-
-
-			//define list of emails where we dont want to send slack message
-			const excludedEmails = [
-				"test@gmail.com",
-				"willyyang.521@gmail.com",
-				"wy323@cornell.edu",
-				"sam@hifibridge.com",
-				"samyoon940@gmail.com",
-				"samyoon941@gmail.com",
-				"william.yang@hifibridge.com"
-
-			]
-
-
-
-			if (!excludedEmails.includes(reqObject.query.profileEmail)) {
-				sendSlackMessage(reqObject, resObject);
-			}
-
-		});
-
 		oldEnd.apply(res, arguments);
 	};
 
+	res.on('finish', () => {
+		const responseBody = Buffer.concat(chunks).toString('utf8');
+		let parsedBody;
+		try {
+			parsedBody = JSON.parse(responseBody);
+		} catch (e) {
+			parsedBody = responseBody;
+		}
+
+		const filteredQuery = { ...originalReq.query };
+		delete filteredQuery.apiKeyId;  // Filtering sensitive information
+
+		const logData = {
+			method: originalReq.method,
+			path: originalReq.path,
+			query: filteredQuery,
+			params: originalReq.params,
+			statusCode: res.statusCode,
+			response: parsedBody
+		};
+
+		console.log("about to log to loki");
+		logToLoki(logData);
+	});
+
 	next();
 };
+
+
+function logToLoki(message) {
+	const logEntry = {
+		streams: [{
+			stream: {
+				app: `hifi-api-${process.env.NODE_ENV}`,
+				level: 'info'
+			},
+			values: [
+				[`${Date.now() * 1e6}`, JSON.stringify(message, null, 2)]
+			]
+		}]
+	};
+
+	fetch(`${process.env.GRAFANA_LOKI_PUSH_URL}`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'Authorization': `Basic ${Buffer.from(`${process.env.GRAFANA_USER_ID}` + ':' + `${process.env.GRAFANA_API_KEY}`).toString('base64')}`
+		},
+		body: JSON.stringify(logEntry)
+	})
+		.then(response => {
+			if (!response.ok) {
+				console.error(`HTTP Error Response: ${response.status} ${response.statusText}`);
+				return response.text().then(text => {
+					throw new Error(text);
+				});
+			}
+			if (response.status === 204) {
+				console.log('Log sent successfully: No Content');
+				return;
+			}
+			return response.text().then(text => {
+				try {
+					return JSON.parse(text);
+				} catch {
+					return text;
+				}
+			});
+		})
+		.then(data => {
+			if (data) {
+				console.log('Log sent successfully:', data);
+			}
+		})
+		.catch(err => {
+			console.error('Error sending logs to Loki:', err);
+		});
+}
