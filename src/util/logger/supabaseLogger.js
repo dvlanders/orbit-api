@@ -7,11 +7,6 @@ async function createLog(source, userId, log, response, profileId = null) {
 		return;
 	}
 
-	if (process.env.DISABLE_LOGGING.toUpperCase() === 'TRUE') {
-		console.log("Logging disabled via DISABLE_LOGGING environment variable.");
-		return;
-	}
-
 	const newLog = {
 		source: source,
 		log: log,
@@ -42,7 +37,13 @@ async function createLog(source, userId, log, response, profileId = null) {
 		newLog.profile_id = profileId;
 	}
 
-	const { data, error } = await supabase.from("logs").insert(newLog);
+	let logTableName = "logs"
+	if (process.env.DEV_LOGGING.toUpperCase() === 'TRUE') {
+		// log to dev table if is 
+		logTableName = "dev_logs"
+		newLog.log_origin = process.env.LOG_ORIGIN || "LOCAL"
+	}
+	const { data, error } = await supabase.from(logTableName).insert(newLog);
 }
 
 module.exports = createLog;
