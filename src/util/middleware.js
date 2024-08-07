@@ -173,7 +173,9 @@ exports.logRequestResponse = (req, res, next) => {
 				"willyyang.521@gmail.com",
 				"wy323@cornell.edu",
 				"sam@hifibridge.com",
-				"samyoon940@gmail.com"
+				"samyoon940@gmail.com",
+				"samyoon941@gmail.com"
+
 			]
 
 			console.log("profileEmail in middleware", reqObject.query.profileEmail)
