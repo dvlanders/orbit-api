@@ -46,10 +46,14 @@ const accountInfoAggregator = (funcs) => (async (accountId, profileId, userId, l
 			
 			if(!accountInfo)return { count: 0, banks: [] };
 			if(!accountInfo.hasOwnProperty('count')) accountInfo = { count: 1, banks: [accountInfo] };
-    
+			const [currency, railType, paymentRail] = key.toLowerCase().split('_');
             const banksWithRail = accountInfo.banks.map(bank => ({
                 ...bank,
-                rail: key.toLowerCase()
+                rail: {
+            		currency,
+            		railType,
+            		paymentRail
+        		}
             }));
             return {
                 count: accountInfo.count,
