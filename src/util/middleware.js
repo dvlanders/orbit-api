@@ -149,7 +149,7 @@ exports.logRequestResponse = (req, res, next) => {
 		}
 
 		const filteredQuery = { ...originalReq.query };
-		delete filteredQuery.apiKeyId;  // Filtering sensitive information
+		delete filteredQuery.apiKeyId;
 
 		const logData = {
 			method: originalReq.method,
@@ -169,17 +169,23 @@ exports.logRequestResponse = (req, res, next) => {
 
 
 function logToLoki(message) {
+
+	console.log('logToLoki middleware:', message);
+
 	const logEntry = {
 		streams: [{
 			stream: {
 				app: `hifi-api-${process.env.NODE_ENV}`,
-				level: 'info'
+				source: 'logToLoki middleware',
+				profileEmail: message.query.profileEmail,
+				path: message.path,
 			},
 			values: [
 				[`${Date.now() * 1e6}`, JSON.stringify(message, null, 2)]
 			]
 		}]
 	};
+
 
 	fetch(`${process.env.GRAFANA_LOKI_PUSH_URL}`, {
 		method: 'POST',
