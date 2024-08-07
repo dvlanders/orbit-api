@@ -178,11 +178,9 @@ exports.logRequestResponse = (req, res, next) => {
 
 			]
 
-			console.log("profileEmail in middleware", reqObject.query.profileEmail)
 
 
 			if (!excludedEmails.includes(reqObject.query.profileEmail)) {
-				console.log('*****************about to send slack message')
 				sendSlackMessage(reqObject, resObject);
 			}
 
