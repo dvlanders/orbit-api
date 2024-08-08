@@ -6,7 +6,7 @@ const { isUUID } = require("./common/fieldsValidation");
 const { verifyApiKey } = require("./helper/verifyApiKey");
 const { logger } = require('../util/logger/logger');
 const readme = require('readmeio');
-const { sendSlackMessage } = require('../util/logger/slackLogger');
+const { sendSlackReqResMessage } = require('../util/logger/slackLogger');
 const cloneDeep = require('lodash.clonedeep');
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
@@ -123,29 +123,15 @@ exports.logRequestResponse = (req, res, next) => {
 		body: req.body
 	});
 
-	const oldWrite = res.write;
-	const oldEnd = res.end;
-	const chunks = [];
+    const originalSend = res.send;
+    // Override send function
+    res.send = function (body) {
 
-	res.write = function (chunk) {
-		chunks.push(chunk);
-		return oldWrite.apply(res, arguments);
-	};
-
-	res.end = function (chunk) {
-		if (chunk) {
-			chunks.push(chunk);
-		}
-		oldEnd.apply(res, arguments);
-	};
-
-	res.on('finish', () => {
-		const responseBody = Buffer.concat(chunks).toString('utf8');
-		let parsedBody;
+        let parsedBody;
 		try {
-			parsedBody = JSON.parse(responseBody);
+			parsedBody = JSON.parse(body);
 		} catch (e) {
-			parsedBody = responseBody;
+			parsedBody = body;
 		}
 
 		const filteredQuery = { ...originalReq.query };
@@ -162,8 +148,36 @@ exports.logRequestResponse = (req, res, next) => {
 
 		console.log("about to log to loki");
 		logToLoki(logData);
-	});
 
+		const reqObject = {
+			method: originalReq.method,
+			route: originalReq.path,
+			query: filteredQuery,
+			body: originalReq.body,
+			params: originalReq.params
+		}
+		const resObject = {
+			statusCode: res.statusCode,
+			body: parsedBody
+		}
+
+		//define list of emails where we dont want to send slack message
+		const excludedEmails = [
+			"test@gmail.com",
+			"willyyang.521@gmail.com",
+			"wy323@cornell.edu",
+			"sam@hifibridge.com",
+			"samyoon940@gmail.com",
+			"samyoon941@gmail.com",
+			"william.yang@hifibridge.com"
+		]
+
+		if (!excludedEmails.includes(reqObject.query.profileEmail)) {
+			sendSlackReqResMessage(reqObject, resObject);
+		}
+
+        originalSend.call(this, body);
+    };
 	next();
 };
 

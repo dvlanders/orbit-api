@@ -1,4 +1,5 @@
 const supabase = require("../supabaseClient");
+const { sendSlackLogMessage } = require("./slackLogger");
 
 async function createLog(source, userId, log, response, profileId = null) {
 	// don't log in test environment
@@ -43,7 +44,17 @@ async function createLog(source, userId, log, response, profileId = null) {
 		logTableName = "dev_logs"
 		newLog.log_origin = process.env.LOG_ORIGIN || "LOCAL"
 	}
-	const { data, error } = await supabase.from(logTableName).insert(newLog);
+	const { data: logData, error: logError } = await supabase.from(logTableName).insert(newLog).select().single();
+
+	if(logError) throw new Error("Failed to insert new log");
+
+	let parsedResponse;
+	try {
+		parsedResponse = JSON.parse(logData.response);
+	} catch (error) {
+		parsedResponse = logData.response;
+	}
+	await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
 }
 
 module.exports = createLog;
