@@ -12,6 +12,7 @@ const { createStripeBill } = require("../util/billing/createBill");
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const createLog = require("../util/logger/supabaseLogger");
 const notifyCryptoToFiatTransfer = require("../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -257,12 +258,12 @@ exports.testIp = async(req, res) => {
 exports.testNotifyCryptoToFiat = async(req, res) => {
     try{
         const {data, error} = await supabase
-        .from("offramp_transactions")
+        .from("onramp_transactions")
         .select("*")
-        .eq("id", "05531915-2a3a-45f2-abe8-af90d5113361")
+        .eq("id", "b78dc7ee-f20f-4321-a14f-b48d624505f2")
         .single()
         if (error) throw error
-        await notifyCryptoToFiatTransfer(data)
+        await notifyFiatToCryptoTransfer(data)
         return res.status(200).json({message: "success"})
     }catch(error){
         console.log(error)
