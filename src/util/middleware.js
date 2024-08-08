@@ -172,7 +172,13 @@ exports.logRequestResponse = (req, res, next) => {
 			"william.yang@hifibridge.com"
 		]
 
-		if (!excludedEmails.includes(reqObject.query.profileEmail)) {
+		//define list of endpoints to exclude from slack message
+		const excludedEndpoints = [
+			{method: "GET", route: "/auth/apiKey"},
+			{method: "GET", route: "/auth/webhook"},
+		]
+
+		if (!excludedEmails.includes(reqObject.query.profileEmail) && !excludedEndpoints.some(endpoint => endpoint.method === reqObject.method && endpoint.route === reqObject.route)) {
 			sendSlackReqResMessage(reqObject, resObject);
 		}
 
