@@ -63,7 +63,8 @@ async function fundMaticPolygon(userId, amount, type = "INDIVIDUAL") {
 				chain: chain,
 				bastion_response: data,
 				transaction_hash: data.transactionHash,
-				status: data.status
+				status: data.status,
+				gas_sponsor_bastion_user_id: gasStation
 			});
 
 		if (gasError) {
