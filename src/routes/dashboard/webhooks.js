@@ -3,6 +3,6 @@ const { authorizeDashboard } = require("../../util/middleware");
 
 
 module.exports = (router) => {
-    router.get("/dashboard/webhooks/getWalletBalance", authorizeDashboard, webhooks.getAllWebhook)
+    router.get("/dashboard/webhooks/getAllWebhookHistory", authorizeDashboard, webhooks.getAllWebhookHistory)
 
 }

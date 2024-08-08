@@ -2,7 +2,7 @@ const createLog = require("../../util/logger/supabaseLogger")
 const supabaseSandbox = require("../../util/sandboxSupabaseClient")
 const supabase = require("../../util/supabaseClient")
 
-exports.getAllWebhook = async(req, res) => {
+exports.getAllWebhookHistory = async(req, res) => {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
     const {profileId, env, type, limit, createdAfter, createdBefore} = req.query
@@ -73,7 +73,9 @@ exports.getAllWebhook = async(req, res) => {
                 createdAt: record.created_at,
                 clientResponseStatusCode: record.client_response_status_code,
                 profileId: record.profile_id,
-                requestBody: record.request_body
+                requestBody: record.request_body,
+                nextRetry: record.next_retry,
+                firstRetry: record.first_retry
             }
         })
 
