@@ -9,6 +9,9 @@ const insertToHistory = require("./insertToHistory");
 
 
 const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=new Date()) => {
+    // prevent message send  in local development
+    if (process.env.WEBHOOK_DISABLE && process.env.WEBHOOK_DISABLE === "TRUE") return
+    
     //get client webhook url and secret
     let { data: webhookUrl, error: webhookUrlError } = await supabaseCall(() => supabase
         .from('webhook_urls')
