@@ -19,6 +19,7 @@ const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
 const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
+const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCoversionRate");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -30,6 +31,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+	// get conversion Rate
+	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
 
 	// fetch or insert request record
 	let initialBastionTransfersInsertData
@@ -66,7 +69,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				contract_address: contractAddress,
 				action_name: "transfer",
 				fiat_provider: "BRIDGE",
-				crypto_provider: "BASTION"
+				crypto_provider: "BASTION",
+				conversion_rate: conversionRate
 			})
 			.select()
 			.single()
@@ -229,7 +233,8 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				destinationAccountId,
 				createdAt: initialBastionTransfersInsertData.created_at,
 				contractAddress: contractAddress,
-				failedReason: ""
+				failedReason: "",
+				conversionRate
 			}
 		}
 
@@ -292,6 +297,9 @@ const transferToBridgeLiquidationAddressDeveloperWithdraw = async (config) => {
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+	
+	// get conversion rate
+	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
 
 	//insert the initial record
 	const { data: initialBastionTransfersInsertData, error: initialBastionTransfersInsertError } = await supabase
@@ -311,7 +319,8 @@ const transferToBridgeLiquidationAddressDeveloperWithdraw = async (config) => {
 			action_name: "transfer",
 			fiat_provider: "BRIDGE",
 			crypto_provider: "BASTION",
-			transfer_from_wallet_type: walletType
+			transfer_from_wallet_type: walletType,
+			conversion_rate: conversionRate
 		})
 		.select()
 		.single()
@@ -352,7 +361,8 @@ const transferToBridgeLiquidationAddressDeveloperWithdraw = async (config) => {
 			createdAt: initialBastionTransfersInsertData.created_at,
 			contractAddress: contractAddress,
 			failedReason: "",
-			walletType
+			walletType,
+			conversionRate
 		}
 	}
 

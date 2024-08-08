@@ -11,6 +11,7 @@ const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypt
 const { createStripeBill } = require("../util/billing/createBill");
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const createLog = require("../util/logger/supabaseLogger");
+const notifyCryptoToFiatTransfer = require("../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -251,4 +252,20 @@ exports.testIp = async(req, res) => {
 	const locaionData = await locationRes.json();
 
     return res.status(200).json(locaionData)
+}
+
+exports.testNotifyCryptoToFiat = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+        .from("offramp_transactions")
+        .select("*")
+        .eq("id", "05531915-2a3a-45f2-abe8-af90d5113361")
+        .single()
+        if (error) throw error
+        await notifyCryptoToFiatTransfer(data)
+        return res.status(200).json({message: "success"})
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({message: "failed"})
+    }
 }
