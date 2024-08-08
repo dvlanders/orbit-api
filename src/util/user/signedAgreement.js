@@ -1,5 +1,6 @@
 const { isUUID } = require("../common/fieldsValidation");
 const createLog = require("../logger/supabaseLogger");
+const supabaseSandbox = require("../sandboxSupabaseClient");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 
@@ -100,8 +101,16 @@ const generateNewSignedAgreementRecord = async(signedAgreementId, templateId) =>
 
 }
 
-const updateSignedAgreementRecord = async(sessionToken) => {
-    const {data: record, error: recordError} = await supabaseCall(() => supabase
+const updateSignedAgreementRecord = async(sessionToken, env) => {
+
+    let supabaseClient
+    if (env == "development"){
+        supabaseClient = supabaseSandbox
+    }else{
+        supabaseClient = supabase
+    }
+
+    const {data: record, error: recordError} = await supabaseCall(() => supabaseClient
     .from("signed_agreements")
     .select()
     .eq("session_token", sessionToken)
@@ -120,7 +129,7 @@ const updateSignedAgreementRecord = async(sessionToken) => {
     if (record.signed) return null
 
     // updated to signed
-    const {data: updatedRecord, error: updatedRecordError} = await supabaseCall(() => supabase
+    const {data: updatedRecord, error: updatedRecordError} = await supabaseCall(() => supabaseClient
         .from("signed_agreements")
         .update({signed: true})
         .eq("session_token", sessionToken)
