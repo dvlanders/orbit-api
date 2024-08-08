@@ -32,7 +32,14 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
 		const responseBody = await response.json();
         if (!response.ok) {
             await createLog("transfer/conversionRate/getBridgeConversionRate", null, responseBody.message, responseBody, profileId) 
-            return null
+            return {
+                fromCurrency,
+                toCurrency,
+                conversionRate: null,
+                vaildFrom,
+                vaildUntil,
+                message: "Not available"
+            }
         }
 
         return {
@@ -45,7 +52,14 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
 
     }catch (error){
         await createLog("transfer/conversionRate/getBridgeConversionRate", null, error.message, error, profileId)
-        throw new Error(`Error happened when getting conversion rate from Bridge: ${fromCurrency} -> ${toCurrency}`)
+        return {
+            fromCurrency,
+            toCurrency,
+            conversionRate: null,
+            vaildFrom,
+            vaildUntil,
+            message: "Not available"
+        }
     }
 
 }

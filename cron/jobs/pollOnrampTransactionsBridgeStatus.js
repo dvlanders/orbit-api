@@ -69,7 +69,7 @@ const updateStatus = async(onrampTransaction) => {
                     transaction_hash: event.destination_tx_hash
                 })
                 .eq("id", onrampTransaction.id)
-                .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id")
+                .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id, fiat_provider, crypto_provider")
                 .single()
             if (updateError) throw updateError
 

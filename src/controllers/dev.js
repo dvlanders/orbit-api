@@ -11,6 +11,8 @@ const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypt
 const { createStripeBill } = require("../util/billing/createBill");
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const createLog = require("../util/logger/supabaseLogger");
+const notifyCryptoToFiatTransfer = require("../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -242,5 +244,29 @@ exports.testDevLogging = async (req, res) => {
     }catch(error){
         console.error(error)
         return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testIp = async(req, res) => {
+    const ip = "192.168.0.1"
+    const locationRes = await fetch(`https://ipapi.co/${ip}/json/?key=${process.env.IP_API_SECRET}`);
+	const locaionData = await locationRes.json();
+
+    return res.status(200).json(locaionData)
+}
+
+exports.testNotifyCryptoToFiat = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+        .from("onramp_transactions")
+        .select("*")
+        .eq("id", "b78dc7ee-f20f-4321-a14f-b48d624505f2")
+        .single()
+        if (error) throw error
+        await notifyFiatToCryptoTransfer(data)
+        return res.status(200).json({message: "success"})
+    }catch(error){
+        console.log(error)
+        return res.status(500).json({message: "failed"})
     }
 }

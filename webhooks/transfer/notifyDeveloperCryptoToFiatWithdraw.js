@@ -3,6 +3,7 @@ const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
 const { supabaseCall } = require("../../src/util/supabaseWithRetry")
 const fetchBridgeCryptoToFiatTransferRecord = require("../../src/util/transfer/cryptoToBankAccount/transfer/fetchBridgeCryptoToFiatTransferRecord")
+const { FetchCryptoToBankSupportedPairCheck } = require("../../src/util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions")
 const { transferType } = require("../../src/util/transfer/utils/transfer")
 const { sendMessage } = require("../sendWebhookMessage")
 const { webhookEventType, webhookEventActionType } = require("../webhookConfig")
@@ -23,7 +24,8 @@ const notifyDeveloperCryptoToFiatWithdraw = async (record) => {
 		return
 	}
 
-	const receipt = await fetchBridgeCryptoToFiatTransferRecord(record.id, user.profile_id)
+	const fetchFunc = FetchCryptoToBankSupportedPairCheck(record.crypto_provider, record.fiat_provider)
+	const receipt = await fetchFunc(record.id, user.profile_id)
 
 	const message = {
 		eventAction: webhookEventActionType.UPDATE,

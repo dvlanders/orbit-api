@@ -65,7 +65,7 @@ exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
 		}
 		fields.profileId = profileId
 		//check if sender is under profileId
-		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "senderUserId not found" })
 		// check if chain is supported
 		if (!(chain in cryptoToCryptoSupportedFunctions)) return res.status(400).json({ error: `Chain ${chain} is not supported` })
 		// check if currency is supported
@@ -125,7 +125,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!valid) return res.status(400).json({ error })
 		}
 		//check if sender is under profileId
-		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "senderUserId not found" })
 		// check if provide either recipientUserId or recipientAddress
 		if (!recipientUserId && !recipientAddress) return res.status(400).json({ error: `Should provide either recipientUserId or recipientAddress` })
 		if (recipientUserId && recipientAddress) return res.status(400).json({ error: `Should only provide either recipientUserId or recipientAddress` })
@@ -254,7 +254,7 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
@@ -330,7 +330,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		}
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
@@ -492,7 +492,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
 		//check if sender is under profileId
-		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
 
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
