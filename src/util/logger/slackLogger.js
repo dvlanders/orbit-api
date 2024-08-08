@@ -253,6 +253,44 @@ const logBlockBuilder = async (
   ];
 };
 
+const newCustomerAccountBlockBuilder = async (fullName, email) => {
+
+  return [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `🎉 New Customer 🎉`,
+        emoji: true,
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: "👤 *Name*",
+        },
+        {
+          type: "mrkdwn",
+          text: "✉️ *Email*",
+        },
+        {
+          type: "mrkdwn",
+          text: fullName || "N/A",
+        },
+        {
+          type: "mrkdwn",
+          text: email || "N/A",
+        },
+      ],
+    },
+  ];
+}
+
 const sendSlackReqResMessage = async (request, response) => {
   try {
     const caller = {
@@ -299,7 +337,26 @@ const sendSlackLogMessage = async (
   }
 };
 
+const sendSlackNewCustomerMessage = async (
+  fullName,
+  email
+) => {
+  try {
+    await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: process.env.SLACK_CHANNEL_NEW_CUSTOMER,
+      text: "New Customer Account",
+      blocks: await newCustomerAccountBlockBuilder(
+        fullName, email
+      ),
+    });
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 module.exports = {
   sendSlackReqResMessage,
   sendSlackLogMessage,
+  sendSlackNewCustomerMessage
 };
