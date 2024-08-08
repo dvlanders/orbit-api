@@ -544,7 +544,7 @@ exports.generateToSLink = async (req, res) => {
 	let { redirectUrl, idempotencyKey, templateId } = req.body
 
 	try {
-
+		const env = process.env.NODE_ENV
 		// Validate idempotencyKey directly using regex for UUID v4
 		if (!isUUID(idempotencyKey)) return res.status(404).json({ error: "idempotencyKey must be a uuid v4" })
 
@@ -565,14 +565,20 @@ exports.generateToSLink = async (req, res) => {
 		if (!isValid) return res.status(400).json({ error: "Invalid or used idempotencyKey" })
 		// valid and unexpired record
 		if (data) {
-			const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}`
+			let tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}`
+			if (env == "development"){
+				tosLink += "&sandbox=true"
+			}
 			return res.status(200).json({ url: tosLink })
 		}
 
 		// insert signed agreement record 
 		const signedAgreementInfo = await generateNewSignedAgreementRecord(idempotencyKey, templateId)
 		// generate hosted tos page
-		const tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}&templateId=${templateId}`
+		let tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}&templateId=${templateId}`
+		if (env == "development"){
+			tosLink += "&sandbox=true"
+		}
 
 		return res.status(200).json({ url: tosLink, signedAgreementId: idempotencyKey })
 	} catch (error) {
@@ -588,10 +594,12 @@ exports.acceptToSLink = async (req, res) => {
 	}
 
 	const { profileId } = req.query
-	const { sessionToken } = req.body
+	const { sessionToken, isSandbox } = req.body
 	try {
+		const env = isSandbox? "development" : "production"
+		console.log(env)
 		if (!sessionToken) return res.status(400).json({ error: "Session token is required" })
-		const signedAgreementId = await updateSignedAgreementRecord(sessionToken)
+		const signedAgreementId = await updateSignedAgreementRecord(sessionToken, env)
 		if (!signedAgreementId) return res.status(400).json({ error: "Session token is invalid" })
 
 
