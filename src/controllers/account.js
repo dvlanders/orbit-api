@@ -37,7 +37,7 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 	const { userId, profileId } = req.query;
 
 	const { plaidProcessorToken, bankName, accountType } = req.body;
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	// TODO: validate the request body fields to make sure all fields are present and are the valid type
 
@@ -87,7 +87,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	}
 
 	const { userId, profileId } = req.query;
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
 
@@ -273,7 +273,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
 	}
 
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 
 	try {
@@ -432,7 +432,7 @@ exports.getAllAccounts = async (req, res) => {
 		const railKey = generateRailCompositeKey(currency, railType, paymentRail)
 		if(!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not a supported rail` });
 
-		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 		
 		const func = getFetchRailFunctions(railKey)
 		
@@ -466,7 +466,7 @@ exports.activateOnRampRail = async (req, res) => {
 	}
 
 	try {
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 		const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
 		if (!activateFunction) return res.status(400).json({ error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported` })
 		const config = {
@@ -551,7 +551,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 	}
 
 
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	// construct the requestBody object based on the accountType
 	let requestBody = {};
@@ -889,7 +889,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	}
 
 
-	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	const headers = {
 		'Accept': 'application/json',
@@ -1016,7 +1016,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 
 	if (fields.dateOfBirth && !isValidISODateFormat(fields.dateOfBirth)) return res.status(400).json({ error: "Invalid date of birth" });
 
-	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "Not authorized" })
+	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	const headers = {
 		'Accept': 'application/json',
