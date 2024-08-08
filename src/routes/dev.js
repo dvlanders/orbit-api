@@ -20,4 +20,6 @@ module.exports = (router) => {
 	router.post("/dev/testStripeWebwook", dev.testStripeWebwook)
 	router.get("/dev/testCheckList", dev.testCheckList)
 	router.get("/dev/testDevLogging", dev.testDevLogging)
+	router.get("/dev/testIp", dev.testIp)
+	router.get("/dev/testNotifyCryptoToFiat", dev.testNotifyCryptoToFiat)
 };

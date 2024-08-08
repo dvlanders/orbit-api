@@ -59,7 +59,8 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
                 status: record.developer_fees.charged_status,
                 transactionHash: record.developer_fees.transaction_hash,
                 failedReason: record.developer_fees.failed_reason
-            } : null
+            } : null,
+            conversionRate: record.conversion_rate
         }
 
     }
