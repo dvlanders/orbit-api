@@ -1,14 +1,64 @@
 const { App } = require("@slack/bolt");
-const createLog = require("./supabaseLogger");
+const { WebClient } = require("@slack/web-api");
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
+const web = new WebClient(process.env.SLACK_BOT_TOKEN);
 
-const blockBuilder = (caller, request, response) => {
+const safeJsonStringify = (content) => {
+  let requestBodyJson;
+  try {
+    requestBodyJson = JSON.stringify(content, null, 2);
+  } catch (error) {
+    requestBodyJson = JSON.stringify({ data: content }, null, 2);
+  }
+  return requestBodyJson;
+}
+
+// upload jsonContent to Slack channel
+const uploadJSON = async (jsonContent, filename, title, channelId) => {
+  const result = await web.filesUploadV2({
+    channel_id: channelId,
+    initial_comment: title,
+    content: jsonContent,
+    filename: filename,
+    title: title,
+  });
+  return result;
+};
+
+// Build the Slack blocks for the request and response message
+const reqResBlockBuilder = async (caller, request, response) => {
+  const channelId = process.env.SLACK_CHANNEL_API;
   const statusEmoji =
     response.statusCode >= 200 && response.statusCode < 300 ? "✅" : "❌";
+
+  const requestBodyJson = safeJsonStringify(request.body);
+  let requestBodyText = `\`\`\`${requestBodyJson}\`\`\``;
+  if (requestBodyText.length > 3000) {
+    const result = await uploadJSON(
+      requestBodyJson,
+      "request_body.json",
+      "Request Body",
+      channelId
+    );
+    requestBodyText = `Request body is too large to display. <${result.files[0].files[0].permalink}|View Request Body File>`;
+  }
+
+  const responseBodyJson = safeJsonStringify(response.body);
+  let responseBodyText = `\`\`\`${responseBodyJson}\`\`\``;
+  if (responseBodyText.length > 3000) {
+    const result = await uploadJSON(
+      responseBodyJson,
+      "response_body.json",
+      "Response Body",
+      channelId
+    );
+    responseBodyText = `Response body is too large to display. <${result.files[0].files[0].permalink}|View Response Body File>`;
+  }
+
   return [
     {
       type: "header",
@@ -77,7 +127,7 @@ const blockBuilder = (caller, request, response) => {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `\`\`\`${JSON.stringify(request.body, null, 2)}\`\`\``,
+        text: requestBodyText,
       },
     },
     {
@@ -92,37 +142,221 @@ const blockBuilder = (caller, request, response) => {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `\`\`\`${JSON.stringify(
-          JSON.parse(response.body),
-          null,
-          2
-        )}\`\`\``,
+        text: responseBodyText,
       },
     },
   ];
 };
 
-const sendSlackMessage = async (request, response) => {
-  const caller = {
-    profileEmail: request.query.profileEmail,
-    profileId: request.query.profileId,
-  };
+// Build the Slack blocks for the log message
+const logBlockBuilder = async (
+  profileEmail,
+  userEmail,
+  source,
+  log,
+  response
+) => {
+  const channelId = process.env.SLACK_CHANNEL_LOG;
 
-  delete request.query.profileEmail;
-  delete request.query.profileId;
+  const responseJson = safeJsonStringify(response);
+  let responseText = `\`\`\`${responseJson}\`\`\``;
+  if (responseText.length > 3000) {
+    const result = await uploadJSON(
+      responseJson,
+      "response_details.json",
+      "Response Details",
+      channelId
+    );
+    responseText = `Response detail is too large to display. <${result.files[0].files[0].permalink}|View Response Details File>`;
+  }
 
+  return [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `🚨 New Log`,
+        emoji: true,
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: "✉️ *Profile Email*",
+        },
+        {
+          type: "mrkdwn",
+          text: "✉️ *User Email*",
+        },
+        {
+          type: "mrkdwn",
+          text: profileEmail || "N/A",
+        },
+        {
+          type: "mrkdwn",
+          text: userEmail || "N/A",
+        },
+      ],
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Error Source",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: source || "N/A",
+        emoji: true,
+      },
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Error Log",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: log || "N/A",
+        emoji: true,
+      },
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Response Details",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: responseText,
+      },
+    },
+  ];
+};
+
+const newCustomerAccountBlockBuilder = async (fullName, email) => {
+
+  return [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `🎉 New Customer 🎉`,
+        emoji: true,
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: "👤 *Name*",
+        },
+        {
+          type: "mrkdwn",
+          text: "✉️ *Email*",
+        },
+        {
+          type: "mrkdwn",
+          text: fullName || "N/A",
+        },
+        {
+          type: "mrkdwn",
+          text: email || "N/A",
+        },
+      ],
+    },
+  ];
+}
+
+const sendSlackReqResMessage = async (request, response) => {
+  try {
+    const caller = {
+      profileEmail: request.query.profileEmail,
+      profileId: request.query.profileId,
+    };
+  
+    delete request.query.profileEmail;
+    delete request.query.profileId;
+
+    await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: process.env.SLACK_CHANNEL_API,
+      text: "API Request and Response",
+      blocks: await reqResBlockBuilder(caller, request, response),
+    });
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const sendSlackLogMessage = async (
+  profileEmail,
+  userEmail,
+  source,
+  log,
+  response
+) => {
   try {
     await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
-      channel: process.env.SLACK_CHANNEL,
-      text: "API Request and Response",
-      blocks: blockBuilder(caller, request, response),
+      channel: process.env.SLACK_CHANNEL_LOG,
+      text: "Logger",
+      blocks: await logBlockBuilder(
+        profileEmail,
+        userEmail,
+        source,
+        log,
+        response
+      ),
     });
   } catch (error) {
-    await createLog("slackLogger", null, "Failed to send slack message", error);
+    console.error(error);
+  }
+};
+
+const sendSlackNewCustomerMessage = async (
+  fullName,
+  email
+) => {
+  try {
+    await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: process.env.SLACK_CHANNEL_NEW_CUSTOMER,
+      text: "New Customer Account",
+      blocks: await newCustomerAccountBlockBuilder(
+        fullName, email
+      ),
+    });
+  } catch (error) {
+    console.error(error);
   }
 };
 
 module.exports = {
-  sendSlackMessage,
+  sendSlackReqResMessage,
+  sendSlackLogMessage,
+  sendSlackNewCustomerMessage
 };

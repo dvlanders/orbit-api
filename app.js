@@ -82,6 +82,7 @@ require("./src/routes")(app, express);
 let { logger } = require("./src/util/logger/logger");
 
 require('./cron');
+require('./listeners/supabaseListener');
 
 if(!process.env.NODE_TEST){
 	app.listen(port, () => {
