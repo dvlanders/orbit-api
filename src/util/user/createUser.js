@@ -203,7 +203,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 
 	// check ip address
 	const isIpAllowed = await ipCheck(fields.ipAddress);
-	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Unsupported area (ipAddress)" });
+	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid ipAddress, please make sure ipAdress provided is a public IPv4 address outside unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)" });
 
 	// check signedAgreementId only for prod
 	if (process.env.NODE_ENV == "production"){
@@ -435,7 +435,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 	// check ip address
 	if (fields.ipAddress) {
 		const isIpAllowed = await ipCheck(fields.ipAddress)
-		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Unsupported area (ipAddress)" })
+		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid ipAddress, please make sure ipAdress provided is a public IPv4 address outside unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)" })
 	}
 
 	// check if required fields are uploaded
@@ -514,6 +514,12 @@ const ipCheck = async (ip) => {
 	const locationRes = await fetch(`https://ipapi.co/${ip}/json/?key=${process.env.IP_API_SECRET}`);
 	const locaionData = await locationRes.json();
 	if (locationRes.ok) {
+		if (locaionData.version != "IPv4") {
+			return false
+		}
+		if (locaionData.reserved){
+			return false
+		}
 		if (sanctionedCountries.includes(locaionData.country_code_iso3)) {
 			return false
 		}

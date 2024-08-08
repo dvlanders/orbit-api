@@ -244,3 +244,11 @@ exports.testDevLogging = async (req, res) => {
         return res.status(500).json({error: "Internal server error"})
     }
 }
+
+exports.testIp = async(req, res) => {
+    const ip = "192.168.0.1"
+    const locationRes = await fetch(`https://ipapi.co/${ip}/json/?key=${process.env.IP_API_SECRET}`);
+	const locaionData = await locationRes.json();
+
+    return res.status(200).json(locaionData)
+}
