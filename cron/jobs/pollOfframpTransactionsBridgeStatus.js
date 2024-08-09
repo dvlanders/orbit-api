@@ -9,6 +9,7 @@ const BRIDGE_URL = process.env.BRIDGE_URL;
 
 
 const updateStatus = async (transaction) => {
+	if (!transaction.to_bridge_liquidation_address_id) return
 	const { data: destnationBridgeCustomerData, error: destnationBridgeCustomerDataError } = await supabaseCall(() => supabase
 		.from('bridge_customers')
 		.select('bridge_id')
