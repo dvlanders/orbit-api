@@ -1,6 +1,8 @@
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
 
 const {transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw} = require("../transfer/transferToBridgeLiquidationAddress");
+const {transferToBridgeLiquidationAddress: transferToBridgeLiquidationAddressV2} = require("../transfer/transferToBridgeLiquidationAddressV2");
+
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
 const CryptoToBankSupportedPairCheck = (paymentRail, sourceCurrency, destinationCurrency) => {
@@ -23,6 +25,7 @@ const CryptoToBankSupportedPairFunctions = {
 		usdc: {
 			usd: {
 				transferFunc: transferToBridgeLiquidationAddress,
+				transferFuncV2: transferToBridgeLiquidationAddressV2,
 				developerWithdrawFunc: transferToBridgeLiquidationAddressDeveloperWithdraw
 			},
 		}

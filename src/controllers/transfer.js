@@ -31,6 +31,7 @@ const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { acceptedFeeType, canChargeFee } = require("../util/transfer/fee/utils");
 const { isNumberOrNumericString } = require("../util/helper/numberCheck");
 const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversionRate/utils/cryptoToFiatConversionRateProvider");
+const { fetchAccountProviders } = require("../util/account/accountProviders/accountProvidersService");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -259,7 +260,7 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
 		// check is record existed
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
 		// FIX ME SHOULD put it in the field validation 
@@ -334,7 +335,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
 		// FIX ME SHOULD put it in the field validation 
@@ -634,5 +635,78 @@ exports.cryptoToFiatConversionRate = async(req, res) => {
 	}catch(error){
 		await createLog("transfer/cryptoToFiatConversionRate", null, error.message, error, profileId)
 		return res.status(500).json({error: "Unexpected error happened"})
+	}
+}
+
+exports.createCryptoToFiatTransferV2 = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const fields = req.body;
+	const { profileId } = req.query
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue } = fields
+	try {
+		// filed validation
+		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
+		const acceptedFields = {
+			"feeType": "string", "feeValue": ["string", "number"],
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string"
+		}
+		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
+
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+
+		// FIX ME SHOULD put it in the field validation 
+		if (!isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
+
+
+		// check if fee config is correct
+		if (feeType || feeValue) {
+			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({ error })
+		}
+
+		// check is chain supported
+		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+
+		// get account info
+		const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
+		if (!accountInfo) return res.status(400).json({ error: `destinationAccountId not exist` });
+		if (accountInfo.rail_type != "offramp")  return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
+		const paymentRail = accountInfo.payment_rail
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFuncV2 } = funcs
+
+		// get user wallet
+		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain)
+		if (!sourceWalletAddress) {
+			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		}
+
+		const { isExternalAccountExist, transferResult } = await transferFuncV2({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail})
+		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+		return res.status(200).json(transferResult);
+
+	} catch (error) {
+		if (error instanceof CreateCryptoToBankTransferError) {
+			if (error.type == CreateCryptoToBankTransferErrorType.CLIENT_ERROR) {
+				return res.status(400).json({ error: error.message })
+			} else {
+				return res.status(500).json({ error: "An unexpected error occurred" })
+			}
+		}
+		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error)
+		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 }

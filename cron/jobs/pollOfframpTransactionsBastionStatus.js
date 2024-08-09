@@ -47,6 +47,7 @@ const updateStatus = async (transaction) => {
 				.update({
 					transaction_status: hifiOfframpTransactionStatus,
 					bastion_transaction_status: data.status,
+					bastion_response: data,
 					updated_at: new Date().toISOString()
 				})
 				.eq('id', transaction.id)
@@ -107,6 +108,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.neq('transaction_status', "CREATED")
+		.neq('transaction_status', "NOT_INITIATED")
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type')
 	)

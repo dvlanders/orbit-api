@@ -14,7 +14,7 @@ const pollBillingCreate = require('./jobs/pollBillingCreate');
 const pollBastionGasTransaction = require('./jobs/pollBastionGasTransaction');
 
 
-cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
+// cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBastionStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds

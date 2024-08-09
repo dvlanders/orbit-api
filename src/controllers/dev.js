@@ -13,6 +13,8 @@ const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const createLog = require("../util/logger/supabaseLogger");
 const notifyCryptoToFiatTransfer = require("../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
+const bridgeRailCheck = require("../util/transfer/cryptoToBankAccount/railCheck/bridgeRailCheckV2");
+const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -268,5 +270,18 @@ exports.testNotifyCryptoToFiat = async(req, res) => {
     }catch(error){
         console.log(error)
         return res.status(500).json({message: "failed"})
+    }
+}
+
+exports.testBridgeRail = async(req, res) => {
+    try{
+        const requestId = "b3c23c32-92dc-42f3-8732-1382c6c5ca0b"
+        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
+        const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+
+        return res.status(200).json(record)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
     }
 }

@@ -13,6 +13,7 @@ const fetchCryptoToFiatRequestInfortmaionById = async(id, profileId, fiatProvide
         
 
     if (requestError) throw requestError
+    console.log(request)
     if (!request) return null
 
     return request
@@ -33,12 +34,12 @@ if (!request) return null
 return request
 }
 
-const checkIsCryptoToFiatRequestIdAlreadyUsed = async(requestId, userId) => {
+const checkIsCryptoToFiatRequestIdAlreadyUsed = async(requestId, profileId) => {
     let { data: request, error:requestError } = await supabaseCall(() => supabase
         .from('offramp_transactions')
-        .select('*')
+        .select('*, users: user_id!inner(profile_id)')
         .eq("request_id", requestId)
-        .eq("user_id", userId)
+        .eq("users.profile_id", profileId)
         .maybeSingle())
 
 
