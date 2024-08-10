@@ -162,10 +162,11 @@ async function pollOfframpTransactionsBridgeStatus() {
 		.neq("transaction_status", "CREATED")
 		.neq("transaction_status", "FAILED_ONCHAIN")
 		.neq("transaction_status", "FAILED_FIAT_REFUNDED")
+		.neq("transaction_status", "SUBMITTED_ONCHAIN")
 		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id, transfer_from_wallet_type, bridge_transfer_id')
-	
+
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
 		await createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);

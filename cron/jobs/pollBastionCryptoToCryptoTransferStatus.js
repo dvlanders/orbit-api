@@ -8,11 +8,7 @@ const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
 const updateStatus = async (transaction) => {
-	let bastionUserId = transaction.sender_user_id
-	// map userId if is fee collection or prefunded
-	if (transaction.transfer_from_wallet_type == "FEE_COLLECTION" || transaction.transfer_from_wallet_type == "PREFUNDED"){
-		bastionUserId = `${transaction.sender_user_id}-${transaction.transfer_from_wallet_type}`
-	}
+	const bastionUserId = transaction.bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
 		method: 'GET',

@@ -1,5 +1,4 @@
 const { v4 } = require("uuid");
-const { transfer } = require("../../bastion/endpoints/transfer");
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet");
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient");
