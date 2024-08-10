@@ -152,7 +152,7 @@ exports.registerFeeWallet = async(req, res) => {
             actionName: "registerFeeWallet",
             chain: Chain.POLYGON_MAINNET,
             actionParams: [
-                {name: "feeWallet", value: "0xaEE3fe8b412e63B5ec73236A292673917Cb254fB"},
+                {name: "feeWallet", value: "0xFb674069Bd8CfB2a63ACCe3b58E601FB9f914665"},
             ]
         };
         const response = await submitUserAction(bodyObject)

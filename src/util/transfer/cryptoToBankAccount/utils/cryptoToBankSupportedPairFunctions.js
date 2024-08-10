@@ -1,7 +1,7 @@
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
 
 const {transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw} = require("../transfer/transferToBridgeLiquidationAddress");
-const {transferToBridgeLiquidationAddress: transferToBridgeLiquidationAddressV2} = require("../transfer/transferToBridgeLiquidationAddressV2");
+const {createTransferToBridgeLiquidationAddress} = require("../transfer/transferToBridgeLiquidationAddressV2");
 
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
@@ -24,17 +24,14 @@ const CryptoToBankSupportedPairFunctions = {
 	ach: {
 		usdc: {
 			usd: {
-				transferFunc: transferToBridgeLiquidationAddress,
-				transferFuncV2: transferToBridgeLiquidationAddressV2,
-				developerWithdrawFunc: transferToBridgeLiquidationAddressDeveloperWithdraw
+				transferFunc: createTransferToBridgeLiquidationAddress,
 			},
 		}
 	},
 	sepa: {
 		usdc: {
 			eur: {
-				transferFunc: transferToBridgeLiquidationAddress,
-				developerWithdrawFunc: transferToBridgeLiquidationAddressDeveloperWithdraw
+				transferFunc: createTransferToBridgeLiquidationAddress,
 			},
 		}
 	},

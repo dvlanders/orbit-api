@@ -25,7 +25,8 @@ const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId = null) => {
+const transferToBlindpaySmartContract = async (config) => {
+	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId } = config
 	if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
 	const { isExternalAccountExist, blindpayAccountId } = await blindpayRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
@@ -65,7 +66,11 @@ const transferToBlindpaySmartContract = async (requestId, sourceUserId, destinat
 				contract_address: contractAddress,
 				action_name: "transfer",
 				fiat_provider: "BLINDPAY",
-				crypto_provider: "BASTION"
+				crypto_provider: "BASTION",
+				source_currency: sourceCurrency,
+				destination_currency: destinationCurrency,
+				destination_account_id: destinationAccountId,
+				bastion_user_id: sourceUserId
 			})
 			.select()
 			.single()

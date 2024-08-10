@@ -281,11 +281,11 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 		}
 
 		// get withdraw function
-		const { developerWithdrawFunc } = funcs
-		if (!developerWithdrawFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc } = funcs
+		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
 		// execute withdraw function
-		const { isExternalAccountExist, transferResult } = await developerWithdrawFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType, description, purposeOfPayment})
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType, description, purposeOfPayment})
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
@@ -367,7 +367,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		// }
 
 		const { transferFunc } = funcs
-		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress, profileId, feeType, feeValue)
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress, profileId, feeType, feeValue})
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
@@ -686,7 +686,7 @@ exports.createCryptoToFiatTransferV2 = async (req, res) => {
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-		const { transferFuncV2 } = funcs
+		const { transferFunc } = funcs
 
 		// get user wallet
 		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain)
@@ -694,7 +694,7 @@ exports.createCryptoToFiatTransferV2 = async (req, res) => {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
 
-		const { isExternalAccountExist, transferResult } = await transferFuncV2({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail})
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail})
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
