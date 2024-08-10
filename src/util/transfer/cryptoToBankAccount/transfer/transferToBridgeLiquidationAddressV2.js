@@ -145,7 +145,7 @@ const transferWithFee = async(initialTransferRecord, profileId) => {
 	const paymentRail = accountInfo.payment_rail
 
 	// create a bridge transfer
-	const clientReceivedAmount = amount - feeRecord.fee_amount
+	const clientReceivedAmount = (amount - feeRecord.fee_amount).toFixed(2)
 	const source = {
 		currency: sourceCurrency,
 		payment_rail: chainToVirtualAccountPaymentRail[chain],
@@ -228,6 +228,7 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 		// failed to create tranfser
 		await createLog("transfer/createTransferToBridgeLiquidationAddress", sourceUserId, bridgeResponseBody.message, bridgeResponseBody)
 		const toUpdate = {
+			transaction_status: "NOT_INITIATED",
 			updated_at: new Date().toISOString(),
 			bridge_response: bridgeResponseBody,
 			failed_reason: "Please contact HIFI for more information"

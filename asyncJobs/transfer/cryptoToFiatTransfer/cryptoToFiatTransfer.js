@@ -7,6 +7,7 @@ const { getTokenAllowance } = require("../../../src/util/smartContract/approve/g
 const supabase = require("../../../src/util/supabaseClient")
 const {transferToBridgeLiquidationAddress} = require("../../../src/util/transfer/cryptoToBankAccount/transfer/transferToBridgeLiquidationAddress")
 const { executeAsyncTransferCryptoToFiat } = require("../../../src/util/transfer/cryptoToBankAccount/transfer/transferToBridgeLiquidationAddressV2")
+const CryptoToBankSupportedPairCheck = require("../../../src/util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions")
 const { bastionCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/bastionTransfer")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { JobError, JobErrorType } = require("../../error")
@@ -31,13 +32,25 @@ exports.cryptoToFiatTransferAsync = async(config) => {
             const allowance = await getTokenAllowance(record.chain, record.source_currency, sourceWalletAddress, paymentProcessorContractAddress)
             if (allowance < BigInt(unitsAmount)){
                 await approveMaxTokenToPaymentProcessor(record.user_id, record.chain, record.source_currency)
-                throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true)
+                throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)
             }
         }
 
+        // get account info
+		const accountInfo = await fetchAccountProviders(record.destination_account_id, config.profileId)
+		if (!accountInfo) return res.status(400).json({ error: `destinationAccountId not exist` });
+		if (accountInfo.rail_type != "offramp")  return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
+		const paymentRail = accountInfo.payment_rail
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, record.source_currency, record.destination_currency)
+		if (!funcs) throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
+		const { asyncTransferExecuteFunc } = funcs
+        if (!asyncTransferExecuteFunc) throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
+
         const transferConfig = {profileId: config.profileId, recordId: record.id}
 
-        await executeAsyncTransferCryptoToFiat(transferConfig)
+        await asyncTransferExecuteFunc(transferConfig)
 
     }catch (error){
         console.error(error)

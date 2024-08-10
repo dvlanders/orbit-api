@@ -26,7 +26,7 @@ const cryptoToCryptoTransferAsync = async(config) => {
         const allowance = await getTokenAllowance(record.chain, record.currency, senderAddress, paymentProcessorContractAddress)
         if (allowance < BigInt(unitsAmount)){
             await approveMaxTokenToPaymentProcessor(record.sender_user_id, record.chain, record.currency)
-            throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true)
+            throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)
         }
 
         

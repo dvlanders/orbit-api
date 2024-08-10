@@ -18,6 +18,8 @@ const { cryptoToCryptoTransferScheduleCheck } = require("../../../../../asyncJob
 const supabase = require("../../../supabaseClient")
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
 const { getMappedError } = require("../../../bastion/utils/errorMappings")
+const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap")
+const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
 
 
 

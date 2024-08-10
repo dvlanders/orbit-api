@@ -76,7 +76,7 @@ exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProc
             feeToUpdate = {
                 bastion_response: responseBody,
                 bastion_status: "FAILED",
-                charged_status: "FAILED",
+                charged_status: "NOT_INITIATED",
             }
 
             // update transfer record
@@ -119,7 +119,7 @@ exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProc
         // update transfer record
         const transferToUpdate = {
             bastion_transaction_status: "FAILED",
-            transaction_status: "NOT_INITIATED",
+            transaction_status: "FAILED",
             developer_fee_id: feeRecordId,
             failed_reason: "Unexpected error happened, please contact HIFI for more information",
         }

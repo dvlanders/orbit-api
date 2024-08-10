@@ -7,11 +7,13 @@ const createBridgeTransfer = async(client_reference_id, amount, on_behalf_of, so
     // create a bridge transfer
     const requestBody = {
         client_reference_id,
-        amount: amount.toString(),
+        amount: amount,
         on_behalf_of,
         source,
         destination
     }
+
+    console.log(requestBody)
 
     const url = `${BRIDGE_URL}/v0/transfers`
     const options = {

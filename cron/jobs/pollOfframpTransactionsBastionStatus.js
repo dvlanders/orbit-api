@@ -106,7 +106,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.neq('transaction_status', "CREATED")
 		.neq('transaction_status', "NOT_INITIATED")
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id')
 	)
 
 
