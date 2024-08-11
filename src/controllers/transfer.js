@@ -31,6 +31,7 @@ const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { acceptedFeeType, canChargeFee } = require("../util/transfer/fee/utils");
 const { isNumberOrNumericString } = require("../util/helper/numberCheck");
 const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversionRate/utils/cryptoToFiatConversionRateProvider");
+const { fetchAccountProviders } = require("../util/account/accountProviders/accountProvidersService");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -76,7 +77,7 @@ exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 		// get transfer function
-		const { developerWithdrawFunc , walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const { transferFunc , walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
 		// fetch sender wallet address information
 		const senderWalletInformation = await fetchUserWalletInformation(senderUserId, chain, walletProviderTable, walletType)
 		if (!senderWalletInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
@@ -85,7 +86,7 @@ exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
 		if (!(await isBastionKycPassedDeveloperUser(senderUserId, walletType)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
 		// transfer
-		const receipt = await developerWithdrawFunc(fields)
+		const receipt = await transferFunc(fields)
 
 		return res.status(200).json(receipt)
 	} catch (error) {
@@ -153,11 +154,6 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!recipientWalletInformation) return res.status(400).json({ error: `recipient wallet not found` })
 			fields.recipientAddress = recipientWalletInformation.address
 		}
-
-		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		// if (process.env.NODE_ENV === "development") {
-		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
-		// }
 
 		// transfer
 		const receipt = await transferFunc(fields)
@@ -241,12 +237,12 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, destinationUserId, paymentRail, description, purposeOfPayment, walletType} = fields
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, walletType} = fields
 
 
 	try {
 		// filed validation
-		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "paymentRail", "walletType"]
+		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency", "walletType"]
 		const acceptedFields = {
 			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "walletType": "string"
 		}
@@ -259,7 +255,7 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
 		// check is record existed
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
 		// FIX ME SHOULD put it in the field validation 
@@ -267,6 +263,12 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+
+		// get account info
+		const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
+		if (!accountInfo) return res.status(400).json({ error: `destinationAccountId not exist` });
+		if (accountInfo.rail_type != "offramp")  return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
+		const paymentRail = accountInfo.payment_rail
 
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
@@ -280,11 +282,11 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 		}
 
 		// get withdraw function
-		const { developerWithdrawFunc } = funcs
-		if (!developerWithdrawFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc } = funcs
+		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
 		// execute withdraw function
-		const { isExternalAccountExist, transferResult } = await developerWithdrawFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType, description, purposeOfPayment})
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, walletType, description, purposeOfPayment})
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
@@ -302,10 +304,85 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 
 }
 
-exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
+exports.createCryptoToFiatTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
+
+	const fields = req.body;
+	const { profileId } = req.query
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue } = fields
+	try {
+		// filed validation
+		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
+		const acceptedFields = {
+			"feeType": "string", "feeValue": ["string", "number"],
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string"
+		}
+		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		}
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
+		// check is request id valid
+		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
+
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+
+		// FIX ME SHOULD put it in the field validation 
+		if (!isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
+
+
+		// check if fee config is correct
+		if (feeType || feeValue) {
+			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
+			if (!valid) return res.status(400).json({ error })
+		}
+
+		// check is chain supported
+		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+
+		// get account info
+		const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
+		if (!accountInfo) return res.status(400).json({ error: `destinationAccountId not exist` });
+		if (accountInfo.rail_type != "offramp")  return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
+		const paymentRail = accountInfo.payment_rail
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc } = funcs
+
+		// get user wallet
+		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain)
+		if (!sourceWalletAddress) {
+			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		}
+
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail})
+		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+		return res.status(200).json(transferResult);
+
+	} catch (error) {
+		if (error instanceof CreateCryptoToBankTransferError) {
+			if (error.type == CreateCryptoToBankTransferErrorType.CLIENT_ERROR) {
+				return res.status(400).json({ error: error.message })
+			} else {
+				return res.status(500).json({ error: "An unexpected error occurred" })
+			}
+		}
+		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error)
+		return res.status(500).json({ error: 'An unexpected error occurred' });
+	}
+}
+
+const transferCryptoFromWalletToBankAccount_DEPREICATED = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	return res.status(500).json({error: "this is a deprecated endpoint"})
 
 	//FIXME
 	// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
@@ -334,7 +411,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
 		// FIX ME SHOULD put it in the field validation 
@@ -349,6 +426,12 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 
 		// check is chain supported
 		if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
+
+		// get account info
+		const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
+		if (!accountInfo) return res.status(400).json({ error: `destinationAccountId not exist` });
+		if (accountInfo.rail_type != "offramp")  return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
+		const paymentRail = accountInfo.payment_rail
 
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
@@ -366,7 +449,7 @@ exports.transferCryptoFromWalletToBankAccount = async (req, res) => {
 		// }
 
 		const { transferFunc } = funcs
-		const { isExternalAccountExist, transferResult } = await transferFunc(requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress, profileId, feeType, feeValue)
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, walletAddress, profileId, feeType, feeValue})
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 

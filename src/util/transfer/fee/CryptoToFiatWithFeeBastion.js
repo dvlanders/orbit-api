@@ -1,5 +1,4 @@
 const { v4 } = require("uuid");
-const { transfer } = require("../../bastion/endpoints/transfer");
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet");
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient");
@@ -12,6 +11,7 @@ const { updateFeeRecord } = require("./updateFeeRecord");
 const { transferType } = require("../utils/transfer");
 const { insertFeeRecord } = require("./insertFeeRecord");
 const { updateRequestRecord } = require("../cryptoToBankAccount/utils/updateRequestRecord");
+const { FetchCryptoToBankSupportedPairCheck } = require("../cryptoToBankAccount/utils/cryptoToBankSupportedPairFetchFunctions");
 
 const chargedStatusMap = {
     ACCEPTED: "SUBMITTED",
@@ -21,22 +21,24 @@ const chargedStatusMap = {
     PENDING: "PENDING"
 }
 
-exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, fields) => {
+exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, profileId) => {
+    const decimals = currencyDecimal[requestRecord.source_currency]
+	const transferUnitAmount = toUnitsString(requestRecord.amount, decimals)
     const feeRecordId = feeRecord.id
     try{
-        const feeUnitAmount = toUnitsString(feeAmount, currencyDecimal[feeRecord.fee_collection_currency])
+        const feeUnitAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
         // transfer
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
-            userId: fields.sourceUserId,
+            userId: requestRecord.bastion_user_id,
             contractAddress: paymentProcessorContractAddress,
             actionName: "processPayment",
-            chain: fields.chain,
+            chain: requestRecord.chain,
             actionParams: [
-                {name: "token", value: fields.contractAddress},
-                {name: "to", value: fields.liquidationAddress},
+                {name: "token", value: requestRecord.contract_address},
+                {name: "to", value: requestRecord.to_wallet_address},
                 {name: "feeWallet", value: feeRecord.fee_collection_wallet_address},
-                {name: "amount", value: fields.transferAmount},
+                {name: "amount", value: transferUnitAmount},
                 {name: "fee", value: feeUnitAmount},
             ]
         };
@@ -69,12 +71,12 @@ exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProc
             }
             
         }else{
-            await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.sourceUserId, responseBody.message, responseBody)
+            await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", requestRecord.user_id, responseBody.message, responseBody)
             // update fee record
             feeToUpdate = {
                 bastion_response: responseBody,
                 bastion_status: "FAILED",
-                charged_status: "FAILED",
+                charged_status: "NOT_INITIATED",
             }
 
             // update transfer record
@@ -98,42 +100,15 @@ exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProc
 
 
         // update record
-        const updatedFeeRecord = await updateFeeRecord(feeRecord.id, feeToUpdate)
-        const updatedTransferRecord = await updateRequestRecord(requestRecord.id, transferToUpdate)
-
-        const receipt =  {
-            transferType: transferType.CRYPTO_TO_FIAT,
-            transferDetails: {
-                id: updatedTransferRecord.id,
-                requestId: updatedTransferRecord.request_id,
-                sourceUserId: updatedTransferRecord.user_id,
-                destinationUserId: updatedTransferRecord.destination_user_id,
-                chain: updatedTransferRecord.chain,
-                sourceCurrency: updatedTransferRecord.source_currency,
-                amount: updatedTransferRecord.amount,
-                status: updatedTransferRecord.transaction_status,
-                destinationCurrency: updatedTransferRecord.destination_currency,
-                destinationAccountId: fields.destinationAccountId,
-                createdAt: updatedTransferRecord.created_at,
-                updatedAt: updatedTransferRecord.updated_at,
-                contractAddress: updatedTransferRecord.contract_address,
-                failedReason: updatedTransferRecord.failed_reason,
-                fee: {
-                    feeId: updatedFeeRecord.id,
-                    feeType,
-                    feeAmount,
-                    feePercent,
-                    status: updatedFeeRecord.charged_status,
-                    transactionHash: updatedFeeRecord.transaction_hash,
-                    failedReason: updatedFeeRecord.failed_reason
-                },
-            }
-        }
+        await updateFeeRecord(feeRecord.id, feeToUpdate)
+        await updateRequestRecord(requestRecord.id, transferToUpdate)
+        const fetchFunc = FetchCryptoToBankSupportedPairCheck(requestRecord.crypto_provider, requestRecord.fiat_provider)
+        const receipt = await fetchFunc(requestRecord.id, profileId)
 
         return receipt
 
     }catch (error){
-        await createLog("transfer/fee/CryptoToFiatWithFeeBastion", fields.sourceUserId, error.message)
+        await createLog("transfer/fee/CryptoToFiatWithFeeBastion", requestRecord.user_id, error.message)
         // update fee record
         const feeToUpdate = {
             bastion_status: "FAILED",
@@ -144,45 +119,18 @@ exports.CryptoToFiatWithFeeBastion = async(requestRecord, feeRecord, paymentProc
         // update transfer record
         const transferToUpdate = {
             bastion_transaction_status: "FAILED",
-            transaction_status: "NOT_INITIATED",
+            transaction_status: "FAILED",
             developer_fee_id: feeRecordId,
             failed_reason: "Unexpected error happened, please contact HIFI for more information",
         }
 
         // update record
-        let updatedFeeRecord
         if (feeRecordId) {
-            updatedFeeRecord = await updateFeeRecord(feeRecordId, feeToUpdate)
+            await updateFeeRecord(feeRecordId, feeToUpdate)
         }
-        const updatedTransferRecord = await updateRequestRecord(requestRecord.id, transferToUpdate)
-        const receipt =  {
-            transferType: transferType.CRYPTO_TO_FIAT,
-            transferDetails: {
-                id: updatedTransferRecord.id,
-                requestId: updatedTransferRecord.request_id,
-                sourceUserId: updatedTransferRecord.user_id,
-                destinationUserId: updatedTransferRecord.destination_user_id,
-                chain: updatedTransferRecord.chain,
-                sourceCurrency: updatedTransferRecord.source_currency,
-                amount: updatedTransferRecord.amount,
-                status: updatedTransferRecord.transaction_status,
-                destinationCurrency: updatedTransferRecord.destination_currency,
-                destinationAccountId: fields.destinationAccountId,
-                createdAt: updatedTransferRecord.created_at,
-                updatedAt: updatedTransferRecord.updated_at,
-                contractAddress: updatedTransferRecord.contract_address,
-                failedReason: updatedTransferRecord.failed_reason,
-                fee: {
-                    feeId: feeRecordId,
-                    feeType,
-                    feeAmount,
-                    feePercent,
-                    status: feeToUpdate.charged_status,
-                    transactionHash: updatedFeeRecord ? updatedFeeRecord.transaction_hash : null,
-                    failedReason: feeToUpdate.failed_reason
-                },
-            }
-        }
+        await updateRequestRecord(requestRecord.id, transferToUpdate)
+        const fetchFunc = FetchCryptoToBankSupportedPairCheck(requestRecord.crypto_provider, requestRecord.fiat_provider)
+        const receipt = await fetchFunc(requestRecord.id, profileId)
 
         return receipt
     }

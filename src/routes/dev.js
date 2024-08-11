@@ -21,5 +21,5 @@ module.exports = (router) => {
 	router.get("/dev/testCheckList", dev.testCheckList)
 	router.get("/dev/testDevLogging", dev.testDevLogging)
 	router.get("/dev/testIp", dev.testIp)
-	router.get("/dev/testNotifyCryptoToFiat", dev.testNotifyCryptoToFiat)
+	router.get("/dev/testBridgeRail", dev.testBridgeRail)
 };

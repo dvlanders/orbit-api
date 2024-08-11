@@ -146,7 +146,6 @@ exports.logRequestResponse = (req, res, next) => {
 			response: parsedBody
 		};
 
-		console.log("about to log to loki");
 		logToLoki(logData);
 
 		const reqObject = {
@@ -183,8 +182,6 @@ exports.logRequestResponse = (req, res, next) => {
 
 
 function logToLoki(message) {
-
-	console.log('logToLoki middleware:', message);
 
 	const logEntry = {
 		streams: [{

@@ -18,6 +18,8 @@ const { cryptoToCryptoTransferScheduleCheck } = require("../../../../../asyncJob
 const supabase = require("../../../supabaseClient")
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
 const { getMappedError } = require("../../../bastion/utils/errorMappings")
+const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap")
+const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
 
 
 
@@ -155,17 +157,27 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
             // perfrom transfer with fee
             const receipt = await CryptoToCryptoWithFeeBastion(requestRecord, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, fields.profileId, fields)
             // gas check
-            await bastionGasCheck(fields.senderUserId, fields.chain)
+            await bastionGasCheck(requestRecord.bastion_user_id, fields.chain)
             // allowance check
-            await allowanceCheck(fields.senderUserId, fields.senderAddress, fields.chain, fields.currency)
+            await allowanceCheck(requestRecord.bastion_user_id, fields.senderAddress, fields.chain, fields.currency)
             return receipt
         }
 
     }else{
         // transfer without fee
-        let record
-        const response = await bastionTransfer(requestRecord.bastion_request_id, fields)
+        const bodyObject = {
+            requestId: requestRecord.bastion_request_id,
+            userId: requestRecord.bastion_user_id,
+            contractAddress: requestRecord.contract_address,
+            actionName: "transfer",
+            chain: requestRecord.chain,
+            actionParams: erc20Transfer(requestRecord.currency, requestRecord.recipient_address, unitsAmount)
+        };
+
+        const response = await submitUserAction(bodyObject)
         const responseBody = await response.json()
+
+        let record
         if (!response.ok) {
 
             await createLog("transfer/util/transfer", fields.senderUserId, responseBody.message, responseBody)
@@ -191,7 +203,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
         }
     
         // gas check
-        await bastionGasCheck(fields.senderUserId, fields.chain)
+        await bastionGasCheck(requestRecord.bastion_user_id, fields.chain)
     
         // return receipt
         const receipt =  {
