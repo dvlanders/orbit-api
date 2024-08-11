@@ -114,7 +114,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
             }
             feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, "BASTION", requestRecord.bastion_request_id)
             // update into crypto to crypto table
-            await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id})
+            await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
         }
 
         if (allowance < BigInt(unitsAmount)){
