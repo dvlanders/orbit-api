@@ -76,6 +76,27 @@ const initTransferData = async(config) => {
 	if (!feeType || parseFloat(feeValue) <= 0) return record
 
 	// insert fee record
+	let {feePercent, feeAmount, clientReceivedAmount} = getFeeConfig(feeType, feeValue, amount)
+	const info = {
+		chargedUserId: sourceUserId,
+		chain: chain,
+		currency: sourceCurrency,
+		chargedWalletAddress: sourceWalletAddress
+	}
+	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION", record.request_id)
+	
+	// return if amount is less than 1 dollar
+	if (clientReceivedAmount < 1) {
+		const toUpdate = {
+			transaction_status: "NOT_INITIATED",
+			failed_reason: `Amount after subtracting fee is less than 1 dollar`
+		}
+		record = await updateRequestRecord(record.id, toUpdate)
+		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
+		return result
+	}
+
+	// get payment processor contract
 	const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][chain]
 	if (!paymentProcessorContractAddress) {
 		// no paymentProcessorContract available
@@ -87,29 +108,7 @@ const initTransferData = async(config) => {
 		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
 		return result
 	}
-
-	// fetch fee record if not create one
-
-	let {feePercent, feeAmount, clientReceivedAmount} = getFeeConfig(feeType, feeValue, amount)
-	// amount is less than 1 dollar
-	if (clientReceivedAmount < 1) {
-		const toUpdate = {
-			transaction_status: "NOT_INITIATED",
-			failed_reason: `Amount after subtracting fee is less than 1 dollar`
-		}
-		record = await updateRequestRecord(record.id, toUpdate)
-		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
-		return result
-	}
-
-	// insert fee record
-	const info = {
-		chargedUserId: sourceUserId,
-		chain: chain,
-		currency: sourceCurrency,
-		chargedWalletAddress: sourceWalletAddress
-	}
-	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION", record.request_id)
+	
 	// update into crypto to crypto table
 	const result = await updateRequestRecord(record.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
 	return result
@@ -221,8 +220,8 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 		payment_rail: paymentRail,
 		external_account_id: bridgeExternalAccountId
 	}
-
-	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, amount, destinationUserBridgeId, source, destination)
+	const clientReceivedAmount = amount.toFixed(2)
+	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
 	const bridgeResponseBody = await bridgeResponse.json()
 	if (!bridgeResponse.ok) {
 		// failed to create tranfser
