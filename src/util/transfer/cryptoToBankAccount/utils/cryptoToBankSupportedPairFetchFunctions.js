@@ -1,4 +1,4 @@
-const fetchBridgeCryptoToFiatTransferRecord = require("../transfer/fetchBridgeCryptoToFiatTransferRecord")
+const fetchBridgeCryptoToFiatTransferRecord = require("../transfer/fetchBridgeCryptoToFiatTransferRecordV2")
 
 
 const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {

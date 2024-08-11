@@ -24,7 +24,8 @@ const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCove
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId=null) => {
+const transferToBridgeLiquidationAddress = async (config) => {
+	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId, developerFeeId} = config
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 	const { isExternalAccountExist, liquidationAddress, liquidationAddressId, bridgeExternalAccountId } = await bridgeRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 
@@ -70,7 +71,10 @@ const transferToBridgeLiquidationAddress = async (requestId, sourceUserId, desti
 				action_name: "transfer",
 				fiat_provider: "BRIDGE",
 				crypto_provider: "BASTION",
-				conversion_rate: conversionRate
+				conversion_rate: conversionRate,
+				source_currency: sourceCurrency,
+				destination_currency: destinationCurrency,
+				destination_account_id: destinationAccountId
 			})
 			.select()
 			.single()

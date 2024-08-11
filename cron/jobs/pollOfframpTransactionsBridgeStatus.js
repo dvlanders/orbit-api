@@ -7,6 +7,72 @@ const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/not
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
+const hifiOfframpTransactionStatusMap = {
+	"in_review": "IN_PROGRESS_FIAT",
+	"funds_received": "IN_PROGRESS_FIAT",
+	'payment_submitted': 'INITIATED_FIAT',
+	'payment_processed': 'COMPLETED',
+	'returned': 'FAILED_FIAT_RETURNED',
+	'refunded': 'FAILED_FIAT_REFUNDED',
+	'error': 'FAILED_UNKNOWN'
+}
+
+const updateStatusWithBridgeTransferId = async (transaction) => {
+
+	try {
+		const response = await fetch(`${BRIDGE_URL}/v0/transfers/${transaction.bridge_transfer_id}`, {
+			method: 'GET',
+			headers: {
+				'Api-Key': BRIDGE_API_KEY
+			}
+		});
+
+		const data = await response.json();
+		if (!response.ok) {
+			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to fetch response from bridge', responseBody);
+			return
+		}
+
+		if (transaction.bridge_transaction_status == data.state) return
+
+		// Map the data.state to our transaction_status
+		const hifiOfframpTransactionStatus = hifiOfframpTransactionStatusMap[data.state] || "UNKNOWN"
+
+		if (hifiOfframpTransactionStatus == transaction.transaction_status) return
+
+		const { data: updateData, error: updateError } = await supabaseCall(() => supabase
+			.from('offramp_transactions')
+			.update({
+				transaction_status: hifiOfframpTransactionStatus,
+				bridge_transaction_status: data.state,
+				bridge_response: data,
+				updated_at: new Date().toISOString()
+			})
+			.eq('id', transaction.id)
+			.select()
+			.single()
+		)
+
+		if (updateError) {
+			console.error('Failed to update transaction status', updateError);
+			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to update transaction status', updateError);
+			return
+		}
+
+		console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+		// send webhook message
+		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
+			await notifyDeveloperCryptoToFiatWithdraw(updateData)
+		}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
+			await notifyCryptoToFiatTransfer(updateData)
+		}
+
+	} catch (error) {
+		console.error('Failed to fetch transaction status from Bridge API', error);
+		await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to fetch transaction status from Bridge API', error);
+	}
+}
+
 
 const updateStatus = async (transaction) => {
 	if (!transaction.to_bridge_liquidation_address_id) return
@@ -89,17 +155,19 @@ const updateStatus = async (transaction) => {
 async function pollOfframpTransactionsBridgeStatus() {
 
 	// Get all records where the bridge_transaction_status is not 
-	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
+	const { data: offrampTransactionData, error: offrampTransactionError } = await supabase
 		.from('offramp_transactions')
 		.update({updated_at: new Date().toISOString()})
 		.eq("fiat_provider", "BRIDGE")
 		.neq("transaction_status", "NOT_INITIATED")
+		.neq("transaction_status", "CREATED")
 		.neq("transaction_status", "FAILED_ONCHAIN")
 		.neq("transaction_status", "FAILED_FIAT_REFUNDED")
+		.neq("transaction_status", "SUBMITTED_ONCHAIN")
 		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id, transfer_from_wallet_type')
-	)
+		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id, transfer_from_wallet_type, bridge_transfer_id')
+
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsBridgeStatus', offrampTransactionError);
 		await createLog('pollOfframpTransactionsBridgeStatus', null, 'Failed to fetch transactions', offrampTransactionError);
@@ -107,7 +175,13 @@ async function pollOfframpTransactionsBridgeStatus() {
 	}
 
 	// For each transaction, get the latest status from the Bridge API and update the db
-	await Promise.all(offrampTransactionData.map(async (transaction) => await updateStatus(transaction)))
+	await Promise.all(offrampTransactionData.map(async (transaction) => {
+		if (transaction.to_bridge_liquidation_address_id){
+			await updateStatus(transaction)
+		}else if (transaction.bridge_transfer_id){
+			await updateStatusWithBridgeTransferId(transaction)
+		}
+	}))
 }
 
 module.exports = pollOfframpTransactionsBridgeStatus;

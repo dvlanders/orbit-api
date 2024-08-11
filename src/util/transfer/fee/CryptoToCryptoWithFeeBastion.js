@@ -1,5 +1,4 @@
 const { v4 } = require("uuid");
-const { transfer } = require("../../bastion/endpoints/transfer");
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet");
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient");
@@ -27,7 +26,7 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
         // transfer
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
-            userId: fields.senderUserId,
+            userId: requestRecord.bastion_user_id,
             contractAddress: paymentProcessorContractAddress,
             actionName: "processPayment",
             chain: fields.chain,

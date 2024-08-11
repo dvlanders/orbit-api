@@ -13,8 +13,8 @@ const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId=null) => {
-
+const transferToCircleWallet = async (config) => {
+	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId} = config
 	// FIXME Sam
 	// if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "amount should be at least 1")
 
@@ -41,7 +41,10 @@ const transferToCircleWallet = async (requestId, sourceUserId, destinationUserId
 			action_name: "transfer",
 			fiat_provider: "CIRCLE",
 			crypto_provider: "BASTION",
+			source_currency: sourceCurrency,
 			destination_currency: destinationCurrency,
+			destination_account_id: destinationAccountId,
+			bastion_user_id: sourceUserId
 		})
 		.select()
 		.single()

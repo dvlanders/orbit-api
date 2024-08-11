@@ -8,11 +8,7 @@ const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/not
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async (transaction) => {
-	let bastionUserId = transaction.user_id
-	// map userId if is fee collection or prefunded
-	if (transaction.transfer_from_wallet_type == "FEE_COLLECTION" || transaction.transfer_from_wallet_type == "PREFUNDED"){
-		bastionUserId = `${transaction.user_id}-${transaction.transfer_from_wallet_type}`
-	}
+	const bastionUserId = transaction.bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
 		method: 'GET',
@@ -47,6 +43,7 @@ const updateStatus = async (transaction) => {
 				.update({
 					transaction_status: hifiOfframpTransactionStatus,
 					bastion_transaction_status: data.status,
+					bastion_response: data,
 					updated_at: new Date().toISOString()
 				})
 				.eq('id', transaction.id)
@@ -107,8 +104,9 @@ async function pollOfframpTransactionsBastionStatus() {
 		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.neq('transaction_status', "CREATED")
+		.neq('transaction_status', "NOT_INITIATED")
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id')
 	)
 
 
