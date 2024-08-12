@@ -15,6 +15,9 @@ const notifyCryptoToFiatTransfer = require("../../webhooks/transfer/notifyCrypto
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const bridgeRailCheck = require("../util/transfer/cryptoToBankAccount/railCheck/bridgeRailCheckV2");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
+const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
+const { regsiterFeeWallet } = require("../util/smartContract/registerWallet/registerFeeWallet");
+const { isFeeWalletRegistered } = require("../util/smartContract/registerWallet/checkFeeWalletIsRegistered");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -145,19 +148,11 @@ exports.registerFeeWallet = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     try{
-        const bodyObject = {
-            requestId: v4(),
-            userId: "4fb4ef7b-5576-431b-8d88-ad0b962be1df",
-            contractAddress: paymentProcessorContractMap.production.POLYGON_MAINNET,
-            actionName: "registerFeeWallet",
-            chain: Chain.POLYGON_MAINNET,
-            actionParams: [
-                {name: "feeWallet", value: "0xFb674069Bd8CfB2a63ACCe3b58E601FB9f914665"},
-            ]
-        };
-        const response = await submitUserAction(bodyObject)
-        const responseBody = await response.json()
-        return res.status(200).json(responseBody)
+        const chain = Chain.POLYGON_MAINNET
+        const userId = "80fdf48c-42b2-4bf8-b4a9-d00817bae912"
+        const walletAddress = await getBastionWallet(userId, chain, "FEE_COLLECTION")
+        await regsiterFeeWallet(userId, walletAddress, chain)
+        return res.status(200).json({message: "success"})
     }catch(error){
         console.error(error)
         return res.status(500).json({message: "Internal server error"})
@@ -273,13 +268,10 @@ exports.testNotifyCryptoToFiat = async(req, res) => {
     }
 }
 
-exports.testBridgeRail = async(req, res) => {
+exports.testCheckFeeWalletRegistered = async(req, res) => {
     try{
-        const requestId = "b3c23c32-92dc-42f3-8732-1382c6c5ca0b"
-        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
-        const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
-
-        return res.status(200).json(record)
+        const isRegistered = await isFeeWalletRegistered(Chain.POLYGON_MAINNET, "0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f")
+        return res.status(200).json(isRegistered)
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "error"})

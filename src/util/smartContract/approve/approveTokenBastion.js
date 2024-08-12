@@ -15,6 +15,12 @@ const paymentProcessorContractMap = {
     }
 }
 
+const paymentProcessorContractOwnerMap = {
+    production:{
+        POLYGON_MAINNET: process.env.POLYGON_PAYMENT_PROCESSOR_CONTRACT_OWNER_BASTION_USER_ID
+    }
+}
+
 const MAX_APPROVE_TOKEN = "10000000000000"
 
 const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
@@ -39,7 +45,8 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
         walletAddress,
         provider: "BASTION",
         actionInput: erc20Approve(currency, paymentProcessorContract, MAX_APPROVE_TOKEN),
-        tag: "APPROVE_MAX_TO_PAYMENT_PROCESSOR"
+        tag: "APPROVE_MAX_TO_PAYMENT_PROCESSOR",
+        bastionUserId: userId
     }
 
     const record = await insertContractActionRecord(requestInfo)
@@ -92,5 +99,6 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
 module.exports = {
     MAX_APPROVE_TOKEN,
     approveMaxTokenToPaymentProcessor,
-    paymentProcessorContractMap
+    paymentProcessorContractMap,
+    paymentProcessorContractOwnerMap
 }

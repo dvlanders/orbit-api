@@ -1,16 +1,17 @@
 const { Chain, currencyContractAddress } = require("../../common/blockchain");
 const createLog = require("../../logger/supabaseLogger");
+const { urlMap } = require("../alchemyApiUrlMap");
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY
 
-const urlMap = {
-    ETHEREUM_MAINNET: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-	OPTIMISM_MAINNET: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-	POLYGON_MAINNET: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-	ETHEREUM_TESTNET:`https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-	OPTIMISM_SEPOLIA: `https://opt-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-	POLYGON_AMOY: `https://polygon-amoy.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-	BASE_MAINNET: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-}
+// const urlMap = {
+//     ETHEREUM_MAINNET: `https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// 	OPTIMISM_MAINNET: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// 	POLYGON_MAINNET: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// 	ETHEREUM_TESTNET:`https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// 	OPTIMISM_SEPOLIA: `https://opt-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// 	POLYGON_AMOY: `https://polygon-amoy.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// 	BASE_MAINNET: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+// }
 
 exports.getTokenAllowance = async(chain, currency, owner, spender) => {
     const url = urlMap[chain]

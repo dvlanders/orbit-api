@@ -27,6 +27,8 @@ const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBlindpaySmartContract = async (config) => {
 	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId } = config
+	// disable fee feature
+	if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route") 
 	if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
 	const { isExternalAccountExist, blindpayAccountId } = await blindpayRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
