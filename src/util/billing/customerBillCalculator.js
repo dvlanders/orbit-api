@@ -32,7 +32,7 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             start_date: startDate
         })
         if (cryptoToFiatError) throw cryptoToFiatError
-
+        
         // fiat to crypto
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabase
         .rpc('get_total_fiat_to_crypto_transaction_payout', {
@@ -59,21 +59,22 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
                 value: feeMap(cryptoToFiat, billingRate.fiat_payout_config)
             },
             fiatDeposit: {
-                value: feeMap(fiatToCrypto, billingRate.fiat_payout_config)
+                value: feeMap(fiatToCrypto, billingRate.fiat_deposit_config)
             },
             virtualAccount: {
                 value: activeVirtualAccount * billingRate.active_virtual_account_fee
             },
             monthlyMinimum: billingRate.monthly_minimum,
-            updatedAt: billingRate.updated_at
+            updatedAt: billingRate.updated_at,
+            billingPeriodStart: startDate,
+            billingPeriodEnd: endDate
         }
+
 
         billingInfo.total = billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value + billingInfo.fiatDeposit.value + billingInfo.virtualAccount.value
         billingInfo.payoutTotal = {
             value: billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value
         }
-
-
         return billingInfo
     }catch (error){
         console.error(error)

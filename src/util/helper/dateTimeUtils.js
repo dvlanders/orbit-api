@@ -1,4 +1,4 @@
-exports.generateDailyTimeRanges = (startDate, endDate) => {
+const generateDailyTimeRanges = (startDate, endDate) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
   
@@ -27,7 +27,7 @@ exports.generateDailyTimeRanges = (startDate, endDate) => {
     return timeRanges;
   }
 
-exports.formatDateFromISOString = (isoString) => {
+const formatDateFromISOString = (isoString) => {
     const date = new Date(isoString);
   
     if (isNaN(date.getTime())) {
@@ -38,32 +38,37 @@ exports.formatDateFromISOString = (isoString) => {
     return date.toLocaleDateString('en-US', options);
   }
 
-exports.transformData = (data, targetColumn) => {
-    const getDaysInMonth = (year, month) => {
-        return new Date(year, month + 1, 0).getDate();
+const generateDatesFromStartToCurrent = (startDate) => {
+    const start = new Date(startDate);
+    const end = new Date(); // Current date
+    const dates = [];
+
+    let current = new Date(start);
+
+    while (current <= end) {
+        dates.push(current.toISOString().split('T')[0]); // Push date in ISO format
+        current.setDate(current.getDate() + 1); // Move to the next day
     }
 
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const currentDay = today.getDate();
-    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+    return dates;
+}
+
+
+const transformData = async(data, targetColumn, startDate) => {
+    const dateList = generateDatesFromStartToCurrent(startDate.split('T')[0])
     
-    let result = [];
-    
-    for (let day = 1; day <= currentDay; day++) {
-        let dateString = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        let dataEntry = data.find(entry => entry.date === dateString);
-        result.push({
-            date: day.toString(),
+    const result = await Promise.all(dateList.map(async(date) => {
+      let dataEntry = data.find(entry => entry.date === date);
+      return {
+            date: date,
             value: dataEntry ? dataEntry[targetColumn] : 0
-        });
-    }
+      }
+    }))
     
     return result;
 }
 
-exports.getNextCycleEnd = (lastCycleEnd) => {
+const getNextCycleEnd = (lastCycleEnd) => {
   // Parse the input ISO date string
   let date = new Date(lastCycleEnd);
   
@@ -78,5 +83,14 @@ exports.getNextCycleEnd = (lastCycleEnd) => {
   
   // Convert the date back to ISO string
   return nextMonth.toISOString();
+}
+
+
+module.exports = {
+  getNextCycleEnd,
+  transformData,
+  formatDateFromISOString,
+  generateDatesFromStartToCurrent,
+  generateDailyTimeRanges
 }
   
