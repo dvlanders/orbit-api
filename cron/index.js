@@ -12,13 +12,15 @@ const pollOfframpTransactionsForCircleWireExecution = require('./jobs/pollOffram
 const pollDeveloperFeeStatus = require('./jobs/pollDeveloperFeeStatus');
 const pollBillingCreate = require('./jobs/pollBillingCreate');
 const pollBastionGasTransaction = require('./jobs/pollBastionGasTransaction');
+const pollContractAction = require('./jobs/pollContractActions');
 
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
-cron.schedule('*/20 * * * * *', pollOfframpTransactionsBastionStatus); // every 60 seconds
+cron.schedule('*/20 * * * * *', pollOfframpTransactionsBastionStatus); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds
-cron.schedule('*/20 * * * * *', pollBastionCryptoToCryptoTransferStatus); // every 60 seconds
+cron.schedule('*/20 * * * * *', pollBastionCryptoToCryptoTransferStatus); // every 20 seconds
+cron.schedule('*/20 * * * * *', pollContractAction); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBastionGasTransaction); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollWebhookRetry);
 cron.schedule('0 0 * * *', pollCleanWebhookQueue); // every 24 hrs
