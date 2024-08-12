@@ -11,7 +11,7 @@ const pollBillingCreate = async() => {
             .select("*")
             .eq("billable", true)
             .lt("next_billing_period_end", new Date().toISOString())
-        // console.log(customers)
+        console.log(customers)
         // create Bill
         await Promise.all(customers.map(async(customer) => {
             try{

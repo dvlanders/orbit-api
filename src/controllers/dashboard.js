@@ -2,7 +2,7 @@
 const { transaction } = require("dynamoose");
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { currencyContractAddress } = require("../util/common/blockchain");
-const { generateDailyTimeRanges, formatDateFromISOString, transformData } = require("../util/helper/dateTimeUtils");
+const { generateDailyTimeRanges, formatDateFromISOString, transformData, generateDatesFromStartToCurrent } = require("../util/helper/dateTimeUtils");
 const createLog = require("../util/logger/supabaseLogger");
 const supabase = require("../util/supabaseClient");
 const { feeMap } = require("../util/billing/feeRateMap");
@@ -10,6 +10,7 @@ const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCa
 const { supabaseCall } = require("../util/supabaseWithRetry");
 const { v4 } = require('uuid');
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
+const getBillingPeriod = require("../util/billing/getBillingPeriod");
 
 exports.getWalletBalance = async(req, res) => {
     if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
@@ -48,6 +49,7 @@ exports.getTotalTransactionVolume = async(req, res) => {
     const {profileId, startDate, endDate} = req.query
 
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_total_crypto_to_crypto_transaction_volume', {
@@ -75,7 +77,7 @@ exports.getTotalTransactionVolume = async(req, res) => {
             })
         if (fiatToCryptoError) throw fiatToCryptoError
         
-        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total: cryptoToCrypto + cryptoToFiat + fiatToCrypto });
+        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total: cryptoToCrypto + cryptoToFiat + fiatToCrypto, periodStartDate: startDate, periodEndDate: endDate });
 
 
 
@@ -92,6 +94,7 @@ exports.getTotalTransactionVolumeHistory = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_daily_crypto_to_crypto_transaction_volume', {
@@ -101,7 +104,7 @@ exports.getTotalTransactionVolumeHistory = async(req, res) => {
         })
         if (cryptoToCryptoError) throw cryptoToCryptoError
 
-        const cryptoToCryptoVol = transformData(cryptoToCrypto, "total_amount")
+        const cryptoToCryptoVol = await transformData(cryptoToCrypto, "total_amount", startDate)
 
         // crypto to fiat
         const {data: cryptoToFiat, error: cryptoToFiatError} = await supabase
@@ -111,7 +114,7 @@ exports.getTotalTransactionVolumeHistory = async(req, res) => {
             start_date: startDate
         })
         if (cryptoToFiatError) throw cryptoToFiatError
-        const cryptoToFiatVol = transformData(cryptoToFiat, "total_amount")
+        const cryptoToFiatVol = await transformData(cryptoToFiat, "total_amount", startDate)
 
         // fiat to crypto
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabase
@@ -121,20 +124,17 @@ exports.getTotalTransactionVolumeHistory = async(req, res) => {
                 start_date: startDate
                 })
         if (fiatToCryptoError) throw fiatToCryptoError
-        const fiatToCryptoVol = transformData(fiatToCrypto, "total_amount")
+        const fiatToCryptoVol = await transformData(fiatToCrypto, "total_amount", startDate)
         
 
         // Sum
-        const currentDay = new Date().getDate();
+        const dateList = generateDatesFromStartToCurrent(startDate)
         let prevTotalValue = 0
         let prevCryptoToCryptoValue = 0
         let prevCryptoToFiatValue = 0
         let prevFiatToCryptoValue = 0
         const accumulated = []
-
-        for (let day = 1; day <= currentDay; day++) {
-            let dayStr = day.toString();
-            
+        for (dayStr of dateList) {
             const dailyCryptoToCryptoVol = cryptoToCryptoVol.find(entry => entry.date === dayStr)?.value || 0;
             const dailyCryptoToFiatVol = cryptoToFiatVol.find(entry => entry.date === dayStr)?.value || 0;
             const dailyFiatToCryptoVol = fiatToCryptoVol.find(entry => entry.date === dayStr)?.value || 0;
@@ -150,7 +150,7 @@ exports.getTotalTransactionVolumeHistory = async(req, res) => {
             accumulated.push({date: dayStr, value: parseFloat(prevCryptoToFiatValue.toFixed(2)), category: "Stablecoin Withdraw Volume"})
         }
 
-        return res.status(200).json({ history: accumulated});
+        return res.status(200).json({ history: accumulated, periodStartDate: startDate, periodEndDate: endDate});
 
     }catch(error){
         console.error(error)
@@ -165,6 +165,7 @@ exports.getTotalTransactionAmount = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_total_crypto_to_crypto_transaction_count', {
@@ -192,7 +193,7 @@ exports.getTotalTransactionAmount = async(req, res) => {
             })
         if (fiatToCryptoError) throw fiatToCryptoError
 
-        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total: cryptoToCrypto + cryptoToFiat + fiatToCrypto });
+        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total: cryptoToCrypto + cryptoToFiat + fiatToCrypto, periodStartDate: startDate, periodEndDate: endDate });
     }catch (error){
         console.error(error)
         await createLog("dashboard/utils/getTotalTransactionAmount", null, error.message, null, profileId)
@@ -205,6 +206,7 @@ exports.getTotalTransactionAmountHistory = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_daily_crypto_to_crypto_transaction_count', {
@@ -214,7 +216,7 @@ exports.getTotalTransactionAmountHistory = async(req, res) => {
         })
         if (cryptoToCryptoError) throw cryptoToCryptoError
 
-        const cryptoToCryptoAmount = transformData(cryptoToCrypto, "total_amount")
+        const cryptoToCryptoAmount = await transformData(cryptoToCrypto, "total_amount", startDate)
         // crypto to fiat
         const {data: cryptoToFiat, error: cryptoToFiatError} = await supabase
         .rpc('get_daily_crypto_to_fiat_transaction_count', {
@@ -223,7 +225,7 @@ exports.getTotalTransactionAmountHistory = async(req, res) => {
             start_date: startDate
         })
         if (cryptoToFiatError) throw cryptoToFiatError
-        const cryptoToFiatAmount = transformData(cryptoToFiat, "total_amount")
+        const cryptoToFiatAmount = await transformData(cryptoToFiat, "total_amount", startDate)
         // fiat to crypto
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabase
             .rpc('get_daily_fiat_to_crypto_transaction_count', {
@@ -232,18 +234,17 @@ exports.getTotalTransactionAmountHistory = async(req, res) => {
                 start_date: startDate
                 })
         if (fiatToCryptoError) throw fiatToCryptoError
-        const fiatToCryptoAmount = transformData(fiatToCrypto, "total_amount")
+        const fiatToCryptoAmount = await transformData(fiatToCrypto, "total_amount", startDate)
 
         // Sum
-        const currentDay = new Date().getDate();
+        const dateList = generateDatesFromStartToCurrent(startDate)
         let prevTotalValue = 0
         let prevCryptoToCryptoValue = 0
         let prevCryptoToFiatValue = 0
         let prevFiatToCryptoValue = 0
         const accumulated = []
 
-        for (let day = 1; day <= currentDay; day++) {
-            let dayStr = day.toString();
+        for (dayStr of dateList) {
             
             const dailyCryptoToCryptoAmount = cryptoToCryptoAmount.find(entry => entry.date === dayStr)?.value || 0;
             const dailyCryptoToFiatAmount = cryptoToFiatAmount.find(entry => entry.date === dayStr)?.value || 0;
@@ -260,7 +261,7 @@ exports.getTotalTransactionAmountHistory = async(req, res) => {
             accumulated.push({date: dayStr, value: parseFloat(prevCryptoToFiatValue.toFixed(2)), category: "Stablecoin Withdraw Amount"})
         }
 
-        return res.status(200).json({ history: accumulated});
+        return res.status(200).json({ history: accumulated, periodStartDate: startDate, periodEndDate: endDate});
 
     }catch(error){
         console.error(error)
@@ -273,8 +274,9 @@ exports.getTotalTransactionAmountHistory = async(req, res) => {
 exports.getAverageTransactionValue = async(req, res) => {
     if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
+    const {profileId, startDate, endDate} = req.query
     try{
-        const {profileId, startDate, endDate} = req.query
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // Volume
         // crypto to crypto
         const {data: cryptoToCryptoVol, error: cryptoToCryptoVolError} = await supabase
@@ -335,7 +337,7 @@ exports.getAverageTransactionValue = async(req, res) => {
         const fiatToCrypto = fiatToCryptoVol / fiatToCryptoAmount
         const total = (cryptoToCryptoVol + cryptoToFiatVol + fiatToCryptoVol) / (cryptoToCryptoAmount + cryptoToFiatAmount + fiatToCryptoAmount)
 
-        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total});
+        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total, periodStartDate: startDate, periodEndDate: endDate});
     }catch(error){
         console.error(error)
         await createLog("dashboard/utils/getAverageTransactionValue", null, error.message, null, profileId)
@@ -350,6 +352,7 @@ exports.getAverageTransactionValueHistory = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_daily_crypto_to_crypto_transaction_avg_amount', {
@@ -359,7 +362,7 @@ exports.getAverageTransactionValueHistory = async(req, res) => {
         })
         if (cryptoToCryptoError) throw cryptoToCryptoError
 
-        const cryptoToCryptoAvg = transformData(cryptoToCrypto, "average_amount")
+        const cryptoToCryptoAvg = await transformData(cryptoToCrypto, "average_amount", startDate)
         // crypto to fiat
         const {data: cryptoToFiat, error: cryptoToFiatError} = await supabase
         .rpc('get_daily_crypto_to_fiat_transaction_avg_amount', {
@@ -368,7 +371,7 @@ exports.getAverageTransactionValueHistory = async(req, res) => {
             start_date: startDate
         })
         if (cryptoToFiatError) throw cryptoToFiatError
-        const cryptoToFiatAvg = transformData(cryptoToFiat, "average_amount")
+        const cryptoToFiatAvg = await transformData(cryptoToFiat, "average_amount", startDate)
 
         // fiat to crypto
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabase
@@ -378,14 +381,13 @@ exports.getAverageTransactionValueHistory = async(req, res) => {
                 start_date: startDate
                 })
         if (fiatToCryptoError) throw fiatToCryptoError
-        const fiatToCryptoAvg = transformData(fiatToCrypto, "average_amount")
+        const fiatToCryptoAvg = await transformData(fiatToCrypto, "average_amount", startDate)
 
         // Map
-        const currentDay = new Date().getDate();
+        const dateList = generateDatesFromStartToCurrent(startDate)
         const avg = []
 
-        for (let day = 1; day <= currentDay; day++) {
-            let dayStr = day.toString();
+        for (dayStr of dateList) {
             
             const dailyCryptoToCrypto = cryptoToCryptoAvg.find(entry => entry.date === dayStr)?.value || 0;
             const dailyCryptoToFiat = cryptoToFiatAvg.find(entry => entry.date === dayStr)?.value || 0;
@@ -398,7 +400,7 @@ exports.getAverageTransactionValueHistory = async(req, res) => {
             avg.push({date: dayStr, value: parseFloat(dailyCryptoToFiat.toFixed(2)), category: "Stablecoin Withdraw Avg."})
         }
 
-        return res.status(200).json({ history: avg});
+        return res.status(200).json({ history: avg, periodStartDate: startDate, periodEndDate: endDate});
 
     }catch(error){
         console.error(error)
@@ -413,6 +415,7 @@ exports.getTotalDeveloperFeeVolume = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_total_developer_fees_volume', {
@@ -443,7 +446,7 @@ exports.getTotalDeveloperFeeVolume = async(req, res) => {
             })
         if (fiatToCryptoError) throw fiatToCryptoError
 
-        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total: cryptoToCrypto + cryptoToFiat + fiatToCrypto });
+        return res.status(200).json({ cryptoToCrypto, cryptoToFiat, fiatToCrypto, total: cryptoToCrypto + cryptoToFiat + fiatToCrypto, periodStartDate: startDate, periodEndDate: endDate });
     }catch (error){
         console.error(error)
         await createLog("dashboard/utils/getTotalTransactionAmount", null, error.message, null, profileId)
@@ -456,6 +459,7 @@ exports.getTotalDeveloperFeeVolumeHistory = async(req, res) => {
 
     const {profileId, startDate, endDate} = req.query
     try{
+        const {startDate, endDate} = await getBillingPeriod(profileId)
         // crypto to crypto
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
         .rpc('get_daily_developer_fees_volume', {
@@ -465,7 +469,7 @@ exports.getTotalDeveloperFeeVolumeHistory = async(req, res) => {
             transfer_type: "CRYPTO_TO_CRYPTO"
         })
         if (cryptoToCryptoError) throw cryptoToCryptoError
-        const cryptoToCryptoAmount = transformData(cryptoToCrypto, "total_amount")
+        const cryptoToCryptoAmount = await transformData(cryptoToCrypto, "total_amount", startDate)
 
         // crypto to fiat
         const {data: cryptoToFiat, error: cryptoToFiatError} = await supabase
@@ -476,7 +480,7 @@ exports.getTotalDeveloperFeeVolumeHistory = async(req, res) => {
             transfer_type: "CRYPTO_TO_FIAT"
         })
         if (cryptoToFiatError) throw cryptoToFiatError
-        const cryptoToFiatAmount = transformData(cryptoToFiat, "total_amount")
+        const cryptoToFiatAmount = await transformData(cryptoToFiat, "total_amount", startDate)
 
         // fiat to crypto
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabase
@@ -487,18 +491,17 @@ exports.getTotalDeveloperFeeVolumeHistory = async(req, res) => {
                 transfer_type: "FIAT_TO_CRYPTO"
                 })
         if (fiatToCryptoError) throw fiatToCryptoError
-        const fiatToCryptoAmount = transformData(fiatToCrypto, "total_amount")
+        const fiatToCryptoAmount = await transformData(fiatToCrypto, "total_amount", startDate)
 
         // Sum
-        const currentDay = new Date().getDate();
+        const dateList = generateDatesFromStartToCurrent(startDate)
         let prevTotalValue = 0
         let prevCryptoToCryptoValue = 0
         let prevCryptoToFiatValue = 0
         let prevFiatToCryptoValue = 0
         const accumulated = []
 
-        for (let day = 1; day <= currentDay; day++) {
-            let dayStr = day.toString();
+        for (dayStr of dateList) {
             
             const dailyCryptoToCryptoAmount = cryptoToCryptoAmount.find(entry => entry.date === dayStr)?.value || 0;
             const dailyCryptoToFiatAmount = cryptoToFiatAmount.find(entry => entry.date === dayStr)?.value || 0;
@@ -515,7 +518,7 @@ exports.getTotalDeveloperFeeVolumeHistory = async(req, res) => {
             accumulated.push({date: dayStr, value: parseFloat(prevCryptoToFiatValue.toFixed(2)), category: "Stablecoin Withdraw Volume"})
         }
 
-        return res.status(200).json({ history: accumulated});
+        return res.status(200).json({ history: accumulated, periodStartDate: startDate, periodEndDate: endDate});
 
     }catch(error){
         console.error(error)
