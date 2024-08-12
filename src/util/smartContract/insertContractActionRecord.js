@@ -14,7 +14,8 @@ exports.insertContractActionRecord = async(requestInfo) => {
             chain: requestInfo.chain,
             action_input: requestInfo.actionInput,
             status: "CREATED",
-            tag: requestInfo.tag
+            tag: requestInfo.tag,
+            bastion_user_id: requestInfo.bastionUserId
         },
     )
     .select("*")
