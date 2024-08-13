@@ -1,0 +1,22 @@
+UserIdParameter:
+  name: userId
+  in: query
+  schema:
+    type: string
+  description: The user ID.
+  required: true
+UserIdOptionalParameter:
+  name: userId
+  in: query
+  schema:
+    type: string
+  description: The user ID.
+  required: false
+UserTypeParameter:
+  name: userType
+  in: query
+  schema:
+    type: string
+    enum: [individual, business]
+  description: If userType is passed, you will get all users under the type.
+  required: false

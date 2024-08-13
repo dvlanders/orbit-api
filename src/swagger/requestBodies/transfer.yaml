@@ -1,0 +1,18 @@
+CryptoToCryptoTransferBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/CryptoToCryptoTransfer'
+CryptoToFiatTransferBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/CryptoToFiatTransfer'
+FiatToCryptoTransferBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/FiatToCryptoTransfer'

@@ -1,0 +1,829 @@
+IndividualUserCreate:
+  type: object
+  title: "Create Individual User"
+  properties:
+    userType:
+      type: string
+      enum: [individual]
+    legalFirstName:
+      type: string
+    legalLastName:
+      type: string
+    complianceEmail:
+      type: string
+      description: E-mail address for compliance-related communications.
+      format: email
+    compliancePhone:
+      type: string
+      description: Phone number in format "+12223334444".
+    dateOfBirth:
+      type: string
+      description: Date of birth in format yyyy-mm-dd.
+      format: date
+    taxIdentificationNumber:
+      type: string
+      description: For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative.
+    addressLine1:
+      type: string
+    addressLine2:
+      type: string
+    city:
+      type: string
+    stateProvinceRegion:
+      type: string
+      description: ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions.
+    postalCode:
+      type: string
+      description: Must be supplied for countries that use postal codes.
+    country:
+      type: string
+      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+    signedAgreementId:
+      type: string
+      description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link.
+    ipAddress:
+      type: string
+      description: IP address of the user.
+      format: ipv4
+    govIdFront:
+      type: string
+      description: "URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    govIdBack:
+      type: string
+      description: "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    govIdCountry:
+      type: string
+      description: "Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above."
+    proofOfResidency:
+      type: string
+      description: "URL of the file of the proof of residency (Required for users based in the EU or withdrawing into EU bank accounts) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+  required:
+    - userType
+    - legalFirstName
+    - legalLastName
+    - complianceEmail
+    - compliancePhone
+    - dateOfBirth
+    - taxIdentificationNumber
+    - govIdFront
+    - govIdCountry
+    - country
+    - addressLine1
+    - city
+    - postalCode
+    - stateProvinceRegion
+    - signedAgreementId
+    - ipAddress
+BusinessUserCreate:
+  type: object
+  title: "Create Business User"
+  properties:
+    userType:
+      type: string
+      enum: [business]
+    businessName:
+      type: string
+    businessDescription:
+      type: string
+    businessType:
+      type: string
+      description: The type of business structure that most closely matches the business customer.
+      enum: [cooperative, corporation, llc, partnership, sole_prop, trust, other]   
+    complianceEmail:
+      type: string
+      description: Email address for compliance-related communications.
+      format: email
+    taxIdentificationNumber:
+      type: string
+      description: For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative.
+    website:
+      type: string
+    addressLine1:
+      type: string
+    addressLine2:
+      type: string
+    city:
+      type: string
+    stateProvinceRegion:
+      type: string
+      description: ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions.
+    postalCode:
+      type: string
+      description: Must be supplied for countries that use postal codes.
+    country:
+      type: string
+      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+    ipAddress:
+      type: string
+      description: IP address of the user. Must be IPv4.
+      format: ipv4
+    signedAgreementId:
+      type: string
+      description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link
+    formationDoc:
+      type: string
+      description: "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    proofOfOwnership:
+      type: string
+      description: "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    sourceOfFunds:
+      type: string
+      description: The source of funds for the business, e.g. profits, income, venture capital, etc.
+    transmitsCustomerFunds:
+      type: boolean
+      description: True if the business transmits funds on behalf of its customers (i.e. transmitsCustomerFunds == true)
+    complianceScreeningExplanation:
+      type: string
+      description: Required if transmits_customer_funds is true. An explanation of types of compliance screening (KYC, KYB, or AML) the customer performs before transmitting funds on behalf of its customers.
+    isDao:
+      type: boolean
+      description: Whether the business is a DAO (Decentralized Autonomous Organization)
+    ultimateBeneficialOwners:
+      type: array
+      items:
+        $ref: '#/components/schemas/UltimateBeneficialOwner'
+    proofOfResidency:
+      type: string
+      description: "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+  required:
+    - userType
+    - businessName
+    - businessType
+    - complianceEmail
+    - taxIdentificationNumber
+    - country
+    - addressLine1
+    - city
+    - postalCode
+    - stateProvinceRegion
+    - signedAgreementId
+    - ipAddress
+    - formationDoc
+    - sourceOfFunds
+    - ultimateBeneficialOwners
+    - transmitsCustomerFunds
+    - proofOfOwnership
+    - website
+    - businessDescription
+    - isDao
+IndividualUserUpdate:
+  type: object
+  title: "Update Individual User"
+  properties:
+    legalFirstName:
+      type: string
+    legalLastName:
+      type: string
+    complianceEmail:
+      type: string
+      description: Email address for compliance-related communications.
+      format: email
+    compliancePhone:
+      type: string
+      description: Phone in format "+12223334444".
+    dateOfBirth:
+      type: string
+      description: Date of birth in format yyyy-mm-dd.
+      format: date
+    taxIdentificationNumber:
+      type: string
+      description: For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative.
+    govIdCountry:
+      type: string
+      description: Three-letter alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec.
+    addressLine1:
+      type: string
+    addressLine2:
+      type: string
+    city:
+      type: string
+    stateProvinceRegion:
+      type: string
+      description: ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions.
+    postalCode:
+      type: string
+      description: Must be supplied for countries that use postal codes.
+    country:
+      type: string
+      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+    signedAgreementId:
+      type: string
+      description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link.
+    ipAddress:
+      type: string
+      description: IP address of the user.
+      format: ipv4
+    govIdFront:
+      type: string
+      description: "Signed URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    govIdBack:
+      type: string
+      description: "Signed URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    proofOfResidency:
+      type: string
+      description: "URL of the file of the proof of residency (Only required for European user or withdrawing into European bank account) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+BusinessUserUpdate:
+  type: object
+  title: "Update Business User"
+  properties:
+    businessName:
+      type: string
+    businessDescription:
+      type: string
+    complianceEmail:
+      type: string
+      description: Email address for compliance-related communications.
+      format: email
+    sourceOfFunds:
+      type: string
+      description: The source of funds for the business, e.g. profits, income, venture capital, etc.
+    businessType:
+      type: string
+      description: The type of business structure that most closely matches the business customer.
+      enum: [cooperative, corporation, llc, partnership, sole_prop, trust, other]
+    taxIdentificationNumber:
+      type: string
+      description: For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative.
+    website:
+      type: string
+    addressLine1:
+      type: string
+    addressLine2:
+      type: string
+    city:
+      type: string
+    stateProvinceRegion:
+      type: string
+      description: ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions.
+    postalCode:
+      type: string
+      description: Must be supplied for countries that use postal codes.
+    country:
+      type: string
+      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+    ipAddress:
+      type: string
+      description: IP address of the user.
+      format: ipv4
+    signedAgreementId:
+      type: string
+      description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link
+    formationDoc:
+      type: string
+      description: "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    proofOfOwnership:
+      type: string
+      description: "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    transmitsCustomerFunds:
+      type: boolean
+      description: True if the business transmits funds on behalf of its customers (i.e. transmitsCustomerFunds == true)
+    complianceScreeningExplanation:
+      type: string
+      description: Required if transmits_customer_funds is true. An explanation of types of compliance screening (KYC, KYB, or AML) the customer performs before transmitting funds on behalf of its customers.
+    isDao:
+      type: boolean
+      description: Whether the business is a DAO (Decentralized Autonomous Organization)
+    ultimateBeneficialOwners:
+      type: array
+      items:
+        $ref: '#/components/schemas/UltimateBeneficialOwner'
+    proofOfResidency:
+      type: string
+      description: "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+UltimateBeneficialOwner:
+  type: object
+  properties:
+    legalFirstName:
+      type: string
+    legalLastName:
+      type: string
+    complianceEmail:
+      type: string
+      format: email
+    compliancePhone:
+      type: string
+    dateOfBirth:
+      type: string
+      description: Date of birth in format yyyy-mm-dd.
+      format: date
+    taxIdentificationNumber:
+      type: string
+    govIdCountry:
+      type: string
+      description: Three-letter alpha-3 country code of the submitted government id as defined in the ISO 3166-1 spec.
+    country:
+      type: string
+      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+    addressLine1:
+      type: string
+    addressLine2:
+      type: string
+    city:
+      type: string
+    stateProvinceRegion:
+      type: string
+      description: ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions.
+    postalCode:
+      type: string
+      description: Must be supplied for countries that use postal codes.
+    govIdFront:
+      type: string
+      description: "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    govIdBack:
+      type: string
+      description: "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+    proofOfResidency:
+      type: string
+      description: "URL of image of the proof of address Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+  required:
+    - legalFirstName
+    - legalLastName
+    - complianceEmail
+    - compliancePhone
+    - dateOfBirth
+    - taxIdentificationNumber
+    - country
+    - addressLine1
+    - city
+    - postalCode
+    - stateProvinceRegion
+    - govIdFront
+    - proofOfResidency
+ToSLink:
+  type: object
+  properties:
+    idempotencyKey:
+      type: string
+      description: Unique identifier for the resource
+      format: uuid
+    templateId:
+      type: string
+      description: Id of the custom terms of service template generated in the HIFI developer dashboard. If not passed, the page will use HIFI's default template.
+    redirectUrl:
+      type: string
+      description: Url to redirect after accepting the terms of service link. The signedAgreementId is the same as the passed idempotencyKey, you may attempt to call the POST /user/create endpoint, but if the user did not accept the TOS, the user creation will return an error.
+  required:
+    - idempotencyKey
+UserObjectPending:
+  type: object
+  properties:
+    wallet:
+      type: object
+      properties:
+        walletStatus:
+          type: string
+        walletMessage:
+          type: string
+        actionNeeded:
+          type: object
+          properties:
+            actions:
+              type: array
+              items:
+                type: string
+            fieldsToResubmit:
+              type: array
+              items:
+                type: string
+        walletAddress:
+          type: object
+          properties:
+            POLYGON_AMOY:
+              type: object
+              properties:
+                address:
+                  type: string
+    user_kyc:
+      type: object
+      properties:
+        status:
+          type: string
+        actionNeeded:
+          type: object
+          properties:
+            actions:
+              type: array
+              items:
+                type: string
+            fieldsToResubmit:
+              type: array
+              items:
+                type: string
+        message:
+          type: string
+    ramps:
+      type: object
+      properties:
+        usdAch:
+          type: object
+          properties:
+            onRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+                achPull:
+                  type: object
+                  properties:
+                    achPullStatus:
+                      type: string
+                    actionNeeded:
+                      type: object
+                      properties:
+                        actions:
+                          type: array
+                          items:
+                            type: string
+                        fieldsToResubmit:
+                          type: array
+                          items:
+                            type: string
+                        message:
+                          type: string
+            offRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        euroSepa:
+          type: object
+          properties:
+            onRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+            offRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+    user:
+      type: object
+      properties:
+        id:
+          type: string
+  example:
+    wallet:
+      walletStatus: "ACTIVE"
+      walletMessage: ""
+      actionNeeded:
+        actions: []
+        fieldsToResubmit: []
+      walletAddress:
+        POLYGON_MAINNET:
+          address: "0x575c35882aC6048FF53DBDe72D0E90d4da071E2D"
+    user_kyc:
+      status: "PENDING"
+      actionNeeded:
+        actions: []
+        fieldsToResubmit: []
+      message: "kyc aplication still under review"
+    ramps:
+      usdAch:
+        onRamp:
+          status: "PENDING"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+          achPull:
+            achPullStatus: "PENDING"
+            actionNeeded:
+              actions: []
+              fieldsToResubmit: []
+            message: ""
+        offRamp:
+          status: "PENDING"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+      euroSepa:
+        onRamp:
+          status: "INACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: "SEPA onRamp will be available in near future"
+        offRamp:
+          status: "PENDING"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+    user:
+      id: "04725d62-d181-4533-80a2-cbcadac6321e"
+UserObjectActive:
+  type: object
+  properties:
+    wallet:
+      type: object
+      properties:
+        walletStatus:
+          type: string
+        walletMessage:
+          type: string
+        actionNeeded:
+          type: object
+          properties:
+            actions:
+              type: array
+              items:
+                type: string
+            fieldsToResubmit:
+              type: array
+              items:
+                type: string
+        walletAddress:
+          type: object
+          properties:
+            POLYGON_AMOY:
+              type: object
+              properties:
+                address:
+                  type: string
+    user_kyc:
+      type: object
+      properties:
+        status:
+          type: string
+        actionNeeded:
+          type: object
+          properties:
+            actions:
+              type: array
+              items:
+                type: string
+            fieldsToResubmit:
+              type: array
+              items:
+                type: string
+        message:
+          type: string
+    ramps:
+      type: object
+      properties:
+        usdAch:
+          type: object
+          properties:
+            onRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+                achPull:
+                  type: object
+                  properties:
+                    achPullStatus:
+                      type: string
+                    actionNeeded:
+                      type: object
+                      properties:
+                        actions:
+                          type: array
+                          items:
+                            type: string
+                        fieldsToResubmit:
+                          type: array
+                          items:
+                            type: string
+                        message:
+                          type: string
+            offRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+        euroSepa:
+          type: object
+          properties:
+            onRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+            offRamp:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+    user:
+      type: object
+      properties:
+        id:
+          type: string
+  example:
+    wallet:
+      walletStatus: "ACTIVE"
+      walletMessage: ""
+      actionNeeded:
+        actions: []
+        fieldsToResubmit: []
+      walletAddress:
+        POLYGON_MAINNET:
+          address: "0x575c35882aC6048FF53DBDe72D0E90d4da071E2D"
+    user_kyc:
+      status: "ACTIVE"
+      actionNeeded:
+        actions: []
+        fieldsToResubmit: []
+      message: ""
+    ramps:
+      usdAch:
+        onRamp:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+          achPull:
+            achPullStatus: "ACTIVE"
+            actionNeeded:
+              actions: []
+              fieldsToResubmit: []
+            message: ""
+        offRamp:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+      euroSepa:
+        onRamp:
+          status: "INACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: "SEPA onRamp will be available in near future"
+        offRamp:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+    user:
+      id: "04725d62-d181-4533-80a2-cbcadac6321e"
+AllUserObjects:
+  type: object
+  properties:
+    count:
+      type: integer
+    users:
+      type: array
+      items:
+        type: object
+        properties:
+          userId:
+            type: string
+          userType:
+            type: string
+          name:
+            type: string
+          dateOfBirth:
+            type: string
+            format: date
+          email:
+            type: string
+          phone:
+            type: string
+          createdAt:
+            type: string
+            format: date
+          userKycStatus:
+            type: string
+          walletStatus:
+            type: string
+          walletAddress:
+            type: object
+            properties:
+              POLYGON_MAINNET:
+                type: object
+                properties:
+                  address:
+                    type: string
+  example:
+    count: 1
+    users:
+      - userId: "04725d62-d181-4533-80a2-cbcadac6321e"
+        userType: "individual"
+        name: "John Doe"
+        dateOfBirth: "1997-02-17T00:00:00+00:00"
+        email: "johndoe@gmail.com"
+        phone: "+11234567890"
+        createdAt: "2024-08-08T19:54:33.035Z"
+        userKycStatus: "ACTIVE"
+        walletStatus: "ACTIVE"
+        walletAddress:
+          POLYGON_MAINNET:
+            address: "0x575c35882aC6048FF53DBDe72D0E90d4da071E2D"
+ToSLinkObject:
+  type: object
+  properties:
+    url:
+      type: string
+    signedAgreementId:
+      type: string
+  example:
+    url: "https://dashboard.hifibridge.com/accept-terms-of-service?sessionToken=e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40&redirectUrl=undefined&templateId=2fb2da24-472a-4e5b-b160-038d9dc82a40"
+    signedAgreementId: "e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40"

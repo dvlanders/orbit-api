@@ -1,0 +1,5052 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hifi API",
+    "version": "1.0.0",
+    "description": "API documentation for Hifi"
+  },
+  "servers": [
+    {
+      "url": "https://production.hifibridge.com",
+      "description": "Production server"
+    },
+    {
+      "url": "https://sandbox.hifibridge.com",
+      "description": "Sandbox server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Common",
+      "description": "Common endpoints"
+    },
+    {
+      "name": "User",
+      "description": "User endpoints"
+    },
+    {
+      "name": "Account",
+      "description": "Account endpoints"
+    },
+    {
+      "name": "Transfer",
+      "description": "Transfer endpoints"
+    },
+    {
+      "name": "Quotes",
+      "description": "Quotes endpoints"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "AccountIdParameter": {
+        "name": "accountId",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID of the account",
+        "required": true
+      },
+      "CurrencyParameter": {
+        "name": "currency",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "usd",
+            "eur",
+            "brl"
+          ]
+        },
+        "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
+        "required": false
+      },
+      "RailTypeParameter": {
+        "name": "railType",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "onramp",
+            "offramp"
+          ]
+        },
+        "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'railType' to 'offramp' without setting 'currency' and 'paymentRail' will return all offramp accounts under any currency or paymentRail.",
+        "required": false
+      },
+      "PaymentRailParameter": {
+        "name": "paymentRail",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "ach",
+            "wire",
+            "sepa",
+            "pix"
+          ]
+        },
+        "required": false
+      },
+      "RailParameter": {
+        "name": "rail",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "US_ACH_WIRE"
+          ]
+        },
+        "required": true
+      },
+      "DestinationCurrencyParameter": {
+        "name": "destinationCurrency",
+        "description": "usdt is allowed only on ETHEREUM_MAINNET at this moment",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "usdc"
+          ]
+        },
+        "required": true
+      },
+      "DestinationChainParameter": {
+        "name": "destinationChain",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+          "enum": [
+            "POLYGON_MAINNET",
+            "POLYGON_AMOY"
+          ]
+        },
+        "required": true
+      },
+      "VALimitParameter": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "description": "Number of micro deposit records return for the virtual account, default to 10 maximum to 100",
+        "required": false
+      },
+      "VACreatedBeforeParameter": {
+        "name": "createdBefore",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Return the micro deposit records that created before this eventId",
+        "required": false
+      },
+      "VACreatedAfterParameter": {
+        "name": "createdAfter",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Return the micro deposit records that created after this eventId",
+        "required": false
+      },
+      "LimitParameter": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "description": "default to 10, maximum to 100",
+        "required": false
+      },
+      "CreatedBeforeParameter": {
+        "name": "createdBefore",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "description": "format: YYYY-MM-DD",
+        "required": false
+      },
+      "CreatedAfterParameter": {
+        "name": "createdAfter",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        },
+        "description": "format: YYYY-MM-DD",
+        "required": false
+      },
+      "TransferRecordIDParameter": {
+        "name": "id",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Transfer record ID",
+        "required": true
+      },
+      "FromCurrencyParameter": {
+        "name": "fromCurrency",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "usdc"
+          ]
+        },
+        "required": true
+      },
+      "ToCurrencyParameter": {
+        "name": "toCurrency",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "usd",
+            "eur"
+          ]
+        },
+        "required": true
+      },
+      "UserIdParameter": {
+        "name": "userId",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "The user ID.",
+        "required": true
+      },
+      "UserIdOptionalParameter": {
+        "name": "userId",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "The user ID.",
+        "required": false
+      },
+      "UserTypeParameter": {
+        "name": "userType",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "individual",
+            "business"
+          ]
+        },
+        "description": "If userType is passed, you will get all users under the type.",
+        "required": false
+      }
+    },
+    "requestBodies": {
+      "UsdOnrampAchAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOnrampAchAccount"
+            }
+          }
+        }
+      },
+      "UsdOnrampWireAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOnrampWireAccount"
+            }
+          }
+        }
+      },
+      "UsdOfframpAchAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOfframpAchAccount"
+            }
+          }
+        }
+      },
+      "UsdOfframpWireAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UsdOfframpWireUSAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "EurOfframpSepaAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/EurOfframpSepaAccount"
+            }
+          }
+        }
+      },
+      "BrlOfframpReceiverBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BrlReceiverAccount"
+            }
+          }
+        }
+      },
+      "BrlOfframpPixAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BrlOfframpPixAccount"
+            }
+          }
+        }
+      },
+      "CryptoToCryptoTransferBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToCryptoTransfer"
+            }
+          }
+        }
+      },
+      "CryptoToFiatTransferBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToFiatTransfer"
+            }
+          }
+        }
+      },
+      "FiatToCryptoTransferBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FiatToCryptoTransfer"
+            }
+          }
+        }
+      },
+      "UserCreateBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/IndividualUserCreate"
+                },
+                {
+                  "$ref": "#/components/schemas/BusinessUserCreate"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "UserUpdateBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/IndividualUserUpdate"
+                },
+                {
+                  "$ref": "#/components/schemas/BusinessUserUpdate"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ToSLinkBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ToSLink"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "UsdOnrampAchAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOnrampAchAccountObject"
+            }
+          }
+        }
+      },
+      "UsdOnrampWireAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOnrampWireAccountObject"
+            }
+          }
+        }
+      },
+      "UsdOfframpAchAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOfframpAchAccountObject"
+            }
+          }
+        }
+      },
+      "UsdOfframpWireAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UsdOfframpWireAccountObject"
+            }
+          }
+        }
+      },
+      "EurOfframpSepaAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/EurOfframpSepaAccountObject"
+            }
+          }
+        }
+      },
+      "BrlOfframpReceiverResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BrlOfframpReceiverObject"
+            }
+          }
+        }
+      },
+      "BrlOfframpPixAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BrlOfframpPixAccountObject"
+            }
+          }
+        }
+      },
+      "GetAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountObject"
+            }
+          }
+        }
+      },
+      "GetAllAccountsResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AllAccountObjects"
+            }
+          }
+        }
+      },
+      "GetVirtualAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/VirtualAccountObject"
+            }
+          }
+        }
+      },
+      "UnauthorizedResponse": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Unauthorized"
+            }
+          }
+        }
+      },
+      "NotFoundResponse": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NotFound"
+            }
+          }
+        }
+      },
+      "InternalServerErrorResponse": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/InternalServerError"
+            }
+          }
+        }
+      },
+      "PingResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Pong"
+            }
+          }
+        }
+      },
+      "CryptoToCryptoTransferResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToCryptoTransferObject"
+            }
+          }
+        }
+      },
+      "CryptoToFiatTransferResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToFiatTransferObject"
+            }
+          }
+        }
+      },
+      "FiatToCryptoTransferResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FiatToCryptoTransferObject"
+            }
+          }
+        }
+      },
+      "CryptoToCryptoRecordResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToCryptoRecordObject"
+            }
+          }
+        }
+      },
+      "CryptoToFiatRecordResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToFiatRecordObject"
+            }
+          }
+        }
+      },
+      "FiatToCryptoRecordResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FiatToCryptoRecordObject"
+            }
+          }
+        }
+      },
+      "CryptoToCryptoAllRecordsResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToCryptoAllRecordsObject"
+            }
+          }
+        }
+      },
+      "CryptoToFiatAllRecordsResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToFiatAllRecordsObject"
+            }
+          }
+        }
+      },
+      "FiatToCryptoAllRecordsResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FiatToCryptoAllRecordsObject"
+            }
+          }
+        }
+      },
+      "CryptoToFiatConversionRateResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CryptoToFiatConversionRateObject"
+            }
+          }
+        }
+      },
+      "UserObjectPendingResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UserObjectPending"
+            }
+          }
+        }
+      },
+      "UserObjectActiveResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UserObjectActive"
+            }
+          }
+        }
+      },
+      "AllUserObjectsResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AllUserObjects"
+            }
+          }
+        }
+      },
+      "ToSLinkObjectResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ToSLinkObject"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "UsdOnrampAchAccount": {
+        "type": "object",
+        "properties": {
+          "plaidProcessorToken": {
+            "type": "string",
+            "description": "See https://plaid.com/docs/api/processors/"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "accountType": {
+            "type": "string",
+            "enum": [
+              "CHECKING",
+              "SAVING",
+              "BUSINESS"
+            ]
+          }
+        },
+        "required": [
+          "plaidProcessorToken",
+          "bankName",
+          "accountType"
+        ]
+      },
+      "UsdOnrampWireAccount": {
+        "type": "object",
+        "properties": {
+          "rail": {
+            "type": "string",
+            "description": "Passing \"US_ACH_WIRE\" allows the user to do USD onramp through both ACH and Wire.",
+            "enum": [
+              "US_ACH_WIRE"
+            ]
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc"
+            ]
+          },
+          "destinationChain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          }
+        },
+        "required": [
+          "rail",
+          "destinationCurrency",
+          "destinationChain"
+        ]
+      },
+      "UsdOfframpAchAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usd"
+            ]
+          },
+          "bankName": {
+            "type": "string",
+            "description": "e.g. Chase, Bank of America"
+          },
+          "accountOwnerName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "routingNumber": {
+            "type": "string"
+          },
+          "accountOwnerType": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "business"
+            ]
+          },
+          "streetLine1": {
+            "type": "string"
+          },
+          "streetLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "description": "ISO 3166-2 subdivision code. e.g. CA"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec. Currently must be passed as \"USA\"."
+          }
+        },
+        "required": [
+          "currency",
+          "bankName",
+          "accountOwnerName",
+          "accountOwnerType",
+          "accountNumber",
+          "routingNumber",
+          "streetLine1",
+          "city",
+          "state",
+          "postalCode",
+          "country"
+        ]
+      },
+      "UsdOfframpWireUSAccount": {
+        "type": "object",
+        "title": "USD Offramp Wire US",
+        "properties": {
+          "accountNumber": {
+            "type": "string",
+            "description": "Either a swift account number or iban must be provided."
+          },
+          "routingNumber": {
+            "type": "string"
+          },
+          "accountHolderName": {
+            "type": "string"
+          },
+          "accountHolderCity": {
+            "type": "string"
+          },
+          "accountHolderCountry": {
+            "type": "string"
+          },
+          "accountHolderStreetLine1": {
+            "type": "string"
+          },
+          "accountHolderStreetLine2": {
+            "type": "string"
+          },
+          "accountHolderStateProvinceRegion": {
+            "type": "string"
+          },
+          "accountHolderPostalCode": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string",
+            "description": "e.g. Chase, Bank of America"
+          },
+          "bankCity": {
+            "type": "string"
+          },
+          "bankCountry": {
+            "type": "string"
+          },
+          "bankStreetLine1": {
+            "type": "string"
+          },
+          "bankStreetLine2": {
+            "type": "string"
+          },
+          "bankStateProvinceRegion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountNumber",
+          "routingNumber",
+          "accountHolderName",
+          "accountHolderCity",
+          "accountHolderCountry",
+          "accountHolderStreetLine1",
+          "accountHolderPostalCode",
+          "bankCountry"
+        ]
+      },
+      "UsdOfframpWireNonUSIbanSupportedAccount": {
+        "type": "object",
+        "title": "USD Offramp Wire Non-US Iban Supported",
+        "properties": {
+          "iban": {
+            "type": "string",
+            "description": "Either a swift account number or iban must be provided."
+          },
+          "accountHolderName": {
+            "type": "string"
+          },
+          "accountHolderCity": {
+            "type": "string"
+          },
+          "accountHolderCountry": {
+            "type": "string"
+          },
+          "accountHolderStreetLine1": {
+            "type": "string"
+          },
+          "accountHolderStreetLine2": {
+            "type": "string"
+          },
+          "accountHolderStateProvinceRegion": {
+            "type": "string"
+          },
+          "accountHolderPostalCode": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "bankCity": {
+            "type": "string"
+          },
+          "bankCountry": {
+            "type": "string"
+          },
+          "bankStreetLine1": {
+            "type": "string"
+          },
+          "bankStreetLine2": {
+            "type": "string"
+          },
+          "bankStateProvinceRegion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "iban",
+          "accountHolderName",
+          "accountHolderCity",
+          "accountHolderCountry",
+          "accountHolderStreetLine1",
+          "accountHolderPostalCode",
+          "bankCity",
+          "bankCountry"
+        ]
+      },
+      "UsdOfframpWireNonUSIbanUnsupportedAccount": {
+        "type": "object",
+        "title": "USD Offramp Wire Non-US Iban Unsupported",
+        "properties": {
+          "accountNumber": {
+            "type": "string",
+            "description": "Either a swift account number or iban must be provided."
+          },
+          "businessIdentifierCode": {
+            "type": "string"
+          },
+          "accountHolderName": {
+            "type": "string"
+          },
+          "accountHolderCity": {
+            "type": "string"
+          },
+          "accountHolderCountry": {
+            "type": "string"
+          },
+          "accountHolderStreetLine1": {
+            "type": "string"
+          },
+          "accountHolderStreetLine2": {
+            "type": "string"
+          },
+          "accountHolderStateProvinceRegion": {
+            "type": "string"
+          },
+          "accountHolderPostalCode": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "bankCity": {
+            "type": "string"
+          },
+          "bankCountry": {
+            "type": "string"
+          },
+          "bankStreetLine1": {
+            "type": "string"
+          },
+          "bankStreetLine2": {
+            "type": "string"
+          },
+          "bankStateProvinceRegion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountNumber",
+          "businessIdentifierCode",
+          "accountHolderName",
+          "accountHolderCity",
+          "accountHolderCountry",
+          "accountHolderStreetLine1",
+          "accountHolderPostalCode",
+          "bankName",
+          "bankCity",
+          "bankCountry"
+        ]
+      },
+      "EurOfframpSepaAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "eur"
+            ]
+          },
+          "bankName": {
+            "type": "string",
+            "description": "e.g. Deutsche Bank"
+          },
+          "accountOwnerName": {
+            "type": "string"
+          },
+          "accountOwnerType": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "business"
+            ]
+          },
+          "ibanAccountNumber": {
+            "type": "string",
+            "description": "The International Bank Account Number (IBAN) that will be used to send the funds."
+          },
+          "ibanCountryCode": {
+            "type": "string",
+            "description": "Country in which the bank account is located. It's a three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+          },
+          "businessIdentifierCode": {
+            "type": "string",
+            "description": "The Business Identifier Code (BIC) that will be used to send the funds."
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Required when accountOwnerType == \"individual\""
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Required when accountOwnerType == \"individual\""
+          },
+          "businessName": {
+            "type": "string",
+            "description": "Required when accountOwnerType == \"business\""
+          }
+        },
+        "required": [
+          "currency",
+          "bankName",
+          "accountOwnerName",
+          "accountOwnerType",
+          "ibanAccountNumber",
+          "businessIdentifierCode",
+          "ibanCountryCode"
+        ]
+      },
+      "BrlReceiverAccount": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "individual",
+              "business"
+            ]
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state_province_region": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "tax_id",
+          "type",
+          "address_line_1",
+          "city",
+          "state_province_region",
+          "country",
+          "postal_code",
+          "image_url",
+          "userId",
+          "firstName",
+          "lastName",
+          "dateOfBirth"
+        ]
+      },
+      "BrlOfframpPixAccount": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "receiverId": {
+            "type": "string",
+            "description": "You can get the receiver id by making a Add a Receiver for BRL Offramp call."
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "BRL"
+            ]
+          },
+          "bankCountry": {
+            "type": "string"
+          },
+          "pixKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "currency",
+          "bankCountry",
+          "pixKey",
+          "receiverId",
+          "userId"
+        ]
+      },
+      "UsdOnrampAchAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Bank account added successfully",
+          "id": "8ff3c91f-54e9-45ea-939b-23523ecc4ae4"
+        }
+      },
+      "UsdOnrampWireAccountObject": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "account": {
+            "type": "object",
+            "properties": {
+              "virtualAccountId": {
+                "type": "string"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "paymentRail": {
+                "type": "string"
+              },
+              "sourceCurrency": {
+                "type": "string"
+              },
+              "destinationChain": {
+                "type": "string"
+              },
+              "destinationCurrency": {
+                "type": "string"
+              },
+              "destinationWalletAddress": {
+                "type": "string"
+              },
+              "railStatus": {
+                "type": "string"
+              },
+              "depositInstructions": {
+                "type": "object",
+                "properties": {
+                  "bankName": {
+                    "type": "string"
+                  },
+                  "routingNumber": {
+                    "type": "string"
+                  },
+                  "accountNumber": {
+                    "type": "string"
+                  },
+                  "bankAddress": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "message": "US_ACH_WIRE create successfully",
+          "account": {
+            "virtualAccountId": "21593434-eb2a-4e44-a4d7-fc5700acd8a2",
+            "userId": "75d7c01f-5f93-43434-8b93-a62fd8020358",
+            "paymentRail": "ach_push",
+            "sourceCurrency": "usd",
+            "destinationChain": "POLYGON_MAINNET",
+            "destinationCurrency": "usdc",
+            "destinationWalletAddress": "0xe039F7FC700194B82EB43E093e9607aE6fcb71c9",
+            "railStatus": "activated",
+            "depositInstructions": {
+              "bankName": "Lead Bank",
+              "routingNumber": "101023444",
+              "accountNumber": "223401218467",
+              "bankAddress": "1801 Main St., Kansas City, MO 64108"
+            }
+          }
+        }
+      },
+      "UsdOfframpAchAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "583eb259-e78b-4f0c-a4b5-a8957876fa6f"
+        }
+      },
+      "UsdOfframpWireAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "EurOfframpSepaAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "BrlOfframpReceiverObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3",
+          "email": "johndoe@gmail.com",
+          "type": "individual",
+          "country": "US"
+        }
+      },
+      "BrlOfframpPixAccountObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "bankCountry": {
+            "type": "string"
+          },
+          "pixKey": {
+            "type": "string"
+          },
+          "receiverId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "4016d72a-889d-4810-b207-fc0f2b892b84",
+          "name": "Bank of Nowhere",
+          "currency": "BRL",
+          "bankCountry": "BR",
+          "pixKey": "14947677759",
+          "receiverId": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
+        }
+      },
+      "AccountObject": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accountType": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "routingNumber": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "rail": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string"
+              },
+              "railType": {
+                "type": "string"
+              },
+              "paymentRail": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "example": {
+          "accountId": "4d9fed63-17e3-4c08-a91e-6e08d0133af0",
+          "userId": "0a472717-039b-48bb-894a-a4fc914a1fe4",
+          "createdAt": "2024-08-07T15:52:23.093947+00:00",
+          "accountType": "SAVINGS",
+          "accountNumber": "1111",
+          "routingNumber": "011401533",
+          "bankName": "Bank of America",
+          "rail": {
+            "currency": "usd",
+            "railType": "onramp",
+            "paymentRail": "ach"
+          }
+        }
+      },
+      "AllAccountObjects": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "banks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "accountId": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "accountType": {
+                  "type": "string"
+                },
+                "businessIdentifierCode": {
+                  "type": "string"
+                },
+                "accountNumber": {
+                  "type": "string"
+                },
+                "routingNumber": {
+                  "type": "string"
+                },
+                "accountHolderName": {
+                  "type": "string"
+                },
+                "accountHolderCity": {
+                  "type": "string"
+                },
+                "accountHolderCountry": {
+                  "type": "string"
+                },
+                "accountHolderStreetLine1": {
+                  "type": "string"
+                },
+                "accountHolderStateProvinceRegion": {
+                  "type": "string"
+                },
+                "accountHolderPostalCode": {
+                  "type": "string"
+                },
+                "bankCountry": {
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string"
+                },
+                "rail": {
+                  "type": "object",
+                  "properties": {
+                    "currency": {
+                      "type": "string"
+                    },
+                    "railType": {
+                      "type": "string"
+                    },
+                    "paymentRail": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "count": 1,
+          "banks": [
+            {
+              "accountId": "3032c480-f4e9-462e-ab97-39984bd92c31",
+              "createdAt": "2024-08-07T15:53:05.571061+00:00",
+              "status": "pending",
+              "accountType": "us",
+              "businessIdentifierCode": "021000021",
+              "accountNumber": "123456789012",
+              "routingNumber": "021000021",
+              "accountHolderName": "Post Man",
+              "accountHolderCity": "New York",
+              "accountHolderCountry": "US",
+              "accountHolderStreetLine1": "123 Main St",
+              "accountHolderStateProvinceRegion": "NY",
+              "accountHolderPostalCode": "10001",
+              "bankCountry": "US",
+              "userId": "0a472717-039b-48bb-894a-a4fc914a1fe4",
+              "rail": {
+                "currency": "usd",
+                "railType": "offramp",
+                "paymentRail": "wire"
+              }
+            }
+          ]
+        }
+      },
+      "VirtualAccountObject": {
+        "type": "object",
+        "properties": {
+          "virtualAccountId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "paymentRail": {
+            "type": "string"
+          },
+          "sourceCurrency": {
+            "type": "string"
+          },
+          "destinationChain": {
+            "type": "string"
+          },
+          "destinationCurrency": {
+            "type": "string"
+          },
+          "destinationWalletAddress": {
+            "type": "string"
+          },
+          "railStatus": {
+            "type": "string"
+          },
+          "depositInstructions": {
+            "type": "object",
+            "properties": {
+              "bankName": {
+                "type": "string"
+              },
+              "routingNumber": {
+                "type": "string"
+              },
+              "accountNumber": {
+                "type": "string"
+              },
+              "bankAddress": {
+                "type": "string"
+              }
+            }
+          },
+          "microDeposits": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer"
+              },
+              "data": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "eventId": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "amount": {
+                      "type": "string"
+                    },
+                    "sourceBankAccountDetails": {
+                      "type": "object",
+                      "properties": {
+                        "description": {
+                          "type": "string"
+                        },
+                        "bankName": {
+                          "type": "string"
+                        },
+                        "routingNumber": {
+                          "type": "string"
+                        },
+                        "traceNumber": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "virtualAccountId": "21593434-eb2a-4e44-a4d7-fc5700acd8a2",
+          "userId": "75d7c01f-5f93-43434-8b93-a62fd8020358",
+          "paymentRail": "ach_push",
+          "sourceCurrency": "usd",
+          "destinationChain": "POLYGON_MAINNET",
+          "destinationCurrency": "usdc",
+          "destinationWalletAddress": "0xBe64088c19d2F06890343bbE03A6125D7A23dec5",
+          "railStatus": "activated",
+          "depositInstructions": {
+            "bankName": "Lead Bank",
+            "routingNumber": "101023444",
+            "accountNumber": "223401218467",
+            "bankAddress": "1801 Main St., Kansas City, MO 64108"
+          },
+          "microDeposits": {
+            "count": 1,
+            "data": [
+              {
+                "eventId": "8b2e2301-9e9b-40bd-12b7-a189ba73d517",
+                "currency": "usd",
+                "createdAt": "2024-05-15T12:38:55.841Z",
+                "amount": "-0.36",
+                "sourceBankAccountDetails": {
+                  "description": "ACCTVERIFY CHARLES SCHWAB 5023447 223513 [Mick Burger]",
+                  "bankName": "CHARLES SCHWAB",
+                  "routingNumber": "032341114",
+                  "traceNumber": "03123434516328"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Unauthorized": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Not authorized"
+          }
+        }
+      },
+      "NotFound": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Not Found"
+          }
+        }
+      },
+      "InternalServerError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Unexpected error happened"
+          }
+        }
+      },
+      "Pong": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "pong"
+          }
+        }
+      },
+      "CryptoToCryptoTransfer": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "senderUserId": {
+            "type": "string",
+            "description": "User Id of the sender"
+          },
+          "recipientUserId": {
+            "type": "string",
+            "description": "User Id of the recipient (should either provide recipientUserId or recipientAddress)"
+          },
+          "recipientAddress": {
+            "type": "string",
+            "description": "wallet address of the recipient (should either provide recipientUserId or recipientAddress)"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usdc"
+            ]
+          }
+        },
+        "required": [
+          "senderUserId",
+          "amount",
+          "requestId",
+          "chain",
+          "currency"
+        ]
+      },
+      "CryptoToFiatTransfer": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc"
+            ]
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "usd",
+              "eur",
+              "brl"
+            ]
+          },
+          "paymentRail": {
+            "type": "string",
+            "enum": [
+              "ach",
+              "wire",
+              "sepa",
+              "pix"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "description": "Required if paymentRail is \"wire\""
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Required if paymentRail is \"wire\""
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "FiatToCryptoTransfer": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string",
+            "description": "User which will be pull the fiat bank account from"
+          },
+          "sourceAccountId": {
+            "type": "string",
+            "description": "Account Id of the source bank account"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "User which will be receiving the crypto"
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usd"
+            ]
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "format": "float"
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "isInstant": {
+            "type": "boolean",
+            "description": "(Not implemented yet)",
+            "default": false
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "amount",
+          "sourceCurrency",
+          "destinationCurrency",
+          "chain",
+          "sourceAccountId",
+          "isInstant"
+        ]
+      },
+      "CryptoToCryptoTransferObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "senderUserId": {
+                "type": "string"
+              },
+              "recipientUserId": {
+                "type": "string"
+              },
+              "recipientAddress": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "transactionHash": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "contractAddress": {
+                "type": "string"
+              },
+              "failedReason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "CRYPTO_TO_CRYPTO",
+          "transferDetails": {
+            "id": "0b9a8c80-3ce3-4aee-9d94-8a8ac43a2543",
+            "requestId": "5d0a55aa-9a2a-486a-a57e-d5d9e576cf6d",
+            "senderUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+            "recipientUserId": "0c91a2a3-b0da-4779-bd15-2b29b8854de4",
+            "recipientAddress": "0x89dfD8792c7E7041c24F01223929F1d8Dd642F0c",
+            "chain": "POLYGON_MAINNET",
+            "currency": "usdc",
+            "amount": 0.01,
+            "transactionHash": "0x23188ac9f798d97d481f86fe1904a74cd885ed8bcff9d52d8bb7c3a2f54a3a59",
+            "createdAt": "2024-06-25T20:41:57.671322+00:00",
+            "status": "SUBMITTED",
+            "contractAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+            "failedReason": ""
+          }
+        }
+      },
+      "CryptoToFiatTransferObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "sourceCurrency": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "destinationCurrency": {
+                "type": "string"
+              },
+              "destinationAccountId": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "contractAddress": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "CRYPTO_TO_FIAT",
+          "transferDetails": {
+            "id": "cb586edd-5f9c-475e-8909-4c65c2f03243",
+            "requestId": "233fb9a1-cf0d-425a-9d71-2f4b84040160",
+            "userId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+            "chain": "POLYGON_MAINNET",
+            "sourceCurrency": "usdc",
+            "amount": 0.01,
+            "destinationCurrency": "usd",
+            "destinationAccountId": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
+            "createdAt": "2024-06-25T20:58:32.152865+00:00",
+            "status": "SUBMITTED_ONCHAIN",
+            "contractAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+          }
+        }
+      },
+      "FiatToCryptoTransferObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "sourceUserId": {
+                "type": "string"
+              },
+              "destinationUserId": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "sourceCurrency": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "destinationCurrency": {
+                "type": "string"
+              },
+              "sourceAccountId": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "isInstant": {
+                "type": "boolean"
+              },
+              "fee": {
+                "type": "number",
+                "nullable": true
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "FIAT_TO_CRYPTO",
+          "transferDetails": {
+            "id": "0ed5e5f7-6f3d-49c3-bbd1-fc7682119d35",
+            "requestId": "1533b435-0d57-43f4-8e05-0f4f6730a219",
+            "sourceUserId": "7d2150ce-bdc4-442d-899e-800c48ba3954",
+            "destinationUserId": "7d2150ce-bdc4-442d-899e-800c48ba3954",
+            "chain": "POLYGON_AMOY",
+            "sourceCurrency": "usd",
+            "amount": 1,
+            "destinationCurrency": "usdc",
+            "sourceAccountId": "8ff3c91f-54e9-45ea-939b-23523ecc4ae4",
+            "createdAt": "2024-07-26T14:52:43.893588+00:00",
+            "status": "FIAT_SUBMITTED",
+            "isInstant": false,
+            "fee": null
+          }
+        }
+      },
+      "CryptoToCryptoRecordObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "senderUserId": {
+                "type": "string"
+              },
+              "recipientUserId": {
+                "type": "string"
+              },
+              "recipientAddress": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "transactionHash": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "contractAddress": {
+                "type": "string"
+              },
+              "recipient": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "sender": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "fee": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "CRYPTO_TO_CRYPTO",
+          "transferDetails": {
+            "id": "d664b6f0-f490-4bba-93bf-5343013e22ed",
+            "requestId": "4782e4cf-7b36-4fbf-ae01-5095c2145b71",
+            "senderUserId": "0a472717-039b-48bb-894a-a4fc914a1fe4",
+            "recipientUserId": "0a472717-039b-48bb-894a-a4fc914a1fe4",
+            "recipientAddress": "0xF3D07a6B4a449431e1489A44e732AA90CeB94A8D",
+            "chain": "POLYGON_MAINNET",
+            "currency": "usdc",
+            "transactionHash": "0xd2f14a064ae8c7509a14597c374a63172f682cfa5fd37b6bf32edd334d52064e",
+            "createdAt": "2024-08-07T18:04:02.29743+00:00",
+            "updatedAt": "2024-08-07T18:04:04.225+00:00",
+            "status": "CONFIRMED",
+            "contractAddress": "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582",
+            "recipient": {
+              "business_name": null,
+              "legal_last_name": "Wu",
+              "compliance_email": "henry@hifibridge.com",
+              "legal_first_name": "Henry"
+            },
+            "sender": {
+              "business_name": null,
+              "legal_last_name": "Gutix",
+              "compliance_email": "maxg@gmail.com",
+              "legal_first_name": "Max"
+            },
+            "fee": null
+          }
+        }
+      },
+      "CryptoToFiatRecordObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "sourceUserId": {
+                "type": "string"
+              },
+              "destinationUserId": {
+                "type": "string"
+              },
+              "chain": {
+                "type": "string"
+              },
+              "sourceCurrency": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "destinationCurrency": {
+                "type": "string"
+              },
+              "liquidationAddress": {
+                "type": "string"
+              },
+              "destinationAccountId": {
+                "type": "string"
+              },
+              "transactionHash": {
+                "type": "string",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "contractAddress": {
+                "type": "string"
+              },
+              "sourceUser": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "destinationUser": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "destinationAccount": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "account_owner_name": {
+                    "type": "string"
+                  },
+                  "bank_name": {
+                    "type": "string"
+                  },
+                  "account_number": {
+                    "type": "string"
+                  },
+                  "routing_number": {
+                    "type": "string"
+                  },
+                  "account_type": {
+                    "type": "string"
+                  },
+                  "business_identifier_code": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "bank_country": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "iban": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "beneficiary_first_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "beneficiary_last_name": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              },
+              "fee": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "CRYPTO_TO_FIAT",
+          "transferDetails": {
+            "id": "2be590e2-4b91-4963-9e10-c07c3886b4f5",
+            "requestId": "49ce7429-dc5b-4210-ba4a-df81a81c31a4",
+            "sourceUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+            "destinationUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+            "chain": "POLYGON_MAINNET",
+            "sourceCurrency": "usdc",
+            "amount": 1,
+            "destinationCurrency": "usd",
+            "liquidationAddress": "0xdeadbeef2usdcpolygonc4298b4e-d8de-4d3c-947c-555e28819e2c",
+            "destinationAccountId": "77ab81be-914a-4619-93d2-996ccdfb0cea",
+            "transactionHash": "0xa47d133f4c7a34a203e6c66a6979fd8e1423f2b53844c1eba00fa5837eb3be28",
+            "createdAt": "2024-07-27T02:19:31.988836+00:00",
+            "updatedAt": "2024-08-07T18:05:00.862+00:00",
+            "status": "COMPLETED",
+            "contractAddress": "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582",
+            "sourceUser": {
+              "business_name": null,
+              "legal_last_name": "Wu",
+              "compliance_email": "henry@hifibridge.com",
+              "legal_first_name": "Henry"
+            },
+            "destinationUser": {
+              "business_name": null,
+              "legal_last_name": "Gutix",
+              "compliance_email": "maxg@gmail.com",
+              "legal_first_name": "Max"
+            },
+            "destinationAccount": {
+              "id": "77ab81be-914a-4619-93d2-996ccdfb0cea",
+              "account_owner_name": "Max Gutix",
+              "bank_name": "Bank of America",
+              "account_number": "48899917874",
+              "routing_number": "0012300322",
+              "account_type": "us",
+              "business_identifier_code": null,
+              "bank_country": null,
+              "iban": null,
+              "beneficiary_first_name": null,
+              "beneficiary_last_name": null
+            },
+            "fee": null
+          }
+        }
+      },
+      "FiatToCryptoRecordObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "sourceUserId": {
+                "type": "string"
+              },
+              "destinationUserId": {
+                "type": "string"
+              },
+              "transactionHash": {
+                "type": "string",
+                "nullable": true
+              },
+              "chain": {
+                "type": "string"
+              },
+              "sourceCurrency": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "destinationCurrency": {
+                "type": "string"
+              },
+              "sourceAccountId": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string"
+              },
+              "sourceUser": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "destinationUser": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "sourceAccount": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "account_number": {
+                    "type": "string"
+                  },
+                  "routing_number": {
+                    "type": "string"
+                  },
+                  "bank_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "fee": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "FIAT_TO_CRYPTO",
+          "transferDetails": {
+            "id": "2f7803d0-568e-47dc-9fa8-5870e1a7556b",
+            "requestId": "244eca98-3c4c-4056-8ba4-ca0246b9bd51",
+            "sourceUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+            "destinationUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+            "transactionHash": null,
+            "chain": "POLYGON_MAINNET",
+            "sourceCurrency": "usd",
+            "amount": 1,
+            "destinationCurrency": "usdc",
+            "sourceAccountId": "95e2ade1-53bb-4f9e-ac04-12a2de2a910d",
+            "createdAt": "2024-07-27T03:04:37.488762+00:00",
+            "updatedAt": "2024-08-07T18:03:01.704+00:00",
+            "status": "FIAT_PROCESSED",
+            "sourceUser": {
+              "business_name": null,
+              "legal_last_name": "Wu",
+              "compliance_email": "henry@hifibridge.com",
+              "legal_first_name": "Henry"
+            },
+            "destinationUser": {
+              "business_name": null,
+              "legal_last_name": "Gutix",
+              "compliance_email": "maxg@gmail.com",
+              "legal_first_name": "Max"
+            },
+            "sourceAccount": {
+              "id": "95e2ade1-53bb-4f9e-ac04-12a2de2a910d",
+              "account_number": "2374",
+              "routing_number": "021234322",
+              "bank_name": "Chase"
+            },
+            "fee": null
+          }
+        }
+      },
+      "CryptoToCryptoAllRecordsObject": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "transferType": {
+                  "type": "string"
+                },
+                "transferDetails": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "senderUserId": {
+                      "type": "string"
+                    },
+                    "recipientUserId": {
+                      "type": "string"
+                    },
+                    "recipientAddress": {
+                      "type": "string"
+                    },
+                    "chain": {
+                      "type": "string"
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "transactionHash": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "contractAddress": {
+                      "type": "string"
+                    },
+                    "recipient": {
+                      "type": "object",
+                      "properties": {
+                        "business_name": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "legal_last_name": {
+                          "type": "string"
+                        },
+                        "compliance_email": {
+                          "type": "string"
+                        },
+                        "legal_first_name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "sender": {
+                      "type": "object",
+                      "properties": {
+                        "business_name": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "legal_last_name": {
+                          "type": "string"
+                        },
+                        "compliance_email": {
+                          "type": "string"
+                        },
+                        "legal_first_name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "fee": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "count": 1,
+          "records": [
+            {
+              "transferType": "CRYPTO_TO_CRYPTO",
+              "transferDetails": {
+                "id": "d664b6f0-f490-4bba-93bf-5343013e22ed",
+                "requestId": "4782e4cf-7b36-4fbf-ae01-5095c2145b71",
+                "senderUserId": "0a472717-039b-48bb-894a-a4fc914a1fe4",
+                "recipientUserId": "0a472717-039b-48bb-894a-a4fc914a1fe4",
+                "recipientAddress": "0xF3D07a6B4a449431e1489A44e732AA90CeB94A8D",
+                "chain": "POLYGON_MAINNET",
+                "currency": "usdc",
+                "transactionHash": "0xd2f14a064ae8c7509a14597c374a63172f682cfa5fd37b6bf32edd334d52064e",
+                "createdAt": "2024-08-07T18:04:02.29743+00:00",
+                "updatedAt": "2024-08-07T18:04:04.225+00:00",
+                "status": "CONFIRMED",
+                "contractAddress": "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582",
+                "recipient": {
+                  "business_name": null,
+                  "legal_last_name": "Wu",
+                  "compliance_email": "henry@hifibridge.com",
+                  "legal_first_name": "Henry"
+                },
+                "sender": {
+                  "business_name": null,
+                  "legal_last_name": "Gutix",
+                  "compliance_email": "maxg@gmail.com",
+                  "legal_first_name": "Max"
+                },
+                "fee": null
+              }
+            }
+          ]
+        }
+      },
+      "CryptoToFiatAllRecordsObject": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "transferType": {
+                  "type": "string"
+                },
+                "transferDetails": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "sourceUserId": {
+                      "type": "string"
+                    },
+                    "destinationUserId": {
+                      "type": "string"
+                    },
+                    "chain": {
+                      "type": "string"
+                    },
+                    "sourceCurrency": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "destinationCurrency": {
+                      "type": "string"
+                    },
+                    "liquidationAddress": {
+                      "type": "string"
+                    },
+                    "destinationAccountId": {
+                      "type": "string"
+                    },
+                    "transactionHash": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "contractAddress": {
+                      "type": "string"
+                    },
+                    "sourceUser": {
+                      "type": "object",
+                      "properties": {
+                        "business_name": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "legal_last_name": {
+                          "type": "string"
+                        },
+                        "compliance_email": {
+                          "type": "string"
+                        },
+                        "legal_first_name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "destinationUser": {
+                      "type": "object",
+                      "properties": {
+                        "business_name": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "legal_last_name": {
+                          "type": "string"
+                        },
+                        "compliance_email": {
+                          "type": "string"
+                        },
+                        "legal_first_name": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "destinationAccount": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "account_owner_name": {
+                          "type": "string"
+                        },
+                        "bank_name": {
+                          "type": "string"
+                        },
+                        "account_number": {
+                          "type": "string"
+                        },
+                        "routing_number": {
+                          "type": "string"
+                        },
+                        "account_type": {
+                          "type": "string"
+                        },
+                        "business_identifier_code": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "bank_country": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "iban": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "beneficiary_first_name": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "beneficiary_last_name": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "fee": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "count": 1,
+          "records": [
+            {
+              "transferType": "CRYPTO_TO_FIAT",
+              "transferDetails": {
+                "id": "2be590e2-4b91-4963-9e10-c07c3886b4f5",
+                "requestId": "49ce7429-dc5b-4210-ba4a-df81a81c31a4",
+                "sourceUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+                "destinationUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+                "chain": "POLYGON_MAINNET",
+                "sourceCurrency": "usdc",
+                "amount": 1,
+                "destinationCurrency": "usd",
+                "liquidationAddress": "0xdeadbeef2usdcpolygonc4298b4e-d8de-4d3c-947c-555e28819e2c",
+                "destinationAccountId": "77ab81be-914a-4619-93d2-996ccdfb0cea",
+                "transactionHash": "0xa47d133f4c7a34a203e6c66a6979fd8e1423f2b53844c1eba00fa5837eb3be28",
+                "createdAt": "2024-07-27T02:19:31.988836+00:00",
+                "updatedAt": "2024-08-07T18:05:00.862+00:00",
+                "status": "COMPLETED",
+                "contractAddress": "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582",
+                "sourceUser": {
+                  "business_name": null,
+                  "legal_last_name": "Wu",
+                  "compliance_email": "henry@hifibridge.com",
+                  "legal_first_name": "Henry"
+                },
+                "destinationUser": {
+                  "business_name": null,
+                  "legal_last_name": "Gutix",
+                  "compliance_email": "maxg@gmail.com",
+                  "legal_first_name": "Max"
+                },
+                "destinationAccount": {
+                  "id": "77ab81be-914a-4619-93d2-996ccdfb0cea",
+                  "account_owner_name": "Max Gutix",
+                  "bank_name": "Bank of America",
+                  "account_number": "48899917874",
+                  "routing_number": "0012300322",
+                  "account_type": "us",
+                  "business_identifier_code": null,
+                  "bank_country": null,
+                  "iban": null,
+                  "beneficiary_first_name": null,
+                  "beneficiary_last_name": null
+                },
+                "fee": null
+              }
+            }
+          ]
+        }
+      },
+      "FiatToCryptoAllRecordsObject": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "transferType": {
+                  "type": "string"
+                },
+                "transferDetails": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "sourceUserId": {
+                      "type": "string"
+                    },
+                    "destinationUserId": {
+                      "type": "string"
+                    },
+                    "chain": {
+                      "type": "string"
+                    },
+                    "sourceCurrency": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "destinationCurrency": {
+                      "type": "string"
+                    },
+                    "sourceAccountId": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "isInstant": {
+                      "type": "boolean"
+                    },
+                    "fee": {
+                      "type": "number",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "count": 1,
+          "records": [
+            {
+              "transferType": "FIAT_TO_CRYPTO",
+              "transferDetails": {
+                "id": "2f7803d0-568e-47dc-9fa8-5870e1a7556b",
+                "requestId": "244eca98-3c4c-4056-8ba4-ca0246b9bd51",
+                "sourceUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+                "destinationUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+                "transactionHash": null,
+                "chain": "POLYGON_MAINNET",
+                "sourceCurrency": "usd",
+                "amount": 1,
+                "destinationCurrency": "usdc",
+                "sourceAccountId": "95e2ade1-53bb-4f9e-ac04-12a2de2a910d",
+                "createdAt": "2024-07-27T03:04:37.488762+00:00",
+                "updatedAt": "2024-08-07T18:03:01.704+00:00",
+                "status": "FIAT_PROCESSED",
+                "sourceUser": {
+                  "business_name": null,
+                  "legal_last_name": "Wu",
+                  "compliance_email": "henry@hifibridge.com",
+                  "legal_first_name": "Henry"
+                },
+                "destinationUser": {
+                  "business_name": null,
+                  "legal_last_name": "Gutix",
+                  "compliance_email": "maxg@gmail.com",
+                  "legal_first_name": "Max"
+                },
+                "sourceAccount": {
+                  "id": "95e2ade1-53bb-4f9e-ac04-12a2de2a910d",
+                  "account_number": "2374",
+                  "routing_number": "021234322",
+                  "bank_name": "Chase"
+                },
+                "fee": null
+              }
+            }
+          ]
+        }
+      },
+      "CryptoToFiatConversionRateObject": {
+        "type": "object",
+        "properties": {
+          "fromCurrency": {
+            "type": "string"
+          },
+          "toCurrency": {
+            "type": "string"
+          },
+          "conversionRate": {
+            "type": "number"
+          },
+          "validFrom": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "validUntil": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "example": {
+          "fromCurrency": "usdc",
+          "toCurrency": "usd",
+          "conversionRate": 1,
+          "validFrom": "2024-08-07T18:02:50.815Z",
+          "validUntil": "2024-08-07T18:03:20.815Z"
+        }
+      },
+      "IndividualUserCreate": {
+        "type": "object",
+        "title": "Create Individual User",
+        "properties": {
+          "userType": {
+            "type": "string",
+            "enum": [
+              "individual"
+            ]
+          },
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "complianceEmail": {
+            "type": "string",
+            "description": "E-mail address for compliance-related communications.",
+            "format": "email"
+          },
+          "compliancePhone": {
+            "type": "string",
+            "description": "Phone number in format \"+12223334444\"."
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "taxIdentificationNumber": {
+            "type": "string",
+            "description": "For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative."
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateProvinceRegion": {
+            "type": "string",
+            "description": "ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions."
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Must be supplied for countries that use postal codes."
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+          },
+          "signedAgreementId": {
+            "type": "string",
+            "description": "ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link."
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user.",
+            "format": "ipv4"
+          },
+          "govIdFront": {
+            "type": "string",
+            "description": "URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "govIdBack": {
+            "type": "string",
+            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "govIdCountry": {
+            "type": "string",
+            "description": "Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above."
+          },
+          "proofOfResidency": {
+            "type": "string",
+            "description": "URL of the file of the proof of residency (Required for users based in the EU or withdrawing into EU bank accounts) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          }
+        },
+        "required": [
+          "userType",
+          "legalFirstName",
+          "legalLastName",
+          "complianceEmail",
+          "compliancePhone",
+          "dateOfBirth",
+          "taxIdentificationNumber",
+          "govIdFront",
+          "govIdCountry",
+          "country",
+          "addressLine1",
+          "city",
+          "postalCode",
+          "stateProvinceRegion",
+          "signedAgreementId",
+          "ipAddress"
+        ]
+      },
+      "BusinessUserCreate": {
+        "type": "object",
+        "title": "Create Business User",
+        "properties": {
+          "userType": {
+            "type": "string",
+            "enum": [
+              "business"
+            ]
+          },
+          "businessName": {
+            "type": "string"
+          },
+          "businessDescription": {
+            "type": "string"
+          },
+          "businessType": {
+            "type": "string",
+            "description": "The type of business structure that most closely matches the business customer.",
+            "enum": [
+              "cooperative",
+              "corporation",
+              "llc",
+              "partnership",
+              "sole_prop",
+              "trust",
+              "other"
+            ]
+          },
+          "complianceEmail": {
+            "type": "string",
+            "description": "Email address for compliance-related communications.",
+            "format": "email"
+          },
+          "taxIdentificationNumber": {
+            "type": "string",
+            "description": "For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative."
+          },
+          "website": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateProvinceRegion": {
+            "type": "string",
+            "description": "ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions."
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Must be supplied for countries that use postal codes."
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user. Must be IPv4.",
+            "format": "ipv4"
+          },
+          "signedAgreementId": {
+            "type": "string",
+            "description": "ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link"
+          },
+          "formationDoc": {
+            "type": "string",
+            "description": "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "proofOfOwnership": {
+            "type": "string",
+            "description": "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "sourceOfFunds": {
+            "type": "string",
+            "description": "The source of funds for the business, e.g. profits, income, venture capital, etc."
+          },
+          "transmitsCustomerFunds": {
+            "type": "boolean",
+            "description": "True if the business transmits funds on behalf of its customers (i.e. transmitsCustomerFunds == true)"
+          },
+          "complianceScreeningExplanation": {
+            "type": "string",
+            "description": "Required if transmits_customer_funds is true. An explanation of types of compliance screening (KYC, KYB, or AML) the customer performs before transmitting funds on behalf of its customers."
+          },
+          "isDao": {
+            "type": "boolean",
+            "description": "Whether the business is a DAO (Decentralized Autonomous Organization)"
+          },
+          "ultimateBeneficialOwners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UltimateBeneficialOwner"
+            }
+          },
+          "proofOfResidency": {
+            "type": "string",
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          }
+        },
+        "required": [
+          "userType",
+          "businessName",
+          "businessType",
+          "complianceEmail",
+          "taxIdentificationNumber",
+          "country",
+          "addressLine1",
+          "city",
+          "postalCode",
+          "stateProvinceRegion",
+          "signedAgreementId",
+          "ipAddress",
+          "formationDoc",
+          "sourceOfFunds",
+          "ultimateBeneficialOwners",
+          "transmitsCustomerFunds",
+          "proofOfOwnership",
+          "website",
+          "businessDescription",
+          "isDao"
+        ]
+      },
+      "IndividualUserUpdate": {
+        "type": "object",
+        "title": "Update Individual User",
+        "properties": {
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "complianceEmail": {
+            "type": "string",
+            "description": "Email address for compliance-related communications.",
+            "format": "email"
+          },
+          "compliancePhone": {
+            "type": "string",
+            "description": "Phone in format \"+12223334444\"."
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "taxIdentificationNumber": {
+            "type": "string",
+            "description": "For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative."
+          },
+          "govIdCountry": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec."
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateProvinceRegion": {
+            "type": "string",
+            "description": "ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions."
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Must be supplied for countries that use postal codes."
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+          },
+          "signedAgreementId": {
+            "type": "string",
+            "description": "ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link."
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user.",
+            "format": "ipv4"
+          },
+          "govIdFront": {
+            "type": "string",
+            "description": "Signed URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "govIdBack": {
+            "type": "string",
+            "description": "Signed URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "proofOfResidency": {
+            "type": "string",
+            "description": "URL of the file of the proof of residency (Only required for European user or withdrawing into European bank account) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          }
+        }
+      },
+      "BusinessUserUpdate": {
+        "type": "object",
+        "title": "Update Business User",
+        "properties": {
+          "businessName": {
+            "type": "string"
+          },
+          "businessDescription": {
+            "type": "string"
+          },
+          "complianceEmail": {
+            "type": "string",
+            "description": "Email address for compliance-related communications.",
+            "format": "email"
+          },
+          "sourceOfFunds": {
+            "type": "string",
+            "description": "The source of funds for the business, e.g. profits, income, venture capital, etc."
+          },
+          "businessType": {
+            "type": "string",
+            "description": "The type of business structure that most closely matches the business customer.",
+            "enum": [
+              "cooperative",
+              "corporation",
+              "llc",
+              "partnership",
+              "sole_prop",
+              "trust",
+              "other"
+            ]
+          },
+          "taxIdentificationNumber": {
+            "type": "string",
+            "description": "For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative."
+          },
+          "website": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateProvinceRegion": {
+            "type": "string",
+            "description": "ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions."
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Must be supplied for countries that use postal codes."
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user.",
+            "format": "ipv4"
+          },
+          "signedAgreementId": {
+            "type": "string",
+            "description": "ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link"
+          },
+          "formationDoc": {
+            "type": "string",
+            "description": "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "proofOfOwnership": {
+            "type": "string",
+            "description": "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "transmitsCustomerFunds": {
+            "type": "boolean",
+            "description": "True if the business transmits funds on behalf of its customers (i.e. transmitsCustomerFunds == true)"
+          },
+          "complianceScreeningExplanation": {
+            "type": "string",
+            "description": "Required if transmits_customer_funds is true. An explanation of types of compliance screening (KYC, KYB, or AML) the customer performs before transmitting funds on behalf of its customers."
+          },
+          "isDao": {
+            "type": "boolean",
+            "description": "Whether the business is a DAO (Decentralized Autonomous Organization)"
+          },
+          "ultimateBeneficialOwners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UltimateBeneficialOwner"
+            }
+          },
+          "proofOfResidency": {
+            "type": "string",
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          }
+        }
+      },
+      "UltimateBeneficialOwner": {
+        "type": "object",
+        "properties": {
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "complianceEmail": {
+            "type": "string",
+            "format": "email"
+          },
+          "compliancePhone": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "taxIdentificationNumber": {
+            "type": "string"
+          },
+          "govIdCountry": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code of the submitted government id as defined in the ISO 3166-1 spec."
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateProvinceRegion": {
+            "type": "string",
+            "description": "ISO 3166-2 subdivision code. Must be supplied if the country has subdivisions."
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "Must be supplied for countries that use postal codes."
+          },
+          "govIdFront": {
+            "type": "string",
+            "description": "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "govIdBack": {
+            "type": "string",
+            "description": "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          },
+          "proofOfResidency": {
+            "type": "string",
+            "description": "URL of image of the proof of address Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+          }
+        },
+        "required": [
+          "legalFirstName",
+          "legalLastName",
+          "complianceEmail",
+          "compliancePhone",
+          "dateOfBirth",
+          "taxIdentificationNumber",
+          "country",
+          "addressLine1",
+          "city",
+          "postalCode",
+          "stateProvinceRegion",
+          "govIdFront",
+          "proofOfResidency"
+        ]
+      },
+      "ToSLink": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "description": "Unique identifier for the resource",
+            "format": "uuid"
+          },
+          "templateId": {
+            "type": "string",
+            "description": "Id of the custom terms of service template generated in the HIFI developer dashboard. If not passed, the page will use HIFI's default template."
+          },
+          "redirectUrl": {
+            "type": "string",
+            "description": "Url to redirect after accepting the terms of service link. The signedAgreementId is the same as the passed idempotencyKey, you may attempt to call the POST /user/create endpoint, but if the user did not accept the TOS, the user creation will return an error."
+          }
+        },
+        "required": [
+          "idempotencyKey"
+        ]
+      },
+      "UserObjectPending": {
+        "type": "object",
+        "properties": {
+          "wallet": {
+            "type": "object",
+            "properties": {
+              "walletStatus": {
+                "type": "string"
+              },
+              "walletMessage": {
+                "type": "string"
+              },
+              "actionNeeded": {
+                "type": "object",
+                "properties": {
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "fieldsToResubmit": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "walletAddress": {
+                "type": "object",
+                "properties": {
+                  "POLYGON_AMOY": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "user_kyc": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "actionNeeded": {
+                "type": "object",
+                "properties": {
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "fieldsToResubmit": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          },
+          "ramps": {
+            "type": "object",
+            "properties": {
+              "usdAch": {
+                "type": "object",
+                "properties": {
+                  "onRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "achPull": {
+                        "type": "object",
+                        "properties": {
+                          "achPullStatus": {
+                            "type": "string"
+                          },
+                          "actionNeeded": {
+                            "type": "object",
+                            "properties": {
+                              "actions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "fieldsToResubmit": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "message": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "offRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euroSepa": {
+                "type": "object",
+                "properties": {
+                  "onRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "offRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "example": {
+          "wallet": {
+            "walletStatus": "ACTIVE",
+            "walletMessage": "",
+            "actionNeeded": {
+              "actions": [],
+              "fieldsToResubmit": []
+            },
+            "walletAddress": {
+              "POLYGON_MAINNET": {
+                "address": "0x575c35882aC6048FF53DBDe72D0E90d4da071E2D"
+              }
+            }
+          },
+          "user_kyc": {
+            "status": "PENDING",
+            "actionNeeded": {
+              "actions": [],
+              "fieldsToResubmit": []
+            },
+            "message": "kyc aplication still under review"
+          },
+          "ramps": {
+            "usdAch": {
+              "onRamp": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "",
+                "achPull": {
+                  "achPullStatus": "PENDING",
+                  "actionNeeded": {
+                    "actions": [],
+                    "fieldsToResubmit": []
+                  },
+                  "message": ""
+                }
+              },
+              "offRamp": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                }
+              }
+            },
+            "euroSepa": {
+              "onRamp": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "SEPA onRamp will be available in near future"
+              },
+              "offRamp": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            }
+          },
+          "user": {
+            "id": "04725d62-d181-4533-80a2-cbcadac6321e"
+          }
+        }
+      },
+      "UserObjectActive": {
+        "type": "object",
+        "properties": {
+          "wallet": {
+            "type": "object",
+            "properties": {
+              "walletStatus": {
+                "type": "string"
+              },
+              "walletMessage": {
+                "type": "string"
+              },
+              "actionNeeded": {
+                "type": "object",
+                "properties": {
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "fieldsToResubmit": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "walletAddress": {
+                "type": "object",
+                "properties": {
+                  "POLYGON_AMOY": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "user_kyc": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "actionNeeded": {
+                "type": "object",
+                "properties": {
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "fieldsToResubmit": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          },
+          "ramps": {
+            "type": "object",
+            "properties": {
+              "usdAch": {
+                "type": "object",
+                "properties": {
+                  "onRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      },
+                      "achPull": {
+                        "type": "object",
+                        "properties": {
+                          "achPullStatus": {
+                            "type": "string"
+                          },
+                          "actionNeeded": {
+                            "type": "object",
+                            "properties": {
+                              "actions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "fieldsToResubmit": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "message": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "offRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "euroSepa": {
+                "type": "object",
+                "properties": {
+                  "onRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "offRamp": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "example": {
+          "wallet": {
+            "walletStatus": "ACTIVE",
+            "walletMessage": "",
+            "actionNeeded": {
+              "actions": [],
+              "fieldsToResubmit": []
+            },
+            "walletAddress": {
+              "POLYGON_MAINNET": {
+                "address": "0x575c35882aC6048FF53DBDe72D0E90d4da071E2D"
+              }
+            }
+          },
+          "user_kyc": {
+            "status": "ACTIVE",
+            "actionNeeded": {
+              "actions": [],
+              "fieldsToResubmit": []
+            },
+            "message": ""
+          },
+          "ramps": {
+            "usdAch": {
+              "onRamp": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "",
+                "achPull": {
+                  "achPullStatus": "ACTIVE",
+                  "actionNeeded": {
+                    "actions": [],
+                    "fieldsToResubmit": []
+                  },
+                  "message": ""
+                }
+              },
+              "offRamp": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                }
+              }
+            },
+            "euroSepa": {
+              "onRamp": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "SEPA onRamp will be available in near future"
+              },
+              "offRamp": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            }
+          },
+          "user": {
+            "id": "04725d62-d181-4533-80a2-cbcadac6321e"
+          }
+        }
+      },
+      "AllUserObjects": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "userType": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "dateOfBirth": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "userKycStatus": {
+                  "type": "string"
+                },
+                "walletStatus": {
+                  "type": "string"
+                },
+                "walletAddress": {
+                  "type": "object",
+                  "properties": {
+                    "POLYGON_MAINNET": {
+                      "type": "object",
+                      "properties": {
+                        "address": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "count": 1,
+          "users": [
+            {
+              "userId": "04725d62-d181-4533-80a2-cbcadac6321e",
+              "userType": "individual",
+              "name": "John Doe",
+              "dateOfBirth": "1997-02-17T00:00:00+00:00",
+              "email": "johndoe@gmail.com",
+              "phone": "+11234567890",
+              "createdAt": "2024-08-08T19:54:33.035Z",
+              "userKycStatus": "ACTIVE",
+              "walletStatus": "ACTIVE",
+              "walletAddress": {
+                "POLYGON_MAINNET": {
+                  "address": "0x575c35882aC6048FF53DBDe72D0E90d4da071E2D"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "ToSLinkObject": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "signedAgreementId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "url": "https://dashboard.hifibridge.com/accept-terms-of-service?sessionToken=e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40&redirectUrl=undefined&templateId=2fb2da24-472a-4e5b-b160-038d9dc82a40",
+          "signedAgreementId": "e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40"
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/account/usd/onramp/plaid": {
+      "post": {
+        "summary": "Add a ACH Source Bank Account for USD Onramp with Plaid",
+        "description": "HIFI and Plaid have partnered to enable you to use your existing Plaid integration to connect your bank account to HIFI for USD Onramp with ACH pull. To get started, follow the guide (https://plaid.com/docs/api/processors/) from Plaid's API docs to create a Plaid processor token. Passing the processor_token to this endpoint will allow you to add a ACH Source Bank Account for USD Onramp with Plaid. \nNote: This is a billable event.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UsdOnrampAchAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UsdOnrampAchAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/activateOnRampRail": {
+      "post": {
+        "summary": "Add a ACH and Wire Source Bank Account for USD Onramp",
+        "description": "Add a source Bank Account for USD Onramp for both ACH push and WIRE. \nNote: This is a billable event.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UsdOnrampWireAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UsdOnrampWireAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/usd/offramp": {
+      "post": {
+        "summary": "Add a ACH Destination Bank Account for USD Offramp",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UsdOfframpAchAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UsdOfframpAchAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/wire/offramp": {
+      "post": {
+        "summary": "Add a Wire Destination Bank Account for USD Offramp",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UsdOfframpWireAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UsdOfframpWireAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/euro/offramp": {
+      "post": {
+        "summary": "Add a SEPA Destination Bank Account for EURO Offramp",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/EurOfframpSepaAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/EurOfframpSepaAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/brl/receiver": {
+      "post": {
+        "summary": "Add a Receiver for BRL Offramp",
+        "tags": [
+          "Account"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/BrlOfframpReceiverBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BrlOfframpReceiverResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/brl/offramp": {
+      "post": {
+        "summary": "Add a Bank Account to a Receiver for BRL Offramp",
+        "description": "Add a Bank Account to a Receiver for Brazilian Real (BRL) Offramp. You will need to have a receiver id to add a bank account to.  You can get the receiver id by making a Add a Receiver for BRL Offramp call.",
+        "tags": [
+          "Account"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/BrlOfframpPixAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BrlOfframpPixAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account": {
+      "get": {
+        "summary": "Get Account",
+        "description": "Get an existing onramp or offramp account detail.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountIdParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/all": {
+      "get": {
+        "summary": "Get all Accounts",
+        "description": "Get all existing onramp or offramp account details.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CurrencyParameter"
+          },
+          {
+            "$ref": "#/components/parameters/RailTypeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/PaymentRailParameter"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetAllAccountsResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/onRampRail/virtualAccount": {
+      "get": {
+        "summary": "Get ACH and Wire Bank Account Deposit Information for USD Onramp",
+        "description": "Get the bank account information for ACH push and WIRE deposit. The response will also include the micro deposit information requested by institution.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/RailParameter"
+          },
+          {
+            "$ref": "#/components/parameters/DestinationCurrencyParameter"
+          },
+          {
+            "$ref": "#/components/parameters/DestinationChainParameter"
+          },
+          {
+            "$ref": "#/components/parameters/VALimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/VACreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/VACreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetVirtualAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/ping": {
+      "get": {
+        "summary": "Ping HIFI Servers",
+        "tags": [
+          "Common"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PingResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/crypto-to-crypto": {
+      "post": {
+        "summary": "Transfer Stablecoin to Stablecoin",
+        "description": "Transfer stablecoins between users or wallet addresses",
+        "tags": [
+          "Transfer"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CryptoToCryptoTransferBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToCryptoTransferResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a Stablecoin-to-Stablecoin Transfer Record",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TransferRecordIDParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToCryptoRecordResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/crypto-to-fiat": {
+      "post": {
+        "summary": "Transfer Stablecoin to Fiat",
+        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.",
+        "tags": [
+          "Transfer"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CryptoToFiatTransferBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToFiatTransferResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a Stablecoin-to-Fiat Transfer Record",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TransferRecordIDParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToFiatRecordResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/fiat-to-crypto": {
+      "post": {
+        "summary": "Transfer Fiat to Stablecoin",
+        "description": "Transfer fiat currency from an onramp bank account to crypto.",
+        "tags": [
+          "Transfer"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/FiatToCryptoTransferBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FiatToCryptoTransferResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a Fiat-to-Stablecoin Transfer Record",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TransferRecordIDParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FiatToCryptoRecordResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/crypto-to-crypto/all": {
+      "get": {
+        "summary": "Get All Stablecoin-to-Stablecoin Transfer Records",
+        "description": "Get all the transfer records of a user or all the transfer records under your organization.",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToCryptoAllRecordsResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/crypto-to-fiat/all": {
+      "get": {
+        "summary": "Get All Stablecoin-to-Fiat Transfer Records",
+        "description": "Get all the transfer records of a user or all the transfer records under your organization.",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToFiatAllRecordsResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/fiat-to-crypto/all": {
+      "get": {
+        "summary": "Get All Fiat-to-Stablecoin Transfer Records",
+        "description": "Get all the transfer records of a user or all the transfer records under your organization.",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FiatToCryptoAllRecordsResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/conversionRate/crypto-to-fiat": {
+      "get": {
+        "summary": "Get Stablecoin-to-Fiat Conversion Rate",
+        "description": "Retrieve conversion rate between stablecoin and fiat currency.",
+        "tags": [
+          "Quotes"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FromCurrencyParameter"
+          },
+          {
+            "$ref": "#/components/parameters/ToCurrencyParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CryptoToFiatConversionRateResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/create": {
+      "post": {
+        "summary": "Create User",
+        "description": "Create a new Hifi user (Individual/Business)",
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UserCreateBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UserObjectPendingResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "summary": "Get User",
+        "description": "Get an existing Hifi user",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UserObjectActiveResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update User",
+        "description": "Update an existing Hifi user",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UserUpdateBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UserObjectPendingResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/all": {
+      "get": {
+        "summary": "Get All Users",
+        "description": "Get all existing Hifi users",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserTypeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AllUserObjectsResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/tos-link": {
+      "post": {
+        "summary": "Generate Terms of Service Link",
+        "description": "The Terms of Service page must be displayed to the end user. This page can be whitelabeled upon request.",
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ToSLinkBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ToSLinkObjectResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    }
+  }
+}

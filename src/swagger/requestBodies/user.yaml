@@ -1,0 +1,22 @@
+UserCreateBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: '#/components/schemas/IndividualUserCreate'
+          - $ref: '#/components/schemas/BusinessUserCreate'
+UserUpdateBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: '#/components/schemas/IndividualUserUpdate'
+          - $ref: '#/components/schemas/BusinessUserUpdate'
+ToSLinkBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ToSLink'

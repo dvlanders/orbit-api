@@ -1,0 +1,682 @@
+UsdOnrampAchAccount:
+  type: object
+  properties:
+    plaidProcessorToken:
+      type: string
+      description: See https://plaid.com/docs/api/processors/
+    bankName:
+      type: string
+    accountType:
+      type: string
+      enum: [CHECKING, SAVING, BUSINESS]
+  required:
+    - plaidProcessorToken
+    - bankName
+    - accountType
+UsdOnrampWireAccount:
+  type: object
+  properties:
+    rail:
+      type: string
+      description: Passing "US_ACH_WIRE" allows the user to do USD onramp through both ACH and Wire.
+      enum: [US_ACH_WIRE]
+    destinationCurrency:
+      type: string
+      enum: [usdc]
+    destinationChain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: [POLYGON_MAINNET, POLYGON_AMOY]
+  required:
+    - rail
+    - destinationCurrency
+    - destinationChain
+UsdOfframpAchAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [usd]
+    bankName:
+      type: string
+      description: e.g. Chase, Bank of America
+    accountOwnerName:
+      type: string
+    accountNumber:
+      type: string
+    routingNumber:
+      type: string
+    accountOwnerType:
+      type: string
+      enum: [individual, business]
+    streetLine1:
+      type: string
+    streetLine2:
+      type: string
+    city:
+      type: string
+    state:
+      type: string
+      description: ISO 3166-2 subdivision code. e.g. CA
+    postalCode:
+      type: string
+    country:
+      type: string
+      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec. Currently must be passed as "USA".
+  required:
+    - currency
+    - bankName
+    - accountOwnerName
+    - accountOwnerType
+    - accountNumber
+    - routingNumber
+    - streetLine1
+    - city
+    - state
+    - postalCode
+    - country
+UsdOfframpWireUSAccount:
+  type: object
+  title: "USD Offramp Wire US"
+  properties:
+    accountNumber:
+      type: string
+      description: Either a swift account number or iban must be provided.
+    routingNumber:
+      type: string
+    accountHolderName:
+      type: string
+    accountHolderCity:
+      type: string
+    accountHolderCountry:
+      type: string
+    accountHolderStreetLine1:
+      type: string
+    accountHolderStreetLine2:
+      type: string
+    accountHolderStateProvinceRegion:
+      type: string
+    accountHolderPostalCode:
+      type: string
+    bankName:
+      type: string
+      description: e.g. Chase, Bank of America
+    bankCity:
+      type: string
+    bankCountry:
+      type: string
+    bankStreetLine1:
+      type: string
+    bankStreetLine2:
+      type: string
+    bankStateProvinceRegion:
+      type: string
+  required:
+    - accountNumber
+    - routingNumber
+    - accountHolderName
+    - accountHolderCity
+    - accountHolderCountry
+    - accountHolderStreetLine1
+    - accountHolderPostalCode
+    - bankCountry
+UsdOfframpWireNonUSIbanSupportedAccount:
+  type: object
+  title: "USD Offramp Wire Non-US Iban Supported"
+  properties:
+    iban:
+      type: string
+      description: Either a swift account number or iban must be provided.
+    accountHolderName:
+      type: string
+    accountHolderCity:
+      type: string
+    accountHolderCountry:
+      type: string
+    accountHolderStreetLine1:
+      type: string
+    accountHolderStreetLine2:
+      type: string
+    accountHolderStateProvinceRegion:
+      type: string
+    accountHolderPostalCode:
+      type: string
+    bankName:
+      type: string
+    bankCity:
+      type: string
+    bankCountry:
+      type: string
+    bankStreetLine1:
+      type: string
+    bankStreetLine2:
+      type: string
+    bankStateProvinceRegion:
+      type: string
+  required:
+    - iban
+    - accountHolderName
+    - accountHolderCity
+    - accountHolderCountry
+    - accountHolderStreetLine1
+    - accountHolderPostalCode
+    - bankCity
+    - bankCountry
+UsdOfframpWireNonUSIbanUnsupportedAccount:
+  type: object
+  title: "USD Offramp Wire Non-US Iban Unsupported"
+  properties:
+    accountNumber:
+      type: string
+      description: Either a swift account number or iban must be provided.
+    businessIdentifierCode:
+      type: string
+    accountHolderName:
+      type: string
+    accountHolderCity:
+      type: string
+    accountHolderCountry:
+      type: string
+    accountHolderStreetLine1:
+      type: string
+    accountHolderStreetLine2:
+      type: string
+    accountHolderStateProvinceRegion:
+      type: string
+    accountHolderPostalCode:
+      type: string
+    bankName:
+      type: string
+    bankCity:
+      type: string
+    bankCountry:
+      type: string
+    bankStreetLine1:
+      type: string
+    bankStreetLine2:
+      type: string
+    bankStateProvinceRegion:
+      type: string
+  required:
+    - accountNumber
+    - businessIdentifierCode
+    - accountHolderName
+    - accountHolderCity
+    - accountHolderCountry
+    - accountHolderStreetLine1
+    - accountHolderPostalCode
+    - bankName
+    - bankCity
+    - bankCountry
+EurOfframpSepaAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [eur]
+    bankName:
+      type: string
+      description: e.g. Deutsche Bank
+    accountOwnerName:
+      type: string
+    accountOwnerType:
+      type: string
+      enum: [individual, business]
+    ibanAccountNumber:
+      type: string
+      description: The International Bank Account Number (IBAN) that will be used to send the funds.
+    ibanCountryCode:
+      type: string
+      description: Country in which the bank account is located. It's a three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+    businessIdentifierCode:
+      type: string
+      description: The Business Identifier Code (BIC) that will be used to send the funds.
+    firstName:
+      type: string
+      description: Required when accountOwnerType == "individual"
+    lastName:
+      type: string
+      description: Required when accountOwnerType == "individual"
+    businessName:
+      type: string
+      description: Required when accountOwnerType == "business"
+  required:
+    - currency
+    - bankName
+    - accountOwnerName
+    - accountOwnerType
+    - ibanAccountNumber
+    - businessIdentifierCode
+    - ibanCountryCode
+BrlReceiverAccount:
+  type: object
+  properties:
+    userId:
+      type: string
+    type:
+      type: string
+      enum: [individual, business]
+    firstName:
+      type: string
+    lastName:
+      type: string
+    dateOfBirth:
+      type: string
+      description: Date of birth in format yyyy-mm-dd
+      format: date
+    email:
+      type: string
+      format: email
+    tax_id:
+      type: string
+    address_line_1:
+      type: string
+    address_line_2:
+      type: string
+    city:
+      type: string
+    state_province_region:
+      type: string
+    country:
+      type: string
+      description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
+    postal_code:
+      type: string
+    image_url:
+      type: string
+  required:
+    - email
+    - tax_id
+    - type
+    - address_line_1
+    - city
+    - state_province_region
+    - country
+    - postal_code
+    - image_url
+    - userId
+    - firstName
+    - lastName
+    - dateOfBirth
+BrlOfframpPixAccount:
+  type: object
+  properties:
+    userId:
+      type: string
+    receiverId:
+      type: string
+      description: You can get the receiver id by making a Add a Receiver for BRL Offramp call.
+    name:
+      type: string
+    currency:
+      type: string
+      enum: [BRL]
+    bankCountry:
+      type: string
+    pixKey:
+      type: string
+  required:
+    - name
+    - currency
+    - bankCountry
+    - pixKey
+    - receiverId
+    - userId
+UsdOnrampAchAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Bank account added successfully"
+    id: "8ff3c91f-54e9-45ea-939b-23523ecc4ae4"
+UsdOnrampWireAccountObject:
+  type: object
+  properties:
+    message:
+      type: string
+    account:
+      type: object
+      properties:
+        virtualAccountId:
+          type: string
+        userId:
+          type: string
+        paymentRail:
+          type: string
+        sourceCurrency:
+          type: string
+        destinationChain:
+          type: string
+        destinationCurrency:
+          type: string
+        destinationWalletAddress:
+          type: string
+        railStatus:
+          type: string
+        depositInstructions:
+          type: object
+          properties:
+            bankName:
+              type: string
+            routingNumber:
+              type: string
+            accountNumber:
+              type: string
+            bankAddress:
+              type: string
+  example:
+    message: "US_ACH_WIRE create successfully"
+    account:
+      virtualAccountId: "21593434-eb2a-4e44-a4d7-fc5700acd8a2"
+      userId: "75d7c01f-5f93-43434-8b93-a62fd8020358"
+      paymentRail: "ach_push"
+      sourceCurrency: "usd"
+      destinationChain: "POLYGON_MAINNET"
+      destinationCurrency: "usdc"
+      destinationWalletAddress: "0xe039F7FC700194B82EB43E093e9607aE6fcb71c9"
+      railStatus: "activated"
+      depositInstructions:
+        bankName: "Lead Bank"
+        routingNumber: "101023444"
+        accountNumber: "223401218467"
+        bankAddress: "1801 Main St., Kansas City, MO 64108"
+UsdOfframpAchAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "583eb259-e78b-4f0c-a4b5-a8957876fa6f"
+UsdOfframpWireAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+EurOfframpSepaAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+BrlOfframpReceiverObject:
+  type: object
+  properties:
+    id:
+      type: string
+    email:
+      type: string
+    type:
+      type: string
+    country:
+      type: string
+  example:
+    id: "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
+    email: "johndoe@gmail.com"
+    type: "individual"
+    country: "US"
+BrlOfframpPixAccountObject:
+  type: object
+  properties:
+    id:
+      type: string
+    name:
+      type: string
+    currency:
+      type: string
+    bankCountry:
+      type: string
+    pixKey:
+      type: string
+    receiverId:
+      type: string
+  example:
+    id: "4016d72a-889d-4810-b207-fc0f2b892b84"
+    name: "Bank of Nowhere"
+    currency: "BRL"
+    bankCountry: "BR"
+    pixKey: "14947677759"
+    receiverId: "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
+AccountObject:
+  type: object
+  properties:
+    accountId:
+      type: string
+    userId:
+      type: string
+    createdAt:
+      type: string
+      format: date-time
+    accountType:
+      type: string
+    accountNumber:
+      type: string
+    routingNumber:
+      type: string
+    bankName:
+      type: string
+    rail:
+      type: object
+      properties:
+        currency:
+          type: string
+        railType:
+          type: string
+        paymentRail:
+          type: string
+  example:
+    accountId: "4d9fed63-17e3-4c08-a91e-6e08d0133af0"
+    userId: "0a472717-039b-48bb-894a-a4fc914a1fe4"
+    createdAt: "2024-08-07T15:52:23.093947+00:00"
+    accountType: "SAVINGS"
+    accountNumber: "1111"
+    routingNumber: "011401533"
+    bankName: "Bank of America"
+    rail:
+      currency: "usd"
+      railType: "onramp"
+      paymentRail: "ach"
+AllAccountObjects:
+  type: object
+  properties:
+    count:
+      type: integer
+    banks:
+      type: array
+      items:
+        type: object
+        properties:
+          accountId:
+            type: string
+          createdAt:
+            type: string
+            format: date-time
+          status:
+            type: string
+          accountType:
+            type: string
+          businessIdentifierCode:
+            type: string
+          accountNumber:
+            type: string
+          routingNumber:
+            type: string
+          accountHolderName:
+            type: string
+          accountHolderCity:
+            type: string
+          accountHolderCountry:
+            type: string
+          accountHolderStreetLine1:
+            type: string
+          accountHolderStateProvinceRegion:
+            type: string
+          accountHolderPostalCode:
+            type: string
+          bankCountry:
+            type: string
+          userId:
+            type: string
+          rail:
+            type: object
+            properties:
+              currency:
+                type: string
+              railType:
+                type: string
+              paymentRail:
+                type: string
+  example:
+    count: 1
+    banks:
+      - accountId: "3032c480-f4e9-462e-ab97-39984bd92c31"
+        createdAt: "2024-08-07T15:53:05.571061+00:00"
+        status: "pending"
+        accountType: "us"
+        businessIdentifierCode: "021000021"
+        accountNumber: "123456789012"
+        routingNumber: "021000021"
+        accountHolderName: "Post Man"
+        accountHolderCity: "New York"
+        accountHolderCountry: "US"
+        accountHolderStreetLine1: "123 Main St"
+        accountHolderStateProvinceRegion: "NY"
+        accountHolderPostalCode: "10001"
+        bankCountry: "US"
+        userId: "0a472717-039b-48bb-894a-a4fc914a1fe4"
+        rail:
+          currency: "usd"
+          railType: "offramp"
+          paymentRail: "wire"
+VirtualAccountObject:
+  type: object
+  properties:
+    virtualAccountId:
+      type: string
+    userId:
+      type: string
+    paymentRail:
+      type: string
+    sourceCurrency:
+      type: string
+    destinationChain:
+      type: string
+    destinationCurrency:
+      type: string
+    destinationWalletAddress:
+      type: string
+    railStatus:
+      type: string
+    depositInstructions:
+      type: object
+      properties:
+        bankName:
+          type: string
+        routingNumber:
+          type: string
+        accountNumber:
+          type: string
+        bankAddress:
+          type: string
+    microDeposits:
+      type: object
+      properties:
+        count:
+          type: integer
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              eventId:
+                type: string
+              currency:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+              amount:
+                type: string
+              sourceBankAccountDetails:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  bankName:
+                    type: string
+                  routingNumber:
+                    type: string
+                  traceNumber:
+                    type: string
+  example:
+    virtualAccountId: "21593434-eb2a-4e44-a4d7-fc5700acd8a2"
+    userId: "75d7c01f-5f93-43434-8b93-a62fd8020358"
+    paymentRail: "ach_push"
+    sourceCurrency: "usd"
+    destinationChain: "POLYGON_MAINNET"
+    destinationCurrency: "usdc"
+    destinationWalletAddress: "0xBe64088c19d2F06890343bbE03A6125D7A23dec5"
+    railStatus: "activated"
+    depositInstructions:
+      bankName: "Lead Bank"
+      routingNumber: "101023444"
+      accountNumber: "223401218467"
+      bankAddress: "1801 Main St., Kansas City, MO 64108"
+    microDeposits:
+      count: 1
+      data:
+        - eventId: "8b2e2301-9e9b-40bd-12b7-a189ba73d517"
+          currency: "usd"
+          createdAt: "2024-05-15T12:38:55.841Z"
+          amount: "-0.36"
+          sourceBankAccountDetails:
+            description: "ACCTVERIFY CHARLES SCHWAB 5023447 223513 [Mick Burger]"
+            bankName: "CHARLES SCHWAB"
+            routingNumber: "032341114"
+            traceNumber: "03123434516328"

@@ -1,0 +1,60 @@
+UsdOnrampAchAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UsdOnrampAchAccountObject'
+UsdOnrampWireAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UsdOnrampWireAccountObject'
+UsdOfframpAchAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UsdOfframpAchAccountObject'
+UsdOfframpWireAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UsdOfframpWireAccountObject'
+EurOfframpSepaAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/EurOfframpSepaAccountObject'
+BrlOfframpReceiverResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/BrlOfframpReceiverObject'
+BrlOfframpPixAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/BrlOfframpPixAccountObject'
+GetAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/AccountObject'
+GetAllAccountsResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/AllAccountObjects'
+GetVirtualAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/VirtualAccountObject'
