@@ -4338,7 +4338,7 @@
     "/account/activateOnRampRail": {
       "post": {
         "summary": "Generate USD Onramp Bank Account (ACH/Wire)",
-        "description": "HIFI will generate a USD Onramp Bank Account for you that allows you to onramp by simply\ndeposit fiat into the generated bank account via ACH push or WIRE transfer.\n\nThe generated bank account only supports the specified onramp rail: `(rail, destinationCurrency, destinationChain)`. \nIf you need to support a different rail, you'll need to generate another bank account for that specific rail.\n\n***Note: This is a billable event.***\n",
+        "description": "HIFI will generate a USD Onramp Bank Account for you that allows you to onramp by simply deposit fiat into the generated bank account via ACH push or WIRE transfer.\n\nThe generated bank account only supports the specified onramp rail: `(rail, destinationCurrency, destinationChain)`. \nIf you need to support a different rail, you'll need to generate another bank account for that specific rail.\n\n***Note: This is a billable event.***\n",
         "tags": [
           "Account"
         ],
