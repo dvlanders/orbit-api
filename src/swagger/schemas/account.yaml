@@ -305,7 +305,7 @@ BrlOfframpPixAccount:
       type: string
     receiverId:
       type: string
-      description: You can get the receiver id by making a Add a Receiver for BRL Offramp call.
+      description: You can get the receiver id by making a Create BRL Offramp Receiver call.
     name:
       type: string
     currency:

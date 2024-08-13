@@ -16,6 +16,7 @@ CryptoToCryptoTransfer:
     amount:
       type: number
       format: float
+      minimum: 0
     chain:
       type: string
       description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
@@ -23,6 +24,14 @@ CryptoToCryptoTransfer:
     currency:
       type: string
       enum: ["usdc"]
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
   required:
     - senderUserId
     - amount
@@ -46,6 +55,7 @@ CryptoToFiatTransfer:
     amount:
       type: number
       format: float
+      minimum: 0
     chain:
       type: string
       description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
@@ -65,6 +75,14 @@ CryptoToFiatTransfer:
     purposeOfPayment:
       type: string
       description: Required if paymentRail is "wire"
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
   required:
     - requestId
     - sourceUserId
@@ -99,6 +117,7 @@ FiatToCryptoTransfer:
     amount:
       type: number
       format: float
+      minimum: 0
     chain:
       type: string
       description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
@@ -107,6 +126,14 @@ FiatToCryptoTransfer:
       type: boolean
       description: (Not implemented yet)
       default: false
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
   required:
     - requestId
     - sourceUserId

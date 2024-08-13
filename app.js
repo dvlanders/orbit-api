@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const swaggerDocument = require('./src/swagger/swaggerDocument');
 const swaggerUi = require('swagger-ui-express');
+const path = require('path');
 
 // use this to get NODE_ENV
 const localEnv = require('dotenv').config({ path: process.env.DOTENV_CONFIG_PATH });
@@ -46,6 +47,7 @@ const { common } = require("./src/util/helper");
 
 // Swagger UI setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/openapi.json', express.static(path.join(__dirname, 'src/swagger/openapi.json')));
 
 // Import your routes
 require("./src/routes")(app, express);

@@ -4,8 +4,9 @@ name: Sync OpenAPI definition to ReadMe
 on:
   push:
     branches:
-      - production
-
+      # - production
+      # - sandbox
+      - hw/feat/openapi
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -13,10 +14,15 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
+      - name: Generate OpenAPI JSON
+        run: |
+          npm install
+          npm run generate-openapi
+
       # Run GitHub Action to sync OpenAPI file at ./path-to-file.json
       - name: GitHub Action
         # We recommend specifying a fixed version, i.e. @v8
         # Docs: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#example-using-versioned-actions
         uses: readmeio/rdme@v8
         with:
-          rdme: openapi src/swagger/openapi.json --key=${{ secrets.README_API_KEY }} --id=${{ secrets.API_DEFINITION_ID }}
+          rdme: openapi src/swagger/openapi.json --key=${{ secrets.README_API_KEY }} --id=${{ secrets.README_API_DEFINITION_ID }}

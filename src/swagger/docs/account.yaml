@@ -1,10 +1,13 @@
 /account/usd/onramp/plaid:
   post:
-    summary: Add a ACH Source Bank Account for USD Onramp with Plaid
-    description: "HIFI and Plaid have partnered to enable you to use your existing Plaid integration to connect your bank account to HIFI for USD Onramp with ACH pull. \
-                  To get started, follow the guide (https://plaid.com/docs/api/processors/) from Plaid's API docs to create a Plaid processor token. \
-                  Passing the processor_token to this endpoint will allow you to add a ACH Source Bank Account for USD Onramp with Plaid. \
-                  \nNote: This is a billable event."
+    summary: Add USD Onramp Bank Account with Plaid (ACH)
+    description: |
+       HIFI and Plaid have partnered to enable you to use your existing Plaid integration to connect your bank account to HIFI for USD Onramp with ACH pull.
+       To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid processor token.
+       
+       Passing the processor_token to this endpoint will allow you to add a USD onramp bank account with Plaid.
+      
+       ***Note: This is a billable event.***
     tags:
       - Account
     parameters:
@@ -22,8 +25,15 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/activateOnRampRail:
   post:
-    summary: Add a ACH and Wire Source Bank Account for USD Onramp
-    description: "Add a source Bank Account for USD Onramp for both ACH push and WIRE. \nNote: This is a billable event."
+    summary: Generate USD Onramp Bank Account (ACH/Wire)
+    description: |
+       HIFI will generate a USD Onramp Bank Account for you that allows you to onramp by simply
+       deposit fiat into the generated bank account via ACH push or WIRE transfer.
+
+       The generated bank account only supports the specified onramp rail: `(rail, destinationCurrency, destinationChain)`. 
+       If you need to support a different rail, you'll need to generate another bank account for that specific rail.
+
+       ***Note: This is a billable event.***
     tags:
       - Account
     parameters:
@@ -41,7 +51,7 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/usd/offramp:
   post:
-    summary: Add a ACH Destination Bank Account for USD Offramp
+    summary: Add USD Offramp Bank Account (ACH)
     tags:
       - Account
     parameters:
@@ -59,7 +69,7 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/wire/offramp:
   post:
-    summary: Add a Wire Destination Bank Account for USD Offramp
+    summary: Add USD Offramp Bank Account (Wire)
     tags:
       - Account
     parameters:
@@ -77,7 +87,7 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/euro/offramp:
   post:
-    summary: Add a SEPA Destination Bank Account for EURO Offramp
+    summary: Add EURO Offramp Bank Account (SEPA)
     tags:
       - Account
     parameters:
@@ -95,7 +105,10 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/brl/receiver:
   post:
-    summary: Add a Receiver for BRL Offramp
+    summary: Create BRL Offramp Receiver
+    description: |
+      Create a Receiver for Brazilian Real (BRL) Offramp. This should be called prior to 
+      adding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.
     tags:
       - Account
     requestBody:
@@ -111,9 +124,10 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/brl/offramp:
   post:
-    summary: Add a Bank Account to a Receiver for BRL Offramp
-    description: "Add a Bank Account to a Receiver for Brazilian Real (BRL) Offramp. You will need to have a receiver id to add a bank account to.\ 
-                  You can get the receiver id by making a Add a Receiver for BRL Offramp call."
+    summary: Add BRL Offramp Bank Account (Pix)
+    description: |
+      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to.
+      You can get the receiver id by making a `Create BRL Offramp Receiver` call.
     tags:
       - Account
     requestBody:
@@ -169,8 +183,8 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/onRampRail/virtualAccount:
   get:
-    summary: Get ACH and Wire Bank Account Deposit Information for USD Onramp 
-    description: Get the bank account information for ACH push and WIRE deposit. The response will also include the micro deposit information requested by institution.
+    summary: Retrieve Generated USD Onramp Bank Account Details
+    description: Retrieve the generated bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.
     tags:
       - Account
     parameters:

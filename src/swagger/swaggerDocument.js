@@ -17,6 +17,12 @@ const mergeYAMLFiles = (dirPath) => {
   return combinedDoc;
 }
 
+const saveOpenAPIFile = (swaggerDocument) => {
+  const outputFilePath = path.join(__dirname, 'openapi.json');
+  fs.writeFileSync(outputFilePath, JSON.stringify(swaggerDocument, null, 2), 'utf8');
+  console.log(`OpenAPI document has been exported to ${outputFilePath}`);
+}
+
 const combinedDoc = mergeYAMLFiles("./docs")
 const combinedParameters = mergeYAMLFiles("./parameters")
 const combinedRequestBodies = mergeYAMLFiles("./requestBodies")
@@ -85,9 +91,6 @@ const swaggerDocument = {
   paths: combinedDoc
 };
 
-// export the OpenAPI document to a file
-const outputFilePath = path.join(__dirname, 'openapi.json');
-fs.writeFileSync(outputFilePath, JSON.stringify(swaggerDocument, null, 2), 'utf8');
-console.log(`OpenAPI document has been exported to ${outputFilePath}`);
+saveOpenAPIFile(swaggerDocument);
 
 module.exports = swaggerDocument;
