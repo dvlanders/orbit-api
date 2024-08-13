@@ -1,0 +1,21 @@
+TransferRecordIDParameter:
+  name: id
+  in: query
+  schema:
+    type: string
+  description: Transfer record ID
+  required: true
+FromCurrencyParameter:
+  name: fromCurrency
+  in: query
+  schema:
+    type: string
+    enum: [usdc]
+  required: true
+ToCurrencyParameter:
+  name: toCurrency
+  in: query
+  schema:
+    type: string
+    enum: [usd, eur]
+  required: true

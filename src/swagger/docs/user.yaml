@@ -1,0 +1,89 @@
+/user/create:
+  post:
+    summary: Create User
+    description: Create a new Hifi user (Individual/Business)
+    tags:
+      - User
+    requestBody:
+      $ref: '#/components/requestBodies/UserCreateBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/UserObjectPendingResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/user: 
+  get:
+    summary: Get User
+    description: Get an existing Hifi user
+    tags:
+      - User
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/UserObjectActiveResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+  put:
+    summary: Update User
+    description: Update an existing Hifi user
+    tags:
+      - User
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/UserUpdateBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/UserObjectPendingResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/user/all:
+  get:
+    summary: Get All Users
+    description: Get all existing Hifi users
+    tags:
+      - User
+    parameters:
+      - $ref: '#/components/parameters/UserTypeParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - $ref: '#/components/parameters/CreatedBeforeParameter'
+      - $ref: '#/components/parameters/CreatedAfterParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/AllUserObjectsResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/tos-link:
+  post:
+    summary: Generate Terms of Service Link
+    description: The Terms of Service page must be displayed to the end user. This page can be whitelabeled upon request.
+    tags:
+      - User
+    requestBody:
+      $ref: '#/components/requestBodies/ToSLinkBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/ToSLinkObjectResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'

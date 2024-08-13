@@ -172,7 +172,8 @@ exports.createHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-			}
+			},
+			message: checkbookResult.message
 		}
 		createHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
@@ -195,12 +196,14 @@ exports.createHifiUser = async (req, res) => {
 					actions: bridgeResult.customerStatus.actions,
 					fieldsToResubmit: bridgeResult.customerStatus.fields
 				},
+				message: bridgeResult.message,
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
 					actionNeeded: {
 						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-					}
+					},
+					message: checkbookResult.message
 				}
 			},
 			offRamp: {

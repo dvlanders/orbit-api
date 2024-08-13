@@ -1,0 +1,24 @@
+UserObjectPendingResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UserObjectPending'
+UserObjectActiveResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UserObjectActive'
+AllUserObjectsResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/AllUserObjects'
+ToSLinkObjectResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ToSLinkObject'

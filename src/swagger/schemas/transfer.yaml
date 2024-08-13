@@ -1,0 +1,972 @@
+CryptoToCryptoTransfer:
+  type: object
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    senderUserId:
+      type: string
+      description: User Id of the sender
+    recipientUserId:
+      type: string
+      description: User Id of the recipient (should either provide recipientUserId or recipientAddress)
+    recipientAddress:
+      type: string
+      description: wallet address of the recipient (should either provide recipientUserId or recipientAddress)
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    currency:
+      type: string
+      enum: ["usdc"]
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+  required:
+    - senderUserId
+    - amount
+    - requestId
+    - chain
+    - currency
+CryptoToFiatTransfer:
+  type: object
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+    destinationUserId:
+      type: string
+      description: If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender.
+    destinationAccountId:
+      type: string
+      description: Account Id of the destination bank account
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    sourceCurrency:
+      type: string
+      enum: ["usdc"]
+    destinationCurrency:
+      type: string
+      enum: ["usd", "eur", "brl"]
+    paymentRail:
+      type: string
+      enum: ["ach", "wire", "sepa", "pix"]
+    description:
+      type: string
+      description: Required if paymentRail is "wire"
+    purposeOfPayment:
+      type: string
+      description: Required if paymentRail is "wire"
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - destinationAccountId
+    - amount
+    - chain
+    - sourceCurrency
+    - destinationCurrency
+    - paymentRail
+FiatToCryptoTransfer:
+  type: object
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+      description: User which will be pull the fiat bank account from
+    sourceAccountId:
+      type: string
+      description: Account Id of the source bank account
+    destinationUserId:
+      type: string
+      description: User which will be receiving the crypto
+    sourceCurrency:
+      type: string
+      enum: ["usd"]
+    destinationCurrency:
+      type: string
+      enum: ["usdc"]
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    isInstant:
+      type: boolean
+      description: (Not implemented yet)
+      default: false
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - amount
+    - sourceCurrency
+    - destinationCurrency
+    - chain
+    - sourceAccountId
+    - isInstant
+CryptoToCryptoTransferObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        senderUserId:
+          type: string
+        recipientUserId:
+          type: string
+        recipientAddress:
+          type: string
+        chain:
+          type: string
+        currency:
+          type: string
+        amount:
+          type: number
+        transactionHash:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        contractAddress:
+          type: string
+        failedReason:
+          type: string
+  example:
+    transferType: "CRYPTO_TO_CRYPTO"
+    transferDetails:
+      id: "0b9a8c80-3ce3-4aee-9d94-8a8ac43a2543"
+      requestId: "5d0a55aa-9a2a-486a-a57e-d5d9e576cf6d"
+      senderUserId: "75d7c01f-5f93-4490-8b93-a62fd8020358"
+      recipientUserId: "0c91a2a3-b0da-4779-bd15-2b29b8854de4"
+      recipientAddress: "0x89dfD8792c7E7041c24F01223929F1d8Dd642F0c"
+      chain: "POLYGON_MAINNET"
+      currency: "usdc"
+      amount: 0.01
+      transactionHash: "0x23188ac9f798d97d481f86fe1904a74cd885ed8bcff9d52d8bb7c3a2f54a3a59"
+      createdAt: "2024-06-25T20:41:57.671322+00:00"
+      status: "SUBMITTED"
+      contractAddress: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+      failedReason: ""
+CryptoToFiatTransferObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        userId:
+          type: string
+        chain:
+          type: string
+        sourceCurrency:
+          type: string
+        amount:
+          type: number
+        destinationCurrency:
+          type: string
+        destinationAccountId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        contractAddress:
+          type: string
+  example:
+    transferType: "CRYPTO_TO_FIAT"
+    transferDetails:
+      id: "cb586edd-5f9c-475e-8909-4c65c2f03243"
+      requestId: "233fb9a1-cf0d-425a-9d71-2f4b84040160"
+      userId: "75d7c01f-5f93-4490-8b93-a62fd8020358"
+      chain: "POLYGON_MAINNET"
+      sourceCurrency: "usdc"
+      amount: 0.01
+      destinationCurrency: "usd"
+      destinationAccountId: "daa6ad75-a4c2-486f-a937-1bbf4d19553c"
+      createdAt: "2024-06-25T20:58:32.152865+00:00"
+      status: "SUBMITTED_ONCHAIN"
+      contractAddress: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+FiatToCryptoTransferObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        sourceUserId:
+          type: string
+        destinationUserId:
+          type: string
+        chain:
+          type: string
+        sourceCurrency:
+          type: string
+        amount:
+          type: number
+        destinationCurrency:
+          type: string
+        sourceAccountId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        isInstant:
+          type: boolean
+        fee:
+          type: number
+          nullable: true
+  example:
+    transferType: "FIAT_TO_CRYPTO"
+    transferDetails:
+      id: "0ed5e5f7-6f3d-49c3-bbd1-fc7682119d35"
+      requestId: "1533b435-0d57-43f4-8e05-0f4f6730a219"
+      sourceUserId: "7d2150ce-bdc4-442d-899e-800c48ba3954"
+      destinationUserId: "7d2150ce-bdc4-442d-899e-800c48ba3954"
+      chain: "POLYGON_AMOY"
+      sourceCurrency: "usd"
+      amount: 1
+      destinationCurrency: "usdc"
+      sourceAccountId: "8ff3c91f-54e9-45ea-939b-23523ecc4ae4"
+      createdAt: "2024-07-26T14:52:43.893588+00:00"
+      status: "FIAT_SUBMITTED"
+      isInstant: false
+      fee: null
+CryptoToCryptoRecordObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        senderUserId:
+          type: string
+        recipientUserId:
+          type: string
+        recipientAddress:
+          type: string
+        chain:
+          type: string
+        currency:
+          type: string
+        transactionHash:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        contractAddress:
+          type: string
+        recipient:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+            legal_first_name:
+              type: string
+        sender:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+            legal_first_name:
+              type: string
+        fee:
+          type: string
+          nullable: true
+  example:
+    transferType: "CRYPTO_TO_CRYPTO"
+    transferDetails:
+      id: "d664b6f0-f490-4bba-93bf-5343013e22ed"
+      requestId: "4782e4cf-7b36-4fbf-ae01-5095c2145b71"
+      senderUserId: "0a472717-039b-48bb-894a-a4fc914a1fe4"
+      recipientUserId: "0a472717-039b-48bb-894a-a4fc914a1fe4"
+      recipientAddress: "0xF3D07a6B4a449431e1489A44e732AA90CeB94A8D"
+      chain: "POLYGON_MAINNET"
+      currency: "usdc"
+      transactionHash: "0xd2f14a064ae8c7509a14597c374a63172f682cfa5fd37b6bf32edd334d52064e"
+      createdAt: "2024-08-07T18:04:02.29743+00:00"
+      updatedAt: "2024-08-07T18:04:04.225+00:00"
+      status: "CONFIRMED"
+      contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
+      recipient:
+        business_name: null
+        legal_last_name: "Wu"
+        compliance_email: "henry@hifibridge.com"
+        legal_first_name: "Henry"
+      sender:
+        business_name: null
+        legal_last_name: "Gutix"
+        compliance_email: "maxg@gmail.com"
+        legal_first_name: "Max"
+      fee: null
+CryptoToFiatRecordObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        sourceUserId:
+          type: string
+        destinationUserId:
+          type: string
+        chain:
+          type: string
+        sourceCurrency:
+          type: string
+        amount:
+          type: number
+        destinationCurrency:
+          type: string
+        liquidationAddress:
+          type: string
+        destinationAccountId:
+          type: string
+        transactionHash:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        contractAddress:
+          type: string
+        sourceUser:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+            legal_first_name:
+              type: string
+        destinationUser:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+            legal_first_name:
+              type: string
+        destinationAccount:
+          type: object
+          properties:
+            id:
+              type: string
+            account_owner_name:
+              type: string
+            bank_name:
+              type: string
+            account_number:
+              type: string
+            routing_number:
+              type: string
+            account_type:
+              type: string
+            business_identifier_code:
+              type: string
+              nullable: true
+            bank_country:
+              type: string
+              nullable: true
+            iban:
+              type: string
+              nullable: true
+            beneficiary_first_name:
+              type: string
+              nullable: true
+            beneficiary_last_name:
+              type: string
+              nullable: true
+        fee:
+          type: string
+          nullable: true
+  example:
+    transferType: "CRYPTO_TO_FIAT"
+    transferDetails:
+      id: "2be590e2-4b91-4963-9e10-c07c3886b4f5"
+      requestId: "49ce7429-dc5b-4210-ba4a-df81a81c31a4"
+      sourceUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+      destinationUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+      chain: "POLYGON_MAINNET"
+      sourceCurrency: "usdc"
+      amount: 1
+      destinationCurrency: "usd"
+      liquidationAddress: "0xdeadbeef2usdcpolygonc4298b4e-d8de-4d3c-947c-555e28819e2c"
+      destinationAccountId: "77ab81be-914a-4619-93d2-996ccdfb0cea"
+      transactionHash: "0xa47d133f4c7a34a203e6c66a6979fd8e1423f2b53844c1eba00fa5837eb3be28"
+      createdAt: "2024-07-27T02:19:31.988836+00:00"
+      updatedAt: "2024-08-07T18:05:00.862+00:00"
+      status: "COMPLETED"
+      contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
+      sourceUser:
+        business_name: null
+        legal_last_name: "Wu"
+        compliance_email: "henry@hifibridge.com"
+        legal_first_name: "Henry"
+      destinationUser:
+        business_name: null
+        legal_last_name: "Gutix"
+        compliance_email: "maxg@gmail.com"
+        legal_first_name: "Max"
+      destinationAccount:
+        id: "77ab81be-914a-4619-93d2-996ccdfb0cea"
+        account_owner_name: "Max Gutix"
+        bank_name: "Bank of America"
+        account_number: "48899917874"
+        routing_number: "0012300322"
+        account_type: "us"
+        business_identifier_code: null
+        bank_country: null
+        iban: null
+        beneficiary_first_name: null
+        beneficiary_last_name: null
+      fee: null
+FiatToCryptoRecordObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        sourceUserId:
+          type: string
+        destinationUserId:
+          type: string
+        transactionHash:
+          type: string
+          nullable: true
+        chain:
+          type: string
+        sourceCurrency:
+          type: string
+        amount:
+          type: number
+        destinationCurrency:
+          type: string
+        sourceAccountId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        sourceUser:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+            legal_first_name:
+              type: string
+        destinationUser:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+            legal_first_name:
+              type: string
+        sourceAccount:
+          type: object
+          properties:
+            id:
+              type: string
+            account_number:
+              type: string
+            routing_number:
+              type: string
+            bank_name:
+              type: string
+        fee:
+          type: string
+          nullable: true
+  example:
+    transferType: "FIAT_TO_CRYPTO"
+    transferDetails:
+      id: "2f7803d0-568e-47dc-9fa8-5870e1a7556b"
+      requestId: "244eca98-3c4c-4056-8ba4-ca0246b9bd51"
+      sourceUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+      destinationUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+      transactionHash: null
+      chain: "POLYGON_MAINNET"
+      sourceCurrency: "usd"
+      amount: 1
+      destinationCurrency: "usdc"
+      sourceAccountId: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
+      createdAt: "2024-07-27T03:04:37.488762+00:00"
+      updatedAt: "2024-08-07T18:03:01.704+00:00"
+      status: "FIAT_PROCESSED"
+      sourceUser:
+        business_name: null
+        legal_last_name: "Wu"
+        compliance_email: "henry@hifibridge.com"
+        legal_first_name: "Henry"
+      destinationUser:
+        business_name: null
+        legal_last_name: "Gutix"
+        compliance_email: "maxg@gmail.com"
+        legal_first_name: "Max"
+      sourceAccount:
+        id: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
+        account_number: "2374"
+        routing_number: "021234322"
+        bank_name: "Chase"
+      fee: null
+CryptoToCryptoAllRecordsObject:
+  type: object
+  properties:
+    count:
+      type: integer
+    records:
+      type: array
+      items:
+        type: object
+        properties:
+          transferType:
+            type: string
+          transferDetails:
+            type: object
+            properties:
+              id:
+                type: string
+              requestId:
+                type: string
+              senderUserId:
+                type: string
+              recipientUserId:
+                type: string
+              recipientAddress:
+                type: string
+              chain:
+                type: string
+              currency:
+                type: string
+              transactionHash:
+                type: string
+                nullable: true
+              createdAt:
+                type: string
+                format: date-time
+              updatedAt:
+                type: string
+                format: date-time
+              status:
+                type: string
+              contractAddress:
+                type: string
+              recipient:
+                type: object
+                properties:
+                  business_name:
+                    type: string
+                    nullable: true
+                  legal_last_name:
+                    type: string
+                  compliance_email:
+                    type: string
+                  legal_first_name:
+                    type: string
+              sender:
+                type: object
+                properties:
+                  business_name:
+                    type: string
+                    nullable: true
+                  legal_last_name:
+                    type: string
+                  compliance_email:
+                    type: string
+                  legal_first_name:
+                    type: string
+              fee:
+                type: string
+                nullable: true
+  example:
+    count: 1
+    records:
+      - transferType: "CRYPTO_TO_CRYPTO"
+        transferDetails:
+          id: "d664b6f0-f490-4bba-93bf-5343013e22ed"
+          requestId: "4782e4cf-7b36-4fbf-ae01-5095c2145b71"
+          senderUserId: "0a472717-039b-48bb-894a-a4fc914a1fe4"
+          recipientUserId: "0a472717-039b-48bb-894a-a4fc914a1fe4"
+          recipientAddress: "0xF3D07a6B4a449431e1489A44e732AA90CeB94A8D"
+          chain: "POLYGON_MAINNET"
+          currency: "usdc"
+          transactionHash: "0xd2f14a064ae8c7509a14597c374a63172f682cfa5fd37b6bf32edd334d52064e"
+          createdAt: "2024-08-07T18:04:02.29743+00:00"
+          updatedAt: "2024-08-07T18:04:04.225+00:00"
+          status: "CONFIRMED"
+          contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
+          recipient:
+            business_name: null
+            legal_last_name: "Wu"
+            compliance_email: "henry@hifibridge.com"
+            legal_first_name: "Henry"
+          sender:
+            business_name: null
+            legal_last_name: "Gutix"
+            compliance_email: "maxg@gmail.com"
+            legal_first_name: "Max"
+          fee: null
+CryptoToFiatAllRecordsObject:
+  type: object
+  properties:
+    count:
+      type: integer
+    records:
+      type: array
+      items:
+        type: object
+        properties:
+          transferType:
+            type: string
+          transferDetails:
+            type: object
+            properties:
+              id:
+                type: string
+              requestId:
+                type: string
+              sourceUserId:
+                type: string
+              destinationUserId:
+                type: string
+              chain:
+                type: string
+              sourceCurrency:
+                type: string
+              amount:
+                type: number
+              destinationCurrency:
+                type: string
+              liquidationAddress:
+                type: string
+              destinationAccountId:
+                type: string
+              transactionHash:
+                type: string
+                nullable: true
+              createdAt:
+                type: string
+                format: date-time
+              updatedAt:
+                type: string
+                format: date-time
+              status:
+                type: string
+              contractAddress:
+                type: string
+              sourceUser:
+                type: object
+                properties:
+                  business_name:
+                    type: string
+                    nullable: true
+                  legal_last_name:
+                    type: string
+                  compliance_email:
+                    type: string
+                  legal_first_name:
+                    type: string
+              destinationUser:
+                type: object
+                properties:
+                  business_name:
+                    type: string
+                    nullable: true
+                  legal_last_name:
+                    type: string
+                  compliance_email:
+                    type: string
+                  legal_first_name:
+                    type: string
+              destinationAccount:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  account_owner_name:
+                    type: string
+                  bank_name:
+                    type: string
+                  account_number:
+                    type: string
+                  routing_number:
+                    type: string
+                  account_type:
+                    type: string
+                  business_identifier_code:
+                    type: string
+                    nullable: true
+                  bank_country:
+                    type: string
+                    nullable: true
+                  iban:
+                    type: string
+                    nullable: true
+                  beneficiary_first_name:
+                    type: string
+                    nullable: true
+                  beneficiary_last_name:
+                    type: string
+                    nullable: true
+              fee:
+                type: string
+                nullable: true
+  example:
+    count: 1
+    records:
+      - transferType: "CRYPTO_TO_FIAT"
+        transferDetails:
+          id: "2be590e2-4b91-4963-9e10-c07c3886b4f5"
+          requestId: "49ce7429-dc5b-4210-ba4a-df81a81c31a4"
+          sourceUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+          destinationUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+          chain: "POLYGON_MAINNET"
+          sourceCurrency: "usdc"
+          amount: 1
+          destinationCurrency: "usd"
+          liquidationAddress: "0xdeadbeef2usdcpolygonc4298b4e-d8de-4d3c-947c-555e28819e2c"
+          destinationAccountId: "77ab81be-914a-4619-93d2-996ccdfb0cea"
+          transactionHash: "0xa47d133f4c7a34a203e6c66a6979fd8e1423f2b53844c1eba00fa5837eb3be28"
+          createdAt: "2024-07-27T02:19:31.988836+00:00"
+          updatedAt: "2024-08-07T18:05:00.862+00:00"
+          status: "COMPLETED"
+          contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
+          sourceUser:
+            business_name: null
+            legal_last_name: "Wu"
+            compliance_email: "henry@hifibridge.com"
+            legal_first_name: "Henry"
+          destinationUser:
+            business_name: null
+            legal_last_name: "Gutix"
+            compliance_email: "maxg@gmail.com"
+            legal_first_name: "Max"
+          destinationAccount:
+            id: "77ab81be-914a-4619-93d2-996ccdfb0cea"
+            account_owner_name: "Max Gutix"
+            bank_name: "Bank of America"
+            account_number: "48899917874"
+            routing_number: "0012300322"
+            account_type: "us"
+            business_identifier_code: null
+            bank_country: null
+            iban: null
+            beneficiary_first_name: null
+            beneficiary_last_name: null
+          fee: null
+FiatToCryptoAllRecordsObject:
+  type: object
+  properties:
+    count:
+      type: integer
+    records:
+      type: array
+      items:
+        type: object
+        properties:
+          transferType:
+            type: string
+          transferDetails:
+            type: object
+            properties:
+              id:
+                type: string
+              requestId:
+                type: string
+              sourceUserId:
+                type: string
+              destinationUserId:
+                type: string
+              chain:
+                type: string
+              sourceCurrency:
+                type: string
+              amount:
+                type: number
+              destinationCurrency:
+                type: string
+              sourceAccountId:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+              status:
+                type: string
+              isInstant:
+                type: boolean
+              fee:
+                type: number
+                nullable: true
+  example:
+    count: 1
+    records:
+      - transferType: "FIAT_TO_CRYPTO"
+        transferDetails:
+          id: "2f7803d0-568e-47dc-9fa8-5870e1a7556b"
+          requestId: "244eca98-3c4c-4056-8ba4-ca0246b9bd51"
+          sourceUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+          destinationUserId: "985b714b-513f-4b48-9710-4298c7bfe84c"
+          transactionHash: null
+          chain: "POLYGON_MAINNET"
+          sourceCurrency: "usd"
+          amount: 1
+          destinationCurrency: "usdc"
+          sourceAccountId: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
+          createdAt: "2024-07-27T03:04:37.488762+00:00"
+          updatedAt: "2024-08-07T18:03:01.704+00:00"
+          status: "FIAT_PROCESSED"
+          sourceUser:
+            business_name: null
+            legal_last_name: "Wu"
+            compliance_email: "henry@hifibridge.com"
+            legal_first_name: "Henry"
+          destinationUser:
+            business_name: null
+            legal_last_name: "Gutix"
+            compliance_email: "maxg@gmail.com"
+            legal_first_name: "Max"
+          sourceAccount:
+            id: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
+            account_number: "2374"
+            routing_number: "021234322"
+            bank_name: "Chase"
+          fee: null
+CryptoToFiatConversionRateObject:
+  type: object
+  properties:
+    fromCurrency:
+      type: string
+    toCurrency:
+      type: string
+    conversionRate:
+      type: number
+    validFrom:
+      type: string
+      format: date-time
+    validUntil:
+      type: string
+      format: date-time
+  example:
+    fromCurrency: "usdc"
+    toCurrency: "usd"
+    conversionRate: 1
+    validFrom: "2024-08-07T18:02:50.815Z"
+    validUntil: "2024-08-07T18:03:20.815Z"
+
