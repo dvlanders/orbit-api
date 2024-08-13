@@ -1985,6 +1985,9 @@
               },
               "failedReason": {
                 "type": "string"
+              },
+              "fee": {
+                "$ref": "#/components/schemas/FeeObject"
               }
             }
           }
@@ -1992,19 +1995,28 @@
         "example": {
           "transferType": "CRYPTO_TO_CRYPTO",
           "transferDetails": {
-            "id": "0b9a8c80-3ce3-4aee-9d94-8a8ac43a2543",
+            "id": "0b9a8c80-3ce3-weee-9d94-8a8ac43a2543",
             "requestId": "5d0a55aa-9a2a-486a-a57e-d5d9e576cf6d",
             "senderUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
             "recipientUserId": "0c91a2a3-b0da-4779-bd15-2b29b8854de4",
             "recipientAddress": "0x89dfD8792c7E7041c24F01223929F1d8Dd642F0c",
             "chain": "POLYGON_MAINNET",
             "currency": "usdc",
-            "amount": 0.01,
-            "transactionHash": "0x23188ac9f798d97d481f86fe1904a74cd885ed8bcff9d52d8bb7c3a2f54a3a59",
+            "amount": 10,
+            "transactionHash": "0x23188ac9f798d97d481f8684jgk4a74cd885ed8bcff9d52d8bb7c3a2f54a3a59",
             "createdAt": "2024-06-25T20:41:57.671322+00:00",
             "status": "SUBMITTED",
             "contractAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
-            "failedReason": ""
+            "failedReason": "",
+            "fee": {
+              "feeId": "15698c9b-6761-42ef-8c0c-96f5f983ba7d",
+              "feeType": "FIX",
+              "feeAmount": 0.01,
+              "feePercent": 0,
+              "status": "CONFIRMED",
+              "transactionHash": "0x23188ac9f798d97d481f8684jgk4a74cd885ed8bcff9d52d8bb7c3a2f54a3a59",
+              "failedReason": null
+            }
           }
         }
       },
@@ -2050,6 +2062,111 @@
               },
               "contractAddress": {
                 "type": "string"
+              },
+              "sourceUser": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "destinationUser": {
+                "type": "object",
+                "properties": {
+                  "business_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "legal_last_name": {
+                    "type": "string"
+                  },
+                  "compliance_email": {
+                    "type": "string"
+                  },
+                  "legal_first_name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "destinationAccount": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "account_owner_name": {
+                    "type": "string"
+                  },
+                  "bank_name": {
+                    "type": "string"
+                  },
+                  "account_number": {
+                    "type": "string"
+                  },
+                  "routing_number": {
+                    "type": "string"
+                  },
+                  "account_type": {
+                    "type": "string"
+                  },
+                  "business_identifier_code": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "bank_country": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "iban": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "beneficiary_first_name": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "beneficiary_last_name": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              },
+              "ConversionRate": {
+                "type": "object",
+                "properties": {
+                  "vaildFrom": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "toCurrency": {
+                    "type": "string"
+                  },
+                  "vaildUntil": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "fromCurrency": {
+                    "type": "string"
+                  },
+                  "conversionRate": {
+                    "type": "number",
+                    "format": "float"
+                  }
+                }
+              },
+              "fee": {
+                "$ref": "#/components/schemas/FeeObject"
               }
             }
           }
@@ -2057,17 +2174,63 @@
         "example": {
           "transferType": "CRYPTO_TO_FIAT",
           "transferDetails": {
-            "id": "cb586edd-5f9c-475e-8909-4c65c2f03243",
-            "requestId": "233fb9a1-cf0d-425a-9d71-2f4b84040160",
-            "userId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+            "id": "7b7e012e-5c19-4398-b5c0-158ac6dd4fe6",
+            "requestId": "0ac9c021-021e-4253-af31-2a3867024a8a",
+            "sourceUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+            "destinationUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
             "chain": "POLYGON_MAINNET",
             "sourceCurrency": "usdc",
-            "amount": 0.01,
+            "amount": 1.23,
             "destinationCurrency": "usd",
+            "liquidationAddress": null,
             "destinationAccountId": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
-            "createdAt": "2024-06-25T20:58:32.152865+00:00",
-            "status": "SUBMITTED_ONCHAIN",
-            "contractAddress": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+            "transactionHash": null,
+            "createdAt": "2024-08-11T03:35:30.921875+00:00",
+            "updatedAt": "2024-08-11T03:35:30.921875+00:00",
+            "status": "CREATED",
+            "contractAddress": 3.441810188089762e+47,
+            "sourceUser": {
+              "business_name": null,
+              "legal_last_name": "YANG",
+              "compliance_email": "william@hifibridge.com",
+              "legal_first_name": "William"
+            },
+            "destinationUser": {
+              "business_name": null,
+              "legal_last_name": "YANG",
+              "compliance_email": "william@hifibridge.com",
+              "legal_first_name": "William"
+            },
+            "destinationAccount": {
+              "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
+              "account_owner_name": "Wei Yu, Yang",
+              "bank_name": "Bank of Aerica",
+              "account_number": 483101817874,
+              "routing_number": 21000322,
+              "account_type": "us",
+              "business_identifier_code": null,
+              "bank_country": null,
+              "iban": null,
+              "beneficiary_first_name": null,
+              "beneficiary_last_name": null
+            },
+            "failedReason": null,
+            "fee": {
+              "feeId": "20719aea-411f-4e0a-b377-61163c09435a",
+              "feeType": "PERCENT",
+              "feeAmount": 0.01,
+              "feePercent": 0.01,
+              "status": "CREATED",
+              "transactionHash": null,
+              "failedReason": null
+            },
+            "conversionRate": {
+              "vaildFrom": "2024-08-11T03:35:30.809Z",
+              "toCurrency": "usd",
+              "vaildUntil": "2024-08-11T03:36:00.809Z",
+              "fromCurrency": "usdc",
+              "conversionRate": 1
+            }
           }
         }
       },
@@ -2118,8 +2281,7 @@
                 "type": "boolean"
               },
               "fee": {
-                "type": "number",
-                "nullable": true
+                "$ref": "#/components/schemas/FeeObject"
               }
             }
           }
@@ -2228,8 +2390,7 @@
                 }
               },
               "fee": {
-                "type": "string",
-                "nullable": true
+                "$ref": "#/components/schemas/FeeObject"
               }
             }
           }
@@ -2261,7 +2422,15 @@
               "compliance_email": "maxg@gmail.com",
               "legal_first_name": "Max"
             },
-            "fee": null
+            "fee": {
+              "feeId": "c44b6d91-eb77-4a64-9b6e-99f32f6a5566",
+              "feeType": "PERCENT",
+              "feeAmount": 0.01,
+              "feePercent": 0.0001,
+              "status": "CONFIRMED",
+              "transactionHash": "0xd2f14a064ae8c7509a14597c374a63172f682cfa5fd37b6bf32edd334d52064e",
+              "failedReason": null
+            }
           }
         }
       },
@@ -2401,9 +2570,11 @@
                   }
                 }
               },
+              "conversionRate": {
+                "$ref": "#/components/schemas/CryptoToFiatConversionRateObject"
+              },
               "fee": {
-                "type": "string",
-                "nullable": true
+                "$ref": "#/components/schemas/FeeObject"
               }
             }
           }
@@ -2411,39 +2582,39 @@
         "example": {
           "transferType": "CRYPTO_TO_FIAT",
           "transferDetails": {
-            "id": "2be590e2-4b91-4963-9e10-c07c3886b4f5",
-            "requestId": "49ce7429-dc5b-4210-ba4a-df81a81c31a4",
-            "sourceUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
-            "destinationUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+            "id": "7b7e012e-5c19-4398-b5c0-158ac6dd4fe6",
+            "requestId": "0ac9c021-021e-4253-af31-2a3867024a8a",
+            "sourceUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+            "destinationUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
             "chain": "POLYGON_MAINNET",
             "sourceCurrency": "usdc",
-            "amount": 1,
+            "amount": 1.23,
             "destinationCurrency": "usd",
-            "liquidationAddress": "0xdeadbeef2usdcpolygonc4298b4e-d8de-4d3c-947c-555e28819e2c",
-            "destinationAccountId": "77ab81be-914a-4619-93d2-996ccdfb0cea",
-            "transactionHash": "0xa47d133f4c7a34a203e6c66a6979fd8e1423f2b53844c1eba00fa5837eb3be28",
-            "createdAt": "2024-07-27T02:19:31.988836+00:00",
-            "updatedAt": "2024-08-07T18:05:00.862+00:00",
-            "status": "COMPLETED",
-            "contractAddress": "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582",
+            "liquidationAddress": null,
+            "destinationAccountId": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
+            "transactionHash": null,
+            "createdAt": "2024-08-11T03:35:30.921875+00:00",
+            "updatedAt": "2024-08-11T03:35:30.921875+00:00",
+            "status": "CREATED",
+            "contractAddress": 3.441810188089762e+47,
             "sourceUser": {
               "business_name": null,
-              "legal_last_name": "Wu",
-              "compliance_email": "henry@hifibridge.com",
-              "legal_first_name": "Henry"
+              "legal_last_name": "YANG",
+              "compliance_email": "william@hifibridge.com",
+              "legal_first_name": "William"
             },
             "destinationUser": {
               "business_name": null,
-              "legal_last_name": "Gutix",
-              "compliance_email": "maxg@gmail.com",
-              "legal_first_name": "Max"
+              "legal_last_name": "YANG",
+              "compliance_email": "william@hifibridge.com",
+              "legal_first_name": "William"
             },
             "destinationAccount": {
-              "id": "77ab81be-914a-4619-93d2-996ccdfb0cea",
-              "account_owner_name": "Max Gutix",
-              "bank_name": "Bank of America",
-              "account_number": "48899917874",
-              "routing_number": "0012300322",
+              "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
+              "account_owner_name": "Wei Yu, Yang",
+              "bank_name": "Bank of Aerica",
+              "account_number": 483101817874,
+              "routing_number": 21000322,
               "account_type": "us",
               "business_identifier_code": null,
               "bank_country": null,
@@ -2451,7 +2622,23 @@
               "beneficiary_first_name": null,
               "beneficiary_last_name": null
             },
-            "fee": null
+            "failedReason": null,
+            "fee": {
+              "feeId": "20719aea-411f-4e0a-b377-61163c09435a",
+              "feeType": "PERCENT",
+              "feeAmount": 0.01,
+              "feePercent": 0.01,
+              "status": "CREATED",
+              "transactionHash": null,
+              "failedReason": null
+            },
+            "conversionRate": {
+              "vaildFrom": "2024-08-11T03:35:30.809Z",
+              "toCurrency": "usd",
+              "vaildUntil": "2024-08-11T03:36:00.809Z",
+              "fromCurrency": "usdc",
+              "conversionRate": 1
+            }
           }
         }
       },
@@ -2560,8 +2747,7 @@
                 }
               },
               "fee": {
-                "type": "string",
-                "nullable": true
+                "$ref": "#/components/schemas/FeeObject"
               }
             }
           }
@@ -2600,7 +2786,15 @@
               "routing_number": "021234322",
               "bank_name": "Chase"
             },
-            "fee": null
+            "fee": {
+              "feeId": "c44b6d91-eb77-4a64-9b6e-99f32f6a5566",
+              "feeType": "PERCENT",
+              "feeAmount": 0.00011100000000000001,
+              "feePercent": 0.0001,
+              "status": "CONFIRMED",
+              "transactionHash": 6.113897308527619e+76,
+              "failedReason": null
+            }
           }
         }
       },
@@ -2697,8 +2891,7 @@
                       }
                     },
                     "fee": {
-                      "type": "string",
-                      "nullable": true
+                      "$ref": "#/components/schemas/FeeObject"
                     }
                   }
                 }
@@ -2736,7 +2929,15 @@
                   "compliance_email": "maxg@gmail.com",
                   "legal_first_name": "Max"
                 },
-                "fee": null
+                "fee": {
+                  "feeId": "c44b6d91-eb77-4a64-9b6e-99f32f6a5566",
+                  "feeType": "PERCENT",
+                  "feeAmount": 0.01,
+                  "feePercent": 0.0001,
+                  "status": "CONFIRMED",
+                  "transactionHash": "0xd2f14a064ae8c7509a14597c374a63172f682cfa5fd37b6bf32edd334d52064e",
+                  "failedReason": null
+                }
               }
             }
           ]
@@ -2887,8 +3088,7 @@
                       }
                     },
                     "fee": {
-                      "type": "string",
-                      "nullable": true
+                      "$ref": "#/components/schemas/FeeObject"
                     }
                   }
                 }
@@ -2902,39 +3102,39 @@
             {
               "transferType": "CRYPTO_TO_FIAT",
               "transferDetails": {
-                "id": "2be590e2-4b91-4963-9e10-c07c3886b4f5",
-                "requestId": "49ce7429-dc5b-4210-ba4a-df81a81c31a4",
-                "sourceUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
-                "destinationUserId": "985b714b-513f-4b48-9710-4298c7bfe84c",
+                "id": "7b7e012e-5c19-4398-b5c0-158ac6dd4fe6",
+                "requestId": "0ac9c021-021e-4253-af31-2a3867024a8a",
+                "sourceUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+                "destinationUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
                 "chain": "POLYGON_MAINNET",
                 "sourceCurrency": "usdc",
-                "amount": 1,
+                "amount": 1.23,
                 "destinationCurrency": "usd",
-                "liquidationAddress": "0xdeadbeef2usdcpolygonc4298b4e-d8de-4d3c-947c-555e28819e2c",
-                "destinationAccountId": "77ab81be-914a-4619-93d2-996ccdfb0cea",
-                "transactionHash": "0xa47d133f4c7a34a203e6c66a6979fd8e1423f2b53844c1eba00fa5837eb3be28",
-                "createdAt": "2024-07-27T02:19:31.988836+00:00",
-                "updatedAt": "2024-08-07T18:05:00.862+00:00",
-                "status": "COMPLETED",
-                "contractAddress": "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582",
+                "liquidationAddress": null,
+                "destinationAccountId": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
+                "transactionHash": null,
+                "createdAt": "2024-08-11T03:35:30.921875+00:00",
+                "updatedAt": "2024-08-11T03:35:30.921875+00:00",
+                "status": "CREATED",
+                "contractAddress": 3.441810188089762e+47,
                 "sourceUser": {
                   "business_name": null,
-                  "legal_last_name": "Wu",
-                  "compliance_email": "henry@hifibridge.com",
-                  "legal_first_name": "Henry"
+                  "legal_last_name": "YANG",
+                  "compliance_email": "william@hifibridge.com",
+                  "legal_first_name": "William"
                 },
                 "destinationUser": {
                   "business_name": null,
-                  "legal_last_name": "Gutix",
-                  "compliance_email": "maxg@gmail.com",
-                  "legal_first_name": "Max"
+                  "legal_last_name": "YANG",
+                  "compliance_email": "william@hifibridge.com",
+                  "legal_first_name": "William"
                 },
                 "destinationAccount": {
-                  "id": "77ab81be-914a-4619-93d2-996ccdfb0cea",
-                  "account_owner_name": "Max Gutix",
-                  "bank_name": "Bank of America",
-                  "account_number": "48899917874",
-                  "routing_number": "0012300322",
+                  "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553c",
+                  "account_owner_name": "Wei Yu, Yang",
+                  "bank_name": "Bank of Aerica",
+                  "account_number": 483101817874,
+                  "routing_number": 21000322,
                   "account_type": "us",
                   "business_identifier_code": null,
                   "bank_country": null,
@@ -2942,7 +3142,23 @@
                   "beneficiary_first_name": null,
                   "beneficiary_last_name": null
                 },
-                "fee": null
+                "failedReason": null,
+                "fee": {
+                  "feeId": "20719aea-411f-4e0a-b377-61163c09435a",
+                  "feeType": "PERCENT",
+                  "feeAmount": 0.01,
+                  "feePercent": 0.01,
+                  "status": "CREATED",
+                  "transactionHash": null,
+                  "failedReason": null
+                },
+                "conversionRate": {
+                  "vaildFrom": "2024-08-11T03:35:30.809Z",
+                  "toCurrency": "usd",
+                  "vaildUntil": "2024-08-11T03:36:00.809Z",
+                  "fromCurrency": "usdc",
+                  "conversionRate": 1
+                }
               }
             }
           ]
@@ -3003,8 +3219,7 @@
                       "type": "boolean"
                     },
                     "fee": {
-                      "type": "number",
-                      "nullable": true
+                      "$ref": "#/components/schemas/FeeObject"
                     }
                   }
                 }
@@ -3049,7 +3264,15 @@
                   "routing_number": "021234322",
                   "bank_name": "Chase"
                 },
-                "fee": null
+                "fee": {
+                  "feeId": "c44b6d91-eb77-4a64-9b6e-99f32f6a5566",
+                  "feeType": "PERCENT",
+                  "feeAmount": 0.00011100000000000001,
+                  "feePercent": 0.0001,
+                  "status": "CONFIRMED",
+                  "transactionHash": 6.113897308527619e+76,
+                  "failedReason": null
+                }
               }
             }
           ]
@@ -3082,6 +3305,49 @@
           "conversionRate": 1,
           "validFrom": "2024-08-07T18:02:50.815Z",
           "validUntil": "2024-08-07T18:03:20.815Z"
+        }
+      },
+      "FeeObject": {
+        "type": "object",
+        "properties": {
+          "feeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "FIX",
+              "PERCENTAGE"
+            ]
+          },
+          "feeAmount": {
+            "type": "number",
+            "format": "float"
+          },
+          "feePercent": {
+            "type": "number",
+            "format": "float"
+          },
+          "status": {
+            "type": "string"
+          },
+          "transactionHash": {
+            "type": "string"
+          },
+          "failedReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "example": {
+          "feeId": "15698c9b-6761-42ef-8c0c-96f5f983ba7d",
+          "feeType": "FIX",
+          "feeAmount": 0.01,
+          "feePercent": 0,
+          "status": "CONFIRMED",
+          "transactionHash": 6.60017588418924e+76,
+          "failedReason": null
         }
       },
       "IndividualUserCreate": {
