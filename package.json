@@ -9,8 +9,7 @@
   "scripts": {
     "test": "node test-env.js",
     "start": "cross-env DOTENV_CONFIG_PATH=./.env.local node app.js",
-    "dev": "cross-env DOTENV_CONFIG_PATH=./.env.local nodemon app.js",
-    "generate-openapi": "node ./src/swagger/swaggerDocument.js"
+    "dev": "cross-env DOTENV_CONFIG_PATH=./.env.local nodemon app.js"
   },
   "author": "HIFI",
   "license": "ISC",
