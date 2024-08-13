@@ -4,9 +4,8 @@ name: Sync OpenAPI definition to ReadMe
 on:
   push:
     branches:
-      # - production
-      # - sandbox
-      - hw/feat/openapi
+      - production
+      - sandbox
 jobs:
   sync:
     runs-on: ubuntu-latest
