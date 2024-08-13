@@ -172,7 +172,8 @@ exports.createHifiUser = async (req, res) => {
 			actionNeeded: {
 				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-			}
+			},
+			message: checkbookResult.message
 		}
 		createHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
 
@@ -195,12 +196,14 @@ exports.createHifiUser = async (req, res) => {
 					actions: bridgeResult.customerStatus.actions,
 					fieldsToResubmit: bridgeResult.customerStatus.fields
 				},
+				message: bridgeResult.message,
 				achPull: {
 					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
 					actionNeeded: {
 						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-					}
+					},
+					message: checkbookResult.message
 				}
 			},
 			offRamp: {
@@ -1031,6 +1034,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// check if the developeruserCreation is in the job queue, if yes return pending response
 		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.userType}, userId, profileId)
 		let status
+		let basicKycStatus
 		if (!canScheduled){
 			status = "PENDING"
 		}else{
@@ -1045,6 +1049,10 @@ exports.getDeveloperUserStatus = async (req, res) => {
 			if (bridgeCustomerError) throw bridgeCustomerError
 			if (!bridgeCustomer) return res.status(500).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
 			const bridgeKycPassed = bridgeCustomer.status == "active"
+
+			if (bridgeCustomer.status == "rejected"){
+				basicKycStatus = await getBridgeCustomer(userId)
+			}
 
 			// get bastion kyc status
 			let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
@@ -1062,7 +1070,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 				status = "ACTIVE"
 			}else if (!bastionKycPassed){
 				status = "INACTIVE"
-			}else if (bridgeCustomer.status = "not_started"){
+			}else if (bridgeCustomer.status == "not_started"){
 				status = "PENDING"
 			}else{
 				status = "INACTIVE"
@@ -1096,7 +1104,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 			}
 		}
 
-		return res.status(200).json({ status, user: userInformation })
+		return res.status(200).json({ status, user: userInformation, basicKycStatus })
 
 
 	} catch (error) {

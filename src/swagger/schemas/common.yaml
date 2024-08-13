@@ -1,0 +1,24 @@
+Unauthorized:
+  type: object
+  properties:
+    error:
+      type: string
+      example: Not authorized
+NotFound:
+  type: object
+  properties:
+    error:
+      type: string
+      example: Not Found
+InternalServerError:
+  type: object
+  properties:
+    error:
+      type: string
+      example: Unexpected error happened
+Pong:
+  type: object
+  properties:
+    message:
+      type: string
+      example: pong

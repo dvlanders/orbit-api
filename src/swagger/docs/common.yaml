@@ -1,0 +1,14 @@
+/ping:
+  get:
+    summary: Ping HIFI Servers
+    tags:
+      - Common
+    responses:
+      '200':
+        $ref: '#/components/responses/PingResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'

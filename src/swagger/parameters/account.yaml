@@ -1,0 +1,76 @@
+AccountIdParameter:
+  name: accountId
+  in: query
+  schema:
+    type: string
+  description: ID of the account
+  required: true
+CurrencyParameter:
+  name: currency
+  in: query
+  schema:
+    type: string
+    enum: ["usd", "eur", "brl"]
+  description: "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail."
+  required: false
+RailTypeParameter:
+  name: railType
+  in: query
+  schema:
+    type: string
+    enum: ["onramp", "offramp"]
+  description: "Please provide at least one of the following query params: currency, railType. Eg. Setting 'railType' to 'offramp' without setting 'currency' and 'paymentRail' will return all offramp accounts under any currency or paymentRail."
+  required: false
+PaymentRailParameter:
+  name: paymentRail
+  in: query
+  schema:
+    type: string
+    enum: ["ach", "wire", "sepa", "pix"]
+  required: false
+RailParameter:
+  name: rail
+  in: query
+  schema:
+    type: string
+    enum: ["US_ACH_WIRE"]
+  required: true
+DestinationCurrencyParameter:
+  name: destinationCurrency
+  description: usdt is allowed only on ETHEREUM_MAINNET at this moment
+  in: query
+  schema:
+    type: string
+    enum: ["usdc"]
+  required: true
+DestinationChainParameter:
+  name: destinationChain
+  in: query
+  schema:
+    type: string
+    description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+    enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+  required: true
+VALimitParameter:
+  name: limit
+  in: query
+  schema:
+    type: string
+    minimum: 1
+    maximum: 100
+  description: Number of micro deposit records return for the virtual account, default to 10 maximum to 100
+  required: false
+VACreatedBeforeParameter:
+  name: createdBefore
+  in: query
+  schema:
+    type: string
+  description: Return the micro deposit records that created before this eventId
+  required: false
+VACreatedAfterParameter:
+  name: createdAfter
+  in: query
+  schema:
+    type: string
+  description: Return the micro deposit records that created after this eventId
+  required: false

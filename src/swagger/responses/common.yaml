@@ -1,0 +1,24 @@
+UnauthorizedResponse:
+  description: Unauthorized
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/Unauthorized'
+NotFoundResponse:
+  description: Not Found
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/NotFound'
+InternalServerErrorResponse:
+  description: Internal Server Error
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/InternalServerError'
+PingResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/Pong'

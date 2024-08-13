@@ -116,7 +116,8 @@ exports.getRawUserObject = async(userId, profileId) => {
 			actionNeeded: {
 				actions: bridgeResult.customerStatus.actions,
 				fieldsToResubmit: bridgeResult.customerStatus.fields,
-			}
+			},
+			message: bridgeResult.message
 		}
 		getHifiUserResponse.user_kyc = userKyc
 		// usRamp

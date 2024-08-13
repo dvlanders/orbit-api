@@ -13,7 +13,7 @@ exports.regsiterFeeWallet = async(userId, walletAddress, chain) => {
         const paymentProcessorContractAddress = paymentProcessorContractMap["production"][chain]
         const paymentProcessorContractOwner = paymentProcessorContractOwnerMap["production"][chain]
         if (!paymentProcessorContractAddress) throw new Error(`No payment processor contract found on ${chain}`)
-        if (!paymentProcessorContractOwner) throw new Error(`No payment processor contract found on ${chain}`)
+        if (!paymentProcessorContractOwner) throw new Error(`No payment processor contract owner found on ${chain}`)
 
         const bodyObject = {
             requestId,

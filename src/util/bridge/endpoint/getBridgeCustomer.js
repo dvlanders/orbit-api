@@ -84,7 +84,7 @@ const getBridgeCustomer = async(userId) => {
                 status: 200,
                 customerStatus: {
                     status: CustomerStatus.INACTIVE,
-                    actions: ["update"],
+                    actions: ["resubmit"],
                     fields: []
                 },
                 usRamp: {
@@ -98,27 +98,6 @@ const getBridgeCustomer = async(userId) => {
                     fields: []
                 },
                 message: "kyc aplication not submitted, please use user/update to resubmit application"
-            }
-        }
-        if (!bridgeCustomer.status || !bridgeCustomer.bridge_id) {
-            return {
-                status: 200,
-                customerStatus: {
-                    status: CustomerStatus.INACTIVE,
-                    actions: ["update"],
-                    fields: []
-                },
-                usRamp: {
-                    status: CustomerStatus.INACTIVE,
-                    actions: [],
-                    fields: []
-                },
-                euRamp: {
-                    status: CustomerStatus.INACTIVE,
-                    actions: [],
-                    fields: []
-                },
-                message: "kyc aplication not submitted, please use user/update to resubmit application or contact HIFI for more information"
             }
         }
 
@@ -138,7 +117,6 @@ const getBridgeCustomer = async(userId) => {
             return reason.developer_reason
         })
         const {requiredActions, fieldsToResubmit} = extractActionsAndFields(reasons)
-        
         //extract base, sepa status
         const {status: baseStatus, actions:baseActions, fields:baseFields} = getEndorsementStatus(responseBody.endorsements, "base")
         const {status: sepaStatus, actions:sepaActions, fields:sepaFields} = getEndorsementStatus(responseBody.endorsements, "sepa")
@@ -197,7 +175,7 @@ const getBridgeCustomer = async(userId) => {
                 status: 200,
                 customerStatus: {
                     status: CustomerStatus.INACTIVE,
-                    actions: [...requiredActions, "update"],
+                    actions: requiredActions,
                     fields: fieldsToResubmit
                 },
                 usRamp: {

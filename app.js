@@ -1,8 +1,9 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
-const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerDocument = require('./src/swagger/swaggerDocument');
 const swaggerUi = require('swagger-ui-express');
+const path = require('path');
 
 // use this to get NODE_ENV
 const localEnv = require('dotenv').config({ path: process.env.DOTENV_CONFIG_PATH });
@@ -20,37 +21,8 @@ if (result.error) {
 	process.exit(0);
 }
 
-// Swagger definition
-const swaggerDefinition = {
-	openapi: '3.0.0',
-	info: {
-		title: 'Hifi API',
-		version: '1.0.0',
-		description: 'API documentation for Hifi',
-	},
-	servers: [
-		{
-			url: 'https://api.hifibridge.com',
-			description: 'Production server',
-		},
-		{
-			url: 'https://sandbox.hifibridge.com',
-			description: 'Sandbox server',
-		},
-	],
-};
-
-// Options for the swagger docs
-const options = {
-	swaggerDefinition,
-	apis: ['./src/routes/*.js'], // Adjust the path according to your project structure
-};
-
 // for stripe webhook
 app.use('/webhook/stripe', express.raw({ type: 'application/json' }));
-
-// Initialize swagger-jsdoc
-const specs = swaggerJsdoc(options);
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -74,7 +46,8 @@ app.use(express.urlencoded({ extended: false }));
 const { common } = require("./src/util/helper");
 
 // Swagger UI setup
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/openapi.json', express.static(path.join(__dirname, 'src/swagger/openapi.json')));
 
 // Import your routes
 require("./src/routes")(app, express);

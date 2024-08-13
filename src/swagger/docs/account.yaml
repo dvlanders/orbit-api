@@ -1,0 +1,205 @@
+/account/usd/onramp/plaid:
+  post:
+    summary: Add USD Onramp Bank Account with Plaid (ACH)
+    description: |
+       HIFI and Plaid have partnered to enable you to use your existing Plaid integration to connect your bank account to HIFI for USD Onramp with ACH pull.
+       To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid processor token.
+       
+       Passing the processor_token to this endpoint will allow you to add a USD onramp bank account with Plaid.
+      
+       ***Note: This is a billable event.***
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/UsdOnrampAchAccountBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/UsdOnrampAchAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/activateOnRampRail:
+  post:
+    summary: Generate USD Onramp Bank Account (ACH/Wire)
+    description: |
+       HIFI will generate a USD Onramp Bank Account for you that allows you to onramp by simply deposit fiat into the generated bank account via ACH push or WIRE transfer.
+
+       The generated bank account only supports the specified onramp rail: `(rail, destinationCurrency, destinationChain)`. 
+       If you need to support a different rail, you'll need to generate another bank account for that specific rail.
+
+       ***Note: This is a billable event.***
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/UsdOnrampWireAccountBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/UsdOnrampWireAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/usd/offramp:
+  post:
+    summary: Add USD Offramp Bank Account (ACH)
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/UsdOfframpAchAccountBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/UsdOfframpAchAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/wire/offramp:
+  post:
+    summary: Add USD Offramp Bank Account (Wire)
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/UsdOfframpWireAccountBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/UsdOfframpWireAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/euro/offramp:
+  post:
+    summary: Add EURO Offramp Bank Account (SEPA)
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/EurOfframpSepaAccountBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/EurOfframpSepaAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/brl/receiver:
+  post:
+    summary: Create BRL Offramp Receiver
+    description: |
+      Create a Receiver for Brazilian Real (BRL) Offramp. This should be called prior to 
+      adding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.
+    tags:
+      - Account
+    requestBody:
+      $ref: '#/components/requestBodies/BrlOfframpReceiverBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/BrlOfframpReceiverResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/brl/offramp:
+  post:
+    summary: Add BRL Offramp Bank Account (Pix)
+    description: |
+      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to.
+      You can get the receiver id by making a `Create BRL Offramp Receiver` call.
+    tags:
+      - Account
+    requestBody:
+      $ref: '#/components/requestBodies/BrlOfframpPixAccountBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/BrlOfframpPixAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account:
+  get:
+    summary: Get Account
+    description: Get an existing onramp or offramp account detail.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/AccountIdParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/GetAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/all:
+  get:
+    summary: Get all Accounts
+    description: Get all existing onramp or offramp account details.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdOptionalParameter'
+      - $ref: '#/components/parameters/CurrencyParameter'
+      - $ref: '#/components/parameters/RailTypeParameter'
+      - $ref: '#/components/parameters/PaymentRailParameter'
+      - $ref: '#/components/parameters/LimitParameter'
+      - $ref: '#/components/parameters/CreatedBeforeParameter'
+      - $ref: '#/components/parameters/CreatedAfterParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/GetAllAccountsResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+/account/onRampRail/virtualAccount:
+  get:
+    summary: Retrieve Generated USD Onramp Bank Account Details
+    description: Retrieve the generated bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'  
+      - $ref: '#/components/parameters/RailParameter'
+      - $ref: '#/components/parameters/DestinationCurrencyParameter'
+      - $ref: '#/components/parameters/DestinationChainParameter'
+      - $ref: '#/components/parameters/VALimitParameter'
+      - $ref: '#/components/parameters/VACreatedBeforeParameter'
+      - $ref: '#/components/parameters/VACreatedAfterParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/GetVirtualAccountResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
