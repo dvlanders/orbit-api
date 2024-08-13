@@ -14,10 +14,13 @@ jobs:
       - name: Checkout this repo
         uses: actions/checkout@v4
 
+      - name: Delete package.json
+        run: rm -f package.json
+          
       - name: Generate OpenAPI JSON
         run: |
-          npm install
-          npm run generate-openapi
+          npm install yaml --no-package-lock --no-save
+          node ./src/swagger/swaggerDocument.js
 
       # Run GitHub Action to sync OpenAPI file at ./path-to-file.json
       - name: GitHub Action
