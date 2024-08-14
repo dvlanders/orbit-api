@@ -11,7 +11,6 @@ const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const updateStatus = async (customer) => {
 	try {
-
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${customer.bridge_id}`, {
 			method: 'GET',
 			headers: {
@@ -48,7 +47,11 @@ const updateStatus = async (customer) => {
 				return
 			}
 			console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
-			await notifyUserStatusUpdate(customer.user_id)
+			if (!customer.is_developer){
+				await notifyUserStatusUpdate(customer.user_id)
+			}else{
+
+			}
 		}
 	} catch (error) {
 		console.error('Failed to fetch customer status from Bridge API', error);
@@ -67,7 +70,7 @@ async function pollBridgeCustomerStatus() {
 		.neq('status', 'invalid_fields')
 		.neq('status', null)
 		.order('updated_at', {ascending: true})
-		.select('id, user_id, status, bridge_id'))
+		.select('id, user_id, status, bridge_id, users(is_developer)'))
 	
 
 

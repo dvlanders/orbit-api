@@ -30,9 +30,9 @@ class BastionError extends Error {
  * @param {string} userId - Identifier for the user.
  * @returns {Promise<Object>} The response data from Bastion.
  */
-async function createUserCore(userId) {
+async function createUserCore(userId, bastionUserId) {
 
-	const response = await createUser(userId)
+	const response = await createUser(bastionUserId)
 	const data = await response.json();
 
 	if (response.status !== 201) {
@@ -47,7 +47,8 @@ async function createUserCore(userId) {
 					.insert([{
 						user_id: userId,
 						chain: chain,
-						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address
+						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address,
+						bastion_user_id: bastionUserId
 					}])
 					.select();
 
@@ -78,15 +79,18 @@ async function createUserCore(userId) {
  * @param {string} userId - The user's unique identifier.
  * @returns {Promise<Object>} A promise resolving to the API data or an error object.
  */
-async function createAndFundBastionUser(userId) {
+async function createAndFundBastionUser(userId, bastionUserId) {
+	const _bastionUserId = bastionUserId || userId
+	console.log(_bastionUserId)
 	try {
 		// create user
-		const walletAddress = await createUserCore(userId);
+		const walletAddress = await createUserCore(userId, _bastionUserId);
 		// submit kyc
 		// if called means createUserCore is success
-		const bastionKycResult = await submitBastionKyc(userId)
+		const bastionKycResult = await submitBastionKyc(userId, _bastionUserId)
 		return { ...bastionKycResult, walletAddress };
 	} catch (error) {
+		await createLog("createAndFundBastionUser", userId, error.message, error)
 		if (error instanceof BastionError) {
 			return {
 				status: error.status,

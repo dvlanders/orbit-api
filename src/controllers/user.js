@@ -1058,7 +1058,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 			let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
 			.from('bastion_users')
 			.select('kyc_passed, jurisdiction_check_passed, kyc_level')
-			.eq("developer_user_id", `${userId}-FEE_COLLECTION`)
+			.eq("bastion_user_id", `${userId}-FEE_COLLECTION`)
 			.maybeSingle())
 
 			if (bastionUserError) throw bastionUserError

@@ -130,12 +130,13 @@ const submitBastionKycForDeveloper = async (userId, type) => {
 				.from('bastion_users')
 				.upsert(
 					{
-						developer_user_id: `${userId}-${type}`,
+						user_id: userId,
+						bastion_user_id: `${userId}-${type}`,
 						kyc_response: responseBody,
 						kyc_passed: responseBody.kycPassed,
 						jurisdiction_check_passed: responseBody.jurisdictionCheckPassed,
 						kyc_level: responseBody.kycLevel
-					},{onConflict: "developer_user_id"}
+					},{onConflict: "bastion_user_id"}
 				)
 				.select()
 			)

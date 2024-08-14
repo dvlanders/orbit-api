@@ -21,7 +21,7 @@ class submitBastionKycError extends Error {
 	}
 }
 
-const submitKycData = async (userId) => {
+const submitKycData = async (userId, bastionUserId) => {
 	// Check user type
 	const { data: userTypeData, error: userTypeError } = await supabaseCall(() => supabase
 		.from("users")
@@ -73,7 +73,7 @@ const submitKycData = async (userId) => {
 
 
 	// Perform the KYC submission
-	const url = `${BASTION_URL}/v1/users/${userId}/kyc`;
+	const url = `${BASTION_URL}/v1/users/${bastionUserId}/kyc`;
 	const options = {
 		method: 'POST',
 		headers: {
