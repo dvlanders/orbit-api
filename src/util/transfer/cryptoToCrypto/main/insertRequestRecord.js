@@ -16,6 +16,7 @@ exports.insertRequestRecord = async(requestInfo) => {
             amount: requestInfo.amount,
             recipient_user_id: requestInfo.recipientUserId ? requestInfo.recipientUserId : null,
             recipient_address: requestInfo.recipientAddress,
+            sender_address: requestInfo.senderAddress,
             chain: requestInfo.chain,
             units_amount: requestInfo.unitsAmount,
             currency: requestInfo.currency,

@@ -23,7 +23,7 @@ const paymentProcessorContractOwnerMap = {
 
 const MAX_APPROVE_TOKEN = "10000000000000"
 
-const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
+const approveMaxTokenToPaymentProcessor = async(userId, chain, currency, walletType) => {
     const env = process.env.NODE_ENV
     // get paymentProcessor address
     const paymentProcessorContract = paymentProcessorContractMap[env][chain]
@@ -33,7 +33,7 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
     const currencyContract = currencyContractAddress[chain][currency]
     const requestId = v4()
     // get userWallet address
-    const {walletAddress, bastionUserId} = await getBastionWallet(userId, chain)
+    const {walletAddress, bastionUserId} = await getBastionWallet(userId, chain, walletType)
 
 
     // insert initial record

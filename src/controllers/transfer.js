@@ -78,11 +78,18 @@ exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 		// get transfer function
-		const { transferFunc , walletProviderTable } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
 		// fetch sender wallet address information
-		const senderWalletInformation = await fetchUserWalletInformation(senderUserId, chain, walletProviderTable, walletType)
-		if (!senderWalletInformation) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
-		fields.senderAddress = senderWalletInformation.address
+		// fetch sender wallet address information
+		if (walletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
+		if (walletType == "INDIVIDUAL") return res.status(400).json({ error: `wallet type is not allowed` })
+		if (walletType && !allowedWalletTypes.includes(walletType)) return res.status(400).json({ error: `wallet type ${walletType} is not supported` })
+		const {walletAddress:senderAddress, bastionUserId: senderBastionUserId} = await getBastionWallet(senderUserId, chain, walletType)
+		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+		fields.senderAddress = senderAddress
+		fields.senderBastionUserId = senderBastionUserId
+		fields.senderWalletType = walletType
+
 		// check privilege
 		if (!(await isBastionKycPassedDeveloperUser(senderUserId, walletType)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
@@ -290,7 +297,7 @@ exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
 
 		// get user wallet
 		// FIXME what if we have multiple wallet provider
-		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain, walletType)
+		const {walletAddress: sourceWalletAddress} = await getBastionWallet(sourceUserId, chain, walletType)
 		if (!sourceWalletAddress) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
@@ -369,7 +376,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const { transferFunc } = funcs
 
 		// get user wallet
-		const sourceWalletAddress = await getBastionWallet(sourceUserId, chain)
+		const {walletAddress:sourceWalletAddress} = await getBastionWallet(sourceUserId, chain)
 		if (!sourceWalletAddress) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
@@ -452,7 +459,7 @@ const transferCryptoFromWalletToBankAccount_DEPREICATED = async (req, res) => {
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
 		// get user wallet
-		const walletAddress = await getBastionWallet(sourceUserId, chain)
+		const {walletAddress} = await getBastionWallet(sourceUserId, chain)
 		if (!walletAddress) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
