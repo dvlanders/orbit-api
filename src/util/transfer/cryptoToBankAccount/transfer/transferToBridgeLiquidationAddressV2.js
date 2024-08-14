@@ -30,19 +30,11 @@ const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async(config) => {
-	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, walletType, bridgeExternalAccountId, feeType, feeValue} = config
+	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId} = config
 	// get conversion rate
 	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
-	// get bastion user id
-	let bastionUserId = sourceUserId
-	if (walletType == "FEE_COLLECTION"){
-		bastionUserId = `${sourceUserId}-FEE_COLLECTION`
-	}else if (walletType == "PREFUNDED"){
-		bastionUserId = `${sourceUserId}-PREFUNDED`
-	}
-
 
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -64,8 +56,8 @@ const initTransferData = async(config) => {
 			source_currency: sourceCurrency,
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
-			transfer_from_wallet_type: walletType || "INDIVIDUAL",
-			bastion_user_id: bastionUserId
+			transfer_from_wallet_type: sourceWalletType,
+			bastion_user_id: sourceBastionUserId
 		})
 		.select()
 		.single()

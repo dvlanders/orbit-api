@@ -4969,7 +4969,7 @@
     },
     "/transfer/crypto-to-fiat": {
       "post": {
-        "summary": "Transfer Stablecoin to Fiat",
+        "summary": "Convert Stablecoin to Fiat",
         "description": "Transfer crypto to fiat currency and send it to an offramp bank account.",
         "tags": [
           "Transfer"
@@ -5020,7 +5020,7 @@
     },
     "/transfer/fiat-to-crypto": {
       "post": {
-        "summary": "Transfer Fiat to Stablecoin",
+        "summary": "Convert Fiat to Stablecoin",
         "description": "Transfer fiat currency from an onramp bank account to crypto.",
         "tags": [
           "Transfer"

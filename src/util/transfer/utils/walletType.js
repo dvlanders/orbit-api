@@ -1,0 +1,1 @@
+exports.allowedWalletTypes = ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]
