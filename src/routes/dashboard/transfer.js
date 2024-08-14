@@ -3,11 +3,11 @@ const { authorize, authorizeDashboard, requiredProdDashboard, requiredAdmin } = 
 
 module.exports = (router) => {
 	router.post("/dashboard/transfer/crypto-to-crypto", authorizeDashboard, requiredProdDashboard, transfer.createCryptoToCryptoTransfer);
-	router.post("/dashboard/transfer/crypto-to-crypto/developer", authorizeDashboard, requiredProdDashboard, requiredAdmin, transfer.createCryptoToCryptoWithdrawForDeveloperUser);
+	router.post("/dashboard/transfer/crypto-to-crypto/developer", authorizeDashboard, requiredProdDashboard, requiredAdmin, transfer.createCryptoToCryptoTransfer);
 	router.get("/dashboard/transfer/crypto-to-crypto", authorizeDashboard, requiredProdDashboard,transfer.getCryptoToCryptoTransfer)
 	router.get("/dashboard/transfer/crypto-to-crypto/all", authorizeDashboard, requiredProdDashboard,transfer.getAllCryptoToCryptoTransfer)
 	router.post("/dashboard/transfer/crypto-to-fiat", authorizeDashboard, requiredProdDashboard,transfer.createCryptoToFiatTransfer);
-	router.post("/dashboard/transfer/crypto-to-fiat/developer", authorizeDashboard, requiredProdDashboard, requiredAdmin, transfer.createCryptoToFiatWithdrawForDeveloperUser);
+	router.post("/dashboard/transfer/crypto-to-fiat/developer", authorizeDashboard, requiredProdDashboard, requiredAdmin, transfer.createCryptoToFiatTransfer);
 	router.get("/dashboard/transfer/crypto-to-fiat", authorizeDashboard, requiredProdDashboard,transfer.getCryptoToFiatTransfer);
 	router.get("/dashboard/transfer/crypto-to-fiat/all", authorizeDashboard, requiredProdDashboard,transfer.getAllCryptoToFiatTransfer);
 	router.post("/dashboard/transfer/fiat-to-crypto", authorizeDashboard, requiredProdDashboard,transfer.createFiatToCryptoTransfer)

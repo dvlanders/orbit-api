@@ -33,7 +33,6 @@ const cryptoToCryptoTransferAsync = async(config) => {
         await executeAsyncBastionCryptoTransfer(config)
 
     }catch (error){
-        console.error(error)
         if (error instanceof JobError) throw error
         await createLog("job/transfer/cryptoToCryptoTransferAsync", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, null, error.message, false)

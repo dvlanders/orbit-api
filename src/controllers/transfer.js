@@ -37,7 +37,7 @@ const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walle
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-exports.createCryptoToCryptoWithdrawForDeveloperUser = async (req, res) => {
+const createCryptoToCryptoWithdrawForDeveloperUser_DEPRECATED = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -156,7 +156,6 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (senderWalletType && !allowedWalletTypes.includes(senderWalletType)) return res.status(400).json({ error: `wallet type ${senderWalletType} is not supported` })
 		const _senderWalletType = senderWalletType || "INDIVIDUAL"
 		const {walletAddress:senderAddress, bastionUserId: senderBastionUserId} = await getBastionWallet(senderUserId, chain, _senderWalletType)
-		console.log(senderAddress, senderBastionUserId)
 		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
 		fields.senderAddress = senderAddress
 		fields.senderBastionUserId = senderBastionUserId
@@ -251,7 +250,7 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 
 }
 
-exports.createCryptoToFiatWithdrawForDeveloperUser = async (req, res) => {
+const createCryptoToFiatWithdrawForDeveloperUser_DEPRECATED = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -332,13 +331,13 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue } = fields
+	const { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType } = fields
 	try {
 		// filed validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
 		const acceptedFields = {
 			"feeType": "string", "feeValue": ["string", "number"],
-			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string"
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "sourceWalletType": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
@@ -376,12 +375,16 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const { transferFunc } = funcs
 
 		// get user wallet
-		const {walletAddress:sourceWalletAddress} = await getBastionWallet(sourceUserId, chain)
-		if (!sourceWalletAddress) {
+		// fetch sender wallet address information
+		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
+		if (sourceWalletType && !allowedWalletTypes.includes(sourceWalletType)) return res.status(400).json({ error: `wallet type ${sourceWalletType} is not supported` })
+		const _sourceWalletType = sourceWalletType || "INDIVIDUAL"
+		const {walletAddress: sourceWalletAddress, bastionUserId: sourceBastionUserId} = await getBastionWallet(sourceUserId, chain, _sourceWalletType)
+		if (!sourceWalletAddress || !sourceBastionUserId) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
 
-		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail})
+		const { isExternalAccountExist, transferResult } = await transferFunc({requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType})
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		return res.status(200).json(transferResult);
 
