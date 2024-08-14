@@ -58,7 +58,6 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 		developer_fee_percent: developerFeePercent,
 		source: {
 			currency: rail.sourceCurrency,
-			payment_rail: rail.sourcePaymentRail
 		},
 		destination: {
 			currency: rail.destinationCurrency,
@@ -86,7 +85,8 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 				user_id: userId,
 				status: responseBody.status,
 				source_currency: responseBody.source_deposit_instructions.currency,
-				source_payment_rail: responseBody.source_deposit_instructions.payment_rail,
+				source_payment_rail: responseBody.source_deposit_instructions.payment_rail, // deprecated
+				source_payment_rails: responseBody.source_deposit_instructions.payment_rails,
 				destination_currency: responseBody.destination.currency,
 				destination_payment_rail: responseBody.destination.payment_rail,
 				destination_wallet_address: getAddress(responseBody.destination.address),
@@ -100,7 +100,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 			})
 			.select()
 			.single())
-		if (virtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, virtual_account_Error.message, virtual_account_Error)
+		if (virtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, virtualAccountError.message, virtualAccountError)
 		return virtualAccount
 	} else {
 		throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, "something went wrong when creating virtual account", responseBody)
