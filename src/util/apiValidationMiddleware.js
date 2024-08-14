@@ -7,10 +7,8 @@ const supabase = require('./supabaseClient');
  * Middleware to validate an API key from the request header against Supabase.
  */
 exports.validateApiKey = async (req, res, next) => {
-	console.log('Validating API key...');
 	try {
 		const apiKeyValue = req.headers['x-api-key'];
-		console.log('API key:', apiKeyValue);
 
 		if (!apiKeyValue) {
 			console.error('API key is required in the request header');

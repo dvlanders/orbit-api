@@ -3,7 +3,7 @@ const { v4 } = require("uuid");
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { BridgeCustomerStatus } = require("../utils");
-const {getAddress} = require("ethers")
+const { getAddress } = require("ethers")
 
 
 
@@ -47,7 +47,6 @@ exports.createBridgeLiquidationAddress = async (
 			destination_currency: destinationCurrency
 		}
 
-		console.log('requestBody', requestBody)
 
 		const response = await fetch(`${BRIDGE_URL}/v0/customers/${userData.bridge_id}/liquidation_addresses`, {
 			method: 'POST',

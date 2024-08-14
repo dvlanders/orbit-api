@@ -3,7 +3,7 @@ const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
 const { bridgeFieldsToRequestFields, getEndorsementStatus } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
-const {supabaseCall} = require("../../supabaseWithRetry");
+const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -34,11 +34,10 @@ class createBridgeCustomerError extends Error {
 
 exports.createIndividualBridgeCustomer = async (userId) => {
 	let invalidFields = [];
-	console.log(BRIDGE_API_KEY);
 
 	try {
 		// check if user exist
-		let { data: user, error: user_error } = await supabaseCall( () => supabase
+		let { data: user, error: user_error } = await supabaseCall(() => supabase
 			.from('users')
 			.select('profile_id, user_type')
 			.eq('id', userId)
@@ -53,7 +52,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		}
 
 		// fetch user kyc data
-		const { data: userKyc, error: userKycError } = await supabaseCall( () =>  supabase
+		const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase
 			.from('user_kyc')
 			.select('*')
 			.eq('user_id', userId)
@@ -69,11 +68,11 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		}
 
 		// fetch user kyc data
-		const { data: bridgeUser, error: bridgeUserError } = await supabaseCall( () =>   supabase
-		.from('bridge_customers')
-		.select('signed_agreement_id')
-		.eq('user_id', userId)
-		.maybeSingle()
+		const { data: bridgeUser, error: bridgeUserError } = await supabaseCall(() => supabase
+			.from('bridge_customers')
+			.select('signed_agreement_id')
+			.eq('user_id', userId)
+			.maybeSingle()
 		)
 
 		if (bridgeUserError) {
@@ -142,8 +141,8 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		});
 
 		const responseBody = await response.json();
-		const {status: baseStatus} = getEndorsementStatus(responseBody.endorsements, "base")
-		const {status: sepaStatus} = getEndorsementStatus(responseBody.endorsements, "sepa")
+		const { status: baseStatus } = getEndorsementStatus(responseBody.endorsements, "base")
+		const { status: sepaStatus } = getEndorsementStatus(responseBody.endorsements, "sepa")
 		if (response.ok) {
 			const { error: bridge_customers_error } = await supabase
 				.from('bridge_customers')
