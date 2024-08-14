@@ -37,7 +37,7 @@ const developerFeePercent = "0.0" //FIX ME
 
 const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 	// get wallet address
-	const address = await getBastionWallet(userId, virtualAccountPaymentRailToChain[rail.destinationPaymentRail])
+	const {walletAddress: address} = await getBastionWallet(userId, virtualAccountPaymentRailToChain[rail.destinationPaymentRail])
 	if (!address) throw new Error (`No user wallet found`)
 
 	// check if virtual account is already created

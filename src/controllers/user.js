@@ -1086,8 +1086,8 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		if (kycInformationError) throw kycInformationError
 
 		// get user wallet information, only polygon for now
-		const feeCollectionWalletAddress = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
-		const prefundedWalletAddress = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
+		const {walletAddress: feeCollectionWalletAddress} = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
+		const {walletAddress: prefundedWalletAddress} = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
 
 		const userInformation = {
 			legalFirstName: kycInformation.legal_first_name,

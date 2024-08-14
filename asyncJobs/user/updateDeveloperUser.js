@@ -47,7 +47,7 @@ const updateDeveloperUserAsync = async(config) => {
 
         // register fee wallet on payment processor contract
         await Promise.all(chainToRegister.map(async(chain) => {
-            const walletAddress = await getBastionWallet(userId, chain, "FEE_COLLECTION")
+            const {walletAddress} = await getBastionWallet(userId, chain, "FEE_COLLECTION")
             if (await isFeeWalletRegistered(chain, walletAddress)) return
 
             // register the fee wallet
