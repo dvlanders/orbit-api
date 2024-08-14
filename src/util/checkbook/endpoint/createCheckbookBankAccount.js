@@ -100,7 +100,6 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			});
 			const checkbookAccountResponseBody = await checkbookAccountResponse.json();
 			if (!checkbookAccountResponse.ok) {
-				console.log(checkbookAccountResponseBody)
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountResponseBody.error || "unknown error", checkbookAccountResponseBody)
 			}
 			const { data: checkbookAccountData, error: checkbookAccountError } = await supabase
@@ -122,7 +121,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				.select("*")
 				.single()
 			if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
-			
+
 			await insertAccountProviders(checkbookAccountData.id, "usd", "onramp", "ach", "CHECKBOOK", userId)
 
 			return {
@@ -144,7 +143,6 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 
 	} catch (error) {
 
-		console.log('error', error)
 		if (error.type == createCheckbookErrorType.UNAUTHORIZED) {
 			return {
 				status: 400,

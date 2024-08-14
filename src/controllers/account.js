@@ -382,7 +382,6 @@ exports.getAccount = async (req, res) => {
 
 	// get user id from path parameter
 	const { accountId, profileId } = req.query;
-	console.log(req.query)
 
 	const requiredFields = ["accountId"]
 	const acceptedFields = { accountId: "string" }
@@ -955,7 +954,6 @@ exports.createBlindpayBankAccount = async (req, res) => {
 			}).select();
 
 		if (blindpayAccountError) {
-			console.log('blindpayAccountError', blindpayAccountError)
 			await createLog("account/createBlindpayBankAccount", fields.userId, blindpayAccountError.message, blindpayAccountError)
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
@@ -1073,7 +1071,6 @@ exports.createBlindpayReceiver = async (req, res) => {
 			}).select().single();
 
 		if (receiverError) {
-			console.log('receiverError', receiverError)
 			await createLog("account/createBlindpayReceiver", fields.userId, receiverError.message, receiverError);
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}

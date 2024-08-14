@@ -162,7 +162,7 @@ const fieldsToColumnsMap = (fields, map) => {
 	const mapped = {}
 
 	Object.keys(fields).map((key) => {
-		if (! (key in map)) return
+		if (!(key in map)) return
 		mapped[map[key]] = fields[key]
 	})
 
@@ -206,7 +206,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid ipAddress, please make sure ipAdress provided is a public IPv4 address outside unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)" });
 
 	// check signedAgreementId only for prod
-	if (process.env.NODE_ENV == "production"){
+	if (process.env.NODE_ENV == "production") {
 		if (!(await checkIsSignedAgreementIdSigned(fields.signedAgreementId))) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid signedAgreementId" });
 	}
 
@@ -294,7 +294,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
 		// internal server error
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error:  "Unexpected error happened"})
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Unexpected error happened" })
 	}
 
 	// Map fields to database columns
@@ -517,7 +517,7 @@ const ipCheck = async (ip) => {
 		if (locaionData.version != "IPv4") {
 			return false
 		}
-		if (locaionData.reserved){
+		if (locaionData.reserved) {
 			return false
 		}
 		if (sanctionedCountries.includes(locaionData.country_code_iso3)) {
