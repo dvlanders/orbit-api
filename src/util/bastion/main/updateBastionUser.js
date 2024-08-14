@@ -43,7 +43,7 @@ const updateBastionUser = async (userId) => {
 		let { data: bastionKyc, error: bastionKycError } = await supabaseCall(() => supabase
 			.from('bastion_users')
 			.select('*')
-			.eq("user_id", userId)
+			.eq("bastion_user_id", userId)
 			.maybeSingle())
 		if (bastionKycError) throw new UpdateBastionUserError(UpdateBastionUserErrorType.INTERNAL_ERROR, bastionKycError.message, bastionKycError)
 		if (!bastionKyc) {

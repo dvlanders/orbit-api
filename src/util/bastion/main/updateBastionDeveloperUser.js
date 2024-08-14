@@ -58,7 +58,7 @@ const updateBastionDeveloperUser = async (userId) => {
 		let { data: bastionKycPrefunded, error: bastionKycPrefundedError } = await supabaseCall(() => supabase
 			.from('bastion_users')
 			.select('*')
-			.eq("developer_user_id", `${userId}-PREFUNDED`)
+			.eq("bastion_user_id", `${userId}-PREFUNDED`)
 			.maybeSingle())
 		if (bastionKycPrefundedError) throw new UpdateBastionUserError(UpdateBastionUserErrorType.INTERNAL_ERROR, bastionKycPrefundedError.message, bastionKycPrefundedError)
 		if (!bastionKycPrefunded) {
@@ -70,7 +70,7 @@ const updateBastionDeveloperUser = async (userId) => {
 		let { data: bastionKycFee, error: bastionKycFeeError } = await supabaseCall(() => supabase
 			.from('bastion_users')
 			.select('*')
-			.eq("developer_user_id", `${userId}-FEE_COLLECTION`)
+			.eq("bastion_user_id", `${userId}-FEE_COLLECTION`)
 			.maybeSingle())
 		if (bastionKycFeeError) throw new UpdateBastionUserError(UpdateBastionUserErrorType.INTERNAL_ERROR, bastionKycFeeError.message, bastionKycFeeError)
 		if (!bastionKycFee) {

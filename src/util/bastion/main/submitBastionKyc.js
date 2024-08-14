@@ -25,9 +25,9 @@ class submitBastionKycError extends Error {
 }
 
 
-const submitBastionKyc = async (userId) => {
+const submitBastionKyc = async (userId, bastionUserId) => {
 	try {
-		const response = await submitKycData(userId)
+		const response = await submitKycData(userId, bastionUserId)
 		const responseBody = await response.json();
 
 
@@ -37,12 +37,13 @@ const submitBastionKyc = async (userId) => {
 				.upsert(
 					{
 						user_id: userId,
+						bastion_user_id: bastionUserId,
 						kyc_response: responseBody,
 						kyc_passed: responseBody.kycPassed,
 						jurisdiction_check_passed: responseBody.jurisdictionCheckPassed,
 						kyc_level: responseBody.kycLevel
 					},
-					{ onConflict: "user_id" }
+					{ onConflict: "bastion_user_id" }
 				)
 				.select()
 			)

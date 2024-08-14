@@ -45,7 +45,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         const responseBody = await response.json()
 
         // insert history
-        await insertToHistory(profileId, requestBody, eventId, response, responseBody)
+        await insertToHistory(profileId, toSend, eventId, response, responseBody)
 
         if (!response.ok){
             // queue the message
