@@ -9,10 +9,13 @@ UsdOnrampAchAccount:
     accountType:
       type: string
       enum: [CHECKING, SAVING, BUSINESS]
+    createVirtualAccount:
+      type: boolean
   required:
     - plaidProcessorToken
     - bankName
     - accountType
+    - createVirtualAccount
 UsdOnrampWireAccount:
   type: object
   properties:
@@ -20,17 +23,8 @@ UsdOnrampWireAccount:
       type: string
       description: Passing "US_ACH_WIRE" allows the user to do USD onramp through both ACH and Wire.
       enum: [US_ACH_WIRE]
-    destinationCurrency:
-      type: string
-      enum: [usdc]
-    destinationChain:
-      type: string
-      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
-      enum: [POLYGON_MAINNET, POLYGON_AMOY]
   required:
     - rail
-    - destinationCurrency
-    - destinationChain
 UsdOfframpAchAccount:
   type: object
   properties:
@@ -352,8 +346,10 @@ UsdOnrampWireAccountObject:
           type: string
         userId:
           type: string
-        paymentRail:
-          type: string
+        paymentRails:
+          type: array
+          items:
+            type: string
         sourceCurrency:
           type: string
         destinationChain:
@@ -380,7 +376,7 @@ UsdOnrampWireAccountObject:
     account:
       virtualAccountId: "21593434-eb2a-4e44-a4d7-fc5700acd8a2"
       userId: "75d7c01f-5f93-43434-8b93-a62fd8020358"
-      paymentRail: "ach_push"
+      paymentRails: ["ach_push", "wire"]
       sourceCurrency: "usd"
       destinationChain: "POLYGON_MAINNET"
       destinationCurrency: "usdc"
@@ -601,8 +597,10 @@ VirtualAccountObject:
       type: string
     userId:
       type: string
-    paymentRail:
-      type: string
+    paymentRails:
+      type: array
+      items:
+        type: string
     sourceCurrency:
       type: string
     destinationChain:
@@ -657,7 +655,7 @@ VirtualAccountObject:
   example:
     virtualAccountId: "21593434-eb2a-4e44-a4d7-fc5700acd8a2"
     userId: "75d7c01f-5f93-43434-8b93-a62fd8020358"
-    paymentRail: "ach_push"
+    paymentRails: ["ach_push", "wire"]
     sourceCurrency: "usd"
     destinationChain: "POLYGON_MAINNET"
     destinationCurrency: "usdc"

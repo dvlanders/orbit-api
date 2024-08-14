@@ -21,6 +21,7 @@ const { fetchAccountProviders, insertAccountProviders } = require('../util/accou
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
+const { virtualAccountPaymentRailToChain } = require('../util/bridge/utils');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -36,10 +37,14 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 
 	const { userId, profileId } = req.query;
 
-	const { plaidProcessorToken, bankName, accountType } = req.body;
+	const { plaidProcessorToken, bankName, accountType, createVirtualAccount } = req.body;
+	const requiredFields = ["plaidProcessorToken", "bankName", "accountType", "createVirtualAccount"];
+	const acceptedFields = { plaidProcessorToken: "string", bankName: "string", accountType: "string", createVirtualAccount: "boolean" };
+	const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields)
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+	}
 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
-
-	// TODO: validate the request body fields to make sure all fields are present and are the valid type
 
 	const checkbookAccountResult = await createCheckbookBankAccountWithProcessorToken(userId, accountType, plaidProcessorToken, bankName);
 
@@ -49,11 +54,29 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 		message: null,
 	}
 
-
 	if (checkbookAccountResult.status == 200) {
 		createUsdOnrampSourceWithPlaidResponse.status = Status.ACTIVE
 		createUsdOnrampSourceWithPlaidResponse.id = checkbookAccountResult.id
 		createUsdOnrampSourceWithPlaidResponse.message = checkbookAccountResult.message
+
+		// if the user wants to also create a virtual account
+		if(createVirtualAccount) {
+			const rail = OnRampRail.US_ACH_WIRE
+			const destinationChain = virtualAccountPaymentRailToChain.polygon
+			const destinationCurrency = "usdc"
+
+			const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
+			const config = {
+				userId,
+				destinationCurrency,
+				destinationChain
+			}
+			const result = await activateFunction(config)
+			if (result.alreadyExisted) createUsdOnrampSourceWithPlaidResponse.message += " (Virtual account already existed)"
+			else if (!result.isAllowedTocreate) createUsdOnrampSourceWithPlaidResponse.message += " (User is not allowed to create a virtual account)"
+			else createUsdOnrampSourceWithPlaidResponse.message += " (Virtual account created successfully)"
+
+		}	
 
 	} else if (checkbookAccountResult.status == 400) {
 		createUsdOnrampSourceWithPlaidResponse.status = Status.NOT_CREATED
@@ -451,9 +474,9 @@ exports.activateOnRampRail = async (req, res) => {
 
 	const { userId, profileId } = req.query
 	const fields = req.body
-	const { rail, destinationCurrency, destinationChain } = fields
+	let { rail, destinationCurrency, destinationChain } = fields
 	// fields validation
-	const requiredFields = ["rail", "destinationCurrency", "destinationChain"]
+	const requiredFields = ["rail"]
 	const acceptedFields = { "rail": "string", "destinationCurrency": "string", "destinationChain": "string" }
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0) {
@@ -462,6 +485,14 @@ exports.activateOnRampRail = async (req, res) => {
 
 	if (invalidFields.length > 0) {
 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+	}
+
+	if(!(destinationCurrency && destinationChain) && !(!destinationCurrency && !destinationChain)) 
+		return res.status(400).json({ error: 'Please provide both destinationCurrency and destinationChain or neither' });
+
+	if(!destinationCurrency && !destinationChain){
+		destinationCurrency = "usdc"
+		destinationChain = virtualAccountPaymentRailToChain.polygon
 	}
 
 	try {
@@ -474,10 +505,10 @@ exports.activateOnRampRail = async (req, res) => {
 			destinationChain
 		}
 		const result = await activateFunction(config)
-		if (result.alreadyExisted) return res.status(200).json({ message: `rail already activated` })
-		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create the rail` })
+		if (result.alreadyExisted) return res.status(200).json({ message: `Virtual account for the rail already existed` })
+		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create a virtual account for the rail` })
 
-		return res.status(200).json({ message: `${rail} created successfully`, account: result.virtualAccountInfo })
+		return res.status(200).json({ message: `Virtual account for ${rail} created successfully`, account: result.virtualAccountInfo })
 
 	} catch (error) {
 		await createLog("account/activateOnRampRail", userId, error.message, error)
@@ -826,35 +857,35 @@ exports.getVirtualAccount = async (req, res) => {
 
 }
 
-exports.getVirtualAccountMicroDepositInstructions = async (req, res) => {
-	if (req.method !== 'GET') {
-		return res.status(405).json({ error: 'Method not allowed' });
-	}
-	const fields = req.query
-	const { profileId, rail, destinationCurrency, destinationChain, userId } = fields
-	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
-	const acceptedFields = {
-		profileId: "string",
-		rail: "string",
-		destinationCurrency: "string",
-		userId: "string",
-		destinationChain: "string"
-	}
+// exports.getVirtualAccountMicroDepositInstructions = async (req, res) => {
+// 	if (req.method !== 'GET') {
+// 		return res.status(405).json({ error: 'Method not allowed' });
+// 	}
+// 	const fields = req.query
+// 	const { profileId, rail, destinationCurrency, destinationChain, userId } = fields
+// 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
+// 	const acceptedFields = {
+// 		profileId: "string",
+// 		rail: "string",
+// 		destinationCurrency: "string",
+// 		userId: "string",
+// 		destinationChain: "string"
+// 	}
 
-	try {
-		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
-		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
-		if (!fetchFunc) return res.status(400).json({ message: "Rail is not yet available" })
-		const despositInformation = await fetchFunc(userId)
-		if (!despositInformation) return res.status(404).json({ message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first" })
-		return res.status(200).json(despositInformation)
+// 	try {
+// 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+// 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
+// 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
+// 		if (!fetchFunc) return res.status(400).json({ message: "Rail is not yet available" })
+// 		const despositInformation = await fetchFunc(userId)
+// 		if (!despositInformation) return res.status(404).json({ message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first" })
+// 		return res.status(200).json(despositInformation)
 
-	} catch (error) {
-		await createLog("account/getVirtualAccount", userId, error.message, error)
-		return res.status(500).json({ error: "Unexpected error happened" })
-	}
-}
+// 	} catch (error) {
+// 		await createLog("account/getVirtualAccount", userId, error.message, error)
+// 		return res.status(500).json({ error: "Unexpected error happened" })
+// 	}
+// }
 
 exports.createBlindpayBankAccount = async (req, res) => {
 	if (req.method !== 'POST') {

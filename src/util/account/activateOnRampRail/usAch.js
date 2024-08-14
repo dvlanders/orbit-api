@@ -64,7 +64,6 @@ const activateUsAchOnRampRail = async(config) => {
         //create bridge virtual account
         const rail = {
             sourceCurrency: "usd",
-            sourcePaymentRail: "ach_push",
             destinationCurrency,
             destinationPaymentRail: chainToVirtualAccountPaymentRail[destinationChain]
         }
@@ -87,7 +86,7 @@ const activateUsAchOnRampRail = async(config) => {
         const virtualAccountInfo = {
             virtualAccountId: virtualAccount.id,
             userId: virtualAccount.user_id,
-            paymentRail: virtualAccount.source_payment_rail,
+            paymentRails: virtualAccount.source_payment_rails,
             sourceCurrency: virtualAccount.source_currency,
             destinationChain: virtualAccountPaymentRailToChain[virtualAccount.destination_payment_rail],
             destinationCurrency: virtualAccount.destination_currency,
