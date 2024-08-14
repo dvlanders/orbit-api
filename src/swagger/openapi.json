@@ -4850,8 +4850,8 @@
     },
     "/account/onRampRail/virtualAccount": {
       "get": {
-        "summary": "Retrieve Generated USD Onramp Bank Account Details",
-        "description": "Retrieve the generated bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.",
+        "summary": "Retrieve USD Onramp Virtual Account Details",
+        "description": "Retrieve the created virtual bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.",
         "tags": [
           "Account"
         ],
