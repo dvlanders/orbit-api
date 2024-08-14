@@ -9,7 +9,7 @@ const { Chain } = require("../../common/blockchain");
 const { getAddress, isAddress } = require("ethers")
 const { BastionSupportedEVMChainSandbox, BastionSupportedEVMChainProd } = require("../utils/utils");
 const submitBastionKycForDeveloper = require("./submitBastionKycForDeveloperUser");
-const chains = process.env.NODE_ENV == "development"? BastionSupportedEVMChainSandbox : BastionSupportedEVMChainProd
+const chains = process.env.NODE_ENV == "development" ? BastionSupportedEVMChainSandbox : BastionSupportedEVMChainProd
 
 const preFundAmount = '0.1'
 
@@ -32,8 +32,8 @@ class BastionError extends Error {
  * @returns {Promise<Object>} The response data from Bastion.
  */
 async function createBastionDeveloperWallet(userId, type) {
-    const bastionUserId = `${userId}-${type}`
-    // need to create two set of wallet
+	const bastionUserId = `${userId}-${type}`
+	// need to create two set of wallet
 	const response = await createUser(bastionUserId)
 	const data = await response.json();
 
@@ -50,7 +50,7 @@ async function createBastionDeveloperWallet(userId, type) {
 						user_id: userId,
 						chain: chain,
 						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address,
-                        type: type
+						type: type
 					}])
 					.select();
 
@@ -59,7 +59,6 @@ async function createBastionDeveloperWallet(userId, type) {
 				} else if (!(insertData && insertData.length > 0)) {
 					logger.warn('Supabase insert resulted in no data or an empty response.');
 				}
-				console.log()
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET) {
 					await fundMaticPolygon(userId, preFundAmount, type);
@@ -80,21 +79,21 @@ async function createBastionDeveloperWallet(userId, type) {
 async function createBastionDeveloperUser(userId) {
 	try {
 		// create wallet
-        await Promise.all([
-            createBastionDeveloperWallet(userId, "PREFUNDED"),
-            createBastionDeveloperWallet(userId, "FEE_COLLECTION")
-        ])
+		await Promise.all([
+			createBastionDeveloperWallet(userId, "PREFUNDED"),
+			createBastionDeveloperWallet(userId, "FEE_COLLECTION")
+		])
 
 		// submit kyc
 		await Promise.all([
-            submitBastionKycForDeveloper(userId, "PREFUNDED"),
-            submitBastionKycForDeveloper(userId, "FEE_COLLECTION")
-        ])
+			submitBastionKycForDeveloper(userId, "PREFUNDED"),
+			submitBastionKycForDeveloper(userId, "FEE_COLLECTION")
+		])
 
 	} catch (error) {
-        await createLog("bastion/createBastionDeveloperUser", userId, error.message)
-    }
+		await createLog("bastion/createBastionDeveloperUser", userId, error.message)
+	}
 }
 
 
-module.exports = {createBastionDeveloperUser, createBastionDeveloperWallet};
+module.exports = { createBastionDeveloperUser, createBastionDeveloperWallet };

@@ -29,7 +29,7 @@ const updateStatusWithBridgeTransferId = async (transaction) => {
 
 		const data = await response.json();
 		if (!response.ok) {
-			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to fetch response from bridge', responseBody);
+			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to fetch response from bridge', response);
 			return
 		}
 
@@ -59,11 +59,10 @@ const updateStatusWithBridgeTransferId = async (transaction) => {
 			return
 		}
 
-		console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 		// send webhook message
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
+		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
 			await notifyDeveloperCryptoToFiatWithdraw(updateData)
-		}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
+		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
 			await notifyCryptoToFiatTransfer(updateData)
 		}
 
@@ -140,9 +139,9 @@ const updateStatus = async (transaction) => {
 
 		console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 		// send webhook message
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
+		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
 			await notifyDeveloperCryptoToFiatWithdraw(updateData)
-		}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
+		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
 			await notifyCryptoToFiatTransfer(updateData)
 		}
 
@@ -157,7 +156,7 @@ async function pollOfframpTransactionsBridgeStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabase
 		.from('offramp_transactions')
-		.update({updated_at: new Date().toISOString()})
+		.update({ updated_at: new Date().toISOString() })
 		.eq("fiat_provider", "BRIDGE")
 		.neq("transaction_status", "NOT_INITIATED")
 		.neq("transaction_status", "CREATED")
@@ -176,9 +175,9 @@ async function pollOfframpTransactionsBridgeStatus() {
 
 	// For each transaction, get the latest status from the Bridge API and update the db
 	await Promise.all(offrampTransactionData.map(async (transaction) => {
-		if (transaction.to_bridge_liquidation_address_id){
+		if (transaction.to_bridge_liquidation_address_id) {
 			await updateStatus(transaction)
-		}else if (transaction.bridge_transfer_id){
+		} else if (transaction.bridge_transfer_id) {
 			await updateStatusWithBridgeTransferId(transaction)
 		}
 	}))
