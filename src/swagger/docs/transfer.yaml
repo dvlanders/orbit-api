@@ -5,95 +5,95 @@
     tags:
       - Transfer
     requestBody:
-      $ref: '#/components/requestBodies/CryptoToCryptoTransferBody'
+      $ref: "#/components/requestBodies/CryptoToCryptoTransferBody"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToCryptoTransferResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToCryptoTransferResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
   get:
     summary: Get a Stablecoin-to-Stablecoin Transfer Record
     tags:
       - Transfer
     parameters:
-      - $ref: '#/components/parameters/TransferRecordIDParameter'
+      - $ref: "#/components/parameters/TransferRecordIDParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToCryptoRecordResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToCryptoRecordResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/crypto-to-fiat:
   post:
-    summary: Transfer Stablecoin to Fiat
+    summary: Convert Stablecoin to Fiat
     description: Transfer crypto to fiat currency and send it to an offramp bank account.
     tags:
       - Transfer
     requestBody:
-      $ref: '#/components/requestBodies/CryptoToFiatTransferBody'
+      $ref: "#/components/requestBodies/CryptoToFiatTransferBody"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToFiatTransferResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToFiatTransferResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
   get:
     summary: Get a Stablecoin-to-Fiat Transfer Record
     tags:
       - Transfer
     parameters:
-      - $ref: '#/components/parameters/TransferRecordIDParameter'
+      - $ref: "#/components/parameters/TransferRecordIDParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToFiatRecordResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToFiatRecordResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/fiat-to-crypto:
   post:
-    summary: Transfer Fiat to Stablecoin
+    summary: Convert Fiat to Stablecoin
     description: Transfer fiat currency from an onramp bank account to crypto.
     tags:
       - Transfer
     requestBody:
-      $ref: '#/components/requestBodies/FiatToCryptoTransferBody'
+      $ref: "#/components/requestBodies/FiatToCryptoTransferBody"
     responses:
-      '200':
-        $ref: '#/components/responses/FiatToCryptoTransferResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/FiatToCryptoTransferResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
   get:
     summary: Get a Fiat-to-Stablecoin Transfer Record
     tags:
       - Transfer
     parameters:
-      - $ref: '#/components/parameters/TransferRecordIDParameter'
+      - $ref: "#/components/parameters/TransferRecordIDParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/FiatToCryptoRecordResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/FiatToCryptoRecordResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/crypto-to-crypto/all:
   get:
     summary: Get All Stablecoin-to-Stablecoin Transfer Records
@@ -101,19 +101,19 @@
     tags:
       - Transfer
     parameters:
-      - $ref: '#/components/parameters/UserIdOptionalParameter'
-      - $ref: '#/components/parameters/LimitParameter'
-      - $ref: '#/components/parameters/CreatedBeforeParameter'
-      - $ref: '#/components/parameters/CreatedAfterParameter'
+      - $ref: "#/components/parameters/UserIdOptionalParameter"
+      - $ref: "#/components/parameters/LimitParameter"
+      - $ref: "#/components/parameters/CreatedBeforeParameter"
+      - $ref: "#/components/parameters/CreatedAfterParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToCryptoAllRecordsResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToCryptoAllRecordsResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/crypto-to-fiat/all:
   get:
     summary: Get All Stablecoin-to-Fiat Transfer Records
@@ -121,19 +121,19 @@
     tags:
       - Transfer
     parameters:
-      - $ref: '#/components/parameters/UserIdOptionalParameter'
-      - $ref: '#/components/parameters/LimitParameter'
-      - $ref: '#/components/parameters/CreatedBeforeParameter'
-      - $ref: '#/components/parameters/CreatedAfterParameter'
+      - $ref: "#/components/parameters/UserIdOptionalParameter"
+      - $ref: "#/components/parameters/LimitParameter"
+      - $ref: "#/components/parameters/CreatedBeforeParameter"
+      - $ref: "#/components/parameters/CreatedAfterParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToFiatAllRecordsResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToFiatAllRecordsResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/fiat-to-crypto/all:
   get:
     summary: Get All Fiat-to-Stablecoin Transfer Records
@@ -141,19 +141,19 @@
     tags:
       - Transfer
     parameters:
-      - $ref: '#/components/parameters/UserIdOptionalParameter'
-      - $ref: '#/components/parameters/LimitParameter'
-      - $ref: '#/components/parameters/CreatedBeforeParameter'
-      - $ref: '#/components/parameters/CreatedAfterParameter'
+      - $ref: "#/components/parameters/UserIdOptionalParameter"
+      - $ref: "#/components/parameters/LimitParameter"
+      - $ref: "#/components/parameters/CreatedBeforeParameter"
+      - $ref: "#/components/parameters/CreatedAfterParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/FiatToCryptoAllRecordsResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/FiatToCryptoAllRecordsResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/conversionRate/crypto-to-fiat:
   get:
     summary: Get Stablecoin-to-Fiat Conversion Rate
@@ -161,14 +161,14 @@
     tags:
       - Quotes
     parameters:
-      - $ref: '#/components/parameters/FromCurrencyParameter'
-      - $ref: '#/components/parameters/ToCurrencyParameter'
+      - $ref: "#/components/parameters/FromCurrencyParameter"
+      - $ref: "#/components/parameters/ToCurrencyParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/CryptoToFiatConversionRateResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/CryptoToFiatConversionRateResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
