@@ -57,7 +57,6 @@ async function createUserCore(userId, bastionUserId) {
 				} else if (!(insertData && insertData.length > 0)) {
 					logger.warn('Supabase insert resulted in no data or an empty response.');
 				}
-				console.log()
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET) {
 					console.log("fund account")

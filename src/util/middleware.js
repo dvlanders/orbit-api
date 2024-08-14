@@ -123,11 +123,11 @@ exports.logRequestResponse = (req, res, next) => {
 		body: req.body
 	});
 
-    const originalSend = res.send;
-    // Override send function
-    res.send = function (body) {
+	const originalSend = res.send;
+	// Override send function
+	res.send = function (body) {
 
-        let parsedBody;
+		let parsedBody;
 		try {
 			parsedBody = JSON.parse(body);
 		} catch (e) {
@@ -173,16 +173,16 @@ exports.logRequestResponse = (req, res, next) => {
 
 		//define list of endpoints to exclude from slack message
 		const excludedEndpoints = [
-			{method: "GET", route: "/auth/apiKey"},
-			{method: "GET", route: "/auth/webhook"},
+			{ method: "GET", route: "/auth/apiKey" },
+			{ method: "GET", route: "/auth/webhook" },
 		]
 
 		if (!excludedEmails.includes(reqObject.query.profileEmail) && !excludedEndpoints.some(endpoint => endpoint.method === reqObject.method && endpoint.route === reqObject.route)) {
 			sendSlackReqResMessage(reqObject, resObject);
 		}
 
-        originalSend.call(this, body);
-    };
+		originalSend.call(this, body);
+	};
 	next();
 };
 
