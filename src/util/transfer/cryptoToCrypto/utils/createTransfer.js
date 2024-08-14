@@ -12,7 +12,9 @@ const acceptedFields = {
     "chain": "string",
     "currency": "string",
     "feeType": "string",
-    "feeValue": ["number", "string"]
+    "feeValue": ["number", "string"],
+    "senderWalletType": "string",
+    "recipientWalletType": "string"
 };
 
 const CreateCryptoToCryptoTransferErrorType = {

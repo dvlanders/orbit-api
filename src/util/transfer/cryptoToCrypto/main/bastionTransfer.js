@@ -157,9 +157,9 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
             // perfrom transfer with fee
             const receipt = await CryptoToCryptoWithFeeBastion(requestRecord, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, fields.profileId, fields)
             // gas check
-            await bastionGasCheck(requestRecord.bastion_user_id, fields.chain)
+            await bastionGasCheck(requestRecord.sender_bastion_user_id, fields.chain)
             // allowance check
-            await allowanceCheck(requestRecord.bastion_user_id, fields.senderAddress, fields.chain, fields.currency)
+            await allowanceCheck(requestRecord.sender_bastion_user_id, fields.senderAddress, fields.chain, fields.currency)
             return receipt
         }
 
@@ -167,7 +167,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
         // transfer without fee
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
-            userId: requestRecord.bastion_user_id,
+            userId: requestRecord.sender_bastion_user_id,
             contractAddress: requestRecord.contract_address,
             actionName: "transfer",
             chain: requestRecord.chain,
@@ -203,7 +203,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
         }
     
         // gas check
-        await bastionGasCheck(requestRecord.bastion_user_id, fields.chain)
+        await bastionGasCheck(requestRecord.sender_bastion_user_id, fields.chain)
     
         // return receipt
         const receipt =  {

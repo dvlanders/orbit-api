@@ -26,7 +26,7 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
         // transfer
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
-            userId: requestRecord.bastion_user_id,
+            userId: requestRecord.sender_bastion_user_id,
             contractAddress: paymentProcessorContractAddress,
             actionName: "processPayment",
             chain: fields.chain,

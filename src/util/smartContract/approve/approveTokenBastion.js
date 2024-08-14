@@ -33,7 +33,7 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
     const currencyContract = currencyContractAddress[chain][currency]
     const requestId = v4()
     // get userWallet address
-    const walletAddress = await getBastionWallet(userId, chain)
+    const {walletAddress, bastionUserId} = await getBastionWallet(userId, chain)
 
 
     // insert initial record
@@ -46,7 +46,7 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
         provider: "BASTION",
         actionInput: erc20Approve(currency, paymentProcessorContract, MAX_APPROVE_TOKEN),
         tag: "APPROVE_MAX_TO_PAYMENT_PROCESSOR",
-        bastionUserId: userId
+        bastionUserId: bastionUserId
     }
 
     const record = await insertContractActionRecord(requestInfo)
@@ -54,7 +54,7 @@ const approveMaxTokenToPaymentProcessor = async(userId, chain, currency) => {
     //  function call to Bastion
     const bodyObject = {
 		requestId: requestId,
-		userId: userId,
+		userId: bastionUserId,
 		contractAddress: currencyContract,
 		actionName: "approve",
 		chain: chain,

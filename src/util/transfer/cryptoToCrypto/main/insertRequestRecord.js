@@ -6,12 +6,6 @@ const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType
 
 
 exports.insertRequestRecord = async(requestInfo) => {
-    let bastionUserId = requestInfo.senderUserId
-	if (requestInfo.walletType == "FEE_COLLECTION"){
-		bastionUserId = `${requestInfo.senderUserId}-FEE_COLLECTION`
-	}else if (requestInfo.walletType == "PREFUNDED"){
-		bastionUserId = `${requestInfo.senderUserId}-PREFUNDED`
-	}
 
     const { data, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
@@ -27,9 +21,12 @@ exports.insertRequestRecord = async(requestInfo) => {
             currency: requestInfo.currency,
             contract_address: requestInfo.contractAddress,
             provider: requestInfo.provider,
-            transfer_from_wallet_type: requestInfo.walletType || "INDIVIDUAL",
+            transfer_from_wallet_type: requestInfo.senderWalletType || "INDIVIDUAL",
+            transfer_to_wallet_type: requestInfo.recipientWalletType || "INDIVIDUAL",
             status: "CREATED",
-            bastion_user_id: bastionUserId
+            bastion_user_id: requestInfo.senderBastionUserId,
+            sender_bastion_user_id: requestInfo.senderBastionUserId,
+            recipient_bastion_user_id: requestInfo.recipientBastionUserId
         },
     )
     .select("*")

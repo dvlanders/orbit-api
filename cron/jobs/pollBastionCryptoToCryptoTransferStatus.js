@@ -8,7 +8,7 @@ const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
 const updateStatus = async (transaction) => {
-	const bastionUserId = transaction.bastion_user_id
+	const bastionUserId = transaction.sender_bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
 		method: 'GET',
