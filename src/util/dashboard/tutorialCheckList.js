@@ -25,7 +25,7 @@ const tutorialCheckList = async(profileId, checkPoint) => {
 
         if (data){
             for (const user of data)
-            if (user && user.bridge_customers && user.checkbook_users && user.bastion_users){
+            if (user && user.bridge_customers && user.checkbook_users.length > 0 && user.bastion_users.length > 0){
                 currentCheckPoint.userCreated = true
                 break
             }

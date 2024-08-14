@@ -22,4 +22,6 @@ module.exports = (router) => {
 	router.get("/dev/testDevLogging", dev.testDevLogging)
 	router.get("/dev/testIp", dev.testIp)
 	router.get("/dev/testCheckFeeWalletRegistered", dev.testCheckFeeWalletRegistered)
+	router.get("/dev/testBastionUserTable", dev.testBastionUserTable)
+
 };

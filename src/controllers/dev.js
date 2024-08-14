@@ -18,6 +18,7 @@ const { checkIsCryptoToFiatRequestIdAlreadyUsed } = require("../util/transfer/cr
 const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { regsiterFeeWallet } = require("../util/smartContract/registerWallet/registerFeeWallet");
 const { isFeeWalletRegistered } = require("../util/smartContract/registerWallet/checkFeeWalletIsRegistered");
+const supabaseSandbox = require("../util/sandboxSupabaseClient");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -272,6 +273,23 @@ exports.testCheckFeeWalletRegistered = async(req, res) => {
     try{
         const isRegistered = await isFeeWalletRegistered(Chain.POLYGON_MAINNET, "0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f")
         return res.status(200).json(isRegistered)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+}
+
+exports.testBastionUserTable = async(req, res) => {
+    try{
+        const {data, error: usersError} = await supabase
+            .from("users")
+            .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
+            .eq("profile_id", "3b8be475-1b32-4ff3-9384-b6699c139869")
+            .eq("is_developer", false)
+            .not("user_kyc", "is", null)
+            .order("created_at", {ascending: false})
+            .limit(1)
+        return res.status(200).json({data, usersError})
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "error"})
