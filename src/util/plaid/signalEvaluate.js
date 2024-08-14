@@ -88,7 +88,6 @@ async function getSignalEvaluate(merchantId, plaidAccountId, amount) {
 	try {
 		const response = await fetch(url, options);
 		const data = await response.json();
-		console.log("Plaid signal evaluate response: ", data);
 		if (!response.ok) {
 			const { data: logData, error: logError } = await supabase
 				.from('logs')
@@ -104,12 +103,10 @@ async function getSignalEvaluate(merchantId, plaidAccountId, amount) {
 			});
 		}
 
-		console.log("Plaid signal evaluate response: ", data);
 
 		// William todo: log the response from plaid signal evaluate into the database
 		const scores = data.scores
 
-		console.log("Plaid signal evaluate scores: ", scores);
 
 		const { data: plaidEvaluationData, error: plaidEvaluationError } = await supabase
 			.from('plaid_bank_account_evaluation')
@@ -128,7 +125,6 @@ async function getSignalEvaluate(merchantId, plaidAccountId, amount) {
 			.select();
 
 		if (plaidEvaluationError) {
-			console.log('in the erro bloc')
 			console.error("Error while inserting plaid bank account evaluation record: ", JSON.stringify(plaid_evaluation_record_error));
 			const { data: logData, error: logError } = await supabase
 				.from('logs')
@@ -140,7 +136,6 @@ async function getSignalEvaluate(merchantId, plaidAccountId, amount) {
 
 			throw JSON.stringify(plaidEvaluationError);
 		}
-		console.log('got heredeeee')
 
 		return { data: data };
 

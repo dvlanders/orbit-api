@@ -47,7 +47,7 @@ const updateStatus = async (transaction) => {
 			return
 		}
 
-		if (transaction.developer_fee_id){
+		if (transaction.developer_fee_id) {
 			// update fee charged
 			const { data: updateFeeData, error: updateFeeError } = await supabaseCall(() => supabase
 				.from('developer_fees')
@@ -60,7 +60,7 @@ const updateStatus = async (transaction) => {
 				.eq('id', transaction.developer_fee_id)
 				.select()
 				.single())
-	
+
 			if (updateFeeError) {
 				console.error('Failed to update fee status', updateError);
 				await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.sender_user_id, 'Failed to update fee status', updateError);
@@ -69,10 +69,9 @@ const updateStatus = async (transaction) => {
 		}
 
 
-		console.log('Updated transaction status for transaction ID', transaction.id, 'to', data.status);
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
+		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
 			await notifyDeveloperCryptoToCryptoWithdraw(updateData)
-		}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
+		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
 			await notifyCryptoToCryptoTransfer(updateData)
 		}
 
@@ -90,7 +89,7 @@ async function pollBastionCryptoToCryptoTransferStatus() {
 		// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 		const { data: cryptoTransactionData, error: cryptoTransactionDataError } = await supabaseCall(() => supabase
 			.from('crypto_to_crypto')
-			.update({updated_at: new Date().toISOString()})
+			.update({ updated_at: new Date().toISOString() })
 			.eq('provider', "BASTION")
 			.neq('status', BastionTransferStatus.CONFIRMED)
 			.neq('status', BastionTransferStatus.FAILED)

@@ -16,7 +16,7 @@ const activateUsAchOnRampRail = require('../util/account/activateOnRampRail/usAc
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
-const { fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions, getFetchRailFunctions, generateRailCompositeKey, validateRailCompositeKey} = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const { fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions, getFetchRailFunctions, generateRailCompositeKey, validateRailCompositeKey } = require('../util/account/getAccount/utils/fetchRailFunctionMap');
 const { fetchAccountProviders, insertAccountProviders } = require('../util/account/accountProviders/accountProvidersService');
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 const { verifyUser } = require("../util/helper/verifyUser");
@@ -382,19 +382,18 @@ exports.getAccount = async (req, res) => {
 
 	// get user id from path parameter
 	const { accountId, profileId } = req.query;
-	console.log(req.query)
 
 	const requiredFields = ["accountId"]
-	const acceptedFields = {accountId: "string"}
+	const acceptedFields = { accountId: "string" }
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		if(!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
+		if (!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
 		const railMapping = await fetchAccountProviders(accountId, profileId);
 		if (!railMapping) return res.status(404).json({ error: "No accountId found" })
 		const railKey = generateRailCompositeKey(railMapping.currency, railMapping.rail_type, railMapping.payment_rail)
-		
+
 		const func = getFetchRailFunctions(railKey);
 		let accountInfo = await func(accountId)
 
@@ -430,12 +429,12 @@ exports.getAllAccounts = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 
 		const railKey = generateRailCompositeKey(currency, railType, paymentRail)
-		if(!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not a supported rail` });
+		if (!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not a supported rail` });
 
 		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
-		
+
 		const func = getFetchRailFunctions(railKey)
-		
+
 		const accountInfo = await func(null, profileId, userId, limit, createdAfter, createdBefore)
 		return res.status(200).json(accountInfo);
 	} catch (error) {
@@ -478,7 +477,7 @@ exports.activateOnRampRail = async (req, res) => {
 		if (result.alreadyExisted) return res.status(200).json({ message: `rail already activated` })
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create the rail` })
 
-		return res.status(200).json({ message: `${rail} create successfully`, account: result.virtualAccountInfo })
+		return res.status(200).json({ message: `${rail} created successfully`, account: result.virtualAccountInfo })
 
 	} catch (error) {
 		await createLog("account/activateOnRampRail", userId, error.message, error)
@@ -955,7 +954,6 @@ exports.createBlindpayBankAccount = async (req, res) => {
 			}).select();
 
 		if (blindpayAccountError) {
-			console.log('blindpayAccountError', blindpayAccountError)
 			await createLog("account/createBlindpayBankAccount", fields.userId, blindpayAccountError.message, blindpayAccountError)
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
@@ -1073,7 +1071,6 @@ exports.createBlindpayReceiver = async (req, res) => {
 			}).select().single();
 
 		if (receiverError) {
-			console.log('receiverError', receiverError)
 			await createLog("account/createBlindpayReceiver", fields.userId, receiverError.message, receiverError);
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}

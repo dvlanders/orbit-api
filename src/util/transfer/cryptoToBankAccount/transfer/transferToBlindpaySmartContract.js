@@ -26,9 +26,9 @@ const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 const transferToBlindpaySmartContract = async (config) => {
-	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId } = config
 	// disable fee feature
-	if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route") 
+	if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route")
 	if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
 	const { isExternalAccountExist, blindpayAccountId } = await blindpayRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
@@ -247,7 +247,6 @@ const transferToBlindpaySmartContract = async (config) => {
 			actionParams: erc20Approve(sourceCurrency, blindpayQuoteResponseBody.contract.address, transferAmount)
 		};
 
-		console.log('bodyObject', bodyObject)
 
 		const response = await submitUserAction(bodyObject)
 		const responseBody = await response.json();
@@ -314,7 +313,6 @@ const transferToBlindpaySmartContract = async (config) => {
 
 			// If the bastion approval is SUBMITTED_ONCHAIN, then schedule the payout with Blindpay's payout endpoints
 			if (result.transferDetails.status == "SUBMITTED_ONCHAIN") {
-				console.log('scheduling payout...')
 				const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.user_id)
 				if (canSchedule) {
 					await createJob("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.destination_user_id, null, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())

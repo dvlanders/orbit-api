@@ -47,7 +47,6 @@ async function regeneration() {
 			});
 
 			let usertokens = response?.data?.data;
-			// console.log(usertokens);
 
 			if (usertokens.length > 0) {
 				for (let i = 0; i < usertokens.length; i++) {
@@ -61,7 +60,6 @@ async function regeneration() {
 					}
 				}
 
-				console.log(usertokens);
 
 				const transactionOperations = usertokens.map((user) => {
 					return User.transaction.update(

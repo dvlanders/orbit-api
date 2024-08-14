@@ -46,10 +46,9 @@ const updateStatus = async (customer) => {
 				await createLog('pollBridgeCustomerStatus', customer.user_id, 'Failed to update bridge customer status', updateError);
 				return
 			}
-			console.log('Updated customer status for customer ID', customer.id, 'to', data.status);
-			if (!customer.is_developer){
+			if (!customer.is_developer) {
 				await notifyUserStatusUpdate(customer.user_id)
-			}else{
+			} else {
 
 			}
 		}
@@ -64,14 +63,14 @@ async function pollBridgeCustomerStatus() {
 
 	const { data: bridgeCustomerData, error: bridgeCustomerError } = await supabaseCall(() => supabase
 		.from('bridge_customers')
-		.update({updated_at: new Date().toISOString()})
+		.update({ updated_at: new Date().toISOString() })
 		.neq('status', 'active')
 		.neq('status', 'rejected')
 		.neq('status', 'invalid_fields')
 		.neq('status', null)
-		.order('updated_at', {ascending: true})
+		.order('updated_at', { ascending: true })
 		.select('id, user_id, status, bridge_id, users(is_developer)'))
-	
+
 
 
 	if (bridgeCustomerError) {
