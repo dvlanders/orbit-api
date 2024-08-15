@@ -19,22 +19,24 @@ const chargedStatusMap = {
     PENDING: "PENDING"
 }
 
-exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, fields) => {
+exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, profileId) => {
     const feeRecordId = feeRecord.id
     try{    
-        const feeUnitAmount = toUnitsString(feeAmount, currencyDecimal[feeRecord.fee_collection_currency])
+        const feeUnitAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
+        const decimals = currencyDecimal[requestRecord.currency]
+        const transferUnitAmount = toUnitsString(requestRecord.amount, decimals)
         // transfer
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
-            userId: requestRecord.bastion_user_id,
+            userId: requestRecord.sender_bastion_user_id,
             contractAddress: paymentProcessorContractAddress,
             actionName: "processPayment",
-            chain: fields.chain,
+            chain: requestRecord.chain,
             actionParams: [
-                {name: "token", value: fields.contractAddress},
-                {name: "to", value: fields.recipientAddress},
+                {name: "token", value: requestRecord.contract_address},
+                {name: "to", value: requestRecord.recipient_address},
                 {name: "feeWallet", value: feeRecord.fee_collection_wallet_address},
-                {name: "amount", value: fields.unitsAmount},
+                {name: "amount", value: transferUnitAmount},
                 {name: "fee", value: feeUnitAmount},
             ]
         };
@@ -64,7 +66,7 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
             }
             
         }else{
-            await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.senderUserId, responseBody.message, responseBody)
+            await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", requestRecord.sender_user_id, responseBody.message, responseBody)
             // update fee record
             feeToUpdate = {
                 bastion_response: responseBody,
@@ -91,42 +93,13 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
         }
 
         // update record
-        const updatedFeeRecord = await updateFeeRecord(feeRecord.id, feeToUpdate)
+        await updateFeeRecord(feeRecord.id, feeToUpdate)
         const updatedTransferRecord = await updateRequestRecord(requestRecord.id, transferToUpdate)
 
-        const receipt =  {
-            transferType: transferType.CRYPTO_TO_CRYPTO,
-            transferDetails: {
-                id: updatedTransferRecord.id,
-                requestId: fields.requestId,
-                senderUserId: fields.senderUserId,
-                recipientUserId: fields.recipientUserId || null,
-                recipientAddress: fields.recipientAddress,
-                chain: fields.chain,
-                currency: fields.currency,
-                amount: fields.amount,
-                transactionHash: updatedTransferRecord.transaction_hash,
-                createdAt: updatedTransferRecord.created_at,
-                updatedAt: updatedTransferRecord.updated_at,
-                status: updatedTransferRecord.status,
-                contractAddress: fields.contractAddress,
-                failedReason: updatedTransferRecord.failed_reason,
-                fee: {
-                    feeId: updatedFeeRecord.id,
-                    feeType,
-                    feeAmount,
-                    feePercent,
-                    status: updatedFeeRecord.charged_status,
-                    transactionHash: updatedFeeRecord.transaction_hash,
-                    failedReason: updatedFeeRecord.failed_reason
-                },
-            }
-        }
-
-        return receipt
+        return updatedTransferRecord
 
     }catch (error){
-        await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", fields.senderUserId, error.message)
+        await createLog("transfer/fee/CryptoToCryptoWithFeeBastion", requestRecord.sender_user_id, error.message)
         // update fee record
         const feeToUpdate = {
             bastion_status: "FAILED",
@@ -143,39 +116,11 @@ exports.CryptoToCryptoWithFeeBastion = async(requestRecord, feeRecord, paymentPr
 
         // update record
         if (feeRecordId) {
-            const updatedFeeRecord = await updateFeeRecord(feeRecordId, feeToUpdate)
+            await updateFeeRecord(feeRecordId, feeToUpdate)
         }
         const updatedTransferRecord = await updateRequestRecord(requestRecord.id, transferToUpdate)
-        const receipt =  {
-            transferType: transferType.CRYPTO_TO_CRYPTO,
-            transferDetails: {
-                id: requestRecord.id,
-                requestId: fields.requestId,
-                senderUserId: fields.senderUserId,
-                recipientUserId: fields.recipientUserId || null,
-                recipientAddress: fields.recipientAddress,
-                chain: fields.chain,
-                currency: fields.currency,
-                amount: fields.amount,
-                transactionHash: null,
-                createdAt: updatedTransferRecord.created_at,
-                updatedAt: updatedTransferRecord.updated_at,
-                status: "FAILED",
-                contractAddress: fields.contractAddress,
-                failedReason: "Unexpected error happened, please contact HIFI for more information",
-                fee: {
-                    feeId: feeRecordId,
-                    feeType,
-                    feeAmount,
-                    feePercent,
-                    status: "FAILED",
-                    transactionHash: null,
-                    failedReason: "Unexpected error happened, please contact HIFI for more information",
-                },
-            }
-        }
 
-        return receipt
+        return updatedTransferRecord
     }
 
 }

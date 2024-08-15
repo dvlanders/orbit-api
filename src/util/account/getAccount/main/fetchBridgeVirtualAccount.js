@@ -10,7 +10,7 @@ const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurre
         // get virtual account info
         const {data, error} = await supabase
             .from("bridge_virtual_accounts")
-            .select("created_at, id, user_id, status, source_currency, source_payment_rail, destination_currency, destination_payment_rail, destination_wallet_address, deposit_institutions_bank_name, deposit_institutions_bank_address, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number, virtual_account_id")
+            .select("created_at, id, user_id, status, source_currency, source_payment_rails, destination_currency, destination_payment_rail, destination_wallet_address, deposit_institutions_bank_name, deposit_institutions_bank_address, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number, virtual_account_id")
             .eq("user_id", userId)
             .eq("source_currency", sourceCurrency)
             .eq("destination_payment_rail", chainToVirtualAccountPaymentRail[destinationChain])
@@ -26,7 +26,7 @@ const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurre
         const virtualAccountInfo = {
             virtualAccountId: data.id,
             userId: data.user_id,
-            paymentRail: data.source_payment_rail,
+            paymentRails: data.source_payment_rails,
             sourceCurrency: data.source_currency,
             destinationChain: virtualAccountPaymentRailToChain[data.destination_payment_rail],
             destinationCurrency: data.destination_currency,

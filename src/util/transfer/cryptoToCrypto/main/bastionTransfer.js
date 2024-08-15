@@ -20,10 +20,158 @@ const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
 const { getMappedError } = require("../../../bastion/utils/errorMappings")
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap")
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
+const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
+
+
+const insertRecord = async(fields) => {
+    // insert record
+    const requestRecord = await insertRequestRecord(fields)
+    if (!fields.feeType || parseFloat(fields.feeValue) <= 0) return {validTransfer: true, record: requestRecord}
+
+    // insert fee record
+    // check if allowance is enough 
+    const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][fields.chain]
+    if (!paymentProcessorContractAddress) {
+        // no paymentProcessorContract available
+        const toUpdate = {
+            status: "FAILED",
+            failed_reason: `Fee feature not available for ${fields.currency} on ${fields.chain}`
+        }
+        const record = await updateRequestRecord(requestRecord.id, toUpdate)
+        return {validTransfer: false, record}
+    }
+    const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, fields.amount)
+
+    // fetch fee record if not create one
+    const info = {
+        chargedUserId: fields.senderUserId,
+        chain: fields.chain,
+        currency: fields.currency,
+        chargedWalletAddress: fields.senderAddress
+    }
+    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, "BASTION", requestRecord.bastion_request_id)
+    // update into crypto to crypto table
+    const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
+    return {validTransfer: true, record: requestRecord}
+}
+
+const createBastionCryptoTransfer = async(fields) => {
+    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionuserId, profileId } = fields
+    if (!isValidAmount(amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
+    // convert to actual crypto amount
+    const decimal = currencyDecimal[currency]
+    const unitsAmount = toUnitsString(amount, decimal) 
+    fields.unitsAmount = unitsAmount
+    const contractAddress = currencyContractAddress[chain][currency]
+    fields.contractAddress = contractAddress
+    fields.provider = "BASTION"
+    // insert record
+    const {validTransfer, record} = await insertRecord(fields)
+    const receipt = await fetchCryptoToCryptoTransferRecord(record.id, profileId)
+    if (!validTransfer) return receipt
+
+    // insert async job
+    const jobConfig = {
+        recordId: record.id
+    }
+    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
+    if (canSchedule){
+        await createJob("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
+    }
+
+    return receipt
+
+}
+
+const transferWithFee = async(record, profileId) => {
+    // get fee record
+    const {data: feeRecord, error} = await supabase
+        .from("developer_fees")
+        .select("*")
+        .eq("id", record.developer_fee_id)
+        .single()
+        
+    if (error) throw error
+
+    // perfrom transfer with fee
+    await CryptoToCryptoWithFeeBastion(record, feeRecord, record.payment_processor_contract_address, profileId)
+    // gas check
+    await bastionGasCheck(record.sender_bastion_user_id, record.chain)
+    // allowance check
+    await allowanceCheck(record.sender_bastion_user_id, record.sender_address, record.chain, record.currency)
+    return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
+}
+
+const transferWithoutFee = async(record, profileId) => {
+    const decimal = currencyDecimal[record.currency]
+    const unitsAmount = toUnitsString(record.amount, decimal) 
+    // transfer without fee
+    const bodyObject = {
+        requestId: record.bastion_request_id,
+        userId: record.sender_bastion_user_id,
+        contractAddress: record.contract_address,
+        actionName: "transfer",
+        chain: record.chain,
+        actionParams: erc20Transfer(record.currency, record.recipient_address, unitsAmount)
+    };
+
+    const response = await submitUserAction(bodyObject)
+    const responseBody = await response.json()
+
+    if (!response.ok) {
+        await createLog("transfer/bastionTransfer/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
+        const {message, type} = getMappedError(responseBody.message)
+
+         // update to database
+        const toUpdate = {
+            bastion_response: responseBody,
+            status: "FAILED",
+            failed_reason: message
+        }
+        await updateRequestRecord(record.id, toUpdate)
+    }else{
+        // update to database
+        const toUpdate = {
+            bastion_response: responseBody,
+            status: responseBody.status,
+            transaction_hash: responseBody.transactionHash,
+            failed_reason: responseBody.failureDetails,
+        }
+        
+        await updateRequestRecord(record.id, toUpdate)
+    }
+
+    // gas check
+    await bastionGasCheck(record.sender_bastion_user_id, record.chain)
+
+    //return record
+    return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
+}
+
+const executeAsyncBastionCryptoTransfer = async(config) => {
+    // fetch from created record
+	const {data, error} = await supabase
+    .from('crypto_to_crypto')
+    .select("*")
+    .eq("id", config.recordId)
+    .single()
+
+    if (error) {
+        await createLog("transfer/util/createTransferToBridgeLiquidationAddress", config.userId, error.message)
+        throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
+    }
+
+    // transfer
+    if (data.developer_fee_id){
+        return await transferWithFee(data, config.profileId)
+    }else{
+        return await transferWithoutFee(data, config.profileId)
+    }
+}
 
 
 
-const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
+const bastionCryptoTransfer_DEPRECATED = async(fields, createdRecordId=null) => {
     if (!isValidAmount(fields.amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
@@ -157,9 +305,9 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
             // perfrom transfer with fee
             const receipt = await CryptoToCryptoWithFeeBastion(requestRecord, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, fields.profileId, fields)
             // gas check
-            await bastionGasCheck(requestRecord.bastion_user_id, fields.chain)
+            await bastionGasCheck(requestRecord.sender_bastion_user_id, fields.chain)
             // allowance check
-            await allowanceCheck(requestRecord.bastion_user_id, fields.senderAddress, fields.chain, fields.currency)
+            await allowanceCheck(requestRecord.sender_bastion_user_id, fields.senderAddress, fields.chain, fields.currency)
             return receipt
         }
 
@@ -167,7 +315,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
         // transfer without fee
         const bodyObject = {
             requestId: requestRecord.bastion_request_id,
-            userId: requestRecord.bastion_user_id,
+            userId: requestRecord.sender_bastion_user_id,
             contractAddress: requestRecord.contract_address,
             actionName: "transfer",
             chain: requestRecord.chain,
@@ -203,7 +351,7 @@ const bastionCryptoTransfer = async(fields, createdRecordId=null) => {
         }
     
         // gas check
-        await bastionGasCheck(requestRecord.bastion_user_id, fields.chain)
+        await bastionGasCheck(requestRecord.sender_bastion_user_id, fields.chain)
     
         // return receipt
         const receipt =  {
@@ -303,8 +451,9 @@ const bastionCryptoTransferDeveloperWithdraw = async(fields) => {
 
 
 module.exports = {
-    bastionCryptoTransfer,
     CreateCryptoToCryptoTransferError,
     CreateCryptoToCryptoTransferErrorType,
-    bastionCryptoTransferDeveloperWithdraw
+    bastionCryptoTransferDeveloperWithdraw,
+    createBastionCryptoTransfer,
+    executeAsyncBastionCryptoTransfer
 }

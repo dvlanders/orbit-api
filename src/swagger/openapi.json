@@ -712,12 +712,16 @@
               "SAVING",
               "BUSINESS"
             ]
+          },
+          "createVirtualAccount": {
+            "type": "boolean"
           }
         },
         "required": [
           "plaidProcessorToken",
           "bankName",
-          "accountType"
+          "accountType",
+          "createVirtualAccount"
         ]
       },
       "UsdOnrampWireAccount": {
@@ -729,26 +733,10 @@
             "enum": [
               "US_ACH_WIRE"
             ]
-          },
-          "destinationCurrency": {
-            "type": "string",
-            "enum": [
-              "usdc"
-            ]
-          },
-          "destinationChain": {
-            "type": "string",
-            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
-            "enum": [
-              "POLYGON_MAINNET",
-              "POLYGON_AMOY"
-            ]
           }
         },
         "required": [
-          "rail",
-          "destinationCurrency",
-          "destinationChain"
+          "rail"
         ]
       },
       "UsdOfframpAchAccount": {
@@ -1205,8 +1193,11 @@
               "userId": {
                 "type": "string"
               },
-              "paymentRail": {
-                "type": "string"
+              "paymentRails": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               },
               "sourceCurrency": {
                 "type": "string"
@@ -1248,7 +1239,10 @@
           "account": {
             "virtualAccountId": "21593434-eb2a-4e44-a4d7-fc5700acd8a2",
             "userId": "75d7c01f-5f93-43434-8b93-a62fd8020358",
-            "paymentRail": "ach_push",
+            "paymentRails": [
+              "ach_push",
+              "wire"
+            ],
             "sourceCurrency": "usd",
             "destinationChain": "POLYGON_MAINNET",
             "destinationCurrency": "usdc",
@@ -1562,8 +1556,11 @@
           "userId": {
             "type": "string"
           },
-          "paymentRail": {
-            "type": "string"
+          "paymentRails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "sourceCurrency": {
             "type": "string"
@@ -1647,7 +1644,10 @@
         "example": {
           "virtualAccountId": "21593434-eb2a-4e44-a4d7-fc5700acd8a2",
           "userId": "75d7c01f-5f93-43434-8b93-a62fd8020358",
-          "paymentRail": "ach_push",
+          "paymentRails": [
+            "ach_push",
+            "wire"
+          ],
           "sourceCurrency": "usd",
           "destinationChain": "POLYGON_MAINNET",
           "destinationCurrency": "usdc",
@@ -4572,8 +4572,8 @@
   "paths": {
     "/account/usd/onramp/plaid": {
       "post": {
-        "summary": "Add USD Onramp Bank Account with Plaid (ACH)",
-        "description": "HIFI and Plaid have partnered to enable you to use your existing Plaid integration to connect your bank account to HIFI for USD Onramp with ACH pull.\nTo get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid processor token.\n\nPassing the processor_token to this endpoint will allow you to add a USD onramp bank account with Plaid.\n\n***Note: This is a billable event.***\n",
+        "summary": "Link Plaid Account for USD Onramp (ACH)",
+        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. \n\n***Note: Create Virtual Account is a billable event.***\n",
         "tags": [
           "Account"
         ],
@@ -4603,8 +4603,8 @@
     },
     "/account/activateOnRampRail": {
       "post": {
-        "summary": "Generate USD Onramp Bank Account (ACH/Wire)",
-        "description": "HIFI will generate a USD Onramp Bank Account for you that allows you to onramp by simply deposit fiat into the generated bank account via ACH push or WIRE transfer.\n\nThe generated bank account only supports the specified onramp rail: `(rail, destinationCurrency, destinationChain)`. \nIf you need to support a different rail, you'll need to generate another bank account for that specific rail.\n\n***Note: This is a billable event.***\n",
+        "summary": "Create Onramp Virtual Account",
+        "description": "HIFI will create a virtual bank account for you that allows you to onramp by simply deposit fiat into the bank account.\n\nThe created virtual bank account only supports the specified onramp `rail`. eg. ACH and WIRE with USD. If you need to support a different rail, you'll need to generate another virtual bank account for that specific rail.\n\n***Note: Create Virtual Account is a billable event.***\n",
         "tags": [
           "Account"
         ],
@@ -4751,7 +4751,7 @@
     "/account/brl/offramp": {
       "post": {
         "summary": "Add BRL Offramp Bank Account (Pix)",
-        "description": "Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to.\nYou can get the receiver id by making a `Create BRL Offramp Receiver` call.\n",
+        "description": "Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id by making a `Create BRL Offramp Receiver` call.\n",
         "tags": [
           "Account"
         ],
@@ -4850,8 +4850,8 @@
     },
     "/account/onRampRail/virtualAccount": {
       "get": {
-        "summary": "Retrieve Generated USD Onramp Bank Account Details",
-        "description": "Retrieve the generated bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.",
+        "summary": "Retrieve Onramp Virtual Account Details",
+        "description": "Retrieve the created virtual bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.",
         "tags": [
           "Account"
         ],

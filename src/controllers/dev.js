@@ -151,7 +151,7 @@ exports.registerFeeWallet = async(req, res) => {
     try{
         const chain = Chain.POLYGON_MAINNET
         const userId = "80fdf48c-42b2-4bf8-b4a9-d00817bae912"
-        const walletAddress = await getBastionWallet(userId, chain, "FEE_COLLECTION")
+        const {walletAddress} = await getBastionWallet(userId, chain, "FEE_COLLECTION")
         await regsiterFeeWallet(userId, walletAddress, chain)
         return res.status(200).json({message: "success"})
     }catch(error){

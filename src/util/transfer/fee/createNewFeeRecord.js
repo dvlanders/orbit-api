@@ -16,7 +16,7 @@ exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, p
     if (!feeCollectionUser.developer_user_id) throw new Error("Developer user account is not created")
 
     // get fee_collection_wallet_address
-    const feeCollectionWalletAddress = await getBastionWallet(feeCollectionUser.developer_user_id, info.chain, "FEE_COLLECTION")
+    const {walletAddress: feeCollectionWalletAddress} = await getBastionWallet(feeCollectionUser.developer_user_id, info.chain, "FEE_COLLECTION")
     if (!feeCollectionWalletAddress) throw new Error (`No feeCollectionWalletAddress wallet found`)
 
     const record = {

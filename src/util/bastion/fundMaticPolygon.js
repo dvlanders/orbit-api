@@ -19,7 +19,7 @@ const gasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
 async function fundMaticPolygon(userId, amount, type = "INDIVIDUAL") {
 	try {
 		// get user wallet
-		const walletAddress = await getBastionWallet(userId, chain, type)
+		const {walletAddress} = await getBastionWallet(userId, chain, type)
 		if (!walletAddress) throw new Error(`No user wallet found`)
 
 		const requestId = uuidv4();
