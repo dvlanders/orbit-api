@@ -30,7 +30,6 @@ const notifyCryptoToCryptoTransfer = async (record) => {
 	}
 
 	await sendMessage(user.profile_id, message)
-	console.log("message sent")
 }
 
 

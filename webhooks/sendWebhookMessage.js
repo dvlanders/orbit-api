@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken")
 const { v4 } = require('uuid');
 const insertWebhookMessageToQueue = require("./insertToQueue");
 const insertToHistory = require("./insertToHistory");
+const crypto = require('crypto');
 
 
 const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=new Date()) => {
@@ -15,7 +16,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
     //get client webhook url and secret
     let { data: webhookUrl, error: webhookUrlError } = await supabaseCall(() => supabase
         .from('webhook_urls')
-        .select('webhook_url, webhook_secret')
+        .select('webhook_url, webhook_signing_secret')
         .eq("profile_id", profileId)
         .maybeSingle())
     
@@ -24,6 +25,15 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         return
     }
     if (!webhookUrl) return
+    const encryptedPrivateKey = webhookUrl.webhook_signing_secret.replace(/\\n/g, '\n')
+    const passphrase = process.env.WEBHOOK_ENCRYPTION_SECRET
+    if (!passphrase) throw new Error("No passphrase found")
+
+    const privateKey = crypto.createPrivateKey({
+        key: encryptedPrivateKey,
+        format: 'pem',
+        passphrase: passphrase,
+      });
 
     try {
         const eventId = v4()
@@ -33,7 +43,10 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
             ...requestBody
         }
         // try sending the webhook message
-        const token = jwt.sign(requestBody, webhookUrl.webhook_secret, { expiresIn: '1h' });
+        const token = jwt.sign(requestBody, privateKey, {
+            algorithm: 'RS256',
+            expiresIn: '1h'
+          });
         const response = await fetch(webhookUrl.webhook_url, {
             method: "POST",
             headers: {

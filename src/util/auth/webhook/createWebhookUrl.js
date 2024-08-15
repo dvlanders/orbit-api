@@ -4,6 +4,7 @@ const crypto = require('crypto');
 let supabase = require("../../supabaseClient");
 const createLog = require("../../logger/supabaseLogger");
 const supabaseSandbox = require("../../sandboxSupabaseClient");
+const generateKeyPair = require("./generateKeyPair");
 
 const activateWebhook = async(webhookUrl, profileId, env) => {
     let supabaseClient
@@ -12,21 +13,23 @@ const activateWebhook = async(webhookUrl, profileId, env) => {
     }else{
         supabaseClient = supabase
     }
-    const secretKey = crypto.randomBytes(64).toString('hex');
 
+    const keys = await generateKeyPair()
 
     const { data, error } = await supabaseClient
     .from('webhook_urls')
     .upsert({ 
         profile_id: profileId, 
         webhook_url: webhookUrl,
-        webhook_secret: secretKey
+        webhook_public_key: keys.publicKey.replace(/\n/g, '\\n'),
+        webhook_signing_secret: keys.privateKey.replace(/\n/g, '\\n')
     }
     , {onConflict: "profile_id"})
-    .select()
+    .select("webhook_public_key")
+    .single()
 
     if (error) throw error
-    return secretKey
+    return data.webhook_public_key
         
 
 }

@@ -231,10 +231,10 @@ exports.createWebhook = async (req, res) => {
 			}
 		}
 
-		const secretKey = await activateWebhook(webhookUrl, organizationId, env)
+		const publicKey = await activateWebhook(webhookUrl, organizationId, env)
 		const result = {
 			webhookUrl,
-			secretKey
+			publicKey
 		}
 		return res.status(200).json(result)
 
@@ -313,27 +313,27 @@ exports.getWebhook = async (req, res) => {
 		// get from sandbox
 		const { data: sandboxWebhook, error: sandboxWebhookError } = await supabaseSandbox
 			.from("webhook_urls")
-			.select()
+			.select("webhook_url, webhook_public_key")
 			.eq("profile_id", profile.organization_id)
 			.maybeSingle()
 
 		if (sandboxWebhookError) throw sandboxWebhookError
 		if (sandboxWebhook) {
 			webhookInfo.sandbox.webhookUrl = sandboxWebhook.webhook_url
-			webhookInfo.sandbox.webhookSecret = sandboxWebhook.webhook_secret
+			webhookInfo.sandbox.webhookPublicKey = sandboxWebhook.webhook_public_key
 		}
 
 		// get from production
 		const { data: prodWebhook, error: prodWebhookError } = await supabase
 			.from("webhook_urls")
-			.select()
+			.select("webhook_url, webhook_public_key")
 			.eq("profile_id", profile.organization_id)
 			.maybeSingle()
 
 		if (prodWebhookError) throw prodWebhookError
 		if (prodWebhook) {
 			webhookInfo.production.webhookUrl = prodWebhook.webhook_url
-			webhookInfo.production.webhookSecret = prodWebhook.webhook_secret
+			webhookInfo.production.webhookPublicKey = prodWebhook.webhook_public_key
 		}
 
 		return res.status(200).json(webhookInfo)
