@@ -34,7 +34,6 @@ const notifyFiatToCryptoTransfer = async (record) => {
 	}
 
 	await sendMessage(user.profile_id, message)
-	console.log("message sent")
 
 }
 
