@@ -568,7 +568,7 @@ exports.generateToSLink = async (req, res) => {
 		if (!isValid) return res.status(400).json({ error: "Invalid or used idempotencyKey" })
 		// valid and unexpired record
 		if (data) {
-			let tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}`
+			let tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${data.session_token}${encodedUrl}`
 			if (env == "development"){
 				tosLink += "&sandbox=true"
 			}
