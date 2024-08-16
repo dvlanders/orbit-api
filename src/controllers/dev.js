@@ -308,3 +308,23 @@ exports.testBastionUserTable = async(req, res) => {
         return res.status(500).json({error: "error"})
     }
 }
+
+exports.testGetVirtualAccountAmount = async(req, res) => {
+    try{
+
+        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
+        const {count, error} = await supabase
+            .from("bridge_virtual_accounts")
+            .select("*, users!inner(profile_id)", {count: 'exact', head: true})
+            .eq("users.profile_id", profileId)
+            .gt("last_activity_time", "2024-08-21")
+            .lt("last_activity_time", "2024-08-30")
+        
+        if (error) throw error
+        return res.status(200).json({count: count})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+
+}

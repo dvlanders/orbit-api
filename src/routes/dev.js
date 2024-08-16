@@ -24,4 +24,5 @@ module.exports = (router) => {
 	router.get("/dev/testCheckFeeWalletRegistered", dev.testCheckFeeWalletRegistered)
 	router.get("/dev/testBastionUserTable", dev.testBastionUserTable)
 	router.post("/dev/testSendMessage", dev.testSendMessage)
+	router.get("/dev/testGetVirtualAccountAmount", dev.testGetVirtualAccountAmount)
 };
