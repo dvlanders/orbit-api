@@ -2,12 +2,11 @@
   post:
     summary: Link Plaid Account for USD Onramp (ACH)
     description: |
-       HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull.
-       To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid processor token. 
-       Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.
+       HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid 
+       processor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.
        
-       Linking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account,
-       you can set the parameter `createVirtualAccount` to `true` in the request body or you can create one manually through the `Create USD Onramp Virtual Account (ACH/Wire)` endpoint. 
+       Linking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body 
+       or you can create one manually later on through the `Create Onramp Virtual Account` endpoint. 
       
        ***Note: Create Virtual Account is a billable event.***
     tags:
@@ -27,12 +26,11 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/activateOnRampRail:
   post:
-    summary: Create USD Onramp Virtual Account (ACH/Wire)
+    summary: Create Onramp Virtual Account
     description: |
-       HIFI will create a virtual bank account for you that allows you to onramp by simply deposit fiat into the bank account via ACH push or WIRE transfer.
+       HIFI will create a virtual bank account for you that allows you to onramp by simply deposit fiat into the bank account.
 
-       The created virtual bank account only supports the specified onramp `rail`. eg. ACH and WIRE with USD.
-       If you need to support a different rail, you'll need to generate another virtual bank account for that specific rail.
+       The created virtual bank account only supports the specified onramp `rail`. eg. ACH and WIRE with USD. If you need to support a different rail, you'll need to generate another virtual bank account for that specific rail.
 
        ***Note: Create Virtual Account is a billable event.***
     tags:
@@ -127,8 +125,7 @@
   post:
     summary: Add BRL Offramp Bank Account (Pix)
     description: |
-      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to.
-      You can get the receiver id by making a `Create BRL Offramp Receiver` call.
+      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id by making a `Create BRL Offramp Receiver` call.
     tags:
       - Account
     requestBody:
@@ -184,7 +181,7 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/onRampRail/virtualAccount:
   get:
-    summary: Retrieve USD Onramp Virtual Account Details
+    summary: Retrieve Onramp Virtual Account Details
     description: Retrieve the created virtual bank account information. The response will include the desposit instructions and the micro deposit information requested by institution.
     tags:
       - Account

@@ -88,11 +88,11 @@ exports.testwebhook = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     try {
-        // console.log(req.headers)
+        console.log("received")
         const token = req.headers['authorization'].split(' ')[1];
-
+        const public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyy6f6moGJlxroxFVK6fn\nBh/5RIw7XmTUPx8PglbBjBHWt5xDPD/oSnplCrmG0nBINCBgALxppsRJyN70Waxu\nRB5KibQHyi6/UrKU/rUZhqw2PDDsar2RpLbqE2YT2P8XlSjSzZoKm5tBPNsGkYE/\nmusLdnsjTMpa+8BzdGpZ9OoXh8p1vu8a+8PES3TmryszfwZxmgBwWp7gpQiOarsr\nKmktoXkyvtaUXd21m97rnO2cR21J56LYaeoLt3uwqb/XrEjbx9WNrJ3a8CC0g/P1\nfeIpujg5zuJPfx6LuqhL0F898ogoaXTSuSy1FAde2EZLBC2rq1eOgslJpb5JVogw\nyQIDAQAB\n-----END PUBLIC KEY-----\n"
         // Verify the token
-        jwt.verify(token, "this-is-a-webhook-secret", (err, decoded) => {
+        jwt.verify(token, public_key.replace(/\\n/g, '\n'), { algorithms: ['RS256'] },(err, decoded) => {
             if (err) {
                 console.error('Failed to verify token:', err.message);
                 throw new Error("wrong token")
@@ -103,6 +103,19 @@ exports.testwebhook = async(req, res) => {
         return res.status(200).json({message: "Success"})
     }catch (error){
         return res.status(401).json({message: "Wrong token"})
+    }
+}
+
+exports.testSendMessage = async(req, res) => {
+    try{
+
+        const profileId = "e00d8e99-6d88-4f9c-98b3-c144bdec009c"
+        const message = {message: "hello"}
+        await sendMessage(profileId, message)
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
     }
 }
 
