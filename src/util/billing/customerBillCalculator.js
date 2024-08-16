@@ -42,13 +42,13 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             })
         if (fiatToCryptoError) throw fiatToCryptoError
 
-        // get active user amount
-        const {data: activeVirtualAccount, error: activeVirtualAccountError} = await supabase
-        .rpc('get_record_count_with_user_id_presented', {
-            profile_id: profileId,
-            table_name: "bridge_virtual_accounts",
-            end_date: endDate
-            })
+        // get active virtual account amount
+        const {count: activeVirtualAccount, error: activeVirtualAccountError} = await supabase
+            .from("bridge_virtual_accounts")
+            .select("*, users!inner(profile_id)", {count: 'exact', head: true})
+            .eq("users.profile_id", profileId)
+            .gt("last_activity_time", startDate)
+            .lt("last_activity_time", endDate)
         if (activeVirtualAccountError) throw activeVirtualAccountError
 
         const billingInfo = {
