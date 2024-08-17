@@ -61,13 +61,11 @@
         "schema": {
           "type": "string",
           "enum": [
-            "usd",
-            "eur",
-            "brl"
+            "usdc"
           ]
         },
-        "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
-        "required": false
+        "description": "The type of currency to check the balance for. Currently, only USDC is supported.",
+        "required": true
       },
       "RailTypeParameter": {
         "name": "railType",
@@ -254,6 +252,18 @@
         },
         "description": "If userType is passed, you will get all users under the type.",
         "required": false
+      },
+      "ChainParameter": {
+        "name": "chain",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "POLYGON_MAINNET"
+          ]
+        },
+        "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported.",
+        "required": true
       }
     },
     "requestBodies": {
@@ -689,6 +699,16 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ToSLinkObject"
+            }
+          }
+        }
+      },
+      "WalletBalanceResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/WalletBalanceObject"
             }
           }
         }
@@ -4561,6 +4581,61 @@
           "url": "https://dashboard.hifibridge.com/accept-terms-of-service?sessionToken=e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40&redirectUrl=undefined&templateId=2fb2da24-472a-4e5b-b160-038d9dc82a40",
           "signedAgreementId": "e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40"
         }
+      },
+      "WalletBalanceObject": {
+        "type": "object",
+        "properties": {
+          "balance": {
+            "type": "string",
+            "description": "The raw balance of the wallet in the smallest unit of the token."
+          },
+          "displayBalance": {
+            "type": "string",
+            "description": "The user-friendly balance of the wallet formatted to two decimal places."
+          },
+          "tokenInfo": {
+            "type": "object",
+            "description": "Detailed information about the token.",
+            "properties": {
+              "chain": {
+                "type": "string",
+                "description": "The blockchain network where the token is hosted."
+              },
+              "contractAddress": {
+                "type": "string",
+                "description": "The smart contract address of the token."
+              },
+              "assetType": {
+                "type": "string",
+                "description": "The type of asset, typically 'ERC20' for Ethereum-based tokens."
+              },
+              "quantity": {
+                "type": "string",
+                "description": "The quantity of the token in its smallest unit."
+              },
+              "symbol": {
+                "type": "string",
+                "description": "The symbol of the token, such as 'USDC'."
+              },
+              "decimals": {
+                "type": "integer",
+                "description": "The number of decimal places the token can be divided into."
+              }
+            }
+          }
+        },
+        "example": {
+          "balance": "10000",
+          "displayBalance": "0.01",
+          "tokenInfo": {
+            "chain": "POLYGON_MAINNET",
+            "contractAddress": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+            "assetType": "ERC20",
+            "quantity": "10000",
+            "symbol": "USDC",
+            "decimals": 6
+          }
+        }
       }
     }
   },
@@ -5350,6 +5425,37 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/wallet/balance": {
+      "get": {
+        "summary": "Get User Wallet Balance",
+        "description": "Poll this endpoint to get the latest balance of a user's wallet, including details like the blockchain network and currency.",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/ChainParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CurrencyParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/WalletBalanceResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerErrorResponse"
