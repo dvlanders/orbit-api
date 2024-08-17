@@ -857,16 +857,26 @@ exports.getUserKycInformation = async (req, res) => {
 	const { userId, profileId } = req.query
 
 	try {
-		const { data, error } = await supabase
-			.from("user_kyc")
-			.select("*, users(user_type)")
-			.eq("user_id", userId)
+
+		const { data:user, error: userError } = await supabase
+			.from("users")
+			.select("user_type, user_kyc(*), ultimate_beneficial_owners(*)")
+			.eq("id", userId)
 			.maybeSingle()
+		if (userError) console.error(userError)
+		if (!user) return res.status(404).json({ error: `user not found for id: ${userId}` })
+		
+		const result = {
+			user:{
+				user_type: user.user_type
+			},
+			...user.user_kyc,
+			ultimate_beneficial_owners: user.ultimate_beneficial_owners
+		}
 
-
-		if (error) throw error
-		if (!data) return res.status(404).json({ error: `user not found for id: ${userId}` })
-		return res.status(200).json(data)
+		console.log(result)
+		
+		return res.status(200).json(result)
 
 
 	} catch (error) {
