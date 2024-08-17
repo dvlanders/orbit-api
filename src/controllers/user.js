@@ -27,9 +27,11 @@ const { jobMapping } = require('../../asyncJobs/jobMapping');
 const { createUserAsyncCheck } = require('../../asyncJobs/user/createUser');
 const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
 const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
-const { Chain } = require('../util/common/blockchain');
+const { Chain, currencyContractAddress } = require('../util/common/blockchain');
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
+const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
+
 
 
 const Status = {
@@ -569,7 +571,7 @@ exports.generateToSLink = async (req, res) => {
 		// valid and unexpired record
 		if (data) {
 			let tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${data.session_token}${encodedUrl}`
-			if (env == "development"){
+			if (env == "development") {
 				tosLink += "&sandbox=true"
 			}
 			return res.status(200).json({ url: tosLink })
@@ -579,7 +581,7 @@ exports.generateToSLink = async (req, res) => {
 		const signedAgreementInfo = await generateNewSignedAgreementRecord(idempotencyKey, templateId)
 		// generate hosted tos page
 		let tosLink = `${DASHBOARD_URL}/accept-terms-of-service?sessionToken=${signedAgreementInfo.session_token}${encodedUrl}&templateId=${templateId}`
-		if (env == "development"){
+		if (env == "development") {
 			tosLink += "&sandbox=true"
 		}
 
@@ -599,7 +601,7 @@ exports.acceptToSLink = async (req, res) => {
 	const { profileId } = req.query
 	const { sessionToken, isSandbox } = req.body
 	try {
-		const env = isSandbox? "development" : "production"
+		const env = isSandbox ? "development" : "production"
 		console.log(env)
 		if (!sessionToken) return res.status(400).json({ error: "Session token is required" })
 		const signedAgreementId = await updateSignedAgreementRecord(sessionToken, env)
@@ -757,7 +759,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 		)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
-			// check is developer user
+		// check is developer user
 		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use PUT user/developer" })
 		// upload all the information
 		try {
@@ -858,16 +860,16 @@ exports.getUserKycInformation = async (req, res) => {
 
 	try {
 
-		const { data:user, error: userError } = await supabase
+		const { data: user, error: userError } = await supabase
 			.from("users")
 			.select("user_type, user_kyc(*), ultimate_beneficial_owners(*)")
 			.eq("id", userId)
 			.maybeSingle()
 		if (userError) console.error(userError)
 		if (!user) return res.status(404).json({ error: `user not found for id: ${userId}` })
-		
+
 		const result = {
-			user:{
+			user: {
 				user_type: user.user_type
 			},
 			...user.user_kyc,
@@ -875,7 +877,7 @@ exports.getUserKycInformation = async (req, res) => {
 		}
 
 		console.log(result)
-		
+
 		return res.status(200).json(result)
 
 
@@ -1042,51 +1044,51 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use GET user" })
 		// check if the developeruserCreation is in the job queue, if yes return pending response
-		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.userType}, userId, profileId)
+		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: user.userType }, userId, profileId)
 		let status
 		let basicKycStatus
-		if (!canScheduled){
+		if (!canScheduled) {
 			status = "PENDING"
-		}else{
+		} else {
 			// get bridge kyc status
 			// check if the application is submitted
 			const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
-			.from('bridge_customers')
-			.select('*')
-			.eq('user_id', userId)
-			.maybeSingle()
+				.from('bridge_customers')
+				.select('*')
+				.eq('user_id', userId)
+				.maybeSingle()
 			)
 			if (bridgeCustomerError) throw bridgeCustomerError
-			if (!bridgeCustomer) return res.status(500).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+			if (!bridgeCustomer) return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
 			const bridgeKycPassed = bridgeCustomer.status == "active"
 
-			if (bridgeCustomer.status == "rejected"){
+			if (bridgeCustomer.status == "rejected") {
 				basicKycStatus = await getBridgeCustomer(userId)
 			}
 
 			// get bastion kyc status
 			let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
-			.from('bastion_users')
-			.select('kyc_passed, jurisdiction_check_passed, kyc_level')
-			.eq("bastion_user_id", `${userId}-FEE_COLLECTION`)
-			.maybeSingle())
+				.from('bastion_users')
+				.select('kyc_passed, jurisdiction_check_passed, kyc_level')
+				.eq("bastion_user_id", `${userId}-FEE_COLLECTION`)
+				.maybeSingle())
 
 			if (bastionUserError) throw bastionUserError
-			if (!bastionUser) return res.status(200).json({status: "INACTIVE", message: "Please contact HIFI for more information"})
+			if (!bastionUser) return res.status(200).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
 			const bastionKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
-			
+
 			// get status
-			if (bridgeKycPassed && bastionKycPassed){
+			if (bridgeKycPassed && bastionKycPassed) {
 				status = "ACTIVE"
-			}else if (!bastionKycPassed){
+			} else if (!bastionKycPassed) {
 				status = "INACTIVE"
-			}else if (bridgeCustomer.status == "not_started"){
+			} else if (bridgeCustomer.status == "not_started") {
 				status = "PENDING"
-			}else{
+			} else {
 				status = "INACTIVE"
 			}
 		}
-		
+
 		// get user kyc_information
 		const { data: kycInformation, error: kycInformationError } = await supabase
 			.from("user_kyc")
@@ -1096,8 +1098,8 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		if (kycInformationError) throw kycInformationError
 
 		// get user wallet information, only polygon for now
-		const {walletAddress: feeCollectionWalletAddress} = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
-		const {walletAddress: prefundedWalletAddress} = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
+		const { walletAddress: feeCollectionWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
+		const { walletAddress: prefundedWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
 
 		const userInformation = {
 			legalFirstName: kycInformation.legal_first_name,
@@ -1144,7 +1146,7 @@ exports.updateDeveloperUser = async (req, res) => {
 		)
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
-			// check is developer user
+		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use PUT user" })
 		// upload all the information
 		try {
@@ -1226,9 +1228,9 @@ exports.updateDeveloperUser = async (req, res) => {
 		}
 
 		// insert async jobs
-		const canSchedule = await updateDeveloperUserAsyncCheck("updateDeveloperUser", {userId, userType: user.user_type}, userId, profileId)
-        if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
-		await createJob("updateDeveloperUser", {userId, userType: user.user_type}, userId, profileId)
+		const canSchedule = await updateDeveloperUserAsyncCheck("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
+		if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
+		await createJob("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
@@ -1236,3 +1238,50 @@ exports.updateDeveloperUser = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
+
+exports.getUserWalletBalance = async (req, res) => {
+	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
+
+	const { userId, chain, currency, walletType, profileId } = req.query
+
+	if (!userId || !chain || !currency || !walletType) return res.status(400).json({ error: "userId, chain, currency, and walletType are required" })
+
+	try {
+		let bastionUserId = userId
+		if (walletType == "FEE_COLLECTION") {
+			bastionUserId = `${bastionUserId}-FEE_COLLECTION`
+		} else if (walletType == "PREFUNDED") {
+			bastionUserId = `${bastionUserId}-PREFUNDED`
+		}
+		const response = await getUserBalance(bastionUserId, chain)
+		const responseBody = await response.json()
+
+		if (!response.ok) {
+			createLog("user/getUserWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody)
+			return res.status(500).json({ error: 'Internal server error' });
+		}
+
+		const currencyContract = currencyContractAddress[chain][currency].toLowerCase()
+
+		const tokenInfo = responseBody.tokenBalances[currencyContract];
+		if (!tokenInfo) {
+			return res.status(200).json({ balance: "0", displayBalance: "0.00", tokenInfo: null });
+		}
+
+		// Calculate the display balance by adjusting for the decimal places
+		const displayBalance = (Number(tokenInfo.quantity) / Math.pow(10, tokenInfo.decimals)).toFixed(2);
+
+		return res.status(200).json({
+			balance: tokenInfo.quantity,
+			displayBalance,  // Adding the formatted balance for easier reading
+			tokenInfo
+		});
+
+
+	} catch (error) {
+		console.error(error)
+		await createLog("user/getUserWalletBalance", userId, error.message, error)
+		return res.status(500).json({ error: 'Internal server error' });
+	}
+
+}

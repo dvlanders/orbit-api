@@ -22,6 +22,7 @@ module.exports = (router) => {
 	router.post("/tos-link", authorize, logRequestResponse, user.generateToSLink)
 
 	router.put("/tos-link", logRequestResponse, user.acceptToSLink)
+	router.get("/user/wallet/balance", authorize, logRequestResponse, user.getUserWalletBalance);
 
 };
 
