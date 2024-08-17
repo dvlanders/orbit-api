@@ -3,22 +3,28 @@ UserObjectPendingResponse:
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UserObjectPending'
+        $ref: "#/components/schemas/UserObjectPending"
 UserObjectActiveResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UserObjectActive'
+        $ref: "#/components/schemas/UserObjectActive"
 AllUserObjectsResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/AllUserObjects'
+        $ref: "#/components/schemas/AllUserObjects"
 ToSLinkObjectResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/ToSLinkObject'
+        $ref: "#/components/schemas/ToSLinkObject"
+WalletBalanceResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/WalletBalanceObject"

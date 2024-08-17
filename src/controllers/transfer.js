@@ -34,6 +34,7 @@ const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversi
 const { fetchAccountProviders } = require("../util/account/accountProviders/accountProvidersService");
 const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walletType");
 
+
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
@@ -711,15 +712,6 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 
 }
 
-// simply return success 200 with testing message
-exports.test = async (req, res) => {
-	if (req.method !== 'GET') {
-		return res.status(405).json({ error: 'Method not allowed' });
-	}
-	return res.status(200).json({ message: "This is a test endpoint" });
-
-}
-
 exports.cryptoToFiatConversionRate = async (req, res) => {
 	if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
@@ -741,3 +733,50 @@ exports.cryptoToFiatConversionRate = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
+
+exports.createFiatToFiatViaCryptoTransfer = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const fields = req.body;
+	const { profileId } = req.query;
+	const { requestId, amount, sourceCurrency, destinationCurrency, sourceAccountId, destinationAccountId, sourceUserId, destinationUserId, feeType, feeValue } = fields;
+
+	try {
+		// Initiate the fiat to crypto transfer
+		const fiatToCryptoResponse = await exports.createFiatToCryptoTransfer(req, res, true);
+		if (fiatToCryptoResponse.status !== 200) {
+			return res.status(fiatToCryptoResponse.status).json(fiatToCryptoResponse.body);
+		}
+
+		// Prepare the parameters needed for the offramp transaction
+		const offrampParams = {
+			requestId,
+			destinationAccountId,
+			amount, // Assume the same amount or calculate based on results from fiatToCryptoResponse
+			chain: fiatToCryptoResponse.body.chainUsed, // Use the chain from fiat to crypto transaction if needed
+			sourceCurrency: destinationCurrency, // Intermediate currency becomes the source
+			destinationCurrency,
+			sourceUserId,
+			description: `Offramp for conversion from ${sourceCurrency} to ${destinationCurrency} via crypto`,
+			purposeOfPayment: 'Fiat to Fiat transfer via crypto intermediary',
+			feeType,
+			feeValue,
+			profileId
+		};
+
+		// Create a job to handle the offramp transaction after onramp is confirmed
+		await createJob("handleOfframpForFiatToFiatViaCryptoTransfer", offrampParams, sourceUserId, profileId);
+
+		return res.status(200).json({
+			message: "Fiat to crypto initiated successfully. Offramp will proceed once onramp is confirmed.",
+			fiatToCryptoResult: fiatToCryptoResponse.body
+		});
+
+	} catch (error) {
+		console.error('Combined Transfer Error:', error);
+		await createLog("transfer/createFiatToFiatViaCryptoTransfer", requestId, error.message, error);
+		return res.status(500).json({ error: "Unexpected error happened", details: error.message });
+	}
+};
