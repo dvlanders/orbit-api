@@ -20,9 +20,10 @@ const bridgeFieldsToRequestFields = {
 	street_line_2: "addressLine2",
 	city: "city",
 	"address.postal_code": "postalCode",
-	"address.state": "stateStateRegion",
+	"address.state": "stateProvinceRegion",
 	signed_agreement_id: "signedAgreementId",
-	compliance_screening_explanation: "complianceScreeningExplanation"
+	compliance_screening_explanation: "complianceScreeningExplanation",
+	business_type: "businessType"
 };
 
 
