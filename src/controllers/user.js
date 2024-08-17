@@ -1242,17 +1242,13 @@ exports.updateDeveloperUser = async (req, res) => {
 exports.getUserWalletBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
-	const { userId, chain, currency, walletType, profileId } = req.query
+	const { userId, chain, currency, profileId } = req.query
 
-	if (!userId || !chain || !currency || !walletType) return res.status(400).json({ error: "userId, chain, currency, and walletType are required" })
+	if (!userId || !chain || !currency) return res.status(400).json({ error: "userId, chain, and currency are required" })
 
 	try {
 		let bastionUserId = userId
-		if (walletType == "FEE_COLLECTION") {
-			bastionUserId = `${bastionUserId}-FEE_COLLECTION`
-		} else if (walletType == "PREFUNDED") {
-			bastionUserId = `${bastionUserId}-PREFUNDED`
-		}
+
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 

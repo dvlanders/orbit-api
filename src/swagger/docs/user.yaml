@@ -89,18 +89,18 @@
         $ref: "#/components/responses/InternalServerErrorResponse"
 /user/wallet/balance:
   get:
-    summary: Get a user's wallet balance
-    description: Poll this endpoint to get the latest balance of a user's wallet.
+    summary: Get User Wallet Balance
+    description: Poll this endpoint to get the latest balance of a user's wallet, including details like the blockchain network and currency.
     tags:
       - User
     parameters:
       - $ref: "#/components/parameters/UserIdParameter"
+      - $ref: "#/components/parameters/ChainParameter"
+      - $ref: "#/components/parameters/CurrencyParameter"
     responses:
       "200":
-        $ref: "#/components/responses/UserObjectActiveResponse"
+        $ref: "#/components/responses/WalletBalanceResponse"
       "401":
         $ref: "#/components/responses/UnauthorizedResponse"
-      "404":
-        $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"

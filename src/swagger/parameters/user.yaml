@@ -20,3 +20,23 @@ UserTypeParameter:
     enum: [individual, business]
   description: If userType is passed, you will get all users under the type.
   required: false
+
+ChainParameter:
+  name: chain
+  in: query
+  schema:
+    type: string
+    enum:
+      - POLYGON_MAINNET
+  description: The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported.
+  required: true
+
+CurrencyParameter:
+  name: currency
+  in: query
+  schema:
+    type: string
+    enum:
+      - usdc
+  description: The type of currency to check the balance for. Currently, only USDC is supported.
+  required: true
