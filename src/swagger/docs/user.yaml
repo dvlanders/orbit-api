@@ -5,51 +5,51 @@
     tags:
       - User
     requestBody:
-      $ref: '#/components/requestBodies/UserCreateBody'
+      $ref: "#/components/requestBodies/UserCreateBody"
     responses:
-      '200':
-        $ref: '#/components/responses/UserObjectPendingResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
-/user: 
+      "200":
+        $ref: "#/components/responses/UserObjectPendingResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/user:
   get:
     summary: Get User
     description: Get an existing Hifi user
     tags:
       - User
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/UserObjectActiveResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/UserObjectActiveResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
   put:
     summary: Update User
     description: Update an existing Hifi user
     tags:
       - User
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
     requestBody:
-      $ref: '#/components/requestBodies/UserUpdateBody'
+      $ref: "#/components/requestBodies/UserUpdateBody"
     responses:
-      '200':
-        $ref: '#/components/responses/UserObjectPendingResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/UserObjectPendingResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /user/all:
   get:
     summary: Get All Users
@@ -57,19 +57,19 @@
     tags:
       - User
     parameters:
-      - $ref: '#/components/parameters/UserTypeParameter'
-      - $ref: '#/components/parameters/LimitParameter'
-      - $ref: '#/components/parameters/CreatedBeforeParameter'
-      - $ref: '#/components/parameters/CreatedAfterParameter'
+      - $ref: "#/components/parameters/UserTypeParameter"
+      - $ref: "#/components/parameters/LimitParameter"
+      - $ref: "#/components/parameters/CreatedBeforeParameter"
+      - $ref: "#/components/parameters/CreatedAfterParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/AllUserObjectsResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/AllUserObjectsResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /tos-link:
   post:
     summary: Generate Terms of Service Link
@@ -77,13 +77,30 @@
     tags:
       - User
     requestBody:
-      $ref: '#/components/requestBodies/ToSLinkBody'
+      $ref: "#/components/requestBodies/ToSLinkBody"
     responses:
-      '200':
-        $ref: '#/components/responses/ToSLinkObjectResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/ToSLinkObjectResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/user/wallet/balance:
+  get:
+    summary: Get User Wallet Balance
+    description: Poll this endpoint to get the latest balance of a user's wallet, including details like the blockchain network and currency.
+    tags:
+      - User
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+      - $ref: "#/components/parameters/ChainParameter"
+      - $ref: "#/components/parameters/CurrencyParameter"
+    responses:
+      "200":
+        $ref: "#/components/responses/WalletBalanceResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"

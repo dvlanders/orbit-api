@@ -88,7 +88,8 @@ BusinessUserCreate:
     businessType:
       type: string
       description: The type of business structure that most closely matches the business customer.
-      enum: [cooperative, corporation, llc, partnership, sole_prop, trust, other]   
+      enum:
+        [cooperative, corporation, llc, partnership, sole_prop, trust, other]
     complianceEmail:
       type: string
       description: Email address for compliance-related communications.
@@ -141,7 +142,7 @@ BusinessUserCreate:
     ultimateBeneficialOwners:
       type: array
       items:
-        $ref: '#/components/schemas/UltimateBeneficialOwner'
+        $ref: "#/components/schemas/UltimateBeneficialOwner"
     proofOfResidency:
       type: string
       description: "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
@@ -240,7 +241,8 @@ BusinessUserUpdate:
     businessType:
       type: string
       description: The type of business structure that most closely matches the business customer.
-      enum: [cooperative, corporation, llc, partnership, sole_prop, trust, other]
+      enum:
+        [cooperative, corporation, llc, partnership, sole_prop, trust, other]
     taxIdentificationNumber:
       type: string
       description: For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative.
@@ -286,7 +288,7 @@ BusinessUserUpdate:
     ultimateBeneficialOwners:
       type: array
       items:
-        $ref: '#/components/schemas/UltimateBeneficialOwner'
+        $ref: "#/components/schemas/UltimateBeneficialOwner"
     proofOfResidency:
       type: string
       description: "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
@@ -827,3 +829,44 @@ ToSLinkObject:
   example:
     url: "https://dashboard.hifibridge.com/accept-terms-of-service?sessionToken=e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40&redirectUrl=undefined&templateId=2fb2da24-472a-4e5b-b160-038d9dc82a40"
     signedAgreementId: "e12d9c3f-75a8-4bd1-aa3d-97a2cfaf2c40"
+WalletBalanceObject:
+  type: object
+  properties:
+    balance:
+      type: string
+      description: "The raw balance of the wallet in the smallest unit of the token."
+    displayBalance:
+      type: string
+      description: "The user-friendly balance of the wallet formatted to two decimal places."
+    tokenInfo:
+      type: object
+      description: "Detailed information about the token."
+      properties:
+        chain:
+          type: string
+          description: "The blockchain network where the token is hosted."
+        contractAddress:
+          type: string
+          description: "The smart contract address of the token."
+        assetType:
+          type: string
+          description: "The type of asset, typically 'ERC20' for Ethereum-based tokens."
+        quantity:
+          type: string
+          description: "The quantity of the token in its smallest unit."
+        symbol:
+          type: string
+          description: "The symbol of the token, such as 'USDC'."
+        decimals:
+          type: integer
+          description: "The number of decimal places the token can be divided into."
+  example:
+    balance: "10000"
+    displayBalance: "0.01"
+    tokenInfo:
+      chain: "POLYGON_MAINNET"
+      contractAddress: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"
+      assetType: "ERC20"
+      quantity: "10000"
+      symbol: "USDC"
+      decimals: 6
