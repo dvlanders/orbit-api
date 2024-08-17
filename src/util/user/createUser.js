@@ -438,9 +438,16 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid ipAddress, please make sure ipAdress provided is a public IPv4 address outside unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)" })
 	}
 
+	let acceptedFields;
+	if (fields.userType === "business") {
+		acceptedFields = businessAcceptedFields;
+	} else {
+		acceptedFields = individualAcceptedFields;
+	}
+
 	// check if required fields are uploaded
 	// check if the field that is passsed is a valid field that we allow updates on
-	const { missingFields, invalidFields } = fieldsValidation(fields, [], individualAcceptedFields)
+	const { missingFields, invalidFields } = fieldsValidation(fields, [], acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
 		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 	}
