@@ -5,4 +5,5 @@ exports.transfer = require("./transfer");
 exports.auth = require("./auth")
 exports.dashboard = require("./dashboard")
 exports.billing = require("./billing")
+exports.bridge = require("./webhook/bridge")
 exports.webhooks = require("./dashboard/webhooks")

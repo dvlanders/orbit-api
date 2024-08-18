@@ -10,6 +10,7 @@ module.exports = (app, express) => {
 	const dashboardUtils = require("./dashboard/utils")
 	const dashboardAccount = require("./dashboard/account")
 	const billing = require("./billing")
+	const bridge = require("./webhook/bridge")
 	const webhooks = require("./dashboard/webhooks")
 	const localUser = require("./localAdmin.js/user")
 
@@ -22,6 +23,7 @@ module.exports = (app, express) => {
 	dashboardUser(router)
 	dashboardUtils(router)
 	billing(router)
+	bridge(router)
 	dashboardAccount(router)
 	webhooks(router)
 	localUser(router)

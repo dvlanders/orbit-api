@@ -21,6 +21,9 @@ if (result.error) {
 	process.exit(0);
 }
 
+// for bridge webhook
+app.use('/webhook/bridge', express.raw({ type: 'application/json' }));
+
 // for stripe webhook
 app.use('/webhook/stripe', express.raw({ type: 'application/json' }));
 
