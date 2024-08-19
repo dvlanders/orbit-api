@@ -27,7 +27,7 @@ const { jobMapping } = require('../../asyncJobs/jobMapping');
 const { createUserAsyncCheck } = require('../../asyncJobs/user/createUser');
 const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
 const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
-const { Chain, currencyContractAddress } = require('../util/common/blockchain');
+const { Chain, currencyContractAddress, hifiSupportedChain } = require('../util/common/blockchain');
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
@@ -1245,6 +1245,10 @@ exports.getUserWalletBalance = async (req, res) => {
 	const { userId, chain, currency, profileId } = req.query
 
 	if (!userId || !chain || !currency) return res.status(400).json({ error: "userId, chain, and currency are required" })
+
+
+	// check is chain supported
+	if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
 
 	try {
 		let bastionUserId = userId
