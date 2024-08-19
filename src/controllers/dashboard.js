@@ -683,41 +683,39 @@ exports.sendInvitation = async (req, res) => {
 			.single()
 		if (invitationRecordError) throw invitationRecordError
 
-		//  create a profile if it's not created
-		if (!profileToInvite) {
-			const { data, error } = await supabase.auth.admin.inviteUserByEmail(emailAddress, {
-				redirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
-			})
-			if (error) {
-				await createLog("ashboard/sendInvitation", null, error.message, error, originProfileId)
-				console.error(error)
-				return res.status(500).json({ error: "Internal server error" })
-			}
+        // generate magic link
+        const { data, error } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: emailAddress,
+            options:{
+                redirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
+            }
+        })
+        if (error) throw error
+        const link = data.properties.action_link
 
-		} else {
-			// send Invitation email
-			const sender = profile.full_name || profile.email
-			const form = new FormData();
-			form.append('from', `HIFI Developer Dashboard <noreply@${process.env.MAILGUN_DOMAIN}>`);
-			form.append('to', emailAddress);
-			form.append('template', 'organization invitation');
-			form.append('v:redirect_to', `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`);
-			form.append('v:from_email', `${sender}`);
+        // send Invitation email
+        const sender = profile.full_name || profile.email
+        const form = new FormData();
+        form.append('from', `HIFI Developer Dashboard <noreply@${process.env.MAILGUN_DOMAIN}>`);
+        form.append('to', emailAddress);
+        form.append('template', 'organization invitation');
+        form.append('v:redirect_to', link);
+        form.append('v:from_email', `${sender}`);
 
-			const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
-			const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
-				method: 'POST',
-				headers: {
-					'Authorization': authHeader
-				},
-				body: form
-			});
-			const responseBody = await response.json()
-			if (!response.ok) {
-				await createLog("ashboard/sendInvitation", null, "Failed to send invitaion emailvia mailgun", responseBody, originProfileId)
-				return res.status(500).json({ error: "Internal server error" })
-			}
-		}
+        const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
+        const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
+            method: 'POST',
+            headers: {
+                'Authorization': authHeader
+            },
+            body: form
+        });
+        const responseBody = await response.json()
+        if (!response.ok) {
+            await createLog("ashboard/sendInvitation", null, "Failed to send invitaion emailvia mailgun", responseBody, originProfileId)
+            return res.status(500).json({ error: "Internal server error" })
+        }
 
 		return res.status(200).json({ message: "Invitation sent" })
 	} catch (error) {
