@@ -259,10 +259,11 @@
         "schema": {
           "type": "string",
           "enum": [
-            "POLYGON_MAINNET"
+            "POLYGON_MAINNET",
+            "POLYGON_AMOY"
           ]
         },
-        "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported.",
+        "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported is production while only POLYGON_AMOY is supported in sandbox.",
         "required": true
       }
     },
