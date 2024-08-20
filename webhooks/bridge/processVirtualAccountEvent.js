@@ -2,6 +2,7 @@ const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
+const { isUUID } = require("../../src/util/common/fieldsValidation");
 
 const processVirtualAccountEvent = async (event) => {
   const {
@@ -24,6 +25,29 @@ const processVirtualAccountEvent = async (event) => {
     event.source;
 
   try {
+    const referenceId = description.split(" ").slice(-5).join('-').toLowerCase()
+
+    // if we can parse a referenceId, then we check whether this event is for an existing onramp transaction
+    if(isUUID(referenceId)){
+      const { data: existingTransaction, error: existingTransactionError } =
+      await supabaseCall(() =>
+        supabase
+          .from("onramp_transactions")
+          .select("id")
+          .eq("id", referenceId)
+          .maybeSingle()
+      );
+  
+      if (existingTransactionError) {
+        throw existingTransactionError;
+      }
+  
+      // dont need to process existing onramp transactions
+      if(existingTransaction){
+        return true;
+      }
+    }
+
     const { data: virtualAccount, error: virtualAccountError } =
       await supabaseCall(() =>
         supabase
