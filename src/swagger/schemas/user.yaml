@@ -43,20 +43,45 @@ IndividualUserCreate:
       description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link.
     ipAddress:
       type: string
-      description: IP address of the user.
+      description: | 
+        IP address of the user. 
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     govIdFront:
       type: string
-      description: "URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the front of the user's government issued ID.
+
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdBack:
       type: string
-      description: "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.
+
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdCountry:
       type: string
-      description: "Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above."
+      description: |
+        Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     proofOfResidency:
       type: string
-      description: "URL of the file of the proof of residency (Required for users based in the EU or withdrawing into EU bank accounts) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: | 
+        URL of the file of the proof of residency.
+        Required for users based in the EU or withdrawing into EU bank accounts.
+        Required for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
+
+        *Maximum File Size: 10MB
+        
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
   required:
     - userType
     - legalFirstName
@@ -113,20 +138,36 @@ BusinessUserCreate:
       description: Must be supplied for countries that use postal codes.
     country:
       type: string
-      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+      description: |
+        Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     ipAddress:
       type: string
-      description: IP address of the user. Must be IPv4.
+      description: |
+        IP address of the user.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     signedAgreementId:
       type: string
       description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link
     formationDoc:
       type: string
-      description: "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the formation documentation. 
+        
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     proofOfOwnership:
       type: string
-      description: "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the ownership documentation.
+        
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     sourceOfFunds:
       type: string
       description: The source of funds for the business, e.g. profits, income, venture capital, etc.
@@ -145,7 +186,16 @@ BusinessUserCreate:
         $ref: "#/components/schemas/UltimateBeneficialOwner"
     proofOfResidency:
       type: string
-      description: "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.
+        Required for businesses registered or operating in the EEA (European Economic Area).
+        Required for businesses who require access to SEPA (Single Euro Payments Area).
+
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
+
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
   required:
     - userType
     - businessName
@@ -189,9 +239,6 @@ IndividualUserUpdate:
     taxIdentificationNumber:
       type: string
       description: For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative.
-    govIdCountry:
-      type: string
-      description: Three-letter alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec.
     addressLine1:
       type: string
     addressLine2:
@@ -212,17 +259,45 @@ IndividualUserUpdate:
       description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link.
     ipAddress:
       type: string
-      description: IP address of the user.
+      description: | 
+        IP address of the user. 
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     govIdFront:
       type: string
-      description: "Signed URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the front of the user's government issued ID.
+
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdBack:
       type: string
-      description: "Signed URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.
+
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
+    govIdCountry:
+      type: string
+      description: |
+        Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     proofOfResidency:
       type: string
-      description: "URL of the file of the proof of residency (Only required for European user or withdrawing into European bank account) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: | 
+        URL of the file of the proof of residency.
+        Required for users based in the EU or withdrawing into EU bank accounts.
+        Required for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
+
+        *Maximum File Size: 10MB
+        
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
 BusinessUserUpdate:
   type: object
   title: "Update Business User"
@@ -262,20 +337,36 @@ BusinessUserUpdate:
       description: Must be supplied for countries that use postal codes.
     country:
       type: string
-      description: Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+      description: |
+        Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     ipAddress:
       type: string
-      description: IP address of the user.
+      description: |
+        IP address of the user.
+        
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     signedAgreementId:
       type: string
       description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link
     formationDoc:
       type: string
-      description: "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the formation documentation. 
+        
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     proofOfOwnership:
       type: string
-      description: "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the ownership documentation.
+        
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     transmitsCustomerFunds:
       type: boolean
       description: True if the business transmits funds on behalf of its customers (i.e. transmitsCustomerFunds == true)
@@ -291,7 +382,16 @@ BusinessUserUpdate:
         $ref: "#/components/schemas/UltimateBeneficialOwner"
     proofOfResidency:
       type: string
-      description: "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+      description: |
+        URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.
+        Required for businesses registered or operating in the EEA (European Economic Area).
+        Required for businesses who require access to SEPA (Single Euro Payments Area).
+
+        (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
+
+        *Maximum File Size: 10MB
+
+        *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
 UltimateBeneficialOwner:
   type: object
   properties:
