@@ -63,7 +63,6 @@ const updateStatus = async (onrampTransaction) => {
 						last_bridge_virtual_account_event_id: last_event_id,
 						updated_at: new Date().toISOString(),
 						transaction_hash: event.destination_tx_hash,
-						bridge_deposit_id: depositId
 					})
 					.eq(hasDepositId ? "bridge_deposit_id" : "id", hasDepositId ? depositId : referenceId) // check with deposit id if it exists, otherwise check with reference id
 					.select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id, fiat_provider, crypto_provider")

@@ -23,6 +23,16 @@ const fetchAndUpdatePendingWebhookMessages = async (
   return events;
 };
 
+const insertWebhookMessageHistory = async (event) => {
+  const { error } = await supabaseCall(() =>
+    supabase.from("bridge_webhook_messages_history").insert(event)
+  );
+
+  if (error) {
+    throw error;
+  }
+};
+
 const deleteWebhookMessage = async (id) => {
   const { error } = await supabaseCall(() =>
     supabase.from("bridge_webhook_messages").delete().eq("id", id)
@@ -50,6 +60,7 @@ const completeWebhookMessage = async (id) => {
 
 module.exports = {
   fetchAndUpdatePendingWebhookMessages,
+  insertWebhookMessageHistory,
   deleteWebhookMessage,
   completeWebhookMessage,
 };

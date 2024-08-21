@@ -33,9 +33,10 @@ const processVirtualAccountEvent = async (event) => {
       await supabaseCall(() =>
         supabase
           .from("onramp_transactions")
-          .select("id")
+          .update({bridge_deposit_id: deposit_id})
           .eq("id", referenceId)
-          .maybeSingle()
+          .is("bridge_deposit_id", null)
+          .select()
       );
   
       if (existingTransactionError) {

@@ -3,6 +3,8 @@ const { webhookMapping } = require("../../webhooks/bridge/webhookMapping");
 const {
   fetchAndUpdatePendingWebhookMessages,
   completeWebhookMessage,
+  insertWebhookMessageHistory,
+  deleteWebhookMessage
 } = require("../../webhooks/bridge/webhookMessagesService");
 
 const RETRY_INTERVAL = 60; // 60 secs
@@ -18,6 +20,7 @@ const pollBridgeWebhookEvents = async () => {
 
     await Promise.all(
       events.map(async (event) => {
+        let caughtError = null;
         try {
           const event_object = event.event_object;
           const eventProcessor = webhookMapping[event.event_category];
@@ -25,6 +28,7 @@ const pollBridgeWebhookEvents = async () => {
             await completeWebhookMessage(event.id);
           }
         } catch (error) {
+          caughtError = error;
           await createLog(
             "pollBridgeWebhookEvents",
             null,
@@ -39,6 +43,18 @@ const pollBridgeWebhookEvents = async () => {
               error
             );
           }
+        }finally{
+          const eventHistory = { 
+            event_category: event.event_category,
+            event_type: event.event_type,
+            full_event: event.full_event,
+            success: !caughtError,
+            error: caughtError ? {message: caughtError.message} : null
+            }
+
+          await insertWebhookMessageHistory(eventHistory);
+          // only delete webhook message if it is successfully inserted into job history
+          await deleteWebhookMessage(event.id);
         }
       })
     );
