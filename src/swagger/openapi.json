@@ -1999,7 +1999,8 @@
                 "format": "date-time"
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "description": "Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.\n\n`CREATED`, `ACCEPTED`, `SUBMITTED`, `CONFIRMED`, `FAILED`, `PENDING`\n"
               },
               "contractAddress": {
                 "type": "string"
@@ -2079,7 +2080,8 @@
                 "format": "date-time"
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "description": "Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.\n\n`NOT_INITIATED`, `CREATED`, `SUBMITTED_ONCHAIN`, `COMPLETED_ONCHAIN`, `IN_PROGRESS_FIAT`, `INITIATED_FIAT`, `COMPLETED`, `FAILED_ONCHAIN`, \n`FAILED_FIAT_RETURNED`, `FAILED_FIAT_REFUNDED`, `FAILED_UNKNOWN`\n"
               },
               "contractAddress": {
                 "type": "string"
@@ -2296,7 +2298,8 @@
                 "format": "date-time"
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "description": "Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.\n\n`CREATED`, `FIAT_SUBMITTED`, `FIAT_PROCESSED`, `FIAT_CONFIRMED`, `CRYPTO_IN_REVIEW`, `CRYPTO_SUBMITTED`, `CONFIRMED`, `REFUNDED`, `FAILED`, `FAILED_UNKNOWN`\n"
               },
               "isInstant": {
                 "type": "boolean"

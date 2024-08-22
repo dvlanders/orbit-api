@@ -175,12 +175,16 @@ CryptoToCryptoTransferObject:
           format: date-time
         status:
           type: string
+          description: |
+            Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.
+
+            `CREATED`, `ACCEPTED`, `SUBMITTED`, `CONFIRMED`, `FAILED`, `PENDING`
         contractAddress:
           type: string
         failedReason:
           type: string
         fee:
-          $ref: '#/components/schemas/FeeObject'
+          $ref: "#/components/schemas/FeeObject"
 
   example:
     transferType: "CRYPTO_TO_CRYPTO"
@@ -235,6 +239,11 @@ CryptoToFiatTransferObject:
           format: date-time
         status:
           type: string
+          description: |
+            Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.
+
+            `NOT_INITIATED`, `CREATED`, `SUBMITTED_ONCHAIN`, `COMPLETED_ONCHAIN`, `IN_PROGRESS_FIAT`, `INITIATED_FIAT`, `COMPLETED`, `FAILED_ONCHAIN`, 
+            `FAILED_FIAT_RETURNED`, `FAILED_FIAT_REFUNDED`, `FAILED_UNKNOWN`
         contractAddress:
           type: string
         sourceUser:
@@ -308,7 +317,7 @@ CryptoToFiatTransferObject:
               type: number
               format: float
         fee:
-          $ref: '#/components/schemas/FeeObject'
+          $ref: "#/components/schemas/FeeObject"
   example:
     transferType: CRYPTO_TO_FIAT
     transferDetails:
@@ -395,10 +404,14 @@ FiatToCryptoTransferObject:
           format: date-time
         status:
           type: string
+          description: |
+            Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.
+
+            `CREATED`, `FIAT_SUBMITTED`, `FIAT_PROCESSED`, `FIAT_CONFIRMED`, `CRYPTO_IN_REVIEW`, `CRYPTO_SUBMITTED`, `CONFIRMED`, `REFUNDED`, `FAILED`, `FAILED_UNKNOWN`
         isInstant:
           type: boolean
         fee:
-          $ref: '#/components/schemas/FeeObject'
+          $ref: "#/components/schemas/FeeObject"
   example:
     transferType: "FIAT_TO_CRYPTO"
     transferDetails:
@@ -475,7 +488,7 @@ CryptoToCryptoRecordObject:
             legal_first_name:
               type: string
         fee:
-          $ref: '#/components/schemas/FeeObject'
+          $ref: "#/components/schemas/FeeObject"
   example:
     transferType: "CRYPTO_TO_CRYPTO"
     transferDetails:
@@ -605,9 +618,9 @@ CryptoToFiatRecordObject:
               type: string
               nullable: true
         conversionRate:
-          $ref: '#/components/schemas/CryptoToFiatConversionRateObject'
+          $ref: "#/components/schemas/CryptoToFiatConversionRateObject"
         fee:
-          $ref: '#/components/schemas/FeeObject'
+          $ref: "#/components/schemas/FeeObject"
   example:
     transferType: CRYPTO_TO_FIAT
     transferDetails:
@@ -736,7 +749,7 @@ FiatToCryptoRecordObject:
             bank_name:
               type: string
         fee:
-          $ref: '#/components/schemas/FeeObject'
+          $ref: "#/components/schemas/FeeObject"
   example:
     transferType: "FIAT_TO_CRYPTO"
     transferDetails:
@@ -843,7 +856,7 @@ CryptoToCryptoAllRecordsObject:
                   legal_first_name:
                     type: string
               fee:
-                $ref: '#/components/schemas/FeeObject'
+                $ref: "#/components/schemas/FeeObject"
   example:
     count: 1
     records:
@@ -982,7 +995,7 @@ CryptoToFiatAllRecordsObject:
                     type: string
                     nullable: true
               fee:
-                $ref: '#/components/schemas/FeeObject'
+                $ref: "#/components/schemas/FeeObject"
   example:
     count: 1
     records:
@@ -1081,7 +1094,7 @@ FiatToCryptoAllRecordsObject:
               isInstant:
                 type: boolean
               fee:
-                $ref: '#/components/schemas/FeeObject'
+                $ref: "#/components/schemas/FeeObject"
   example:
     count: 1
     records:
@@ -1145,34 +1158,34 @@ CryptoToFiatConversionRateObject:
     validFrom: "2024-08-07T18:02:50.815Z"
     validUntil: "2024-08-07T18:03:20.815Z"
 FeeObject:
-    type: object
-    properties:
-      feeId:
-        type: string
-        format: uuid
-      feeType:
-        type: string
-        enum:
-          - FIX
-          - PERCENTAGE
-      feeAmount:
-        type: number
-        format: float
-      feePercent:
-        type: number
-        format: float
-      status:
-        type: string
-      transactionHash:
-        type: string
-      failedReason:
-        type: string
-        nullable: true
-    example:
-      feeId: 15698c9b-6761-42ef-8c0c-96f5f983ba7d
-      feeType: FIX
-      feeAmount: 0.01
-      feePercent: 0
-      status: CONFIRMED
-      transactionHash: 0x91ebabf2867d7b28532c8ac9bc9e37f442c121486583d659aef9531fa97eacc0
-      failedReason: null
+  type: object
+  properties:
+    feeId:
+      type: string
+      format: uuid
+    feeType:
+      type: string
+      enum:
+        - FIX
+        - PERCENTAGE
+    feeAmount:
+      type: number
+      format: float
+    feePercent:
+      type: number
+      format: float
+    status:
+      type: string
+    transactionHash:
+      type: string
+    failedReason:
+      type: string
+      nullable: true
+  example:
+    feeId: 15698c9b-6761-42ef-8c0c-96f5f983ba7d
+    feeType: FIX
+    feeAmount: 0.01
+    feePercent: 0
+    status: CONFIRMED
+    transactionHash: 0x91ebabf2867d7b28532c8ac9bc9e37f442c121486583d659aef9531fa97eacc0
+    failedReason: null
