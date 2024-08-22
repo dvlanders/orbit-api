@@ -25,26 +25,41 @@ const processVirtualAccountEvent = async (event) => {
     event.source;
 
   try {
-    const referenceId = description.split(" ").slice(-5).join('-').toLowerCase()
+    const referenceId = description
+      .split(" ")
+      .slice(-5)
+      .join("-")
+      .toLowerCase();
 
     // if we can parse a referenceId, then we check whether this event is for an existing onramp transaction
-    if(isUUID(referenceId)){
+    if (isUUID(referenceId)) {
       const { data: existingTransaction, error: existingTransactionError } =
-      await supabaseCall(() =>
-        supabase
-          .from("onramp_transactions")
-          .update({bridge_deposit_id: deposit_id})
-          .eq("id", referenceId)
-          .is("bridge_deposit_id", null)
-          .select()
-      );
-  
+        await supabaseCall(() =>
+          supabase
+            .from("onramp_transactions")
+            .select("id, bridge_deposit_id")
+            .eq("id", referenceId)
+        );
+
       if (existingTransactionError) {
         throw existingTransactionError;
       }
-  
+
+      if (existingTransaction && !existingTransaction.bridge_deposit_id) {
+        const { error: updateTransactionError } = await supabaseCall(() =>
+          supabase
+            .from("onramp_transactions")
+            .update({ bridge_deposit_id: deposit_id })
+            .eq("id", referenceId)
+        );
+
+        if (updateTransactionError) {
+          throw updateTransactionError;
+        }
+      }
+
       // dont need to process existing onramp transactions
-      if(existingTransaction){
+      if (existingTransaction) {
         return true;
       }
     }
