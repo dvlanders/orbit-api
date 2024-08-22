@@ -60,7 +60,7 @@ const processVirtualAccountEvent = async (event) => {
 
       // dont need to process existing onramp transactions
       if (existingTransaction) {
-        return true;
+        return;
       }
     }
 
@@ -104,7 +104,6 @@ const processVirtualAccountEvent = async (event) => {
     if (initialRecordError) {
       throw initialRecordError;
     }
-    return true;
   } catch (error) {
     await createLog(
       "webhooks/bridge/processVirtualAccountEvent",
@@ -112,8 +111,8 @@ const processVirtualAccountEvent = async (event) => {
       `Failed to process event with id ${id} and virtual account id ${virtual_account_id}`,
       error
     );
+    throw error;
   }
-  return false;
 };
 
 module.exports = {
