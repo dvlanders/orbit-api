@@ -1,4 +1,5 @@
 const fetchBridgeCryptoToFiatTransferRecord = require("../transfer/fetchBridgeCryptoToFiatTransferRecordV2")
+const fetchDirectBridgeCryptoToFiatTransferRecord = require("../transfer/fetchDirectBridgeCryptoToFiatTransferRecord")
 
 
 const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {
@@ -12,6 +13,9 @@ const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {
 const FetchCryptoToBankSupportedPairFunctions = {
    BASTION:{
     BRIDGE: fetchBridgeCryptoToFiatTransferRecord
+   },
+   EXTERNAL:{
+    BRIDGE: fetchDirectBridgeCryptoToFiatTransferRecord
    }
 }
 

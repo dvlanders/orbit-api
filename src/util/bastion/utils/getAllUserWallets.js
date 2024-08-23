@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 
-const prodChains = ["POLYGON_MAINNET"]
+const prodChains = ["POLYGON_MAINNET", "ETHEREUM_MAINNET"]
 const sandboxChains = ["POLYGON_AMOY"]
 
 exports.getAllUserWallets = async(userId) => {
