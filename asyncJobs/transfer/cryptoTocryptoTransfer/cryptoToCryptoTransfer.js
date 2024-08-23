@@ -1,3 +1,4 @@
+const bastionGasCheck = require("../../../src/util/bastion/utils/gasCheck")
 const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
 const { currencyDecimal } = require("../../../src/util/common/blockchain")
 const createLog = require("../../../src/util/logger/supabaseLogger")
@@ -18,6 +19,12 @@ const cryptoToCryptoTransferAsync = async(config) => {
             .single()
         
         if (error) throw error
+
+        // gas check
+        const { needFund, fundSubmitted } = await bastionGasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type)
+        if (needFund){
+            throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
+        }
 
         // check allowance if not enough perform a token approve job and reschedule transfer
         if (record.developer_fee_id){

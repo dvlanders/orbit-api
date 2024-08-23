@@ -28,7 +28,8 @@ ChainParameter:
     type: string
     enum:
       - POLYGON_MAINNET
-  description: The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported.
+      - POLYGON_AMOY
+  description: The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported in production and only POLYGON_AMOY is supported in sandbox.
   required: true
 
 CurrencyParameter:

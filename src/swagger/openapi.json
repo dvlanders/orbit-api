@@ -259,10 +259,11 @@
         "schema": {
           "type": "string",
           "enum": [
-            "POLYGON_MAINNET"
+            "POLYGON_MAINNET",
+            "POLYGON_AMOY"
           ]
         },
-        "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported.",
+        "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported in production and only POLYGON_AMOY is supported in sandbox.",
         "required": true
       }
     },
@@ -1998,7 +1999,8 @@
                 "format": "date-time"
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "description": "Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.\n\n`CREATED`, `ACCEPTED`, `SUBMITTED`, `CONFIRMED`, `FAILED`, `PENDING`\n"
               },
               "contractAddress": {
                 "type": "string"
@@ -2078,7 +2080,8 @@
                 "format": "date-time"
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "description": "Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.\n\n`NOT_INITIATED`, `CREATED`, `SUBMITTED_ONCHAIN`, `COMPLETED_ONCHAIN`, `IN_PROGRESS_FIAT`, `INITIATED_FIAT`, `COMPLETED`, `FAILED_ONCHAIN`, \n`FAILED_FIAT_RETURNED`, `FAILED_FIAT_REFUNDED`, `FAILED_UNKNOWN`\n"
               },
               "contractAddress": {
                 "type": "string"
@@ -2295,7 +2298,8 @@
                 "format": "date-time"
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "description": "Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.\n\n`CREATED`, `FIAT_SUBMITTED`, `FIAT_PROCESSED`, `FIAT_CONFIRMED`, `CRYPTO_IN_REVIEW`, `CRYPTO_SUBMITTED`, `CONFIRMED`, `REFUNDED`, `FAILED`, `FAILED_UNKNOWN`\n"
               },
               "isInstant": {
                 "type": "boolean"
@@ -3431,24 +3435,24 @@
           },
           "ipAddress": {
             "type": "string",
-            "description": "IP address of the user.",
+            "description": "IP address of the user. \n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
             "format": "ipv4"
           },
           "govIdFront": {
             "type": "string",
-            "description": "URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the front of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdBack": {
             "type": "string",
-            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdCountry": {
             "type": "string",
-            "description": "Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above."
+            "description": "Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n"
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of the file of the proof of residency (Required for users based in the EU or withdrawing into EU bank accounts) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         },
         "required": [
@@ -3530,11 +3534,11 @@
           },
           "country": {
             "type": "string",
-            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n"
           },
           "ipAddress": {
             "type": "string",
-            "description": "IP address of the user. Must be IPv4.",
+            "description": "IP address of the user.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
             "format": "ipv4"
           },
           "signedAgreementId": {
@@ -3543,11 +3547,11 @@
           },
           "formationDoc": {
             "type": "string",
-            "description": "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the formation documentation. \n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "proofOfOwnership": {
             "type": "string",
-            "description": "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the ownership documentation.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "sourceOfFunds": {
             "type": "string",
@@ -3573,7 +3577,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         },
         "required": [
@@ -3627,10 +3631,6 @@
             "type": "string",
             "description": "For individual US customers, SSN should be used. For non-US individual customers, a national ID is preferred where applicable; however, a tax ID can also be used as an alternative."
           },
-          "govIdCountry": {
-            "type": "string",
-            "description": "Three-letter alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec."
-          },
           "addressLine1": {
             "type": "string"
           },
@@ -3658,20 +3658,24 @@
           },
           "ipAddress": {
             "type": "string",
-            "description": "IP address of the user.",
+            "description": "IP address of the user. \n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
             "format": "ipv4"
           },
           "govIdFront": {
             "type": "string",
-            "description": "Signed URL of image of the front of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the front of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdBack": {
             "type": "string",
-            "description": "Signed URL of image of the back of the user's government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+          },
+          "govIdCountry": {
+            "type": "string",
+            "description": "Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n"
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of the file of the proof of residency (Only required for European user or withdrawing into European bank account) Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         }
       },
@@ -3733,11 +3737,11 @@
           },
           "country": {
             "type": "string",
-            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n"
           },
           "ipAddress": {
             "type": "string",
-            "description": "IP address of the user.",
+            "description": "IP address of the user.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
             "format": "ipv4"
           },
           "signedAgreementId": {
@@ -3746,11 +3750,11 @@
           },
           "formationDoc": {
             "type": "string",
-            "description": "URL of image of the formation documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the formation documentation. \n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "proofOfOwnership": {
             "type": "string",
-            "description": "URL of image of the ownership documentation Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the ownership documentation.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "transmitsCustomerFunds": {
             "type": "boolean",
@@ -3772,7 +3776,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement. Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         }
       },
@@ -5289,7 +5293,7 @@
     "/user/create": {
       "post": {
         "summary": "Create User",
-        "description": "Create a new Hifi user (Individual/Business)",
+        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for more info.\n",
         "tags": [
           "User"
         ],
@@ -5341,7 +5345,7 @@
       },
       "put": {
         "summary": "Update User",
-        "description": "Update an existing Hifi user",
+        "description": "Update an existing Hifi user.\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for more info.\n",
         "tags": [
           "User"
         ],
