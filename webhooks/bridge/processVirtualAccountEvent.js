@@ -64,6 +64,25 @@ const processVirtualAccountEvent = async (event) => {
       }
     }
 
+    // check if this manual deposit event has already been inserted into the onramp_transactions table
+    const { data: existingRecord, error: existingRecordError } =
+      await supabaseCall(() =>
+        supabase
+          .from("onramp_transactions")
+          .select("id")
+          .eq("bridge_deposit_id", deposit_id)
+          .maybeSingle()
+      );
+
+    if (existingRecordError) {
+      throw existingRecordError;
+    }
+
+    // this manual deposit event has already been inserted into the onramp_transactions table
+    if (existingRecord) {
+      return;
+    }
+
     const { data: virtualAccount, error: virtualAccountError } =
       await supabaseCall(() =>
         supabase
