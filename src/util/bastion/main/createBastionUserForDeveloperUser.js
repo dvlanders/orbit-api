@@ -1,14 +1,11 @@
 const supabase = require("../../supabaseClient");
-const fundMaticPolygon = require("../fundMaticPolygon");
 const createLog = require("../../logger/supabaseLogger");
-const submitBastionKyc = require("./submitBastionKyc");
 const { createUser } = require("../endpoints/createUser");
-const { getAllUserWallets } = require("../utils/getAllUserWallets");
-const { CustomerStatus } = require("../../user/common");
 const { Chain } = require("../../common/blockchain");
 const { getAddress, isAddress } = require("ethers")
 const { BastionSupportedEVMChainSandbox, BastionSupportedEVMChainProd } = require("../utils/utils");
 const submitBastionKycForDeveloper = require("./submitBastionKycForDeveloperUser");
+const fundUserGasFee = require("../fundGasFee");
 const chains = process.env.NODE_ENV == "development" ? BastionSupportedEVMChainSandbox : BastionSupportedEVMChainProd
 
 const preFundAmount = '0.1'
@@ -61,7 +58,7 @@ async function createBastionDeveloperWallet(userId, type) {
 				}
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET) {
-					await fundMaticPolygon(userId, preFundAmount, type);
+					await fundUserGasFee(userId, preFundAmount, Chain.POLYGON_MAINNET, type);
 				}
 			}
 		}

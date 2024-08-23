@@ -1,4 +1,4 @@
-const fundMaticPolygon = require("../../src/util/bastion/fundMaticPolygon")
+const fundUserGasFee = require("../../src/util/bastion/fundGasFee")
 const { Chain } = require("../../src/util/common/blockchain")
 const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
@@ -22,12 +22,9 @@ const fundGasScheduleCheck = async(job, config, userId, profileId) => {
 
 const fundGas = async(config) => {
     try{
-        if (config.chain == Chain.POLYGON_MAINNET){
-            const result = await fundMaticPolygon(config.userId, config.amount)
-            if (!result) throw new Error("Failed to fund Matic")
-        }else {
-            throw new Error("Chain not found")
-        }
+        const chain = config.chain
+        const result = await fundUserGasFee(config.userId, config.amount, chain, config.walletType || "INDIVIDUAL")
+        if (!result) throw new Error("Failed to fund Matic")
     }catch (error){
         await createLog("asyncJob/fundGas", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, undefined, undefined, true)

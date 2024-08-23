@@ -1,4 +1,4 @@
-const { bastionCryptoTransferDeveloperWithdraw, createBastionCryptoTransfer } = require("../main/bastionTransfer")
+const { createBastionCryptoTransfer } = require("../main/bastionTransfer")
 
 /**
 transfer information should include
@@ -9,21 +9,18 @@ const cryptoToCryptoSupportedFunctions = {
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: createBastionCryptoTransfer,
-            developerWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
         }
     },
     POLYGON_AMOY: {
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: createBastionCryptoTransfer,
-            developerWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
         }
     },
     ETHEREUM_TESTNET:{
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: createBastionCryptoTransfer,
-            developerWithdrawFunc: bastionCryptoTransferDeveloperWithdraw
         }
     }
 }
