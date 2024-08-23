@@ -175,6 +175,10 @@ CryptoToCryptoTransferObject:
           format: date-time
         status:
           type: string
+          description: |
+            Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.
+
+            `CREATED`, `ACCEPTED`, `SUBMITTED`, `CONFIRMED`, `FAILED`, `PENDING`
         contractAddress:
           type: string
         failedReason:
@@ -235,6 +239,11 @@ CryptoToFiatTransferObject:
           format: date-time
         status:
           type: string
+          description: |
+            Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.
+
+            `NOT_INITIATED`, `CREATED`, `SUBMITTED_ONCHAIN`, `COMPLETED_ONCHAIN`, `IN_PROGRESS_FIAT`, `INITIATED_FIAT`, `COMPLETED`, `FAILED_ONCHAIN`, 
+            `FAILED_FIAT_RETURNED`, `FAILED_FIAT_REFUNDED`, `FAILED_UNKNOWN`
         contractAddress:
           type: string
         sourceUser:
@@ -395,6 +404,10 @@ FiatToCryptoTransferObject:
           format: date-time
         status:
           type: string
+          description: |
+            Status of the transfer. See [Transfer](https://docs.hifibridge.com/docs/core-api-transfer) for more details.
+
+            `CREATED`, `FIAT_SUBMITTED`, `FIAT_PROCESSED`, `FIAT_CONFIRMED`, `CRYPTO_IN_REVIEW`, `CRYPTO_SUBMITTED`, `CONFIRMED`, `REFUNDED`, `FAILED`, `FAILED_UNKNOWN`
         isInstant:
           type: boolean
         fee:

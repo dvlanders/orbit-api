@@ -6,6 +6,7 @@ module.exports = (router) => {
 	router.get("/transfer/crypto-to-crypto", authorize, logRequestResponse, transfer.getCryptoToCryptoTransfer)
 	router.get("/transfer/crypto-to-crypto/all", authorize, logRequestResponse, transfer.getAllCryptoToCryptoTransfer)
 	router.post("/transfer/crypto-to-fiat", authorize, logRequestResponse, transfer.createCryptoToFiatTransfer);
+	router.post("/transfer/crypto-to-fiat/direct", authorize, logRequestResponse, transfer.createDirectCryptoToFiatTransfer);
 	router.get("/transfer/crypto-to-fiat", authorize, logRequestResponse, transfer.getCryptoToFiatTransfer);
 	router.get("/transfer/crypto-to-fiat/all", authorize, logRequestResponse, transfer.getAllCryptoToFiatTransfer);
 	router.post("/transfer/fiat-to-crypto", authorize, logRequestResponse, transfer.createFiatToCryptoTransfer)

@@ -183,7 +183,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
 	// gas check
-	await bastionGasCheck(bastionUserId, chain)
+	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
 	// allowance check
 	await allowanceCheck(bastionUserId, sourceWalletAddress, chain, sourceCurrency)
 	return result
@@ -297,7 +297,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	}
 
 	// gas check
-	await bastionGasCheck(bastionUserId, chain)
+	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
 	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return result
 }

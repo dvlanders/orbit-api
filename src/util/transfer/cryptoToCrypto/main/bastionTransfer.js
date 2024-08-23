@@ -96,7 +96,7 @@ const transferWithFee = async(record, profileId) => {
     // perfrom transfer with fee
     await CryptoToCryptoWithFeeBastion(record, feeRecord, record.payment_processor_contract_address, profileId)
     // gas check
-    await bastionGasCheck(record.sender_bastion_user_id, record.chain)
+    await bastionGasCheck(record.sender_bastion_user_id, record.chain, record.transfer_from_wallet_type)
     // allowance check
     await allowanceCheck(record.sender_bastion_user_id, record.sender_address, record.chain, record.currency)
     return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
@@ -142,7 +142,7 @@ const transferWithoutFee = async(record, profileId) => {
     }
 
     // gas check
-    await bastionGasCheck(record.sender_bastion_user_id, record.chain)
+    await bastionGasCheck(record.sender_bastion_user_id, record.chain, record.transfer_from_wallet_type)
 
     //return record
     return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
@@ -168,7 +168,6 @@ const executeAsyncBastionCryptoTransfer = async(config) => {
         return await transferWithoutFee(data, config.profileId)
     }
 }
-
 
 
 const bastionCryptoTransfer_DEPRECATED = async(fields, createdRecordId=null) => {
@@ -379,7 +378,7 @@ const bastionCryptoTransfer_DEPRECATED = async(fields, createdRecordId=null) => 
     
 }
 
-const bastionCryptoTransferDeveloperWithdraw = async(fields) => {
+const bastionCryptoTransferDeveloperWithdraw_DEPRECATED = async(fields) => {
     if (!isValidAmount(fields.amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[fields.currency]
@@ -453,7 +452,6 @@ const bastionCryptoTransferDeveloperWithdraw = async(fields) => {
 module.exports = {
     CreateCryptoToCryptoTransferError,
     CreateCryptoToCryptoTransferErrorType,
-    bastionCryptoTransferDeveloperWithdraw,
     createBastionCryptoTransfer,
     executeAsyncBastionCryptoTransfer
 }
