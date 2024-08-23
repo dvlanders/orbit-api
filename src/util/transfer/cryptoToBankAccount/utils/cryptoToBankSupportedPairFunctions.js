@@ -1,8 +1,8 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
 
-const {transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw} = require("../transfer/transferToBridgeLiquidationAddress");
-const {createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFiat} = require("../transfer/transferToBridgeLiquidationAddressV2");
+const { transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw } = require("../transfer/transferToBridgeLiquidationAddress");
+const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFiat } = require("../transfer/transferToBridgeLiquidationAddressV2");
 
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
@@ -24,6 +24,22 @@ const CryptoToBankSupportedPairFunctions = {
 		}
 	},
 	ach: {
+		usdc: {
+			usd: {
+				transferFunc: createTransferToBridgeLiquidationAddress,
+				asyncTransferExecuteFunc: executeAsyncTransferCryptoToFiat,
+				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
+			},
+		},
+		usdt: {
+			usd: {
+				transferFunc: null,
+				asyncTransferExecuteFunc: null,
+				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
+			},
+		}
+	},
+	sameDayAch: {
 		usdc: {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
