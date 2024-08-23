@@ -48,7 +48,6 @@ exports.bridgeWebhook = async (req, res) => {
 	  if (missingFields.length > 0 || invalidFields.length > 0) {
 		  await createLog("webhook/bridgeWebhook", null, "Bridge webhook might have changed their event structure", { missingFields, invalidFields });
 	  }
-    if(event_category !== "virtual_account.activity") return res.status(200).json({ status: "OK" }); // ignore non virtual_account.activity events for now
     const now = new Date().toISOString();
     // insert or update incoming Bridge webhook messages.
     const { error } = await supabaseCall(() =>

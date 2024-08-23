@@ -1,10 +1,11 @@
 const createLog = require("../../src/util/logger/supabaseLogger");
-const { webhookMapping } = require("../../webhooks/bridge/webhookMapping");
+const { getWebhookProcessor } = require("../../webhooks/bridge/webhookMapping");
 const {
   fetchAndUpdatePendingWebhookMessages,
   completeWebhookMessage,
   insertWebhookMessageHistory,
   deleteWebhookMessage,
+  incrementWebhookMessageRetryCount
 } = require("../../webhooks/bridge/webhookMessagesService");
 
 const RETRY_INTERVAL = 60; // 60 secs
@@ -13,17 +14,16 @@ const MAX_RETRIES = 100;
 const pollBridgeWebhookEvents = async () => {
   try {
     const events = await fetchAndUpdatePendingWebhookMessages(
-      "virtual_account.activity",
-      RETRY_INTERVAL,
-      MAX_RETRIES
+      RETRY_INTERVAL
     );
 
     await Promise.all(
       events.map(async (event) => {
         let caughtError = null;
         try {
+          await incrementWebhookMessageRetryCount(event);
           const event_object = event.event_object;
-          const eventProcessor = webhookMapping[event.event_category];
+          const eventProcessor = getWebhookProcessor(event.event_category);
           await eventProcessor(event_object);
           await completeWebhookMessage(event.id);
         } catch (error) {
@@ -34,7 +34,7 @@ const pollBridgeWebhookEvents = async () => {
             `Failed to process event id ${event.id}`,
             error
           );
-          if (event.retry_count >= RETRY_INTERVAL) {
+          if (event.retry_count >= MAX_RETRIES) {
             await createLog(
               "pollBridgeWebhookEvents",
               null,
@@ -52,8 +52,10 @@ const pollBridgeWebhookEvents = async () => {
           };
 
           await insertWebhookMessageHistory(eventHistory);
-          // only delete webhook message if it is successfully inserted into job history
-          await deleteWebhookMessage(event.id);
+          // only delete webhook message if it is successfully inserted into job history and was processed successfully
+          if(eventHistory.success){
+            await deleteWebhookMessage(event.id);
+          }
         }
       })
     );

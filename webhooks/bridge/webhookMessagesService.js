@@ -3,24 +3,24 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 
 // You can go to Supabase database function to see what the function updates and returns
 const fetchAndUpdatePendingWebhookMessages = async (
-  event_category,
   retry_interval,
-  max_retries
 ) => {
-  const { data: events, error } = await supabase.rpc(
-    "get_and_update_bridge_webhook_messages",
-    {
-      event_category_param: event_category,  
-      retry_interval: retry_interval,
-      max_retries: max_retries,
-    }
-  );
+  const now =  new Date();
+  const { data, error} = await supabaseCall(() => supabase
+    .from("bridge_webhook_messages")
+    .update({
+      next_retry_at: new Date(now.getTime() + retry_interval * 1000).toISOString(),
+    })
+    .eq("process_status", "PENDING")
+    .lte("next_retry_at", now.toISOString())
+    .select()
+  )
 
   if (error) {
     throw error;
   }
 
-  return events;
+  return data;
 };
 
 const insertWebhookMessageHistory = async (event) => {
@@ -58,9 +58,25 @@ const completeWebhookMessage = async (id) => {
   }
 };
 
+const incrementWebhookMessageRetryCount = async (record) => {
+  const { error } = await supabaseCall(() =>
+    supabase
+      .from("bridge_webhook_messages")
+      .update({
+        retry_count: record.retry_count + 1
+      })
+      .eq("id", record.id)
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   fetchAndUpdatePendingWebhookMessages,
   insertWebhookMessageHistory,
   deleteWebhookMessage,
   completeWebhookMessage,
+  incrementWebhookMessageRetryCount
 };
