@@ -45,8 +45,10 @@ UsdOfframpAchAccount:
       enum: [individual, business]
     streetLine1:
       type: string
+      description: This has to be a valid street address.
     streetLine2:
       type: string
+      description: This has to be a valid street address. Eg. It cannot be a PO Box.
     city:
       type: string
     state:
