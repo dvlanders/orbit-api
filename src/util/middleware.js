@@ -8,6 +8,7 @@ const { logger } = require('../util/logger/logger');
 const readme = require('readmeio');
 const { sendSlackReqResMessage } = require('../util/logger/slackLogger');
 const cloneDeep = require('lodash.clonedeep');
+const createLog = require("./logger/supabaseLogger");
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
 const README_API_KEY = process.env.README_API_KEY
@@ -239,4 +240,17 @@ function logToLoki(message) {
 		.catch(err => {
 			console.error('Error sending logs to Loki:', err);
 		});
+}
+
+exports.localAdmin = async(req, res, next) => {
+	try{
+		const { userId, profileId } = req.query
+		if (!profileId) return res.status(400).jsno({error: "profileId is required"})
+		if (userId && (!isUUID(userId) || !(await verifyUser(userId, profileId)))) return res.status(401).json({ error: "userId not found or not under provided profileId" });
+
+		next()
+	}catch (error){
+		await createLog("middleware/localAdmin", null, error.message, error)
+		return res.status(500).json({error: "Internal server error"})
+	}
 }
