@@ -29,8 +29,12 @@ const { fetchAccountProviders } = require("../../../account/accountProviders/acc
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
-const initTransferData = async(config) => {
-	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId} = config
+const initTransferData = async (config) => {
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail } = config
+
+
+	console.log("****payment rail", paymentRail)
+
 	// get conversion rate
 	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
 	//get crypto contract address
@@ -57,18 +61,19 @@ const initTransferData = async(config) => {
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
-			bastion_user_id: sourceBastionUserId
+			bastion_user_id: sourceBastionUserId,
+			same_day_ach: paymentRail == "sameDayAch",
 		})
 		.select()
 		.single()
-	
+
 	if (recordError) throw recordError
-	
+
 	// return if no fee charged
 	if (!feeType || parseFloat(feeValue) <= 0) return record
 
 	// insert fee record
-	let {feePercent, feeAmount, clientReceivedAmount} = getFeeConfig(feeType, feeValue, amount)
+	let { feePercent, feeAmount, clientReceivedAmount } = getFeeConfig(feeType, feeValue, amount)
 	const info = {
 		chargedUserId: sourceUserId,
 		chain: chain,
@@ -76,7 +81,7 @@ const initTransferData = async(config) => {
 		chargedWalletAddress: sourceWalletAddress
 	}
 	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION", record.request_id)
-	
+
 	// return if amount is less than 1 dollar
 	if (clientReceivedAmount < 1) {
 		const toUpdate = {
@@ -100,13 +105,13 @@ const initTransferData = async(config) => {
 		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
 		return result
 	}
-	
+
 	// update into crypto to crypto table
-	const result = await updateRequestRecord(record.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
+	const result = await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
 	return result
 }
 
-const transferWithFee = async(initialTransferRecord, profileId) => {
+const transferWithFee = async (initialTransferRecord, profileId) => {
 
 	const sourceUserId = initialTransferRecord.user_id
 	const destinationAccountId = initialTransferRecord.destination_account_id
@@ -119,12 +124,12 @@ const transferWithFee = async(initialTransferRecord, profileId) => {
 	const paymentProcessorContractAddress = initialTransferRecord.payment_processor_contract_address
 	const bastionUserId = initialTransferRecord.bastion_user_id
 	// get fee config
-	const {data: feeRecord, error: feeRecordError} = await supabase
+	const { data: feeRecord, error: feeRecordError } = await supabase
 		.from("developer_fees")
 		.select("*")
 		.eq("id", developerFeeId)
 		.single()
-	
+
 	if (feeRecordError) throw feeRecordError
 
 	//get payment rail
@@ -132,8 +137,10 @@ const transferWithFee = async(initialTransferRecord, profileId) => {
 	// get account info
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
 	if (!accountInfo) throw new Error(`destinationAccountId not exist`)
-	if (accountInfo.rail_type != "offramp")  throw new Error(`destinationAccountId is not a offramp bank account`)
-	const paymentRail = accountInfo.payment_rail
+	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
+
+	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
+	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
 
 	// create a bridge transfer
 	const clientReceivedAmount = (amount - feeRecord.fee_amount).toFixed(2)
@@ -180,10 +187,10 @@ const transferWithFee = async(initialTransferRecord, profileId) => {
 	// allowance check
 	await allowanceCheck(bastionUserId, sourceWalletAddress, chain, sourceCurrency)
 	return result
-	
+
 }
 
-const transferWithoutFee = async(initialTransferRecord, profileId) => {
+const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const sourceUserId = initialTransferRecord.user_id
 	const destinationAccountId = initialTransferRecord.destination_account_id
 	const sourceCurrency = initialTransferRecord.source_currency
@@ -197,8 +204,10 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 	// get account info
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
 	if (!accountInfo) throw new Error(`destinationAccountId not exist`)
-	if (accountInfo.rail_type != "offramp")  throw new Error(`destinationAccountId is not a offramp bank account`)
-	const paymentRail = accountInfo.payment_rail
+	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
+
+	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
+	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
 
 	//create transfer without fee
 	// create a bridge transfer
@@ -268,14 +277,14 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 		}
 
 		// in sandbox, just return SUBMITTED_ONCHAIN status
-		if(process.env.NODE_ENV == "development"){
+		if (process.env.NODE_ENV == "development") {
 			toUpdate.bastion_transaction_status = "CONFIRMED"
 			toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 		}
-		
+
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-	}else{
+	} else {
 
 		const toUpdate = {
 			bastion_response: bastionResponseBody,
@@ -294,9 +303,10 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
-	const {destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId} = config
+
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId } = config
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
-	
+
 	// check destination bank account information
 	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
 	config.destinationUserId = destinationUserId
@@ -310,7 +320,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	const jobConfig = {
 		recordId: initialTransferRecord.id
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)){
+	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)) {
 		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
 	}
 
@@ -319,9 +329,9 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 }
 
 // this should already contain every information needed for transfer
-const executeAsyncTransferCryptoToFiat = async(config) => {
+const executeAsyncTransferCryptoToFiat = async (config) => {
 	// fetch from created record
-	const {data, error} = await supabase
+	const { data, error } = await supabase
 		.from('offramp_transactions')
 		.select("*")
 		.eq("id", config.recordId)
@@ -333,9 +343,9 @@ const executeAsyncTransferCryptoToFiat = async(config) => {
 	}
 
 	// transfer
-	if (data.developer_fee_id){
+	if (data.developer_fee_id) {
 		return await transferWithFee(data, config.profileId)
-	}else{
+	} else {
 		return await transferWithoutFee(data, config.profileId)
 	}
 

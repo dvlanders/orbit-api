@@ -1844,6 +1844,7 @@
             "type": "string",
             "enum": [
               "ach",
+              "sameDayAch",
               "wire",
               "sepa",
               "pix"
