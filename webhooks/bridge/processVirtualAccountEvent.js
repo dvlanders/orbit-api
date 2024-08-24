@@ -39,6 +39,7 @@ const processVirtualAccountEvent = async (event) => {
             .from("onramp_transactions")
             .select("id, bridge_deposit_id")
             .eq("id", referenceId)
+            .maybeSingle()
         );
 
       if (existingTransactionError) {
