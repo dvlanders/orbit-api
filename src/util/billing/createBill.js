@@ -37,8 +37,10 @@ exports.createStripeBill = async(billingInformation) => {
         const billableDepositFee = parseFloat(billingInfo.fiatDeposit.value.toFixed(2))
         const billableVirtualAccountFee = parseFloat(billingInfo.virtualAccount.value.toFixed(2))
         const monthlyMinimum = parseFloat(billingInfo.monthlyMinimum.toFixed(2))
-        const billableIntegrationFee = Math.max(monthlyMinimum - (billablePayoutFee + billableDepositFee + billableVirtualAccountFee), 0)
-        const finalBillableFee = Math.max(billablePayoutFee + billableDepositFee + billableVirtualAccountFee, monthlyMinimum)
+        const feeToMinimum = Math.max(monthlyMinimum - (billablePayoutFee + billableDepositFee + billableVirtualAccountFee), 0)
+        const integrationFee = parseFloat(billingInfo.integrationFee.toFixed(2))
+        const platformFee = parseFloat(billingInfo.platformFee.toFixed(2))
+        const finalBillableFee = Math.max(billablePayoutFee + billableDepositFee + billableVirtualAccountFee, monthlyMinimum) + integrationFee + platformFee
         const hifiBillingId = generateHifiInvoiceId()
 
         // insert billing history
@@ -57,7 +59,9 @@ exports.createStripeBill = async(billingInformation) => {
                 billable_payout_fee: billablePayoutFee,
                 billable_deposit_fee: billableDepositFee,
                 billable_active_virtual_account_fee: billableVirtualAccountFee,
-                billable_integration_fee: billableIntegrationFee,
+                billable_integration_fee: integrationFee,
+                billable_platform_fee: platformFee,
+                fee_to_minimum: feeToMinimum,
                 final_billable_fee_amount: finalBillableFee,
                 status: "CREATED",
                 provider: "STRIPE",
@@ -94,7 +98,9 @@ exports.createStripeBill = async(billingInformation) => {
             {productName: "deposit_fee", fee: billableDepositFee}, 
             {productName: "payout_fee", fee: billablePayoutFee}, 
             {productName: "active_virtual_account_fee", fee: billableVirtualAccountFee}, 
-            {productName: "integration_fee", fee: billableIntegrationFee}, 
+            {productName: "integration_fee", fee: integrationFee}, 
+            {productName: "account_minimum", fee: feeToMinimum}, 
+            {productName: "platform_fee", fee: platformFee}, 
         ]
 
         await Promise.all(products.map(async(product) => {
