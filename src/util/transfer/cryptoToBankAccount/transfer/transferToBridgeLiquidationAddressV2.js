@@ -25,6 +25,7 @@ const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiat
 const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
+const { safeStringToFloat } = require("../../../utils/number");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -166,11 +167,15 @@ const transferWithFee = async(initialTransferRecord, profileId) => {
 
 	// update record
 	const liquidationAddress = responseBody.source_deposit_instructions.to_address
+	const providerFee = safeStringToFloat(responseBody.receipt.developer_fee) + safeStringToFloat(responseBody.receipt.exchange_fee) + safeStringToFloat(responseBody.receipt.gas_fee)
+	const finalClientReceivedAmount = safeStringToFloat(responseBody.receipt.final_amount)
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: responseBody.state,
 		bridge_response: responseBody,
 		bridge_transfer_id: responseBody.id,
+		provider_fee: providerFee,
+		final_received_amount: finalClientReceivedAmount,
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
@@ -231,11 +236,15 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 
 	// update record
 	const liquidationAddress = bridgeResponseBody.source_deposit_instructions.to_address
+	const providerFee = safeStringToFloat(bridgeResponseBody.receipt.developer_fee) + safeStringToFloat(bridgeResponseBody.receipt.exchange_fee) + safeStringToFloat(bridgeResponseBody.receipt.gas_fee)
+	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount)
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: bridgeResponseBody.state,
 		bridge_response: bridgeResponseBody,
 		bridge_transfer_id: bridgeResponseBody.id,
+		provider_fee: providerFee,
+		final_received_amount: finalClientReceivedAmount,
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	await updateRequestRecord(initialTransferRecord.id, toUpdate)
@@ -248,7 +257,7 @@ const transferWithoutFee = async(initialTransferRecord, profileId) => {
 		contractAddress: initialTransferRecord.contract_address,
 		actionName: "transfer",
 		chain: chain,
-		actionParams: erc20Transfer(sourceCurrency, liquidationAddress, transferAmount)
+		actionParams: erc20Transfer(sourceCurrency, chain, liquidationAddress, transferAmount)
 	};
 
 	const bastionResponse = await submitUserAction(bodyObject)

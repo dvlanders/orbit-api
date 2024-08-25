@@ -12,7 +12,7 @@ exports.transfer = async(id, requestRecord) => {
 		contractAddress: requestRecord.contractAddress,
 		actionName: "transfer",
 		chain: requestRecord.chain,
-		actionParams: erc20Transfer(requestRecord.currency, requestRecord.recipientAddress, requestRecord.unitsAmount)
+		actionParams: erc20Transfer(requestRecord.currency, requestRecord.chain, requestRecord.recipientAddress, requestRecord.unitsAmount)
 	};
 
     const url = `${BASTION_URL}/v1/user-actions`;

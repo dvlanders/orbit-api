@@ -374,6 +374,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 		const { transferFunc } = funcs
+		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
 		// get user wallet
 		// fetch sender wallet address information

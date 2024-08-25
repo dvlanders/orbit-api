@@ -33,8 +33,8 @@ const CryptoToBankSupportedPairFunctions = {
 		},
 		usdt: {
 			usd: {
-				transferFunc: null,
-				asyncTransferExecuteFunc: null,
+				transferFunc: createTransferToBridgeLiquidationAddress,
+				asyncTransferExecuteFunc: executeAsyncTransferCryptoToFiat,
 				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
 			},
 		}
