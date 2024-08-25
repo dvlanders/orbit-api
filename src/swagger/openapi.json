@@ -754,6 +754,20 @@
             "enum": [
               "US_ACH_WIRE"
             ]
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "usdt",
+              "usdc"
+            ]
+          },
+          "destinationChain": {
+            "type": "string",
+            "enum": [
+              "POLYGON_MAINNET",
+              "ETHEREUM_MAINNET"
+            ]
           }
         },
         "required": [
