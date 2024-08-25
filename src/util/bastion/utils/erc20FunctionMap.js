@@ -25,11 +25,18 @@ const erc20Approve = (currency, spender, unitsAmount) => {
 			{ name: "spender", value: spender },
 			{ name: "value", value: unitsAmount }
 		]
-    }else{
-        return [
-			{ name: "spender", value: spender },
-			{ name: "amount", value: unitsAmount }
-		]
+    }else if (currency == "usdt"){
+        if (chain == "POLYGON_MAINNET"){
+            return [
+                { name: "spender", value: spender },
+                { name: "amount", value: unitsAmount }
+            ]
+        }else if (chain == "ETHEREUM_MAINNET"){
+            return [
+                { name: "_spender", value: spender },
+                { name: "_value", value: unitsAmount }
+            ]
+        }
     }
 }
 
