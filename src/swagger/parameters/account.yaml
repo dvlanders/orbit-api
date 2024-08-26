@@ -74,3 +74,10 @@ VACreatedAfterParameter:
     type: string
   description: Return the micro deposit records that created after this eventId
   required: false
+AccountTypeParameter:
+  name: accountType
+  in: query
+  schema:
+    type: string
+    enum: ["us", "nonUsIbanSupported", "nonUsIbanUnsupported"]
+  required: true
