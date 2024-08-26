@@ -73,6 +73,7 @@
       - Account
     parameters:
       - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/AccountTypeParameter'
     requestBody:
       $ref: '#/components/requestBodies/UsdOfframpWireAccountBody'
     responses:
