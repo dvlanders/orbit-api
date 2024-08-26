@@ -804,10 +804,12 @@
             ]
           },
           "streetLine1": {
-            "type": "string"
+            "type": "string",
+            "description": "This has to be a valid street address."
           },
           "streetLine2": {
-            "type": "string"
+            "type": "string",
+            "description": "This has to be a valid street address. Eg. It cannot be a PO Box."
           },
           "city": {
             "type": "string"
@@ -1854,22 +1856,17 @@
               "brl"
             ]
           },
-          "paymentRail": {
-            "type": "string",
-            "enum": [
-              "ach",
-              "wire",
-              "sepa",
-              "pix"
-            ]
+          "sameDayAch": {
+            "type": "boolean",
+            "description": "Routes offramp for same day ACH transfer for a $1 additional fee"
           },
           "description": {
             "type": "string",
-            "description": "Required if paymentRail is \"wire\""
+            "description": "Required if paymentRail for the account for the destinationAccountId is \"wire\""
           },
           "purposeOfPayment": {
             "type": "string",
-            "description": "Required if paymentRail is \"wire\""
+            "description": "Required if paymentRail for the account for the destinationAccountId is \"wire\""
           },
           "feeType": {
             "type": "string",

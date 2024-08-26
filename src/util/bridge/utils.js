@@ -39,6 +39,14 @@ const BridgeCustomerStatus = {
 	AWAITING_UBO: "awaiting_ubo",
 }
 
+const BridgeTransactionStatusMap = {
+	in_review: "CRYPTO_IN_REVIEW",
+	payment_submitted: "CRYPTO_SUBMITTED",
+	funds_received: "FIAT_CONFIRMED",
+	payment_processed: "CONFIRMED",
+	refunded: "REFUNDED",
+}
+
 const virtualAccountPaymentRailToChain = NODE_ENV == "development" ?
 	{
 		ethereum: "ETHEREUM_TESTNET",
@@ -232,6 +240,7 @@ const getBridgeUserId = async(userId) => {
 
 module.exports = {
 	bridgeFieldsToRequestFields,
+	BridgeTransactionStatusMap,
 	getEndorsementStatus,
 	AccountActions,
 	RejectionReasons,

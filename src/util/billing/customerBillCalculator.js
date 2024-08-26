@@ -65,6 +65,8 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
                 value: activeVirtualAccount * billingRate.active_virtual_account_fee
             },
             monthlyMinimum: billingRate.monthly_minimum,
+            integrationFee: billingRate.integration_fee,
+            platformFee: billingRate.platform_fee,
             updatedAt: billingRate.updated_at,
             billingPeriodStart: startDate,
             billingPeriodEnd: endDate

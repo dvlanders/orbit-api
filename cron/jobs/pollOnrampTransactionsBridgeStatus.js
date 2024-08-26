@@ -4,17 +4,9 @@ const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const { chargeFeeOnFundReceivedBastion } = require("../../src/util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
+const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
-
-
-const bridgeStatusMap = {
-	"in_review": "CRYPTO_IN_REVIEW",
-	"payment_submitted": "CRYPTO_SUBMITTED",
-	"funds_received": "FIAT_CONFIRMED",
-	"payment_processed": "CONFIRMED",
-	"refunded": "REFUNDED",
-}
 
 const updateStatus = async (onrampTransaction) => {
 	try {
@@ -56,29 +48,37 @@ const updateStatus = async (onrampTransaction) => {
 			for (const event of events) {
 				const description = event.source.description
 				const referenceId = description.split(" ").slice(-5).join('-').toLowerCase()
-				if (referenceId != onrampTransaction.id) continue
-				// update status, this should be the latest for this batch of records
-				const { data: update, error: updateError } = await supabase
+				const depositId = event.deposit_id;
+				const hasDepositId = depositId == onrampTransaction.bridge_deposit_id
+				const hasReferenceId = referenceId == onrampTransaction.id
+
+				if(hasDepositId || hasReferenceId){
+					// update status, this should be the latest for this batch of records
+					const { data: update, error: updateError } = await supabase
 					.from("onramp_transactions")
 					.update({
 						bridge_response: event,
 						bridge_status: event.type,
-						status: event.type in bridgeStatusMap ? bridgeStatusMap[event.type] : "UNKNOWN",
+						status: event.type in BridgeTransactionStatusMap ? BridgeTransactionStatusMap[event.type] : "UNKNOWN",
 						last_bridge_virtual_account_event_id: last_event_id,
 						updated_at: new Date().toISOString(),
-						transaction_hash: event.destination_tx_hash
+						transaction_hash: event.destination_tx_hash,
 					})
-					.eq("id", onrampTransaction.id)
+					.eq(hasDepositId ? "bridge_deposit_id" : "id", hasDepositId ? depositId : referenceId) // check with deposit id if it exists, otherwise check with reference id
 					.select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id, fiat_provider, crypto_provider")
 					.single()
-				if (updateError) throw updateError
+					if (updateError) throw updateError
 
-				if (onrampTransaction.developer_fee_id) {
-					await chargeFeeOnFundReceivedBastion(onrampTransaction.id)
+					if (onrampTransaction.developer_fee_id) {
+						await chargeFeeOnFundReceivedBastion(onrampTransaction.id)
+    				}
+					await notifyFiatToCryptoTransfer(update)
+					break
+
+				}else{
+					await createLog("pollOnrampTransactionsBridgeStatus/updateStatus", onrampTransaction.user_id, `No matching deposit id or reference id found for ${onrampTransaction.id} and ${depositId}`)
 				}
 
-				await notifyFiatToCryptoTransfer(update)
-				break
 			}
 
 		}
@@ -94,7 +94,7 @@ async function pollOnrampTransactionsBridgeStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
-		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id, developer_fee_id')
+		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id, developer_fee_id, bridge_deposit_id')
 		.eq("crypto_provider", "BRIDGE")
 		.or('status.eq.FIAT_PROCESSED,status.eq.FIAT_CONFIRMED,status.eq.CRYPTO_SUBMITTED,status.eq.CRYPTO_IN_REVIEW')
 		.order('updated_at', { ascending: true })
