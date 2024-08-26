@@ -33,6 +33,7 @@ const { isNumberOrNumericString } = require("../util/helper/numberCheck");
 const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversionRate/utils/cryptoToFiatConversionRateProvider");
 const { fetchAccountProviders } = require("../util/account/accountProviders/accountProvidersService");
 const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walletType");
+const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
 
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -355,7 +356,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 		// FIX ME SHOULD put it in the field validation 
 		if (!isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
-
+		if (!cryptoToFiatAmountCheck(amount, sourceCurrency, chain)) return res.status(400).json({ error: "Invalid amount for sourceCurrency" })
 
 		// check if fee config is correct
 		if (feeType || feeValue) {
@@ -385,6 +386,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 		const { transferFunc } = funcs
+		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
 		// get user wallet
 		// fetch sender wallet address information

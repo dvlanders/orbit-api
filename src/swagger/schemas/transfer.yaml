@@ -113,7 +113,7 @@ FiatToCryptoTransfer:
       enum: ["usd"]
     destinationCurrency:
       type: string
-      enum: ["usdc"]
+      enum: ["usdc", "usdt"]
     amount:
       type: number
       format: float
@@ -121,7 +121,7 @@ FiatToCryptoTransfer:
     chain:
       type: string
       description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
-      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY", "ETHEREUM_MAINNET"]
     isInstant:
       type: boolean
       description: (Not implemented yet)

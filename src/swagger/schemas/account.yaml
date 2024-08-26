@@ -23,6 +23,12 @@ UsdOnrampWireAccount:
       type: string
       description: Passing "US_ACH_WIRE" allows the user to do USD onramp through both ACH and Wire.
       enum: [US_ACH_WIRE]
+    destinationCurrency:
+      type: string
+      enum: ["usdt", "usdc"]
+    destinationChain:
+      type: string
+      enum: ["POLYGON_MAINNET", "ETHEREUM_MAINNET"]
   required:
     - rail
 UsdOfframpAchAccount:

@@ -70,7 +70,7 @@ const transferToCircleWallet = async (config) => {
 		contractAddress: contractAddress,
 		actionName: "transfer",
 		chain: chain,
-		actionParams: erc20Transfer(sourceCurrency, process.env.CIRCLE_MASTER_WALLET_BLOCKCHAIN_ADDRESS, transferAmount)
+		actionParams: erc20Transfer(sourceCurrency, chain, process.env.CIRCLE_MASTER_WALLET_BLOCKCHAIN_ADDRESS, transferAmount)
 	};
 
 	const url = `${BASTION_URL}/v1/user-actions`;

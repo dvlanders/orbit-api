@@ -767,6 +767,20 @@
             "enum": [
               "US_ACH_WIRE"
             ]
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "usdt",
+              "usdc"
+            ]
+          },
+          "destinationChain": {
+            "type": "string",
+            "enum": [
+              "POLYGON_MAINNET",
+              "ETHEREUM_MAINNET"
+            ]
           }
         },
         "required": [
@@ -1921,7 +1935,8 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usdc"
+              "usdc",
+              "usdt"
             ]
           },
           "amount": {
@@ -1934,7 +1949,8 @@
             "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
             "enum": [
               "POLYGON_MAINNET",
-              "POLYGON_AMOY"
+              "POLYGON_AMOY",
+              "ETHEREUM_MAINNET"
             ]
           },
           "isInstant": {

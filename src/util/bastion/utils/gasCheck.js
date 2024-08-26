@@ -5,16 +5,15 @@ const { Chain } = require("../../common/blockchain");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
-const GAS_THRESHOLD = BigInt(5 * Math.pow(10, 16))
 
 const gasAmount = {
     POLYGON_MAINNET: "0.1",
-    ETHEREUM_MAINNET: "0.005"
+    ETHEREUM_MAINNET: "0.001"
 }
 
 const gasThreshold = {
     POLYGON_MAINNET: BigInt(5 * Math.pow(10, 16)),
-    ETHEREUM_MAINNET: BigInt(1 * Math.pow(10, 15))
+    ETHEREUM_MAINNET: BigInt(5 * Math.pow(10, 14))
 }
 
 const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL") => {
