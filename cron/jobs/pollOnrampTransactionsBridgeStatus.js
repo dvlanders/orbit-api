@@ -78,7 +78,7 @@ const updateStatus = async (onrampTransaction) => {
 				}else{
 					// await createLog("pollOnrampTransactionsBridgeStatus/updateStatus", onrampTransaction.user_id, `No matching deposit id or reference id found for ${onrampTransaction.id} and ${depositId}`)
 				}
-
+				break
 			}
 
 		}
