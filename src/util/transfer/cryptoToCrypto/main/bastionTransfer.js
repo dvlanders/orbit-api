@@ -112,7 +112,7 @@ const transferWithoutFee = async(record, profileId) => {
         contractAddress: record.contract_address,
         actionName: "transfer",
         chain: record.chain,
-        actionParams: erc20Transfer(record.currency, record.recipient_address, unitsAmount)
+        actionParams: erc20Transfer(record.currency, record.chain, record.recipient_address, unitsAmount)
     };
 
     const response = await submitUserAction(bodyObject)
@@ -318,7 +318,7 @@ const bastionCryptoTransfer_DEPRECATED = async(fields, createdRecordId=null) => 
             contractAddress: requestRecord.contract_address,
             actionName: "transfer",
             chain: requestRecord.chain,
-            actionParams: erc20Transfer(requestRecord.currency, requestRecord.recipient_address, unitsAmount)
+            actionParams: erc20Transfer(requestRecord.currency, requestRecord.chain, requestRecord.recipient_address, unitsAmount)
         };
 
         const response = await submitUserAction(bodyObject)

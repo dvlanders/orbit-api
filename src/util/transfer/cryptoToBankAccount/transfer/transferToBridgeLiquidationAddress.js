@@ -218,7 +218,7 @@ const transferToBridgeLiquidationAddress = async (config) => {
 			contractAddress: contractAddress,
 			actionName: "transfer",
 			chain: chain,
-			actionParams: erc20Transfer(sourceCurrency, liquidationAddress, transferAmount)
+			actionParams: erc20Transfer(sourceCurrency, chain, liquidationAddress, transferAmount)
 		};
 
 		const response = await submitUserAction(bodyObject)
@@ -345,7 +345,7 @@ const transferToBridgeLiquidationAddressDeveloperWithdraw = async (config) => {
 		contractAddress: contractAddress,
 		actionName: "transfer",
 		chain: chain,
-		actionParams: erc20Transfer(sourceCurrency, liquidationAddress, transferAmount)
+		actionParams: erc20Transfer(sourceCurrency, chain, liquidationAddress, transferAmount)
 	};
 
 	const response = await submitUserAction(bodyObject)

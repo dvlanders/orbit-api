@@ -159,6 +159,19 @@
         "description": "Return the micro deposit records that created after this eventId",
         "required": false
       },
+      "AccountTypeParameter": {
+        "name": "accountType",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "us",
+            "nonUsIbanSupported",
+            "nonUsIbanUnsupported"
+          ]
+        },
+        "required": true
+      },
       "LimitParameter": {
         "name": "limit",
         "in": "query",
@@ -753,6 +766,20 @@
             "description": "Passing \"US_ACH_WIRE\" allows the user to do USD onramp through both ACH and Wire.",
             "enum": [
               "US_ACH_WIRE"
+            ]
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "usdt",
+              "usdc"
+            ]
+          },
+          "destinationChain": {
+            "type": "string",
+            "enum": [
+              "POLYGON_MAINNET",
+              "ETHEREUM_MAINNET"
             ]
           }
         },
@@ -1908,7 +1935,8 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usdc"
+              "usdc",
+              "usdt"
             ]
           },
           "amount": {
@@ -1921,7 +1949,8 @@
             "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
             "enum": [
               "POLYGON_MAINNET",
-              "POLYGON_AMOY"
+              "POLYGON_AMOY",
+              "ETHEREUM_MAINNET"
             ]
           },
           "isInstant": {
@@ -4747,6 +4776,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/AccountTypeParameter"
           }
         ],
         "requestBody": {

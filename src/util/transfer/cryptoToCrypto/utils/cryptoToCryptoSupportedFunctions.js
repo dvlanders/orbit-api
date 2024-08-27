@@ -11,6 +11,16 @@ const cryptoToCryptoSupportedFunctions = {
             transferFunc: createBastionCryptoTransfer,
         }
     },
+    ETHEREUM_MAINNET: {
+        usdc: {
+            walletProviderTable: "bastion_wallets",
+            transferFunc: createBastionCryptoTransfer,
+        },
+        usdt: {
+            walletProviderTable: "bastion_wallets",
+            transferFunc: createBastionCryptoTransfer,
+        }
+    },
     POLYGON_AMOY: {
         usdc: {
             walletProviderTable: "bastion_wallets",

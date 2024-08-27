@@ -14,7 +14,8 @@ const hifiOfframpTransactionStatusMap = {
 	'payment_processed': 'COMPLETED',
 	'returned': 'FAILED_FIAT_RETURNED',
 	'refunded': 'FAILED_FIAT_REFUNDED',
-	'error': 'FAILED_UNKNOWN'
+	'error': 'FAILED_UNKNOWN',
+	'canceled': "CANCELED"
 }
 
 const updateStatusWithBridgeTransferId = async (transaction) => {
