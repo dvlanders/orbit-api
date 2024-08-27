@@ -13,6 +13,7 @@ const bridgeWebhookEventRequiredFields = [
 const bridgeWebhookEventAcceptedFields = {
   api_version: "string",
   event_id: "string",
+  event_sequence: "string",
   event_category: "string",
   event_type: "string",
   event_object_id: "string",
