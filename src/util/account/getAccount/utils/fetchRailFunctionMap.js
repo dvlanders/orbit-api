@@ -3,13 +3,16 @@ const fetchBridgeVirtualAccount = require("../main/fetchBridgeVirtualAccount")
 const fetchPlaidAccountInformation = require("../main/fetchPlaidAccountInformation")
 const fetchCircleAccount = require("../main/fetchCircleAccount")
 const fetchBlindpayAccount = require("../main/fetchBlindpayAccount")
+const { fetchReapAccountInformation } = require("../main/fetchReapAccount")
 
 const fetchRailFunctionsMap = {
 	USD_ONRAMP_ACH: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchPlaidAccountInformation(profileId, accountId, userId, limit, createdAfter, createdBefore),
 	USD_OFFRAMP_ACH: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBridgeExternalAccountInformation("usd", profileId, accountId, userId, limit, createdAfter, createdBefore),
 	USD_OFFRAMP_WIRE: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchCircleAccount("us", profileId, accountId, userId, limit, createdAfter, createdBefore),
 	EUR_OFFRAMP_SEPA: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBridgeExternalAccountInformation("eur", profileId, accountId, userId, limit, createdAfter, createdBefore),
-	BRL_OFFRAMP_PIX: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBlindpayAccount("BRL", profileId, accountId, userId, limit, createdAfter, createdBefore)
+	BRL_OFFRAMP_PIX: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBlindpayAccount("brl", profileId, accountId, userId, limit, createdAfter, createdBefore),
+	HKD_OFFRAMP_FPS: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchReapAccountInformation("hkd", "fps", profileId, accountId, userId, limit, createdAfter, createdBefore),
+	USD_OFFRAMP_CHATS: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchReapAccountInformation("usd", "chats", profileId, accountId, userId, limit, createdAfter, createdBefore)
 }
 
 /**
@@ -43,7 +46,7 @@ const accountInfoAggregator = (funcs) => (async (accountId, profileId, userId, l
         const results = await Promise.all(Object.keys(funcs).map(async (key) => {
             const func = funcs[key];
             let accountInfo = await func(accountId, profileId, userId, limit, createdAfter, createdBefore);
-			
+			console.log(`${key}: `, accountInfo)
 			if(!accountInfo)return { count: 0, banks: [] };
 			if(!accountInfo.hasOwnProperty('count')) accountInfo = { count: 1, banks: [accountInfo] };
 			const [currency, railType, paymentRail] = key.toLowerCase().split('_');
@@ -91,6 +94,7 @@ const getFetchRailFunctions = (railKey) => {
             acc[key] = fetchRailFunctionsMap[key];
             return acc;
         }, {});
+
 	return accountInfoAggregator(funcs);
 }
 
