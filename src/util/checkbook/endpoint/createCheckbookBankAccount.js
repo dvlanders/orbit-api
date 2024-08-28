@@ -54,6 +54,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 			.maybeSingle()
 		);
 
+
 		if (checkbookUserError) {
 			throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookUserError.message, checkbookUserError)
 
@@ -122,13 +123,12 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				.single()
 			if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
 
-			await insertAccountProviders(checkbookAccountData.id, "usd", "onramp", "ach", "CHECKBOOK", userId)
-
+			accountProviderRecord = await insertAccountProviders(checkbookAccountData.id, "usd", "onramp", "ach", "CHECKBOOK", userId)
 			return {
 				status: 200,
 				invalidFields: [],
 				message: "Bank account added successfully",
-				id: checkbookAccountData.id
+				id: accountProviderRecord.id
 			}
 
 		} else {
