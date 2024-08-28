@@ -1157,11 +1157,10 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	}
 
 	try {
-		let checkAccountResult = accountType === 'us'
+		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = accountType === 'us'
 			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
 			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
-		let recordId = checkAccountResult.externalAccountRecordId;
-		if (!recordId) {
+		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
@@ -1216,7 +1215,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
 				.select('id, payment_rail')
-				.eq('account_id', recordId);
+				.eq('account_id', externalAccountRecordId);
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
@@ -1230,11 +1229,11 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: recordId
+					id: externalAccountRecordId
 				});
 			}
 
-			const accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "wire", "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
