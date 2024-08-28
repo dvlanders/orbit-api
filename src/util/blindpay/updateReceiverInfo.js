@@ -25,15 +25,28 @@ const updateReceiverUBOInfo = async (userId, receiverId, fields) => {
           Object.keys(owner).forEach((field) => {
             const column = receiverFieldsNameMap[field];
             if (column && owner[field] !== undefined) {
-                ownerData[column] = owner[field];
+              ownerData[column] = owner[field];
             }
           });
-
-          if (ownerData.date_of_birth) {
-            ownerData.date_of_birth = new Date(
-              ownerData.date_of_birth
-            ).toISOString();
+          try {
+            if (ownerData.date_of_birth) {
+              ownerData.date_of_birth = new Date(
+                ownerData.date_of_birth
+              ).toISOString();
+            }
+          } catch (error) {
+            throw new ReceiverInfoUploadError(
+              ReceiverInfoUploadErrorType.INVALID_FIELD,
+              400,
+              "",
+              {
+                error: `owners field provided are either missing or invalid`,
+                missing_fields: [],
+                invalid_fields: ["date_of_birth"],
+              }
+            );
           }
+
           return ownerData;
         })
       );
@@ -94,7 +107,7 @@ const updateReceiverUBOInfo = async (userId, receiverId, fields) => {
         error.message,
         error
       );
-      
+      if (error instanceof ReceiverInfoUploadError) throw error;
       // internal server error
       throw new ReceiverInfoUploadError(
         ReceiverInfoUploadErrorType.INTERNAL_ERROR,
@@ -217,11 +230,28 @@ const updateReceiverKYCInfo = async (fields) => {
     }
   });
 
-  if (kycData.date_of_birth) {
-    kycData.date_of_birth = new Date(kycData.date_of_birth).toISOString();
-  }
-  if (kycData.formation_date) {
-    kycData.formation_date = new Date(kycData.formation_date).toISOString();
+  try {
+    if (kycData.date_of_birth) {
+      kycData.date_of_birth = new Date(kycData.date_of_birth).toISOString();
+    }
+    if (kycData.formation_date) {
+      kycData.formation_date = new Date(kycData.formation_date).toISOString();
+    }
+  } catch (error) {
+    throw new ReceiverInfoUploadError(
+      ReceiverInfoUploadErrorType.INVALID_FIELD,
+      400,
+      "",
+      {
+        error: `fields provided are either missing or invalid`,
+        missing_fields: [],
+        invalid_fields: [
+          receiverExistRecord.type === "individual"
+            ? "date_of_birth"
+            : "formation_date",
+        ],
+      }
+    );
   }
 
   console.log("kyc data: \n", kycData);
@@ -270,7 +300,7 @@ const updateReceiverKYCInfo = async (fields) => {
       receiverRecord.formation_date
     ).toISOString();
   }
-  console.log("updated receiverRecord: \n", receiverRecord)
+  console.log("updated receiverRecord: \n", receiverRecord);
   // receiverRecord.blindpay_receiver_id =
   //   receiverExistRecord.blindpay_receiver_id;
   return receiverRecord;

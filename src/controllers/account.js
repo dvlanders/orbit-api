@@ -890,10 +890,12 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId } = req.query;
-
+	const { profileId, userId, receiverId } = req.query;
+	if(!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
 
 	const fields = req.body;
+	fields.user_id = userId;
+	fields.receiver_id = receiverId;
 
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 
@@ -1251,8 +1253,8 @@ exports.getBlindpayReceiver = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId } = req.query;
-	const fields = req.body;
+	const { profileId, userId, receiverId} = req.query;
+	const fields = {user_id: userId, receiver_id: receiverId};
 
 	const requiredFields = ["user_id"]
 	const acceptedFields = { user_id: "string", receiver_id: "string" }
@@ -1278,10 +1280,12 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId } = req.query;
+	const { profileId, userId, receiverId } = req.query;
+	if(!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
 	const fields = req.body;
+	fields.user_id = userId;
+	fields.receiver_id = receiverId;
 	
-	if(!fields.user_id || !fields.receiver_id) return res.status(400).json({ error: "user_id or receiver_id is missing" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 	
 	let receiverRecord
@@ -1314,7 +1318,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		}
 
 		const responseObject = {
-			sucess: response.success ? response.success : false,
+			success: response.success ? response.success : false,
 			id: receiverRecord.id
 		};
 
