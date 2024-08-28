@@ -17,6 +17,7 @@ const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
 const { virtualAccountPaymentRailToChain } = require('../util/bridge/utils');
 const { account } = require('.');
+const { create } = require('lodash');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -158,22 +159,31 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		})
 		recordId = externalAccountRecordId
 
-		// already created
-		if (externalAccountExist) {
-			return res.status(200).json({
-				status: "ACTIVE",
-				invalidFields: [],
-				message: "Account already exist",
-				id: recordId
-			})
-		}
 
-		// external account is not yet created
+
+
 		if (!externalAccountExist) {
 
+			const bridgeAccountResult = await createBridgeExternalAccount(
+				userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
+				null, null, null,
+				streetLine1, streetLine2, city, state, postalCode, country,
+				null, null, null, // iban fields not used for USD
+				accountNumber, routingNumber
+			);
+
+
+
+			if (bridgeAccountResult.status !== 200) {
+				return res.status(bridgeAccountResult.status).json({
+					error: bridgeAccountResult.type,
+					message: bridgeAccountResult.message,
+					source: bridgeAccountResult.source
+				});
+			}
 
 			recordId = v4();
-
+			// we handle the insert after the bridge account creation because we want the user to be able to try to create the account again if the account creation fails
 			const { error: bridgeAccountInserterror } = await supabase
 				.from('bridge_external_accounts')
 				.insert({
@@ -192,6 +202,8 @@ exports.createUsdOfframpDestination = async (req, res) => {
 					beneficiary_country: country,
 					account_number: accountNumber,
 					routing_number: routingNumber,
+					bridge_response: bridgeAccountResult.rawResponse,
+					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 				})
 
 			if (bridgeAccountInserterror) {
@@ -199,77 +211,59 @@ exports.createUsdOfframpDestination = async (req, res) => {
 			}
 
 
-			const bridgeAccountResult = await createBridgeExternalAccount(
-				userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
-				null, null, null,
-				streetLine1, streetLine2, city, state, postalCode, country,
-				null, null, null, // iban fields not used for USD
-				accountNumber, routingNumber
-			);
+			const accountProviderRecord = await insertAccountProviders(recordId, "usd", "offramp", "ach", "BRIDGE", userId)
+
+			let createUsdOfframpDestinationResponse = {
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account created successfully",
+				id: accountProviderRecord.id
+			};
+
+			return res.status(200).json(createUsdOfframpDestinationResponse);
+		} else {
+			// use the recordId to check the account_id column of the account_providers table. if a record with the account_id exists with payment_rail ==ach, return success immediately.
+			// supabase call to the account_providers table to check if the wire rail is already present.
+			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
+				.from('account_providers')
+				.select('id, payment_rail')
+				.eq('account_id', recordId)
 
 
-			// if (bridgeAccountResult.source && bridgeAccountResult.source.key.account_type == "Please contact Bridge to enable SEPA/Euro services") {
-			// 	return res.status(bridgeAccountResult.status).json({
-			// 		error: bridgeAccountResult.type,
-			// 		message: 'Account would normally be successfully created. However, euro offramp creation is currently not available in sandbox.',
-
-			// 	});
-			// } else if (bridgeAccountResult.status !== 200) {
-			// 	return res.status(bridgeAccountResult.status).json({
-			// 		error: bridgeAccountResult.type,
-			// 		message: bridgeAccountResult.message,
-			// 		source: bridgeAccountResult.source
-			// 	});
-			// }
-			if (bridgeAccountResult.status !== 200) {
-				return res.status(bridgeAccountResult.status).json({
-					error: bridgeAccountResult.type,
-					message: bridgeAccountResult.message,
-					source: bridgeAccountResult.source
-				});
+			if (providerAccountRecordError) {
+				throw new Error(providerAccountRecordError)
 			}
 
 
-			const { error: bridgeAccountUpdateError } = await supabase
-				.from('bridge_external_accounts')
-				.update({
-					id: recordId,
-					user_id: userId,
-					currency: currency,
-					bank_name: bankName,
-					account_owner_name: accountOwnerName,
-					account_owner_type: accountOwnerType,
-					account_type: 'us',
-					beneficiary_street_line_1: streetLine1,
-					beneficiary_street_line_2: streetLine2,
-					beneficiary_city: city,
-					beneficiary_state: state,
-					beneficiary_postal_code: postalCode,
-					beneficiary_country: country,
-					account_number: accountNumber,
-					routing_number: routingNumber,
-					bridge_response: bridgeAccountResult.rawResponse,
-					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
+			//iterate throught he records in the providerAccountRecordData array to check if the payment_rail is ach, 
+			if (providerAccountRecordData) {
+				for (let i = 0; i < providerAccountRecordData.length; i++) {
+					if (providerAccountRecordData[i].payment_rail === 'ach') {
+						return res.status(200).json({
+							status: "ACTIVE",
+							invalidFields: [],
+							message: "Account already exists",
+							id: recordId
+						})
+					}
+				}
+				// if a ach record does not exist, but we do find a record that exists for the account_id, then we insert a new provider record with payment_rail == ach
+			} else if (providerAccountRecordData && providerAccountRecordData.payment_rail !== 'ach') {
+				accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "ach", "BRIDGE", userId);
+				return res.status(200).json({
+					status: "ACTIVE",
+					invalidFields: [],
+					message: "Account created successfully",
+					id: accountProviderRecord.id
 				})
-				.match({ id: recordId });
-
-			if (bridgeAccountUpdateError) {
-				return res.status(500).json({ error: 'Internal Server Error' });
 			}
-
-			accountProviderRecord = await insertAccountProviders(recordId, "usd", "offramp", "ach", "BRIDGE", userId)
 		}
 
-		// create a record in the bridge_liquidation_addresses table
-		let createUsdOfframpDestinationResponse = {
-			status: "ACTIVE",
-			invalidFields: [],
-			message: "Account created successfully",
-			id: accountProviderRecord.id
-		};
 
-		return res.status(200).json(createUsdOfframpDestinationResponse);
+		// we should never reach this point
+		throw new Error("Unexpected error happened")
 	} catch (error) {
+		createLog("account/createUsdOfframpDestination", userId, error.message, error)
 		console.error('Error in createUsdOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message });
 	}
@@ -332,20 +326,36 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		})
 		recordId = externalAccountRecordId
 
-		// account is already existed in the database
-		if (externalAccountExist) {
-			return res.status(200).json({
-				status: "ACTIVE",
-				invalidFields: [],
-				message: "Account already created",
-				id: recordId
-			})
-		}
+
 
 		if (!externalAccountExist) {
 
+			const bridgeAccountResult = await createBridgeExternalAccount(
+				userId, 'iban', currency, bankName, accountOwnerName, accountOwnerType,
+				firstName, lastName, businessName,
+				null, null, null, null, null, null, // address fields not used for IBAN
+				ibanAccountNumber, businessIdentifierCode, ibanCountryCode, // iban fields for EUR
+				null, null // accountNumber and routingNumber not used for IBAN
+			);
+
+
+			if (bridgeAccountResult.source && bridgeAccountResult.source.key.account_type == "Please contact Bridge to enable SEPA/Euro services") {
+				return res.status(bridgeAccountResult.status).json({
+					error: bridgeAccountResult.type,
+					message: 'Account would normally be successfully created. However, euro offramp creation is currently not available in sandbox.',
+
+				});
+			} else if (bridgeAccountResult.status !== 200) {
+				return res.status(bridgeAccountResult.status).json({
+					error: bridgeAccountResult.type,
+					message: bridgeAccountResult.message,
+					source: bridgeAccountResult.source
+				});
+			}
+
 			recordId = v4();
-			const accountProviderRecord = await insertAccountProviders(recordId, "eur", "offramp", "sepa", "BRIDGE", userId)
+
+			// we handle the insert after the bridge account creation because we want the user to be able to try to create the account again if the account creation fails
 			const { error: bridgeAccountInserterror } = await supabase
 				.from('bridge_external_accounts')
 				.insert({
@@ -369,70 +379,61 @@ exports.createEuroOfframpDestination = async (req, res) => {
 				return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 			}
 
+			const accountProviderRecord = await insertAccountProviders(recordId, "eur", "offramp", "sepa", "BRIDGE", userId)
 
-			const bridgeAccountResult = await createBridgeExternalAccount(
-				userId, 'iban', currency, bankName, accountOwnerName, accountOwnerType,
-				firstName, lastName, businessName,
-				null, null, null, null, null, null, // address fields not used for IBAN
-				ibanAccountNumber, businessIdentifierCode, ibanCountryCode, // iban fields for EUR
-				null, null // accountNumber and routingNumber not used for IBAN
-			);
+			let createEuroOfframpDestinationResponse = {
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account created successfully",
+				id: accountProviderRecord.id
+			};
+
+			return res.status(200).json(createEuroOfframpDestinationResponse);
+
+		} else {
+			// use the recordId to check the account_id column of the account_providers table. if a record with the account_id exists with payment_rail ==ach, return success immediately.
+			// supabase call to the account_providers table to check if the wire rail is already present.
+			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
+				.from('account_providers')
+				.select('id, payment_rail')
+				.eq('account_id', recordId)
 
 
-			if (bridgeAccountResult.source && bridgeAccountResult.source.key.account_type == "Please contact Bridge to enable SEPA/Euro services") {
-				return res.status(bridgeAccountResult.status).json({
-					status: "ACTIVE",
-					invalidFields: [],
-					message: "Account created successfully. However, euro offramp transactions are currently not available in sandbox.",
-					id: accountProviderRecord.id
-				});
-			} else if (bridgeAccountResult.status !== 200) {
-				return res.status(bridgeAccountResult.status).json({
-					error: bridgeAccountResult.type,
-					message: bridgeAccountResult.message,
-					source: bridgeAccountResult.source
-				});
+			if (providerAccountRecordError) {
+				console.log(providerAccountRecordError)
+				throw new Error(providerAccountRecordError)
 			}
 
 
-
-			// update the record in the bridge_external_accounts table
-			const { error: bridgeAccountUpdateError } = await supabase
-				.from('bridge_external_accounts')
-				.update({
-					id: recordId,
-					user_id: userId,
-					currency: currency,
-					bank_name: bankName,
-					account_owner_name: accountOwnerName,
-					account_owner_type: accountOwnerType,
-					account_type: 'iban',
-					beneficiary_first_name: firstName,
-					beneficiary_last_name: lastName,
-					beneficiary_business_name: businessName,
-					iban: ibanAccountNumber,
-					business_identifier_code: businessIdentifierCode,
-					bank_country: ibanCountryCode,
-					bridge_response: bridgeAccountResult.rawResponse,
-					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
+			//iterate throught he records in the providerAccountRecordData array to check if the payment_rail is sepa already exists
+			if (providerAccountRecordData) {
+				for (let i = 0; i < providerAccountRecordData.length; i++) {
+					if (providerAccountRecordData[i].payment_rail === 'sepa') {
+						return res.status(200).json({
+							status: "ACTIVE",
+							invalidFields: [],
+							message: "Account already exists",
+							id: recordId
+						})
+					}
+				}
+				// if a sepa record does not exist, but we do find a record that exists for the account_id, then we insert a new provider record with payment_rail == sepa
+			} else if (providerAccountRecordData && providerAccountRecordData.payment_rail !== 'sepa') {
+				accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "sepa", "BRIDGE", userId);
+				return res.status(200).json({
+					status: "ACTIVE",
+					invalidFields: [],
+					message: "Account created successfully",
+					id: accountProviderRecord.id
 				})
-				.match({ id: recordId });
-
-			if (bridgeAccountUpdateError) {
-				return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountUpdateError });
 			}
 
 		}
 
-		let createEuroOfframpDestinationResponse = {
-			status: "ACTIVE",
-			invalidFields: [],
-			message: "Account created successfully",
-			id: accountProviderRecord.id
-		};
-
-		return res.status(200).json(createEuroOfframpDestinationResponse);
+		// we should never reach this point
+		throw new Error("Unexpected error happened")
 	} catch (error) {
+		createLog("account/createEuroOfframpDestination", userId, error.message, error)
 		console.error('Error in createEuroOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error' });
 	}
