@@ -150,17 +150,17 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	let accountProviderRecord
 
 	try {
-		let recordId
-		// check if the external account is already exist
+		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({
 			userId,
 			accountNumber,
 			routingNumber
-		})
-		recordId = externalAccountRecordId
+		}).catch(error => {
+			console.error("Error checking USD off-ramp account", error);
+			throw new Error("Error checking USD off-ramp account: " + error.message);
+		});
 
-
-
+		recordId = externalAccountRecordId;
 
 		if (!externalAccountExist) {
 
@@ -182,12 +182,12 @@ exports.createUsdOfframpDestination = async (req, res) => {
 				});
 			}
 
-			recordId = v4();
+			const newBridgeExternalAccountRecordId = v4();
 			// we handle the insert after the bridge account creation because we want the user to be able to try to create the account again if the account creation fails
 			const { error: bridgeAccountInserterror } = await supabase
 				.from('bridge_external_accounts')
 				.insert({
-					id: recordId,
+					id: newBridgeExternalAccountRecordId,
 					user_id: userId,
 					currency: currency,
 					bank_name: bankName,
@@ -211,62 +211,50 @@ exports.createUsdOfframpDestination = async (req, res) => {
 			}
 
 
-			const accountProviderRecord = await insertAccountProviders(recordId, "usd", "offramp", "ach", "BRIDGE", userId)
-
-			let createUsdOfframpDestinationResponse = {
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, "usd", "offramp", "ach", "BRIDGE", userId);
+			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
 				message: "Account created successfully",
 				id: accountProviderRecord.id
-			};
-
-			return res.status(200).json(createUsdOfframpDestinationResponse);
+			});
 		} else {
-			// use the recordId to check the account_id column of the account_providers table. if a record with the account_id exists with payment_rail ==ach, return success immediately.
-			// supabase call to the account_providers table to check if the wire rail is already present.
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
 				.select('id, payment_rail')
-				.eq('account_id', recordId)
-
+				.eq('account_id', recordId);
 
 			if (providerAccountRecordError) {
-				throw new Error(providerAccountRecordError)
+				console.log(providerAccountRecordError);
+				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
+			let achExists = providerAccountRecordData.some(record => record.payment_rail === 'ach');
 
-			//iterate throught he records in the providerAccountRecordData array to check if the payment_rail is ach, 
-			if (providerAccountRecordData) {
-				for (let i = 0; i < providerAccountRecordData.length; i++) {
-					if (providerAccountRecordData[i].payment_rail === 'ach') {
-						return res.status(200).json({
-							status: "ACTIVE",
-							invalidFields: [],
-							message: "Account already exists",
-							id: recordId
-						})
-					}
-				}
-				// if a ach record does not exist, but we do find a record that exists for the account_id, then we insert a new provider record with payment_rail == ach
-			} else if (providerAccountRecordData && providerAccountRecordData.payment_rail !== 'ach') {
-				accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "ach", "BRIDGE", userId);
+			if (achExists) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
-					message: "Account created successfully",
-					id: accountProviderRecord.id
-				})
+					message: "Account already exists",
+					id: recordId
+				});
 			}
+
+			const accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "ach", "BRIDGE", userId);
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account created successfully",
+				id: accountProviderRecord.id
+			});
 		}
 
-
-		// we should never reach this point
-		throw new Error("Unexpected error happened")
 	} catch (error) {
-		createLog("account/createUsdOfframpDestination", userId, error.message, error)
+		createLog("account/createUsdOfframpDestination", userId, error.message, error);
 		console.error('Error in createUsdOfframpDestination', error);
-		return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
+
 };
 
 exports.createEuroOfframpDestination = async (req, res) => {
@@ -316,17 +304,17 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 
 	try {
-
-		let recordId
-		// check if the external account is already exist
+		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkEuOffRampAccount({
 			userId,
 			ibanAccountNumber,
 			businessIdentifierCode
-		})
-		recordId = externalAccountRecordId
+		}).catch(error => {
+			console.error("Error checking EU off-ramp account", error);
+			throw new Error("Error checking EU off-ramp account: " + error.message);
+		});
 
-
+		recordId = externalAccountRecordId;
 
 		if (!externalAccountExist) {
 
@@ -353,13 +341,13 @@ exports.createEuroOfframpDestination = async (req, res) => {
 				});
 			}
 
-			recordId = v4();
 
+			const newBridgeExternalAccountRecordId = v4();
 			// we handle the insert after the bridge account creation because we want the user to be able to try to create the account again if the account creation fails
 			const { error: bridgeAccountInserterror } = await supabase
 				.from('bridge_external_accounts')
 				.insert({
-					id: recordId,
+					id: newBridgeExternalAccountRecordId,
 					user_id: userId,
 					currency: currency,
 					bank_name: bankName,
@@ -379,64 +367,51 @@ exports.createEuroOfframpDestination = async (req, res) => {
 				return res.status(500).json({ error: 'Internal Server Error', message: bridgeAccountInserterror });
 			}
 
-			const accountProviderRecord = await insertAccountProviders(recordId, "eur", "offramp", "sepa", "BRIDGE", userId)
 
-			let createEuroOfframpDestinationResponse = {
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, "eur", "offramp", "sepa", "BRIDGE", userId);
+			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
 				message: "Account created successfully",
 				id: accountProviderRecord.id
-			};
-
-			return res.status(200).json(createEuroOfframpDestinationResponse);
-
+			});
 		} else {
-			// use the recordId to check the account_id column of the account_providers table. if a record with the account_id exists with payment_rail ==ach, return success immediately.
-			// supabase call to the account_providers table to check if the wire rail is already present.
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
 				.select('id, payment_rail')
-				.eq('account_id', recordId)
-
+				.eq('account_id', recordId);
 
 			if (providerAccountRecordError) {
-				console.log(providerAccountRecordError)
-				throw new Error(providerAccountRecordError)
+				console.log(providerAccountRecordError);
+				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
+			let sepaExists = providerAccountRecordData.some(record => record.payment_rail === 'sepa');
 
-			//iterate throught he records in the providerAccountRecordData array to check if the payment_rail is sepa already exists
-			if (providerAccountRecordData) {
-				for (let i = 0; i < providerAccountRecordData.length; i++) {
-					if (providerAccountRecordData[i].payment_rail === 'sepa') {
-						return res.status(200).json({
-							status: "ACTIVE",
-							invalidFields: [],
-							message: "Account already exists",
-							id: recordId
-						})
-					}
-				}
-				// if a sepa record does not exist, but we do find a record that exists for the account_id, then we insert a new provider record with payment_rail == sepa
-			} else if (providerAccountRecordData && providerAccountRecordData.payment_rail !== 'sepa') {
-				accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "sepa", "BRIDGE", userId);
+			if (sepaExists) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
-					message: "Account created successfully",
-					id: accountProviderRecord.id
-				})
+					message: "Account already exists",
+					id: recordId
+				});
 			}
 
+			const accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "sepa", "BRIDGE", userId);
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account created successfully",
+				id: accountProviderRecord.id
+			});
 		}
 
-		// we should never reach this point
-		throw new Error("Unexpected error happened")
 	} catch (error) {
-		createLog("account/createEuroOfframpDestination", userId, error.message, error)
+		createLog("account/createEuroOfframpDestination", userId, error.message, error);
 		console.error('Error in createEuroOfframpDestination', error);
-		return res.status(500).json({ error: 'Internal Server Error' });
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
+
 };
 
 exports.getAccount = async (req, res) => {
@@ -1182,15 +1157,10 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	}
 
 	try {
-		// Check the bridge_external_accounts table to see if the account with the provided account details already exists.
 		let checkAccountResult = accountType === 'us'
 			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
 			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
-
-		// id of the bridge_external_accounts table to be used to see if [1] the bridge_external_accounts record exists and [2] to check if the payment_rail == wire record exists on the account_providers table
 		let recordId = checkAccountResult.externalAccountRecordId;
-
-		// If no external account exists, create it.
 		if (!recordId) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
@@ -1208,9 +1178,10 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				});
 			}
 
-			let recordId = v4();
+
+			const newBridgeExternalAccountRecordId = v4();
 			const insertResult = await supabase.from('bridge_external_accounts').insert({
-				id: recordId,
+				id: newBridgeExternalAccountRecordId,
 				user_id: userId,
 				currency: currency,
 				bank_name: bankName,
@@ -1232,7 +1203,8 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			if (insertResult.error) {
 				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
 			}
-			accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "wire", "BRIDGE", userId);
+
+			accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 
 			return res.status(200).json({
 				status: "ACTIVE",
@@ -1240,45 +1212,42 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				message: "Wire payment rail added successfully",
 				id: accountProviderRecord.id
 			});
-		}
-		// If an account exists, check if the required wire rail is already present.
-		// supabase call to the account_providers table to check if the wire rail is already present.
-		const { data: providerResult, error: providerError } = await supabase
-			.from('account_providers')
-			.select('id, payment_rail')
-			.eq('account_id', recordId)
-			.maybeSingle();
+		} else {
+			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
+				.from('account_providers')
+				.select('id, payment_rail')
+				.eq('account_id', recordId);
 
-		// If the provider entry for wire exists, return success immediately.
-		if (providerResult && providerResult.payment_rail === 'wire' && providerResult.id) {
+			if (providerAccountRecordError) {
+				console.log(providerAccountRecordError);
+				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
+			}
+
+			let wireExists = providerAccountRecordData.some(record => record.payment_rail === 'wire');
+
+			if (wireExists) {
+				return res.status(200).json({
+					status: "ACTIVE",
+					invalidFields: [],
+					message: "Account already exists",
+					id: recordId
+				});
+			}
+
+			const accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "wire", "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
-				message: "Account already created",
-				id: providerResult.id
-			});
-		}
-
-		// If the provider_acounts record exists but not for wire (for example, a record exists for payment_rail == "ach"), add the wire rail record on the account_providers table.
-		if (providerResult && providerResult.payment_rail !== 'wire') {
-			accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "wire", "BRIDGE", userId);
-			return res.status(200).json({
-				status: "ACTIVE",
-				invalidFields: [],
-				message: "Wire payment rail added successfully",
+				message: "Account created successfully",
 				id: accountProviderRecord.id
 			});
 		}
 
-		// If no provider exists for this account, it's an inconsistency error: the account exists without any provider.
-		console.error(`Inconsistency error: Account exists without provider entry for ${recordId}`);
-		return res.status(500).json({
-			error: 'Server Error',
-			message: 'Internal inconsistency detected (account without provider)'
-		});
 	} catch (error) {
+		createLog("account/createInternationalWireOfframpDestination", userId, error.message, error);
 		console.error('Error in createInternationalWireOfframpDestination', error);
-		return res.status(500).json({ error: 'Internal Server Error', message: error.message });
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
+
 };
 
