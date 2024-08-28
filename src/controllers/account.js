@@ -1204,7 +1204,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
 			}
 
-			accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 
 			return res.status(200).json({
 				status: "ACTIVE",
