@@ -13,7 +13,6 @@ const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/uti
 const { JobError, JobErrorType } = require("../../error")
 
 exports.cryptoToFiatTransferAsync = async (config) => {
-	console.log("cryptoToFiatTransferAsync")
 	try {
 		// fetch record
 		const { data: record, error } = await supabase

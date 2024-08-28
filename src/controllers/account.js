@@ -1181,10 +1181,12 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	}
 
 	try {
+		// Check the bridge_external_accounts table to see if the account with the provided account details already exists.
 		let checkAccountResult = accountType === 'us'
 			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
 			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
 
+		// id of the bridge_external_accounts table to be used to see if [1] the bridge_external_accounts record exists and [2] to check if the payment_rail == wire record exists on the account_providers table
 		let recordId = checkAccountResult.externalAccountRecordId;
 
 		// If no external account exists, create it.
@@ -1205,7 +1207,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				});
 			}
 
-			let recordId = v4();  // Generate a new UUID for the account
+			let recordId = v4();
 			const insertResult = await supabase.from('bridge_external_accounts').insert({
 				id: recordId,
 				user_id: userId,
@@ -1229,7 +1231,6 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			if (insertResult.error) {
 				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
 			}
-
 			accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "wire", "BRIDGE", userId);
 
 			return res.status(200).json({
@@ -1239,9 +1240,13 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				id: accountProviderRecord.id
 			});
 		}
-
 		// If an account exists, check if the required wire rail is already present.
-		const providerResult = await fetchAccountProviders(recordId, profileId);
+		// supabase call to the account_providers table to check if the wire rail is already present.
+		const { data: providerResult, error: providerError } = await supabase
+			.from('account_providers')
+			.select('id, payment_rail')
+			.eq('account_id', recordId)
+			.maybeSingle();
 
 		// If the provider entry for wire exists, return success immediately.
 		if (providerResult && providerResult.payment_rail === 'wire' && providerResult.id) {
@@ -1253,7 +1258,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			});
 		}
 
-		// If the provider exists but not for wire, add the wire rail.
+		// If the provider_acounts record exists but not for wire (for example, a record exists for payment_rail == "ach"), add the wire rail record on the account_providers table.
 		if (providerResult && providerResult.payment_rail !== 'wire') {
 			accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "wire", "BRIDGE", userId);
 			return res.status(200).json({
