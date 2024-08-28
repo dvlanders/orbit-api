@@ -371,8 +371,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
 		if (!accountInfo) return res.status(400).json({ error: `destinationAccountId not exist` });
 		if (accountInfo.rail_type != "offramp") return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
-
-		console.log('accountInfo.payment_rail', accountInfo.payment_rail)
+		if (accountInfo.currency != destinationCurrency) return res.status(400).json({ error: `destinationCurrency not allowed for destinationAccountId` });
 		let paymentRail = accountInfo.payment_rail
 
 		// if accountInfo.paymentRail is "ach" and the "sameDayAch" is true, then set the paymentRail to "sameDayAch"

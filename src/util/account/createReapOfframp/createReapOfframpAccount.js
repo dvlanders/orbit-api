@@ -1,8 +1,8 @@
-const { generateRailCompositeKey, getFetchRailFunctions } = require("../../account/getAccount/utils/fetchRailFunctionMap")
+const { generateRailCompositeKey, getFetchRailFunctions } = require("../getAccount/utils/fetchRailFunctionMap")
 const createLog = require("../../logger/supabaseLogger")
 const supabase = require("../../supabaseClient")
 
-const createHKOfframpAccount = async(config) => {
+const createReapOfframpAccount = async(config) => {
     const {
         userId,
 		recipientType,
@@ -23,13 +23,10 @@ const createHKOfframpAccount = async(config) => {
 		state,
 		country,
 		city,
-		postalCode
+		postalCode,
+        network
 	  } = config
     
-    // map to network
-    let network
-    if (currency == "hkd") network = "FPS"
-    else if (currency == "usd") network = "CHATS"
 
     // insert in provider table
     const {data: hkAccount, error: hkAccountError} = await supabase
@@ -56,7 +53,7 @@ const createHKOfframpAccount = async(config) => {
         country: country,
         city: city,
         postal_code: postalCode,
-        network: network
+        network: network.toUpperCase()
       })
       .select()
       .single()
@@ -74,7 +71,7 @@ const createHKOfframpAccount = async(config) => {
             user_id: userId,
             currency: currency,
             rail_type: "offramp",
-            payment_rail: network.toLowerCase(),
+            payment_rail: network,
             provider: "REAP"
         })
         .select()
@@ -85,8 +82,7 @@ const createHKOfframpAccount = async(config) => {
     const railKey = generateRailCompositeKey(currency, "offramp", network)
     const func = getFetchRailFunctions(railKey);
 	let accountInfo = await func(accountProvider.id)
-    console.log(accountInfo)
     return accountInfo.banks[0]
 }
 
-module.exports = createHKOfframpAccount
+module.exports = createReapOfframpAccount

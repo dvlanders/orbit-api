@@ -16,7 +16,8 @@ const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/create
 const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
 const { virtualAccountPaymentRailToChain } = require('../util/bridge/utils');
-const createHKOfframpAccount = require('../util/reap/main/createHKOfframpDestination');
+const createHKOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
+const createReapOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -1145,7 +1146,8 @@ exports.createAPECOfframpDestination = async(req, res) => {
 		state,
 		country,
 		city,
-		postalCode
+		postalCode,
+		network
 	  } = fields
 
 	const requiredFields = [
@@ -1200,7 +1202,7 @@ exports.createAPECOfframpDestination = async(req, res) => {
 		if (recipientType != "company") return res.status(400).json({ error: 'Only company is allowed to create HK offramp for now'});
 		if (recipientType == "company" && !companyName) return res.status(400).json({ error: 'companyName is missing'});
 		if (recipientType == "individual" && (!firstName || !lastName)) return res.status(400).json({ error: 'firstName or lastName is missing'});
-		const account = await createHKOfframpAccount({...fields, userId})
+		const account = await createReapOfframpAccount({...fields, userId})
 		let accountInfo = {
 			status: "ACTIVE",
 			invalidFields: [],
