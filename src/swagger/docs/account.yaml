@@ -110,16 +110,52 @@
     tags:
       - Account
     requestBody:
-      $ref: "#/components/requestBodies/BrlOfframpReceiverBody"
+      $ref: '#/components/requestBodies/BrlOfframpReceiverCreateBody'
     responses:
-      "200":
-        $ref: "#/components/responses/BrlOfframpReceiverResponse"
-      "401":
-        $ref: "#/components/responses/UnauthorizedResponse"
-      "404":
-        $ref: "#/components/responses/NotFoundResponse"
-      "500":
-        $ref: "#/components/responses/InternalServerErrorResponse"
+      '200':
+        $ref: '#/components/responses/BrlOfframpReceiverCreateResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+  get:
+    summary: Get BRL Offramp Receiver
+    description: Get an existing BRL Offramp Receiver detail.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/ReceiverIdOptionalParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/BrlOfframpReceiverGetResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+  put:
+    summary: Update BRL Offramp Receiver
+    description: Update an existing BRL Offramp Receiver detail.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/ReceiverIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/BrlOfframpReceiverUpdateBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/BrlOfframpReceiverUpdateResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
 /account/brl/offramp:
   post:
     summary: Add BRL Offramp Bank Account (Pix)
@@ -127,8 +163,11 @@
       Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id by making a `Create BRL Offramp Receiver` call.
     tags:
       - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/ReceiverIdParameter'
     requestBody:
-      $ref: "#/components/requestBodies/BrlOfframpPixAccountBody"
+      $ref: '#/components/requestBodies/BrlOfframpAccountBody'
     responses:
       "200":
         $ref: "#/components/responses/BrlOfframpPixAccountResponse"
