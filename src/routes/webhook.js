@@ -10,4 +10,6 @@ module.exports = (router) => {
   );
 
   router.post("/webhook/reap", verifyReapSignature, externalWebhooks.reapWebhook);
+  router.post("/webhook/bridge", signatureVerification, externalWebhooks.bridgeWebhook);
+  // router.post("/webhook/blindpay", externalWebhooks.blindpayWebhook);
 };

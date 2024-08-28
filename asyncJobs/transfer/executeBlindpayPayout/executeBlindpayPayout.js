@@ -1,9 +1,11 @@
 const createLog = require("../../../src/util/logger/supabaseLogger")
 const supabase = require("../../../src/util/supabaseClient")
-
+const { BastionTransferStatus } = require("../../../src/util/bastion/utils/utils")
+const { blindpayPayoutStatusMap } = require("../../../src/util/blindpay/endpoint/utils")
 const { JobError, JobErrorType } = require("../../error")
 
 exports.executeBlindpayPayout = async (config) => {
+	console.log("executeBlindpayPayout", config)
 	try {
 		const { data: record, error } = await supabase
 			.from("offramp_transactions")
@@ -22,7 +24,7 @@ exports.executeBlindpayPayout = async (config) => {
 		};
 
 		const payoutBody = {
-			"quote_id": record.blindpay_quote_response.id,
+			"quote_id": record.blindpay_quote_id,
 			"sender_wallet_address": record.from_wallet_address
 		}
 
@@ -34,7 +36,7 @@ exports.executeBlindpayPayout = async (config) => {
 		});
 
 		const blindpayExecutePayoutBody = await blindpayExecutePayoutResponse.json();
-
+		console.log("blindpayExecutePayoutBody", blindpayExecutePayoutBody)
 
 		if (blindpayExecutePayoutResponse.status !== 200 || blindpayExecutePayoutBody.success === false) {
 			// if payout is successful, update the offramp transaction record
@@ -47,6 +49,8 @@ exports.executeBlindpayPayout = async (config) => {
 				.eq("id", config.recordId)
 				.single()
 
+			if(updateError) throw updateError
+
 			throw new Error("Blindpay payout execution failed")
 		}
 
@@ -54,12 +58,13 @@ exports.executeBlindpayPayout = async (config) => {
 			.from("offramp_transactions")
 			.update({
 				blindpay_payout_response: blindpayExecutePayoutBody,
-				transaction_status: "IN_PROGRESS_FIAT"
+				blindpay_transaction_status: blindpayExecutePayoutBody.status,
+				transaction_status: blindpayPayoutStatusMap[blindpayExecutePayoutBody.status] || "UNKNOWN"
 			})
 			.eq("id", config.recordId)
 			.single()
 
-
+		if(updateError) throw updateError
 
 	} catch (error) {
 		console.error(error)
