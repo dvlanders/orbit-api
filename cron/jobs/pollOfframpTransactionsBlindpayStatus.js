@@ -36,7 +36,7 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 		}
 
 	} catch (error) {
-		console.error('Failed to fetch transaction status from Bridge API', error);
+		console.error('Failed to fetch transaction status from Blindpay API', error);
 		await createLog('pollOfframpTransactionsBlindpayStatus/updateStatusWithBlindpayTransferId', transaction.user_id, 'Failed to fetch transaction status from Blindpay API', error);
 	}
 }
