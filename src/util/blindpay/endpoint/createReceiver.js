@@ -128,16 +128,26 @@ const createReceiver = async (receiverInfo) => {
       : await businessReceiverRequestBodyBuilder(receiverInfo);
 
   console.log("receiverRequestBody: \n", receiverRequestBody);
-  const response = await fetch(
-    `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers`,
-    {
+
+  const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers`;
+
+  let response, responseBody;
+  try {
+    response = await fetch(url, {
       method: "POST",
       headers: headers,
       body: JSON.stringify(receiverRequestBody),
-    }
-  );
+    });
+    responseBody = await response.json();
+  } catch (error) {
+    throw new CreateReceiverError(
+      CreateReceiverErrorType.INTERNAL_ERROR,
+      500,
+      "Blindpay API get quote fetch error or parsing error",
+      response
+    );
+  }
 
-  const responseBody = await response.json();
   console.log(responseBody);
   if (!response.ok) {
     // Insert response into blindpay_receivers table

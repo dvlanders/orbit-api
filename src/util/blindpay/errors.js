@@ -113,6 +113,21 @@ class ExecutePayoutError extends Error {
   }
 }
 
+const GetPayoutErrorType = {
+  INVALID_FIELD: "INVALID_FIELD",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+};
+
+class GetPayoutError extends Error {
+  constructor(type, status, message, rawResponse) {
+    super(message);
+    this.type = type;
+    this.status = status;
+    this.rawResponse = rawResponse;
+    Object.setPrototypeOf(this, GetPayoutError.prototype);
+  }
+}
+
 module.exports = {
   ReceiverInfoUploadErrorType,
   ReceiverInfoUploadError,
@@ -127,5 +142,7 @@ module.exports = {
   CreateQuoteErrorType,
   CreateQuoteError,
   ExecutePayoutErrorType,
-  ExecutePayoutError
+  ExecutePayoutError,
+  GetPayoutErrorType,
+  GetPayoutError,
 };

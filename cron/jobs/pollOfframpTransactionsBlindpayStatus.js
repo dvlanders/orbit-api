@@ -5,30 +5,13 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
 const { blindpayPayoutStatusMap } = require('../../src/util/blindpay/endpoint/utils');
+const { getPayout } = require('../../src/util/blindpay/endpoint/getPayout');
+const { updateRequestRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord');
 
 const updateStatusWithBlindpayTransferId = async (transaction) => {
 	console.log("polling blindpay payout status for transaction", transaction)
 	try {
-		const headers = {
-			Accept: "application/json",
-			Authorization: `Bearer ${process.env.BLINDPAY_API_KEY}`,
-			"Content-Type": "application/json",
-		  };
-
-		const response = await fetch(
-		`${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/payouts/${transaction.blindpay_payout_id}`,
-		{
-			method: "GET",
-			headers: headers,
-		}
-		);
-
-		const payoutResponseBody = await response.json();
-		if (!response.ok) {
-			await createLog('pollOfframpTransactionsBlindpayStatus/updateStatusWithBlindpayTransferId', transaction.user_id, 'Failed to fetch response from Blindpay', response);
-			return
-		}
-
+		const payoutResponseBody = await getPayout(transaction.blindpay_payout_id)
 		if (transaction.blindpay_payout_status == payoutResponseBody.status) return
 
 		// Map the data.state to our transaction_status
@@ -37,25 +20,14 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 		if (hifiOfframpTransactionStatus == transaction.transaction_status) return
 		
 		console.log("updating payout transaction status", payoutResponseBody)
-		const { data: updateData, error: updateError } = await supabaseCall(() => supabase
-			.from('offramp_transactions')
-			.update({
-				transaction_status: hifiOfframpTransactionStatus,
-				blindpay_payout_status: payoutResponseBody.status,
-				blindpay_payout_response: payoutResponseBody,
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', transaction.id)
-			.select()
-			.single()
-		)
 
-		if (updateError) {
-			console.error('Failed to update transaction status', updateError);
-			await createLog('pollOfframpTransactionsBlindpayStatus/updateStatusWithBlindpayTransferId', transaction.user_id, 'Failed to update transaction status', updateError);
-			return
+		const toUpdate = {
+			transaction_status: hifiOfframpTransactionStatus,
+			blindpay_payout_status: payoutResponseBody.status,
+			blindpay_payout_response: payoutResponseBody,
+			updated_at: new Date().toISOString()			
 		}
-
+		const updateData = await updateRequestRecord(transaction.id, toUpdate);
 		// send webhook message
 		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
 			await notifyDeveloperCryptoToFiatWithdraw(updateData)

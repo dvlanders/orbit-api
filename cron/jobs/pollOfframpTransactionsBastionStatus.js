@@ -5,11 +5,12 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
-const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck');
+const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
 const createJob = require('../../asyncJobs/createJob');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async (transaction) => {
+	console.log('Updating status for transaction ID', transaction.id);
 	const bastionUserId = transaction.bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
@@ -107,7 +108,7 @@ const updateStatus = async (transaction) => {
 }
 
 async function pollOfframpTransactionsBastionStatus() {
-
+	console.log("pollOfframpTransactionsBastionStatus")
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')

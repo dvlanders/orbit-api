@@ -51,12 +51,24 @@ const createBankAccount = async (bankAccountInfo) => {
   const requestBody = await bankAccountRequestBodyBuilder(bankAccountInfo);
 
   const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers/${receiverId}/bank-accounts`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify(requestBody),
-  });
-  const responseBody = await response.json();
+
+  let response, responseBody;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(requestBody),
+    });
+    responseBody = await response.json();
+  } catch (error) {
+    throw new CreateBankAccountError(
+      CreateBankAccountErrorType.INTERNAL_ERROR,
+      500,
+      "Blindpay API create bank account fetch error or parsing error",
+      error
+    );
+  }
+
   console.log(responseBody);
   if (!response.ok) {
     // Insert response into blindpay_bank_accounts table
@@ -77,7 +89,7 @@ const createBankAccount = async (bankAccountInfo) => {
             "Bank account type is not supported by the receiver's kyc type.",
         }
       );
-    }else if(responseBody.message === "create_ach_failed"){
+    } else if (responseBody.message === "create_ach_failed") {
       throw new CreateBankAccountError(
         CreateBankAccountErrorType.INTERNAL_ERROR,
         500,

@@ -8,18 +8,18 @@ const executePayout = async (quoteId, fromWalletAddress) => {
   };
 
   const payoutRequestBody = {
-    "quote_id": quoteId,
-    "sender_wallet_address": fromWalletAddress
-  }
+    quote_id: quoteId,
+    sender_wallet_address: fromWalletAddress,
+  };
 
   const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/payouts/evm`;
 
   let response, responseBody;
   try {
-    const response = await fetch(url, {
-      method: 'POST',
+    response = await fetch(url, {
+      method: "POST",
       headers: headers,
-      body: JSON.stringify(payoutRequestBody)
+      body: JSON.stringify(payoutRequestBody),
     });
     responseBody = await response.json();
   } catch (error) {
@@ -27,7 +27,7 @@ const executePayout = async (quoteId, fromWalletAddress) => {
       ExecutePayoutErrorType.INTERNAL_ERROR,
       500,
       "Blindpay API execute payout fetch error or parsing error",
-      error
+      responseBody
     );
   }
 
@@ -38,6 +38,16 @@ const executePayout = async (quoteId, fromWalletAddress) => {
       ExecutePayoutErrorType.INTERNAL_ERROR,
       500,
       "Blindpay execute payout response not OK",
+      responseBody
+    );
+  }
+
+  if (response.status !== 200 || responseBody.success === false) {
+    console.log("Payout failed:", responseBody);
+    throw new ExecutePayoutError(
+      ExecutePayoutErrorType.INTERNAL_ERROR,
+      500,
+      "Blindpay execute payout response failed",
       responseBody
     );
   }

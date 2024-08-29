@@ -30,7 +30,7 @@ const createQuote = async (bankAccountId, quoteAmount, network, token) => {
       CreateQuoteErrorType.INTERNAL_ERROR,
       500,
       "Blindpay API get quote fetch error or parsing error",
-      response
+      responseBody
     );
   }
 
