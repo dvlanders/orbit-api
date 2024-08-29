@@ -1,4 +1,5 @@
 const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
+const { getBlindpayContractAddress } = require("../../../blindpay/blockchain");
 const supabase = require("../../../supabaseClient");
 const blindpayRailCheck = require("../railCheck/blindpayRailCheck");
 const { getAddress, isAddress } = require("ethers");
@@ -19,8 +20,6 @@ const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
-const { ethers } = require("ethers");
-const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck");
 const { getBlindpayChain } = require("../../../blindpay/blockchain");
 const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 
@@ -33,7 +32,7 @@ const transferToBlindpaySmartContract = async (config) => {
 	const { isExternalAccountExist, blindpayAccountId, destinationUserId } = await blindpayRailCheck(destinationAccountId)
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 
-	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+	const contractAddress = getBlindpayContractAddress(chain, sourceCurrency)
 
 	//insert the initial record
 	const { data: initialBastionTransfersInsertData, error: initialBastionTransfersInsertError } = await supabase
@@ -205,19 +204,32 @@ const transferToBlindpaySmartContract = async (config) => {
 		const conversionRate = {...blindpayQuoteResponse};
 		delete conversionRate.contract;
 
-		//create transfer without fee
-		const decimals = currencyDecimal[sourceCurrency]
-		const transferAmount = toUnitsString(amount, decimals)
+		const abi = blindpayQuoteResponse.contract.abi;
+		const approveFunctionAbi = abi.find(func => func.name === 'approve');
+		const inputs = approveFunctionAbi.inputs;
+
+		const actionParams = inputs.map(input => {
+			const value = input.name.includes('spender')
+			  ? blindpayQuoteResponse.contract.blindpayContractAddress
+			  : input.name.includes('value')
+			  ? blindpayQuoteResponse.contract.amount
+			  : null;
+		  
+			return {
+			  name: input.name,
+			  value: value
+			};
+		  });
+
 		const bodyObject = {
 			requestId: initialBastionTransfersInsertData.bastion_request_id,
 			userId: sourceUserId,
-			contractAddress: contractAddress,
-			actionName: "approve",
-			chain: chain,
-			actionParams: erc20Approve(sourceCurrency, blindpayQuoteResponse.contract.address, transferAmount)
+			contractAddress: contractAddress, // blindpayQuoteResponse.contract.address,
+			actionName: blindpayQuoteResponse.contract.functionName,
+			chain: getBlindpayChain(chain).toUpperCase(),
+			actionParams: actionParams
 		};
 		console.log(bodyObject)
-
 		const response = await submitUserAction(bodyObject)
 		const responseBody = await response.json();
 		const result = {
@@ -282,18 +294,6 @@ const transferToBlindpaySmartContract = async (config) => {
 				conversion_rate: conversionRate
 			}
 			const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
-
-
-			// I am commenting below off because we need to wait until the transaction is confirmed on chain before we execute the payout.
-			// I am doing the scheduling of the payout in pollOfframpTransactionsBastionStatus
-			
-			// If the bastion approval is SUBMITTED_ONCHAIN, then schedule the payout with Blindpay's payout endpoints
-			// if (result.transferDetails.status == "SUBMITTED_ONCHAIN") {
-			// 	const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.user_id)
-			// 	if (canSchedule) {
-			// 		await createJob("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.destination_user_id, null, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
-			// 	}
-			// }
 		}
 
 		// gas check
