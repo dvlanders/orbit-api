@@ -44,7 +44,6 @@ const filledInfo = async(account) => {
 const fetchReapAccountInformation = async (currency, paymentRail, profileId, accountId, userId, limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
 	let allBanksInfo
 	let bankInfo
-    console.log({currency, paymentRail, profileId, accountId, userId})
     try{
         if (!accountId){
             if (userId){
@@ -83,8 +82,9 @@ const fetchReapAccountInformation = async (currency, paymentRail, profileId, acc
             // fetch single record
             const {data: accountData, error: accountDataError} = await supabase
                 .from("account_providers")
-                .select("id, account_id, user_id")
+                .select("id, account_id, user_id, users: user_id!inner(id, profile_id)")
                 .eq("id", accountId)
+                .eq("users.profile_id", profileId)
                 .maybeSingle()
 
             if (accountDataError) throw accountDataError

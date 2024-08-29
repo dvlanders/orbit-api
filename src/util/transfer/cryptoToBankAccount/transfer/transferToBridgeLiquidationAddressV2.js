@@ -175,14 +175,14 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	// update record
 	const liquidationAddress = responseBody.source_deposit_instructions.to_address
 	const providerFee = safeStringToFloat(responseBody.receipt.developer_fee) + safeStringToFloat(responseBody.receipt.exchange_fee) + safeStringToFloat(responseBody.receipt.gas_fee)
-	const finalClientReceivedAmount = safeStringToFloat(responseBody.receipt.final_amount)
+	const finalClientReceivedAmount = safeStringToFloat(responseBody.receipt.final_amount || responseBody.receipt.subtotal_amount) * parseFloat(initialTransferRecord.conversion_rate.conversionRate)
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: responseBody.state,
 		bridge_response: responseBody,
 		bridge_transfer_id: responseBody.id,
 		provider_fee: providerFee,
-		final_received_amount: finalClientReceivedAmount,
+		destination_currency_amount: finalClientReceivedAmount,
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
@@ -246,14 +246,14 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	// update record
 	const liquidationAddress = bridgeResponseBody.source_deposit_instructions.to_address
 	const providerFee = safeStringToFloat(bridgeResponseBody.receipt.developer_fee) + safeStringToFloat(bridgeResponseBody.receipt.exchange_fee) + safeStringToFloat(bridgeResponseBody.receipt.gas_fee)
-	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount)
+	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount || bridgeResponseBody.receipt.subtotal_amount) * parseFloat(initialTransferRecord.conversion_rate.conversionRate)
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: bridgeResponseBody.state,
 		bridge_response: bridgeResponseBody,
 		bridge_transfer_id: bridgeResponseBody.id,
 		provider_fee: providerFee,
-		final_received_amount: finalClientReceivedAmount,
+		destination_currency_amount: finalClientReceivedAmount,
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	await updateRequestRecord(initialTransferRecord.id, toUpdate)

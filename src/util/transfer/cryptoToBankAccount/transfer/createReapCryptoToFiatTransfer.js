@@ -26,13 +26,21 @@ const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
+const createPaymentQuote = require("../../../reap/main/createPayment");
+const fetchReapCryptoToFiatTransferRecord = require("./fetchReapCryptoToFiatTransferRecord");
+const getUserReapWalletAddress = require("../../../reap/main/getUserWallet");
+const acceptPaymentQuote = require("../../../reap/main/acceptPaymentQuote");
+const getReapPayment = require("../../../reap/main/getPayment");
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description } = config
 
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
 
+	// get Reap wallet Address
+	const userReapWalletAddress = await getUserReapWalletAddress(destinationUserId, chain)
+    
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
 		.from('offramp_transactions')
@@ -40,21 +48,22 @@ const initTransferData = async (config) => {
 			request_id: requestId,
 			user_id: sourceUserId,
 			destination_user_id: destinationUserId,
-			amount: amount,
 			chain: chain,
 			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
-			transaction_status: 'OPEN_QUOTE',
+			to_wallet_address: isAddress(userReapWalletAddress) ? getAddress(userReapWalletAddress) : userReapWalletAddress,
+			transaction_status: 'CREATED',
 			contract_address: contractAddress,
 			action_name: "transfer",
-			fiat_provider: "BRIDGE",
+			fiat_provider: "REAP",
 			crypto_provider: "BASTION",
-			conversion_rate: conversionRate,
 			source_currency: sourceCurrency,
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
 			bastion_user_id: sourceBastionUserId,
-			same_day_ach: paymentRail == "sameDayAch",
+            purpose_of_payment: purposeOfPayment,
+            description: description, 
+            destination_currency_amount: receivedAmount
 		})
 		.select()
 		.single()
@@ -62,7 +71,7 @@ const initTransferData = async (config) => {
 	if (recordError) throw recordError
 
 	// return if no fee charged
-	if (!feeType || parseFloat(feeValue) <= 0) return record
+	if (!feeType || parseFloat(feeValue) <= 0) return {record}
 
 	// insert fee record
 	let { feePercent, feeAmount, clientReceivedAmount } = getFeeConfig(feeType, feeValue, amount)
@@ -81,8 +90,7 @@ const initTransferData = async (config) => {
 			failed_reason: `Amount after subtracting fee is less than 1 dollar`
 		}
 		record = await updateRequestRecord(record.id, toUpdate)
-		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
-		return result
+		return {record}
 	}
 
 	// get payment processor contract
@@ -94,13 +102,12 @@ const initTransferData = async (config) => {
 			failed_reason: `Fee feature not available for ${currency} on ${chain}`
 		}
 		record = await updateRequestRecord(record.id, toUpdate)
-		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
-		return result
+		return {record}
 	}
 
 	// update into crypto to crypto table
-	const result = await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
-	return result
+	await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
+	return {record, feeRecord}
 }
 
 const transferWithFee = async (initialTransferRecord, profileId) => {
@@ -304,22 +311,116 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 const createReapCryptoToFiatTransfer = async (config) => {
 
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId } = config
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount } = config
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
+    if (feeType || feeValue) return CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee is not available for this rail") 
+	//insert request record
+	const {record:initialTransferRecord, feeRecord} = await initTransferData(config)
 
-	// fetch or insert request record
-	const initialTransferRecord = await initTransferData(config)
-	// create Job
-	const jobConfig = {
-		recordId: initialTransferRecord.id
-	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
-	}
+    // create quote and update record
+    const paymentConfig = {
+        amount: receivedAmount,
+        destinationCurrency: destinationCurrency.toUpperCase(),
+        sourceCurrency: sourceCurrency.toUpperCase(),
+        description: description,
+        purposeOfPayment: purposeOfPayment
+    }
+    const reapQuoteResponse = await createPaymentQuote(destinationUserId, destinationAccountId, paymentConfig)
+    const reapQuoteResponseBody = await reapQuoteResponse.json()
+    if (!reapQuoteResponse.ok){
+        await createLog("transfer/createReapCryptoToFiatTransfer", sourceUserId, reapQuoteResponseBody.message, reapQuoteResponseBody)
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            reap_payment_response: reapQuoteResponseBody,
+            failed_reason: "Quote creation failed, please contact HIFI for more information",
+            amount: 0
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+    }else{
+        // get conversion rate
+        const conversionRate = {
+            validFrom: reapQuoteResponseBody.validFrom,
+            toCurrency: destinationCurrency,
+            validUntil: reapQuoteResponseBody.validTo,
+            fromCurrency: sourceCurrency,
+            conversionRate: reapQuoteResponseBody.fxInfo.clientRate
+          }
 
-	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+        const toUpdate = {
+            reap_payment_response: reapQuoteResponseBody,
+            reap_payment_status: reapQuoteResponseBody.status,
+            reap_payment_id: reapQuoteResponseBody.paymentId,
+            conversion_rate: conversionRate,
+            provider_fee: reapQuoteResponseBody.feeInfo.totalFee,
+            amount: reapQuoteResponseBody.paymentInfo.senderAmount,
+            destination_currency_amount: reapQuoteResponseBody.paymentInfo.receivingAmount
+
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+    }
+
+	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return { isExternalAccountExist: true, transferResult: result }
 }
+
+const acceptReapCryptoToFiatTransfer = async(config) => {
+	const {recordId, profileId} = config
+    // accept quote and update record
+	const {data: record, error: recordError} = await supabase
+		.from("offramp_transactions")
+		.select("reap_payment_id, user_id, destination_user_id")
+		.eq("id", recordId)
+		.maybeSingle()
+
+	if (recordError) throw recordError
+	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
+	
+	// accept quote
+	const response = await acceptPaymentQuote(record.reap_payment_id, record.destination_user_id)
+	const responseBody = await response.json()
+	if (!response.ok){
+		let failed_reason = "Quote accept failed"
+		if (responseBody.code == "PAAS0003" && responseBody.message == "Quote has been expired"){
+			failed_reason = "Quote expired"
+		}
+		const toUpdate = {
+			transaction_status: "NOT_INITIATED",
+            reap_payment_response: responseBody,
+            failed_reason
+		}
+
+		await updateRequestRecord(recordId, toUpdate)
+		const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
+		return result
+	}
+
+	// get latest payment
+	const updatedPaymentresponse = await getReapPayment(record.reap_payment_id, record.destination_user_id)
+	const updatedPaymentresponseBody = await updatedPaymentresponse.json()
+	if (!response.ok){
+		await createLog("transfer/acceptReapCryptoToFiatTransfer", record.user_id, updatedPaymentresponseBody.message, updatedPaymentresponseBody)
+		const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
+		return result
+	}
+	const toUpdate = {
+		transaction_status: "CREATED",
+		reap_payment_response: updatedPaymentresponseBody,
+		reap_payment_status: updatedPaymentresponseBody.status
+	}
+	await updateRequestRecord(recordId, toUpdate)
+
+    // create Job
+	const jobConfig = {
+		recordId
+	}
+	// if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
+	// 	await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
+	// }
+
+	const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
+    return result
+}
+
 
 // this should already contain every information needed for transfer
 const executeAsyncTransferCryptoToFiat = async (config) => {
@@ -345,6 +446,7 @@ const executeAsyncTransferCryptoToFiat = async (config) => {
 }
 
 module.exports = {
-	createTransferToBridgeLiquidationAddress,
+	createReapCryptoToFiatTransfer,
+	acceptReapCryptoToFiatTransfer,
 	executeAsyncTransferCryptoToFiat
 }

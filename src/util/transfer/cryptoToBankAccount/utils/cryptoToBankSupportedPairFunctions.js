@@ -1,4 +1,5 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
+const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer } = require("../transfer/createReapCryptoToFiatTransfer");
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
 
 const { transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw } = require("../transfer/transferToBridgeLiquidationAddress");
@@ -69,6 +70,24 @@ const CryptoToBankSupportedPairFunctions = {
 			brl: {
 				transferFunc: transferToBlindpaySmartContract,
 				directWithdrawFunc: null
+			},
+		}
+	},
+	fps: {
+		usdc: {
+			hkd: {
+				transferFunc: createReapCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: null
+			},
+		}
+	},
+	chats: {
+		usdc: {
+			usd: {
+				transferFunc: createReapCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: null
 			},
 		}
 	}

@@ -303,12 +303,12 @@ CryptoToFiatTransferObject:
         ConversionRate:
           type: object
           properties:
-            vaildFrom:
+            validFrom:
               type: string
               format: date-time
             toCurrency:
               type: string
-            vaildUntil:
+            validUntil:
               type: string
               format: date-time
             fromCurrency:
@@ -368,9 +368,9 @@ CryptoToFiatTransferObject:
         transactionHash: null
         failedReason: null
       conversionRate:
-        vaildFrom: 2024-08-11T03:35:30.809Z
+        validFrom: 2024-08-11T03:35:30.809Z
         toCurrency: usd
-        vaildUntil: 2024-08-11T03:36:00.809Z
+        validUntil: 2024-08-11T03:36:00.809Z
         fromCurrency: usdc
         conversionRate: 1
 FiatToCryptoTransferObject:
@@ -671,9 +671,9 @@ CryptoToFiatRecordObject:
         transactionHash: null
         failedReason: null
       conversionRate:
-        vaildFrom: 2024-08-11T03:35:30.809Z
+        validFrom: 2024-08-11T03:35:30.809Z
         toCurrency: usd
-        vaildUntil: 2024-08-11T03:36:00.809Z
+        validUntil: 2024-08-11T03:36:00.809Z
         fromCurrency: usdc
         conversionRate: 1
 FiatToCryptoRecordObject:
@@ -1048,9 +1048,9 @@ CryptoToFiatAllRecordsObject:
             transactionHash: null
             failedReason: null
           conversionRate:
-            vaildFrom: 2024-08-11T03:35:30.809Z
+            validFrom: 2024-08-11T03:35:30.809Z
             toCurrency: usd
-            vaildUntil: 2024-08-11T03:36:00.809Z
+            validUntil: 2024-08-11T03:36:00.809Z
             fromCurrency: usdc
             conversionRate: 1
 FiatToCryptoAllRecordsObject:

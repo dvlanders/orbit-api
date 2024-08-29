@@ -11,7 +11,6 @@ const fetchCryptoToFiatRequestInfortmaionById = async(id, profileId, fiatProvide
         
 
     if (requestError) throw requestError
-    console.log(request)
     if (!request) return null
 
     return request
