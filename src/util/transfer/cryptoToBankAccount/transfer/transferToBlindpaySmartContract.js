@@ -226,7 +226,7 @@ const transferToBlindpaySmartContract = async (config) => {
 			userId: sourceUserId,
 			contractAddress: contractAddress, // blindpayQuoteResponse.contract.address,
 			actionName: blindpayQuoteResponse.contract.functionName,
-			chain: getBlindpayChain(chain).toUpperCase(),
+			chain: chain === "POLYGON_AMOY" ? "BASE_SEPOLIA" : chain, 
 			actionParams: actionParams
 		};
 		console.log(bodyObject)

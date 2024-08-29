@@ -29,6 +29,7 @@ exports.executeBlindpayPayout = async (config) => {
     }
 
 	const toUpdate = {
+		blindpay_payout_id: blindpayExecutePayoutBody.id,
 		blindpay_payout_response: blindpayExecutePayoutBody,
       	blindpay_payout_status: blindpayExecutePayoutBody.status,
       	transaction_status: blindpayPayoutStatusMap[blindpayExecutePayoutBody.status] || "UNKNOWN"
