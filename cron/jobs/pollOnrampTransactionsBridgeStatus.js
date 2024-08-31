@@ -10,6 +10,9 @@ const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const updateStatus = async (onrampTransaction) => {
 	try {
+
+		if (!onrampTransaction.bridge_deposit_id) return
+
 		// get user bridge Id
 		const { data: bridgeUser, error: bridgeUserError } = await supabaseCall(() => supabase
 			.from("bridge_customers")
@@ -106,6 +109,7 @@ async function pollOnrampTransactionsBridgeStatus() {
 		await createLog('pollOnrampTransactionsBridgeStatus', null, onRampTransactionStatusError.message, onRampTransactionStatusError);
 		return;
 	}
+
 	await Promise.all(onRampTransactionStatus.map(async (onrampTransaction) => await updateStatus(onrampTransaction)))
 
 }
