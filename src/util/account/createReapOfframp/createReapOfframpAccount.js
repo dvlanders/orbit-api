@@ -66,19 +66,16 @@ const createReapOfframpAccount = async(config) => {
     const {data: accountProvider, error: accountProviderError} = await supabase
         .from("account_providers")
         .insert({
-            id: hkAccount.id,
             account_id: hkAccount.id,
             user_id: userId,
             currency: currency,
             rail_type: "offramp",
-            payment_rail: network,
+            payment_rail: network.toLowerCase(),
             provider: "REAP"
         })
-        .select()
+        .select("*")
         .single()
-    
     if (accountProviderError) throw accountProviderError
-
     const railKey = generateRailCompositeKey(currency, "offramp", network)
     const func = getFetchRailFunctions(railKey);
 	let accountInfo = await func(accountProvider.id)

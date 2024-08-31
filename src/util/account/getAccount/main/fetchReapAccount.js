@@ -82,9 +82,8 @@ const fetchReapAccountInformation = async (currency, paymentRail, profileId, acc
             // fetch single record
             const {data: accountData, error: accountDataError} = await supabase
                 .from("account_providers")
-                .select("id, account_id, user_id, users: user_id!inner(id, profile_id)")
+                .select("id, account_id, user_id")
                 .eq("id", accountId)
-                .eq("users.profile_id", profileId)
                 .maybeSingle()
 
             if (accountDataError) throw accountDataError

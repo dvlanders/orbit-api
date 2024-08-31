@@ -1,9 +1,9 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
-const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer } = require("../transfer/createReapCryptoToFiatTransfer");
+const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer, executeAsyncTransferCryptoToFiat: executeReapAsyncTransferCryptoToFiat } = require("../transfer/createReapCryptoToFiatTransfer");
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
 
 const { transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw } = require("../transfer/transferToBridgeLiquidationAddress");
-const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFiat } = require("../transfer/transferToBridgeLiquidationAddressV2");
+const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFiat: executeBridgeAsyncTransferCryptoToFiat } = require("../transfer/transferToBridgeLiquidationAddressV2");
 
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
@@ -28,14 +28,14 @@ const CryptoToBankSupportedPairFunctions = {
 		usdc: {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeAsyncTransferCryptoToFiat,
+				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
 				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
 			},
 		},
 		usdt: {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeAsyncTransferCryptoToFiat,
+				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
 				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
 			},
 		}
@@ -44,14 +44,14 @@ const CryptoToBankSupportedPairFunctions = {
 		usdc: {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeAsyncTransferCryptoToFiat,
+				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
 				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
 			},
 		},
 		usdt: {
 			usd: {
-				transferFunc: null,
-				asyncTransferExecuteFunc: null,
+				transferFunc: createTransferToBridgeLiquidationAddress,
+				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
 				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
 			},
 		}
@@ -60,7 +60,7 @@ const CryptoToBankSupportedPairFunctions = {
 		usdc: {
 			eur: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeAsyncTransferCryptoToFiat,
+				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
 				directWithdrawFunc: null
 			},
 		}
@@ -78,7 +78,7 @@ const CryptoToBankSupportedPairFunctions = {
 			hkd: {
 				transferFunc: createReapCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
-				asyncTransferExecuteFunc: null
+				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
 			},
 		}
 	},
@@ -87,7 +87,7 @@ const CryptoToBankSupportedPairFunctions = {
 			usd: {
 				transferFunc: createReapCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
-				asyncTransferExecuteFunc: null
+				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
 			},
 		}
 	}

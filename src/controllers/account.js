@@ -18,6 +18,8 @@ const { stringify } = require('querystring');
 const { virtualAccountPaymentRailToChain } = require('../util/bridge/utils');
 const createHKOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
 const createReapOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
+const { networkCheck } = require('../util/reap/utils/networkCheck');
+const { basicReapAccountInfoCheck } = require('../util/reap/utils/basicAccountInfoCheck');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -1165,6 +1167,7 @@ exports.createAPECOfframpDestination = async(req, res) => {
 		"country",
 		"city",
 		"postalCode",
+		"network"
 	]
 
 	const acceptedFields = {
@@ -1187,6 +1190,7 @@ exports.createAPECOfframpDestination = async(req, res) => {
 		country: "string",
 		city: "string",
 		postalCode: "string",
+		network: "string"
 	  };
 	
 	try{
@@ -1202,6 +1206,8 @@ exports.createAPECOfframpDestination = async(req, res) => {
 		if (recipientType != "company") return res.status(400).json({ error: 'Only company is allowed to create HK offramp for now'});
 		if (recipientType == "company" && !companyName) return res.status(400).json({ error: 'companyName is missing'});
 		if (recipientType == "individual" && (!firstName || !lastName)) return res.status(400).json({ error: 'firstName or lastName is missing'});
+		if (!networkCheck(network, currency)) return res.status(400).json({error: "Currency and network not matched"})
+		if (!basicReapAccountInfoCheck(fields)) return res.status(400).json({error: "Invalid banking information"})
 		const account = await createReapOfframpAccount({...fields, userId})
 		let accountInfo = {
 			status: "ACTIVE",

@@ -44,14 +44,14 @@ const fetchReapCryptoToFiatTransferRecord = async(id, profileId) => {
                 failedReason: record.developer_fees.failed_reason
             } : null,
             conversionRate: record.conversion_rate,
-            quoteInformation: {
+            quoteInformation: record.conversion_rate ? {
                 validFrom: record.conversion_rate.validFrom,
                 validUntil: record.conversion_rate.validUntil,
                 sendingCurrency: record.source_currency,
                 sendingAmount: record.amount,
                 receivingCurrency: record.destination_currency,
                 receivingAmount: record.destination_currency_amount
-            }
+            } : null
         }
 
     }
