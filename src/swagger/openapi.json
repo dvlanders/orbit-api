@@ -159,6 +159,19 @@
         "description": "Return the micro deposit records that created after this eventId",
         "required": false
       },
+      "AccountTypeParameter": {
+        "name": "accountType",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "us",
+            "nonUsIbanSupported",
+            "nonUsIbanUnsupported"
+          ]
+        },
+        "required": true
+      },
       "LimitParameter": {
         "name": "limit",
         "in": "query",
@@ -4763,6 +4776,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/AccountTypeParameter"
           }
         ],
         "requestBody": {
