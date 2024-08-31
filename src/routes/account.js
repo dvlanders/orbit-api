@@ -14,5 +14,4 @@ module.exports = (router) => {
 	router.post("/account/brl/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
 	router.post("/account/brl/receiver", authorize, logRequestResponse, account.createBlindpayReceiver);
 	router.post("/account/apec/offramp", authorize, logRequestResponse, account.createAPECOfframpDestination);
-
 };
