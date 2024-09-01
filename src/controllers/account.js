@@ -1121,7 +1121,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 	}
 }
 
-exports.createAPECOfframpDestination = async(req, res) => {
+exports.createAPACOfframpDestination = async(req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
