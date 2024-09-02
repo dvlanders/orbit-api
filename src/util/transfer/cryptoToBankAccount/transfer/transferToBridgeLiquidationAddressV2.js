@@ -246,7 +246,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	// update record
 	const liquidationAddress = bridgeResponseBody.source_deposit_instructions.to_address
 	const providerFee = safeStringToFloat(bridgeResponseBody.receipt.developer_fee) + safeStringToFloat(bridgeResponseBody.receipt.exchange_fee) + safeStringToFloat(bridgeResponseBody.receipt.gas_fee)
-	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount)
+	const finalClientReceivedAmount = bridgeResponseBody.receipt.final_amount ? safeStringToFloat(bridgeResponseBody.receipt.final_amount) : null
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: bridgeResponseBody.state,
