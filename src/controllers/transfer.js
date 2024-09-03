@@ -584,8 +584,9 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		const fetchFunc = FetchCryptoToBankSupportedPairCheck(request.crypto_provider, request.fiat_provider)
 		let transactionRecord = await fetchFunc(id, profileId)
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
-
-		transactionRecord =	await transferObjectReconstructor(transactionRecord);
+		
+		const externalDestinationAccountId = transactionRecord.transferDetails?.destinationAccountId;
+		transactionRecord =	await transferObjectReconstructor(transactionRecord, externalDestinationAccountId);
 
 		return res.status(200).json(transactionRecord)
 
