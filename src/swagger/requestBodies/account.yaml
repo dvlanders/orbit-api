@@ -3,43 +3,51 @@ UsdOnrampAchAccountBody:
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UsdOnrampAchAccount'
+        $ref: "#/components/schemas/UsdOnrampAchAccount"
 UsdOnrampWireAccountBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UsdOnrampWireAccount'
+        $ref: "#/components/schemas/UsdOnrampWireAccount"
 UsdOfframpAchAccountBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UsdOfframpAchAccount'
+        $ref: "#/components/schemas/UsdOfframpAchAccount"
+# UsdOfframpWireAccountBody:
+#   required: true
+#   content:
+#     application/json:
+#       schema:
+#         oneOf:
+#           - $ref: '#/components/schemas/UsdOfframpWireUSAccount'
+#           - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount'
+#           - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount'
 UsdOfframpWireAccountBody:
   required: true
   content:
     application/json:
       schema:
         oneOf:
-          - $ref: '#/components/schemas/UsdOfframpWireUSAccount'
-          - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount'
-          - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount'
+          - $ref: "#/components/schemas/UsdOfframpWireUSAccount"
+          - $ref: "#/components/schemas/UsdOfframpWireNonUSAccount"
 EurOfframpSepaAccountBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/EurOfframpSepaAccount'
+        $ref: "#/components/schemas/EurOfframpSepaAccount"
 BrlOfframpReceiverBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlReceiverAccount'
+        $ref: "#/components/schemas/BrlReceiverAccount"
 BrlOfframpPixAccountBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpPixAccount'
+        $ref: "#/components/schemas/BrlOfframpPixAccount"

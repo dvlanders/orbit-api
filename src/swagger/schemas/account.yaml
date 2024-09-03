@@ -79,52 +79,151 @@ UsdOfframpAchAccount:
     - country
 UsdOfframpWireUSAccount:
   type: object
-  title: "USD Offramp Wire US"
+  title: "USD Offramp Wire to US Bank Account"
   properties:
-    accountNumber:
+    currency:
       type: string
-      description: Either a swift account number or iban must be provided.
-    routingNumber:
-      type: string
-    accountHolderName:
-      type: string
-    accountHolderCity:
-      type: string
-    accountHolderCountry:
-      type: string
-    accountHolderStreetLine1:
-      type: string
-    accountHolderStreetLine2:
-      type: string
-    accountHolderStateProvinceRegion:
-      type: string
-    accountHolderPostalCode:
-      type: string
+      description: "Currency denomination of the destination bank account. Must be usd."
+      enum:
+        - usd
     bankName:
       type: string
-      description: e.g. Chase, Bank of America
-    bankCity:
+      example: "Bank of America"
+    accountOwnerName:
       type: string
-    bankCountry:
+      example: "John Doe"
+    accountOwnerType:
       type: string
-    bankStreetLine1:
+      description: "Specify 'business' if the account is owned by a business, otherwise 'individual'. If 'business', 'businessName' is required. If 'individual', 'firstName' and 'lastName' are required."
+      enum:
+        - business
+        - individual
+    businessName:
       type: string
-    bankStreetLine2:
+      description: "Required if 'accountOwnerType' is 'business'."
+      example: "Doe Enterprises"
+    firstName:
       type: string
-    bankStateProvinceRegion:
+      description: "Required if 'accountOwnerType' is 'individual'."
+      example: "John"
+    lastName:
       type: string
+      description: "Required if 'accountOwnerType' is 'individual'."
+      example: "Doe"
+    accountNumber:
+      type: string
+      example: "1234567890"
+    routingNumber:
+      type: string
+      example: "011000138"
+    streetLine1:
+      type: string
+      example: "123 Main St"
+    streetLine2:
+      type: string
+      example: "Suite 100"
+    city:
+      type: string
+      example: "New York"
+    state:
+      type: string
+      example: "NY"
+    postalCode:
+      type: string
+      example: "10001"
+    country:
+      type: string
+      description: "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+      example: "USA"
   required:
+    - currency
+    - bankName
+    - accountOwnerName
+    - accountOwnerType
     - accountNumber
     - routingNumber
-    - accountHolderName
-    - accountHolderCity
-    - accountHolderCountry
-    - accountHolderStreetLine1
-    - accountHolderPostalCode
-    - bankCountry
+    - streetLine1
+    - city
+    - state
+    - postalCode
+    - country
+UsdOfframpWireNonUSAccount:
+  type: object
+  title: "USD Offramp Wire to Non-US Bank Account"
+  properties:
+    currency:
+      type: string
+      enum:
+        - usd
+    bankName:
+      type: string
+      example: "Deutsche Bank"
+    accountOwnerName:
+      type: string
+      example: "John Doe"
+    ibanAccountNumber:
+      type: string
+      description: "The IBAN for the bank account."
+      example: "DE89 3704 0044 0532 0130 00"
+    accountOwnerType:
+      type: string
+      description: "Specify 'business' or 'individual'. Relevant name fields must be provided based on this type."
+      enum:
+        - business
+        - individual
+    firstName:
+      type: string
+      description: "Required if 'accountOwnerType' is 'individual'."
+      example: "John"
+    lastName:
+      type: string
+      description: "Required if 'accountOwnerType' is 'individual'."
+      example: "Doe"
+    businessName:
+      type: string
+      description: "Required if 'accountOwnerType' is 'business'."
+      example: "Doe Enterprises"
+    businessIdentifierCode:
+      type: string
+      description: "Also known as SWIFT code."
+      example: "DEUTDEDBFRA"
+    ibanCountryCode:
+      type: string
+      description: "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
+      example: "DEU"
+    streetLine1:
+      type: string
+      example: "123 Berlin St"
+    streetLine2:
+      type: string
+      example: "Building A"
+    city:
+      type: string
+      example: "Berlin"
+    state:
+      type: string
+      example: "Berlin"
+    postalCode:
+      type: string
+      example: "10115"
+    country:
+      type: string
+      example: "Germany"
+  required:
+    - currency
+    - bankName
+    - accountOwnerName
+    - accountOwnerType
+    - ibanAccountNumber
+    - businessIdentifierCode
+    - ibanCountryCode
+    - streetLine1
+    - city
+    - postalCode
+    - country
 UsdOfframpWireNonUSIbanSupportedAccount:
   type: object
-  title: "USD Offramp Wire Non-US Iban Supported"
+  title: "USD Offramp Wire Iban Supported"
   properties:
     iban:
       type: string
