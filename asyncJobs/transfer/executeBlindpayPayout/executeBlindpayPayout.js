@@ -8,7 +8,7 @@ const { executePayout } = require("../../../src/util/blindpay/endpoint/executePa
 const { ExecutePayoutError } = require("../../../src/util/blindpay/errors")
 
 exports.executeBlindpayPayout = async (config) => {
-	console.log("executeBlindpayPayout", config)
+	// console.log("executeBlindpayPayout", config)
 	try {
 		const { data: record, error } = await supabase
 			.from("offramp_transactions")
