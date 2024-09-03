@@ -32,7 +32,7 @@ const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, achReference, sepaReference, swiftReference } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, achReference, sepaReference, wireMessage, swiftReference } = config
 
 
 
@@ -358,7 +358,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
-
+	console.log(wireMessage)
 
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 
@@ -366,7 +366,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
 	if (!accountInfo || !accountInfo.account_id) return { isExternalAccountExist: false, transferResult: null }
-
+	
 	// check destination bank account information
 	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(accountInfo.account_id, destinationCurrency)
 	config.destinationUserId = destinationUserId
