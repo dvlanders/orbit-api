@@ -32,7 +32,7 @@ ChainParameter:
   description: The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported in production and only POLYGON_AMOY is supported in sandbox.
   required: true
 
-CurrencyParameter:
+CryptoCurrencyParameter:
   name: currency
   in: query
   schema:

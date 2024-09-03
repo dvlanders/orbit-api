@@ -46,7 +46,6 @@ class getBridgeExternalAccountError extends Error {
 exports.getBridgeExternalAccount = async (userId, accountId) => {
 
 
-	console.log("getBridgeExternalAccount", userId, accountId)
 	try {
 
 		// check if the bridge external account exists
@@ -81,7 +80,6 @@ exports.getBridgeExternalAccount = async (userId, accountId) => {
 
 		const bridgeData = await response.json()
 
-		console.log("bridgeData", bridgeData)
 		if (response.status == 500) throw new getBridgeExternalAccountError(getBridgeExternalAccountErrorType.INTERNAL_ERROR, "Bridge internal server error", bridgeData)
 		if (!response.ok) throw new getBridgeExternalAccountError(getBridgeExternalAccountErrorType.INTERNAL_ERROR, bridgeData.message, bridgeData)
 

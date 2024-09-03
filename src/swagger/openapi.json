@@ -61,11 +61,13 @@
         "schema": {
           "type": "string",
           "enum": [
-            "usdc"
+            "usd",
+            "eur",
+            "brl"
           ]
         },
-        "description": "The type of currency to check the balance for. Currently, only USDC is supported.",
-        "required": true
+        "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
+        "required": false
       },
       "RailTypeParameter": {
         "name": "railType",
@@ -277,6 +279,18 @@
           ]
         },
         "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported in production and only POLYGON_AMOY is supported in sandbox.",
+        "required": true
+      },
+      "CryptoCurrencyParameter": {
+        "name": "currency",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "usdc"
+          ]
+        },
+        "description": "The type of currency to check the balance for. Currently, only USDC is supported.",
         "required": true
       }
     },
@@ -4678,7 +4692,7 @@
     "/account/usd/onramp/plaid": {
       "post": {
         "summary": "Link Plaid Account for USD Onramp (ACH)",
-        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. \n\n***Note: Create Virtual Account is a billable event.***\n",
+        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. Creating a Virtual Account is a billable event.\n",
         "tags": [
           "Account"
         ],
@@ -5480,7 +5494,7 @@
             "$ref": "#/components/parameters/ChainParameter"
           },
           {
-            "$ref": "#/components/parameters/CurrencyParameter"
+            "$ref": "#/components/parameters/CryptoCurrencyParameter"
           }
         ],
         "responses": {
