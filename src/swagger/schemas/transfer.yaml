@@ -69,12 +69,6 @@ CryptoToFiatTransfer:
     sameDayAch:
       type: boolean
       description: Routes offramp for same day ACH transfer for a $1 additional fee
-    description:
-      type: string
-      description: Required if paymentRail for the account for the destinationAccountId is "wire"
-    purposeOfPayment:
-      type: string
-      description: Required if paymentRail for the account for the destinationAccountId is "wire"
     feeType:
       type: string
       enum: ["PERCENT", "FIX"]

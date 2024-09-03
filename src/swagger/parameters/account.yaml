@@ -79,5 +79,5 @@ AccountTypeParameter:
   in: query
   schema:
     type: string
-    enum: ["us", "nonUsIbanSupported", "nonUsIbanUnsupported"]
+    enum: ["us", "iban"]
   required: true
