@@ -1147,6 +1147,9 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
 	} = req.body;
 
+
+	const fields = req.body;
+
 	if (!(await verifyUser(userId, profileId))) {
 		return res.status(401).json({ error: "UserId not found" });
 	}
