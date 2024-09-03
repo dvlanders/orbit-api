@@ -1157,7 +1157,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	// verify required fields
 
 	const requiredFields = [
-		'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'city', 'state', 'postalCode', "country", "userId"
+		'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'city', 'state', 'postalCode', "country"
 	];
 
 	const acceptedFields = {
