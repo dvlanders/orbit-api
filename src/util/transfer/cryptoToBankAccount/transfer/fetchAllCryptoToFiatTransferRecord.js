@@ -35,7 +35,8 @@ const fetchAllCryptoToFiatTransferRecord = async(profileId, userId, limit=10, cr
     const info = await Promise.all(allRecords.map(async(record) => {
         const func = FetchCryptoToBankSupportedPairCheck(record.crypto_provider, record.fiat_provider)
         let result = await func(record.id, profileId)
-        result = await transferObjectReconstructor(result);
+        const externalDestinationAccountId = result.transferDetails?.destinationAccountId;
+        result = await transferObjectReconstructor(result, externalDestinationAccountId);
         return result
     }))
     return {count: info.length, records: info}
