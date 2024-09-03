@@ -1,7 +1,7 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../utils/fiatToCryptoSupportedPairFetchFunctions");
-
+const { transferObjectReconstructor } = require("../../utils/transfer");
 
 const fetchAllFiatToCryptoTransferRecord = async(profileId, userId, limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
     let allRecords
@@ -32,7 +32,8 @@ const fetchAllFiatToCryptoTransferRecord = async(profileId, userId, limit=10, cr
 
     const info = await Promise.all(allRecords.map(async(record) => {
         const func = FiatToCryptoSupportedPairFetchFunctionsCheck(record.crypto_provider, record.fiat_provider)
-        const result = await func(record.id, profileId)
+        let result = await func(record.id, profileId)
+        result = await transferObjectReconstructor(result);
         return result
     }))
     return {count: info.length, records: info}

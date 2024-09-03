@@ -4678,7 +4678,7 @@
     "/account/usd/onramp/plaid": {
       "post": {
         "summary": "Link Plaid Account for USD Onramp (ACH)",
-        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. \n\n***Note: Create Virtual Account is a billable event.***\n",
+        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. Creating a Virtual Account is a billable event.\n",
         "tags": [
           "Account"
         ],
