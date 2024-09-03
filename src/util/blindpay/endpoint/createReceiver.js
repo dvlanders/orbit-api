@@ -127,7 +127,7 @@ const createReceiver = async (receiverInfo) => {
       ? await individualReceiverRequestBodyBuilder(receiverInfo)
       : await businessReceiverRequestBodyBuilder(receiverInfo);
 
-  console.log("receiverRequestBody: \n", receiverRequestBody);
+  // console.log("receiverRequestBody: \n", receiverRequestBody);
 
   const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers`;
 
@@ -148,7 +148,7 @@ const createReceiver = async (receiverInfo) => {
     );
   }
 
-  console.log(responseBody);
+  // console.log(responseBody);
   if (!response.ok) {
     // Insert response into blindpay_receivers table
     const { error } = await supabase

@@ -896,13 +896,13 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	const fields = req.body;
 	fields.user_id = userId;
 	fields.receiver_id = receiverId;
-
+	if(!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
-
-	let bankAccountRecord
+	
+	let bankAccountExist, bankAccountRecord
 	// upload information and create new user
 	try {
-		bankAccountRecord = await uploadBankAccountInfo(fields)
+		({ bankAccountExist, bankAccountRecord } = await uploadBankAccountInfo(fields))
 	} catch (error) {
 		if (error instanceof BankAccountInfoUploadError) {
 			return res.status(error.status).json(error.rawResponse)
@@ -911,8 +911,19 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
+	if(bankAccountExist){
+		const responseObject = {
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account already exists",
+			id: bankAccountRecord.global_account_id
+		};
+		return res.status(200).json(responseObject);
+	}
+
 	try {
 		const response = await createBankAccount(bankAccountRecord)
+		const account = await insertAccountProviders(bankAccountRecord.id, "brl", "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id)
 		// insert the record to the blindpay_accounts table
 		const {error: bankAccountUpdateError } = await supabase
 			.from('blindpay_bank_accounts')
@@ -920,6 +931,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 				blindpay_response: response,
 				blindpay_account_id: response.id,
 				blockchain_address: response.blockchain_address,
+				global_account_id: account.id,
 			})
 			.eq('id', bankAccountRecord.id)
 
@@ -928,14 +940,11 @@ exports.createBlindpayBankAccount = async (req, res) => {
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
-		await insertAccountProviders(bankAccountRecord.id, "brl", "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id)
-
-		// structure a responseObject with the id from the supabase table, name, currency, bank country, pix key, and receiver id
 		const responseObject = {
 			status: "ACTIVE",
 			invalidFields: [],
 			message: "Account created successfully",
-			id: bankAccountRecord.id
+			id: account.id
 		};
 
 		// return response object wiht success code
@@ -1261,6 +1270,7 @@ exports.getBlindpayReceiver = async (req, res) => {
 
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
+	if(!isUUID(fields.receiver_id)) return res.status(400).json({ error: "Invalid receiver_id" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	try {
@@ -1285,7 +1295,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	const fields = req.body;
 	fields.user_id = userId;
 	fields.receiver_id = receiverId;
-	
+	if(!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 	
 	let receiverRecord

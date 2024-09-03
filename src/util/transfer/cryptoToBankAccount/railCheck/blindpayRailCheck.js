@@ -1,14 +1,14 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
-const blindpayRailCheck = async (bankAccountId) => {
+const blindpayRailCheck = async (globalAccountId) => {
   // check if the destination user own the Blindpay bank account
   let { data: blindpayAccountData, error: blindpayAccountError } =
     await supabaseCall(() =>
       supabase
         .from("blindpay_bank_accounts")
         .select("blindpay_account_id, user_id")
-        .eq("id", bankAccountId)
+        .eq("global_account_id", globalAccountId)
         .maybeSingle()
     );
   if (blindpayAccountError) throw blindpayAccountError;

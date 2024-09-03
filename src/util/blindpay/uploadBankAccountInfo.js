@@ -10,6 +10,7 @@ const {
 const { fieldsValidation } = require("../common/fieldsValidation");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
+const { checkBrlOfframpBankAccount } = require("./checkBrlOfframpBankAccount");
 
 const uploadBankAccountInfo = async (fields) => {
   const acceptedFields = bankAccountAcceptedFieldsMap[fields.type];
@@ -89,7 +90,13 @@ const uploadBankAccountInfo = async (fields) => {
     }
   });
 
-  console.log("bank account data: \n", bankAccountData);
+  // console.log("bank account data: \n", bankAccountData);
+
+  // check if the bank account already exists
+  const { bankAccountExist, bankAccountRecord: existingBankAccountRecord } = await checkBrlOfframpBankAccount(bankAccountData);
+  if(bankAccountExist) {
+    return { bankAccountExist, bankAccountRecord: existingBankAccountRecord };
+  }
 
   // update the blindpay_bank_accounts table record
   const { data: bankAccountRecord, error: bankAccountRecordError } =
@@ -114,7 +121,7 @@ const uploadBankAccountInfo = async (fields) => {
   }
 
   bankAccountRecord.blindpay_receiver_id = receiverRecord.blindpay_receiver_id;
-  return bankAccountRecord;
+  return { bankAccountExist: false, bankAccountRecord };
 };
 
 module.exports = {

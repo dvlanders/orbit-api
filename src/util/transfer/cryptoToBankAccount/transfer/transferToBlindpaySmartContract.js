@@ -25,7 +25,7 @@ const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 
 const transferToBlindpaySmartContract = async (config) => {
 	const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceWalletType } = config
-	console.log("transferToBlindpaySmartContract", config)
+	// console.log("transferToBlindpaySmartContract", config)
 	// disable fee feature
 	if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route")
 	if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
@@ -74,7 +74,7 @@ const transferToBlindpaySmartContract = async (config) => {
 			// no paymentProcessorContract available
 			const toUpdate = {
 				status: "NOT_INITIATED",
-				failed_reason: `Fee feature not available for ${currency} on ${chain}`
+				failed_reason: `Fee feature not available for ${sourceCurrency} on ${chain}`
 			}
 			record = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
 			return {
@@ -229,7 +229,7 @@ const transferToBlindpaySmartContract = async (config) => {
 			chain: chain === "POLYGON_AMOY" ? "BASE_SEPOLIA" : chain, 
 			actionParams: actionParams
 		};
-		console.log(bodyObject)
+		// console.log(bodyObject)
 		const response = await submitUserAction(bodyObject)
 		const responseBody = await response.json();
 		const result = {

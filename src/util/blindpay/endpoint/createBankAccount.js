@@ -69,7 +69,7 @@ const createBankAccount = async (bankAccountInfo) => {
     );
   }
 
-  console.log(responseBody);
+  // console.log(responseBody);
   if (!response.ok) {
     // Insert response into blindpay_bank_accounts table
     const { error } = await supabase

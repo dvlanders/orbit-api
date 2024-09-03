@@ -9,7 +9,7 @@ const { getPayout } = require('../../src/util/blindpay/endpoint/getPayout');
 const { updateRequestRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord');
 
 const updateStatusWithBlindpayTransferId = async (transaction) => {
-	console.log("polling blindpay payout status for transaction", transaction)
+	// console.log("polling blindpay payout status for transaction", transaction)
 	try {
 		const payoutResponseBody = await getPayout(transaction.blindpay_payout_id)
 		if (transaction.blindpay_payout_status == payoutResponseBody.status) return
@@ -19,7 +19,7 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 		
 		if (hifiOfframpTransactionStatus == transaction.transaction_status) return
 		
-		console.log("updating payout transaction status", payoutResponseBody)
+		// console.log("updating payout transaction status", payoutResponseBody)
 
 		const toUpdate = {
 			transaction_status: hifiOfframpTransactionStatus,

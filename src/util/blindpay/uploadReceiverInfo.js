@@ -52,7 +52,7 @@ const uploadReceiverUBOInfo = async (userId, receiverId, fields) => {
           return ownerData;
         })
       );
-      console.log("processed Ubos: \n", processedUbos);
+      // console.log("processed Ubos: \n", processedUbos);
       // Insert the processed UBO data into the database
       const {
         data: ultimateBeneficialOwnersData,
@@ -210,7 +210,7 @@ const uploadReceiverKYCInfo = async (fields) => {
     );
   }
 
-  console.log("kyc data: \n", kycData);
+  // console.log("kyc data: \n", kycData);
 
   // update the blindpay_receivers_kyc table record
   const { data: receiverRecord, error: receiverRecordError } =

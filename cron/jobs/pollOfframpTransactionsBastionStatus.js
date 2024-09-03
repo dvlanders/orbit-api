@@ -10,7 +10,6 @@ const createJob = require('../../asyncJobs/createJob');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const updateStatus = async (transaction) => {
-	console.log('Updating status for transaction ID', transaction.id);
 	const bastionUserId = transaction.bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
@@ -81,7 +80,7 @@ const updateStatus = async (transaction) => {
 				}
 			}
 
-			console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+			// console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 			
 			// if the on-chain transfer is completed, it means we can execute the payout for the Blindpay offramp
 			if(hifiOfframpTransactionStatus === 'COMPLETED_ONCHAIN' && transaction.fiat_provider === "BLINDPAY"){
@@ -108,7 +107,6 @@ const updateStatus = async (transaction) => {
 }
 
 async function pollOfframpTransactionsBastionStatus() {
-	console.log("pollOfframpTransactionsBastionStatus")
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')

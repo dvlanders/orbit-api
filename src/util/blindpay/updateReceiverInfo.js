@@ -50,7 +50,7 @@ const updateReceiverUBOInfo = async (userId, receiverId, fields) => {
           return ownerData;
         })
       );
-      console.log("processed Ubos: \n", processedUbos);
+      // console.log("processed Ubos: \n", processedUbos);
 
       const { error: deleteError } = await supabaseCall(() =>
         supabase
@@ -159,7 +159,7 @@ const updateReceiverKYCInfo = async (fields) => {
       }
     );
   }
-  console.log(receiverExistRecord);
+  // console.log(receiverExistRecord);
   const acceptedFields =
     receiverAcceptedFieldsMap[receiverExistRecord.type]?.[
       receiverExistRecord.kyc_type
@@ -254,7 +254,7 @@ const updateReceiverKYCInfo = async (fields) => {
     );
   }
 
-  console.log("kyc data: \n", kycData);
+  // console.log("kyc data: \n", kycData);
 
   // update the blindpay_receivers_kyc table record
   const { data: receiverRecord, error: receiverRecordError } =
@@ -300,7 +300,7 @@ const updateReceiverKYCInfo = async (fields) => {
       receiverRecord.formation_date
     ).toISOString();
   }
-  console.log("updated receiverRecord: \n", receiverRecord);
+  // console.log("updated receiverRecord: \n", receiverRecord);
   // receiverRecord.blindpay_receiver_id =
   //   receiverExistRecord.blindpay_receiver_id;
   return receiverRecord;

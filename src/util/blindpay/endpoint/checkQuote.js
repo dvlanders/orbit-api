@@ -32,7 +32,7 @@ const checkQuote = async (sourceCurrency, destinationCurrency, requestAmount = 1
     );
   }
 
-  console.log(responseBody);
+  // console.log(responseBody);
   if (!response.ok) {
     console.error("Response not OK:", responseBody);
     throw new CreateQuoteError(

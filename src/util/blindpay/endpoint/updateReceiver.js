@@ -123,8 +123,8 @@ const updateReceiver = async (receiverInfo) => {
       ? await individualReceiverRequestBodyBuilder(receiverInfo)
       : await businessReceiverRequestBodyBuilder(receiverInfo);
 
-  console.log("receiverRequestBody: \n", receiverRequestBody);
-  console.log(receiverInfo.blindpay_receiver_id);
+  // console.log("receiverRequestBody: \n", receiverRequestBody);
+  // console.log(receiverInfo.blindpay_receiver_id);
   const response = await fetch(
     `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers/${receiverInfo.blindpay_receiver_id}`,
     {
@@ -135,7 +135,7 @@ const updateReceiver = async (receiverInfo) => {
   );
 
   const responseBody = await response.json();
-  console.log(responseBody);
+  // console.log(responseBody);
   if (!response.ok) {
     // Insert response into blindpay_receivers table
     const { error } = await supabase

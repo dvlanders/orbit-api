@@ -34,7 +34,7 @@ const createQuote = async (bankAccountId, quoteAmount, network, token) => {
     );
   }
 
-  console.log(responseBody);
+  // console.log(responseBody);
   if (!response.ok) {
     console.error("Response not OK:", responseBody);
     throw new CreateQuoteError(

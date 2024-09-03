@@ -11,6 +11,7 @@ const filterReceiverInfo = (receiverInfo) => {
   const keepFields = {
     id: receiverInfo.id,
     created_at: receiverInfo.created_at,
+    limit: receiverInfo.blindpay_response?.limit
   };
   Object.keys(acceptedFields).map((field) => {
     const colName = receiverFieldsNameMap[field];

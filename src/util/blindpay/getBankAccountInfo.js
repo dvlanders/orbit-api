@@ -4,6 +4,7 @@ const { supabaseCall } = require("../supabaseWithRetry");
 const filterBankAccountInfo = (type, bankAccountInfo) => {
     if (!type) return bankAccountInfo;
     const filteredBankAccountInfo = {
+        id: bankAccountInfo.global_account_id,
         type: bankAccountInfo.type,
         name: bankAccountInfo.name,
       };
