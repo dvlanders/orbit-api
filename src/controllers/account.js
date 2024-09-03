@@ -431,7 +431,7 @@ exports.getAccount = async (req, res) => {
 		if (!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
 
 		const account = await fetchAccountProviders(accountId, profileId); // returns an account object
-		if(!account) return res.status(404).json({ error: "No account found" })
+		if (!account) return res.status(404).json({ error: "No account found" })
 		let accountInfo = await getAccountsInfo([account]);
 
 		if (accountInfo.count === 0) return res.status(404).json({ error: "No account found" })
@@ -464,9 +464,9 @@ exports.getAllAccounts = async (req, res) => {
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		
+
 		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
-		
+
 		const accounts = await fetchAccountProvidersWithRail(currency, railType, paymentRail, userId, profileId, limit, createdAfter, createdBefore); // returns an accounts array
 		const accountsInfo = await getAccountsInfo(accounts);
 
@@ -1150,6 +1150,43 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	if (!(await verifyUser(userId, profileId))) {
 		return res.status(401).json({ error: "UserId not found" });
 	}
+
+	// verify required fields
+
+	const requiredFields = [
+		'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'streetLine2', 'city', 'state', 'postalCode', "country", "userId"
+	];
+
+	const acceptedFields = {
+		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': "string", 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": "string"
+	};
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	}
+
+	if (invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+	}
+
+	// make sure that accountType is either us or iban
+	if (!['us', 'iban'].includes(accountType)) {
+		return res.status(400).json({ error: 'The accountType must be passed as "us" or "iban' });
+	}
+
+	// if the accountOwnerType is business, make sure that the businessName is provided. if individual, then make sure that the firstName and lastName are provided
+	if (accountOwnerType === 'business' && !businessName) {
+		return res.status(400).json({ error: 'The businessName field is required when the accountOwnerType is business' });
+	}
+
+	if (accountOwnerType === 'individual' && (!firstName || !lastName)) {
+		return res.status(400).json({ error: 'The firstName and lastName fields are required when the accountOwnerType is individual' });
+	}
+
 
 	try {
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = accountType === 'us'
