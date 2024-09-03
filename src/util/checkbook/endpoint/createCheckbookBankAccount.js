@@ -2,7 +2,7 @@ const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const { createLog } = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
-const { insertAccountProviders } = require("../../account/accountProviders/accountProvidersService")
+const { insertAccountProviders, fetchAccountProvidersWithInternalId } = require("../../account/accountProviders/accountProvidersService")
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -37,11 +37,22 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 
 		if (checkbookAccountError) throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountError.message, checkbookAccountError)
 		if (checkbokAccount) {
-			return {
-				status: 200,
-				invalidFields: [],
-				message: "Bank account already added",
-				id: checkbokAccount.id
+			const account = await fetchAccountProvidersWithInternalId(checkbokAccount.id);
+			if(account.length > 0) {
+				return {
+					status: 200,
+					invalidFields: [],
+					message: "Bank account already added",
+					id: account[0].id
+				}
+			}else{
+				const account = await insertAccountProviders(checkbokAccount.id, "usd", "onramp", "ach", "CHECKBOOK", userId)
+				return {
+					status: 200,
+					invalidFields: [],
+					message: "Bank account already added",
+					id: account.id
+				}
 			}
 		}
 

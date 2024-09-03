@@ -10,8 +10,8 @@ const { supportedRail, OnRampRail, activateOnRampRailFunctionsCheck } = require(
 const checkUsdOffRampAccount = require('../util/account/createUsdOffRamp/checkBridgeExternalAccount');
 const checkEuOffRampAccount = require('../util/account/createEuOffRamp/checkBridgeExternalAccount');
 const { accountRailTypes } = require('../util/account/getAccount/utils/rail');
-const { fetchRailFunctionsMap, getFetchOnRampVirtualAccountFunctions, getFetchRailFunctions, generateRailCompositeKey, validateRailCompositeKey } = require('../util/account/getAccount/utils/fetchRailFunctionMap');
-const { fetchAccountProviders, insertAccountProviders } = require('../util/account/accountProviders/accountProvidersService');
+const { getFetchOnRampVirtualAccountFunctions, getAccountsInfo } = require('../util/account/getAccount/utils/fetchRailFunctionMap');
+const { fetchAccountProviders, insertAccountProviders, fetchAccountProvidersWithRail } = require('../util/account/accountProviders/accountProvidersService');
 const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/createTransfer');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
@@ -229,14 +229,14 @@ exports.createUsdOfframpDestination = async (req, res) => {
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let achExists = providerAccountRecordData.some(record => record.payment_rail === 'ach');
+			let achRecord = providerAccountRecordData.find(record => record.payment_rail === 'ach');
 
-			if (achExists) {
+			if (achRecord) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: recordId
+					id: achRecord.id
 				});
 			}
 
@@ -386,14 +386,14 @@ exports.createEuroOfframpDestination = async (req, res) => {
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let sepaExists = providerAccountRecordData.some(record => record.payment_rail === 'sepa');
+			let sepaRecord = providerAccountRecordData.find(record => record.payment_rail === 'sepa');
 
-			if (sepaExists) {
+			if (sepaRecord) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: recordId
+					id: sepaRecord.id
 				});
 			}
 
@@ -429,12 +429,10 @@ exports.getAccount = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
 		if (!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
-		const railMapping = await fetchAccountProviders(accountId, profileId);
-		if (!railMapping) return res.status(404).json({ error: "No accountId found" })
-		const railKey = generateRailCompositeKey(railMapping.currency, railMapping.rail_type, railMapping.payment_rail)
 
-		const func = getFetchRailFunctions(railKey);
-		let accountInfo = await func(railMapping.account_id)
+		const account = await fetchAccountProviders(accountId, profileId); // returns an account object
+		if(!account) return res.status(404).json({ error: "No account found" })
+		let accountInfo = await getAccountsInfo([account]);
 
 		if (accountInfo.count === 0) return res.status(404).json({ error: "No account found" })
 		if (accountInfo.count > 1) await createLog("account/getAccount", null, "Account Id exists at more than one place", null, profileId)
@@ -466,16 +464,13 @@ exports.getAllAccounts = async (req, res) => {
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-
-		const railKey = generateRailCompositeKey(currency, railType, paymentRail)
-		if (!validateRailCompositeKey(railKey)) return res.status(400).json({ error: `${railKey} is not a supported rail` });
-
+		
 		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+		
+		const accounts = await fetchAccountProvidersWithRail(currency, railType, paymentRail, userId, profileId, limit, createdAfter, createdBefore); // returns an accounts array
+		const accountsInfo = await getAccountsInfo(accounts);
 
-		const func = getFetchRailFunctions(railKey)
-
-		const accountInfo = await func(null, profileId, userId, limit, createdAfter, createdBefore)
-		return res.status(200).json(accountInfo);
+		return res.status(200).json(accountsInfo);
 	} catch (error) {
 		console.error(error)
 		await createLog("account/getAllAccounts", userId, error.message, error)
@@ -1222,14 +1217,14 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let wireExists = providerAccountRecordData.some(record => record.payment_rail === 'wire');
+			let wireRecord = providerAccountRecordData.find(record => record.payment_rail === 'wire');
 
-			if (wireExists) {
+			if (wireRecord) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: externalAccountRecordId
+					id: wireRecord.id
 				});
 			}
 

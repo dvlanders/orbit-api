@@ -34,6 +34,7 @@ const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversi
 const { fetchAccountProviders } = require("../util/account/accountProviders/accountProvidersService");
 const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walletType");
 const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
+const { transferObjectReconstructor } = require("../util/transfer/utils/transfer");
 
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -407,10 +408,14 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// TODO: the destinationAccountId that is passed here needs to be the internalAccountId-- for example, the primary key of the account in the bridge_external_accounts table\
 		// we maintain the destinationAccountId naming convention here for consistency with the rest of the codebase, but this is tech debt that will need to be addressed
 
-		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType })
+		let { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType })
 
 
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+
+
+		transferResult = await transferObjectReconstructor(transferResult, destinationAccountId);
+
 		return res.status(200).json(transferResult);
 
 	} catch (error) {
@@ -577,8 +582,11 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		if (!request) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
 		const fetchFunc = FetchCryptoToBankSupportedPairCheck(request.crypto_provider, request.fiat_provider)
-		const transactionRecord = await fetchFunc(id, profileId)
+		let transactionRecord = await fetchFunc(id, profileId)
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
+
+		transactionRecord =	await transferObjectReconstructor(transactionRecord);
+
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
@@ -647,10 +655,14 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const internalAccountId = providerResult.account_id;
 
 
-		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
+		let transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
+		console.log(transferResult)
+		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
+
 		return res.status(200).json(transferResult);
 
 	} catch (error) {
+		console.log(error)
 		if (error instanceof CreateFiatToCryptoTransferError) {
 			if (error.type == CreateFiatToCryptoTransferErrorType.CLIENT_ERROR) {
 				return res.status(400).json({ error: error.message })
@@ -690,10 +702,11 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		if (requestError) throw requestError
 		if (!request) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 		const fetchFunc = FiatToCryptoSupportedPairFetchFunctionsCheck(request.crypto_provider, request.fiat_provider)
-		const transactionRecord = await fetchFunc(id, profileId)
+		let transactionRecord = await fetchFunc(id, profileId)
 
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
+		transactionRecord =	await transferObjectReconstructor(transactionRecord);
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
@@ -863,8 +876,11 @@ exports.createDirectCryptoToFiatTransfer = async (req, res) => {
 		const { directWithdrawFunc } = funcs
 		if (!directWithdrawFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
-		const { isExternalAccountExist, transferResult } = await directWithdrawFunc({ requestId, internalAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch })
+		let { isExternalAccountExist, transferResult } = await directWithdrawFunc({ requestId, internalAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+		
+		transferResult = await transferObjectReconstructor(transferResult, destinationAccountId);
+
 		return res.status(200).json(transferResult);
 
 	} catch (error) {
