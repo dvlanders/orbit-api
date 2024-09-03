@@ -334,14 +334,14 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType, sameDayAch } = fields
+	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType, sameDayAch, achReference, sepaReference, wireMessage, swiftReference } = fields
 
 	try {
 		// field validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "amount", "chain", "sourceCurrency", "destinationCurrency"]
 		const acceptedFields = {
 			"feeType": "string", "feeValue": ["string", "number"],
-			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "sourceWalletType": "string", "sameDayAch": "boolean"
+			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "sourceWalletType": "string", "sameDayAch": "boolean", "achReference": "string", "sepaReference": "string", "wireMessage": "string", "swiftReference": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
@@ -408,7 +408,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// TODO: the destinationAccountId that is passed here needs to be the internalAccountId-- for example, the primary key of the account in the bridge_external_accounts table\
 		// we maintain the destinationAccountId naming convention here for consistency with the rest of the codebase, but this is tech debt that will need to be addressed
 
-		let { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType })
+		let { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, achReference, sepaReference, wireMessage, swiftReference })
 
 
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
@@ -584,9 +584,9 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		const fetchFunc = FetchCryptoToBankSupportedPairCheck(request.crypto_provider, request.fiat_provider)
 		let transactionRecord = await fetchFunc(id, profileId)
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
-		
+
 		const externalDestinationAccountId = transactionRecord.transferDetails?.destinationAccountId;
-		transactionRecord =	await transferObjectReconstructor(transactionRecord, externalDestinationAccountId);
+		transactionRecord = await transferObjectReconstructor(transactionRecord, externalDestinationAccountId);
 
 		return res.status(200).json(transactionRecord)
 
@@ -707,7 +707,7 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 
 		if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id}` })
 
-		transactionRecord =	await transferObjectReconstructor(transactionRecord);
+		transactionRecord = await transferObjectReconstructor(transactionRecord);
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
@@ -879,7 +879,7 @@ exports.createDirectCryptoToFiatTransfer = async (req, res) => {
 
 		let { isExternalAccountExist, transferResult } = await directWithdrawFunc({ requestId, internalAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
-		
+
 		transferResult = await transferObjectReconstructor(transferResult, destinationAccountId);
 
 		return res.status(200).json(transferResult);
