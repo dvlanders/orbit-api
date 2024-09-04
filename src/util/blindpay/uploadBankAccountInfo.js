@@ -50,7 +50,7 @@ const uploadBankAccountInfo = async (fields) => {
     await supabaseCall(() =>
       supabase
         .from("blindpay_receivers_kyc")
-        .select("blindpay_receiver_id")
+        .select("blindpay_receiver_id, kyc_status")
         .eq("id", fields.receiver_id)
         .eq("user_id", fields.user_id)
         .maybeSingle()
@@ -75,6 +75,17 @@ const uploadBankAccountInfo = async (fields) => {
       "",
       {
         error: "Receiver record not found",
+      }
+    );
+  }
+
+  if (receiverRecord && receiverRecord.kyc_status !== "approved") {
+    throw new BankAccountInfoUploadError(
+      BankAccountInfoUploadErrorType.KYC_STATUS_NOT_APPROVED,
+      400,
+      "",
+      {
+        error: "KYC status not approved",
       }
     );
   }

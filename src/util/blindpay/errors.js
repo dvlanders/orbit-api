@@ -39,6 +39,7 @@ const BankAccountInfoUploadErrorType = {
   FIELD_MISSING: "FIELD_MISSING",
   FILE_TOO_LARGE: "FILE_TOO_LARGE",
   RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
+  KYC_STATUS_NOT_APPROVED: "KYC_STATUS_NOT_APPROVED",
 };
 
 class BankAccountInfoUploadError extends Error {
