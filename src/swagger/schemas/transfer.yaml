@@ -77,6 +77,19 @@ CryptoToFiatTransfer:
       format: float
       minimum: 0
       description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+    wireMessage:
+      type: string
+      description: A message to be sent with a wire transfer, only allowed when the payment rail is a wire. This message will be validated against 4 lines, each with a max length of 35 char according to the Fedwire standard.
+    achReference:
+      type: string
+      description: A reference message to be sent with an ACH transaction. It can be at most 10 characters, A-Z, a-z, 0-9, and spaces. Note that as of 2024-08-06, setting this field is only supported for certain developers while we work on rolling out general support for everyone.
+    sepaReference:
+      type: string
+      description: A reference message to be sent with a SEPA transaction. It must be from 6 to 140 characters. The allowed characters are a-z, A-Z, 0-9, spaces, ampersand (&), hyphen (-), full stop (.), and solidus (/).
+    swiftReference:
+      type: string
+      description: >
+        A payment reference message or remittance information to be included in a SWIFT transaction. It can have at most 4 lines (separated by "\n"), each line with a max length of 35 chars. The allowed characters are a-z, A-Z, 0-9, special characters (/ - ? : ( ) . , ' +), and spaces.
   required:
     - requestId
     - sourceUserId
