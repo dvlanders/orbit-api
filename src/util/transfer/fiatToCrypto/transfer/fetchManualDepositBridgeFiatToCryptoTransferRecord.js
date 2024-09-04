@@ -11,7 +11,7 @@ const fetchManualDepositBridgeFiatToCryptoTransferRecord = async(id, profileId) 
     // get rail information
     let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
         .from('bridge_virtual_accounts')
-        .select('destination_payment_rail, source_currency, destination_currency')
+        .select('*')
         .eq("virtual_account_id", record.bridge_virtual_account_id)
         .single())
 
@@ -44,7 +44,23 @@ const fetchManualDepositBridgeFiatToCryptoTransferRecord = async(id, profileId) 
                 status: record.developer_fees.charged_status,
                 transactionHash: record.developer_fees.transaction_hash,
                 failedReason: record.developer_fees.failed_reason
-            } : null
+            } : null,
+            virtualAccountInformation:{
+                virtualAccountId: bridgeVirtualAccount.id,
+                userId: bridgeVirtualAccount.user_id,
+                paymentRails: bridgeVirtualAccount.source_payment_rails,
+                sourceCurrency: bridgeVirtualAccount.source_currency,
+                destinationChain: virtualAccountPaymentRailToChain[bridgeVirtualAccount.destination_payment_rail],
+                destinationCurrency: bridgeVirtualAccount.destination_currency,
+                destinationWalletAddress: bridgeVirtualAccount.destination_wallet_address,
+                railStatus: bridgeVirtualAccount.status,
+                depositInstructions: {
+                    bankName: bridgeVirtualAccount.deposit_institutions_bank_name,
+                    routingNumber: bridgeVirtualAccount.deposit_institutions_bank_routing_number,
+                    accountNumber: bridgeVirtualAccount.deposit_institutions_bank_account_number,
+                    bankAddress: bridgeVirtualAccount.deposit_institutions_bank_address
+                }
+            }
         }
     }
 
