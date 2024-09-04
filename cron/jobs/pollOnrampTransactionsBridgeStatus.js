@@ -50,7 +50,7 @@ const updateStatus = async (onrampTransaction) => {
 			// try to find the latest record
 			for (const event of events) {
 				const description = event.source.description
-				const referenceId = description.split(" ").slice(-5).join('-').toLowerCase()
+				const referenceId = description?.split(" ").slice(-5).join('-').toLowerCase()
 				const depositId = event.deposit_id;
 				const hasDepositId = depositId == onrampTransaction.bridge_deposit_id
 				const hasReferenceId = referenceId == onrampTransaction.id
