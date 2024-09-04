@@ -41,8 +41,6 @@ const placeholder = (recordId, profileId) => {
 
 const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {
     try {
-        console.log("cryptoProvider", cryptoProvider)
-        console.log("fiatProvider", fiatProvider)
         return FetchCryptoToBankSupportedPairFunctions[cryptoProvider][fiatProvider] || FetchCryptoToBankSupportedPairFunctions.DEFAULT
     }catch (error){
         return FetchCryptoToBankSupportedPairFunctions.DEFAULT

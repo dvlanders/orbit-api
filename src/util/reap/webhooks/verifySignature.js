@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-const publicKey = process.env.REAP_WEBHOOK_PUBLIC_KEY.replace(/\\n/g, '\n')
+const publicKey = process.env.REAP_WEBHOOK_PUBLIC_KEY ? process.env.REAP_WEBHOOK_PUBLIC_KEY.replace(/\\n/g, '\n') : null
 
 exports.verifyReapSignature = (req, res, next) => {
     const message = JSON.stringify(req.body);
