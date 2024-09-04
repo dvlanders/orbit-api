@@ -59,7 +59,7 @@ const processVirtualAccountEvent = async (event) => {
             supabase
               .from("onramp_transactions")
               .select("id, bridge_deposit_id")
-              .like("id_text", `%${referenceId}%`)
+              .like("reference_id", `%${referenceId}%`)
           );
 
         if (error) {
