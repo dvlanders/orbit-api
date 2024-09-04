@@ -34,18 +34,40 @@ const processVirtualAccountEvent = async (event) => {
       ?.toLowerCase();
 
     // if we can parse a referenceId, then we check whether this event is for an existing onramp transaction
-    if (isUUID(referenceId)) {
-      const { data: existingTransaction, error: existingTransactionError } =
-        await supabaseCall(() =>
-          supabase
-            .from("onramp_transactions")
-            .select("id, bridge_deposit_id")
-            .eq("id", referenceId)
-            .maybeSingle()
-        );
+    if (referenceId && referenceId != "") {
+      let existingTransaction
+      if (isUUID(referenceId)){
+          // match exact uuid
+          const { data, error } =
+          await supabaseCall(() =>
+            supabase
+              .from("onramp_transactions")
+              .select("id, bridge_deposit_id")
+              .eq("id", referenceId)
+              .maybeSingle()
+          );
 
-      if (existingTransactionError) {
-        throw existingTransactionError;
+        if (error) {
+          throw error;
+        }
+
+        existingTransaction = data
+      }else{
+        // match partial uuid
+        const { data, error } =
+          await supabaseCall(() =>
+            supabase
+              .from("onramp_transactions")
+              .select("id, bridge_deposit_id")
+              .like("reference_id", `%${referenceId}%`)
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.length == 1) existingTransaction = data[0]
+        else if (data.length > 1) throw new Error("Multiple onramp transactions found for referenceId " + referenceId)
       }
 
       if (existingTransaction && !existingTransaction.bridge_deposit_id) {
@@ -69,6 +91,7 @@ const processVirtualAccountEvent = async (event) => {
       if (existingTransaction) {
         return;
       }
+
     }
 
     // check if this manual deposit event has already been inserted into the onramp_transactions table
