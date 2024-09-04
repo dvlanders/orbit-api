@@ -3,6 +3,8 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
+const { v4: uuidv4 } = require("uuid");
+const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
 
 const processVirtualAccountEvent = async (event) => {
   const {
@@ -26,10 +28,10 @@ const processVirtualAccountEvent = async (event) => {
 
   try {
     const referenceId = description
-      .split(" ")
-      .slice(-5)
-      .join("-")
-      .toLowerCase();
+      ?.split(" ")
+      ?.slice(-5)
+      ?.join("-")
+      ?.toLowerCase();
 
     // if we can parse a referenceId, then we check whether this event is for an existing onramp transaction
     if (isUUID(referenceId)) {
@@ -47,16 +49,20 @@ const processVirtualAccountEvent = async (event) => {
       }
 
       if (existingTransaction && !existingTransaction.bridge_deposit_id) {
-        const { error: updateTransactionError } = await supabaseCall(() =>
+        const { data: updateTransaction, error: updateTransactionError } = await supabaseCall(() =>
           supabase
             .from("onramp_transactions")
             .update({ bridge_deposit_id: deposit_id })
             .eq("id", referenceId)
+            .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
+            .single()
         );
 
         if (updateTransactionError) {
           throw updateTransactionError;
         }
+
+        await notifyFiatToCryptoTransfer(updateTransaction);
       }
 
       // dont need to process existing onramp transactions
@@ -99,9 +105,10 @@ const processVirtualAccountEvent = async (event) => {
     }
     const userId = virtualAccount.user_id;
 
-    const { error: initialRecordError } = await supabaseCall(() =>
-      supabase.from("onramp_transactions").upsert(
+    const { data: initialRecord, error: initialRecordError } = await supabaseCall(() =>
+      supabase.from("onramp_transactions").insert(
         {
+          request_id: uuidv4(),
           user_id: userId,
           amount: amount,
           destination_user_id: userId,
@@ -117,13 +124,15 @@ const processVirtualAccountEvent = async (event) => {
           fiat_provider: "MANUAL_DEPOSIT",
           crypto_provider: "BRIDGE",
           bridge_deposit_id: deposit_id,
-        },
-        { onConflict: "bridge_deposit_id" }
-      )
+          source_manual_deposit: event.source
+        }
+      ).select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
+       .single()
     );
     if (initialRecordError) {
       throw initialRecordError;
     }
+    await notifyFiatToCryptoTransfer(initialRecord);
   } catch (error) {
     await createLog(
       "webhooks/bridge/processVirtualAccountEvent",

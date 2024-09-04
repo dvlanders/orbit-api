@@ -549,9 +549,9 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 	const fields = req.query
-	const { profileId, userId, limit, createdAfter, createdBefore } = fields
+	const { profileId, userId, virtualAccountId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
+	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string", virtualAccountId: "string" }
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
@@ -565,9 +565,11 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 			(createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore))) {
 			return res.status(400).json({ error: "Invalid date range" });
 		}
+		// should move to field validation
+		if (virtualAccountId && !isUUID(virtualAccountId)) return res.status(400).json({ error: "Invalid virtualAccountId" })
 
 		// get all records
-		const records = await fetchAllFiatToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore)
+		const records = await fetchAllFiatToCryptoTransferRecord(profileId, {userId, virtualAccountId}, limit, createdAfter, createdBefore)
 		return res.status(200).json(records)
 
 	} catch (error) {
