@@ -10,6 +10,7 @@ exports.bridgeWebhook = async (req, res) => {
   // console.log(req.body);
   const {
     api_version,
+    event_sequence,
     event_id,
     event_category,
     event_type,

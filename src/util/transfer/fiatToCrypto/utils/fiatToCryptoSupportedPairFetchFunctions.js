@@ -1,4 +1,5 @@
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("../transfer/fetchCheckbookBridgeFiatToCryptoTransferRecord")
+const fetchManualDepositBridgeFiatToCryptoTransferRecord = require("../transfer/fetchManualDepositBridgeFiatToCryptoTransferRecord")
 
 const FiatToCryptoSupportedPairFetchFunctionsCheck = (cryptoProvider, fiatProvider) => {
     try{
@@ -11,6 +12,9 @@ const FiatToCryptoSupportedPairFetchFunctionsCheck = (cryptoProvider, fiatProvid
 const FiatToCryptoSupportedPairFetchFunctions = {
     CHECKBOOK:{
         BRIDGE: fetchCheckbookBridgeFiatToCryptoTransferRecord
+    },
+    MANUAL_DEPOSIT:{
+        BRIDGE: fetchManualDepositBridgeFiatToCryptoTransferRecord
     }
 }
 

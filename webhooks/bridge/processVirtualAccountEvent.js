@@ -3,6 +3,7 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
+const { v4: uuidv4 } = require("uuid");
 
 const processVirtualAccountEvent = async (event) => {
   const {
@@ -100,8 +101,9 @@ const processVirtualAccountEvent = async (event) => {
     const userId = virtualAccount.user_id;
 
     const { error: initialRecordError } = await supabaseCall(() =>
-      supabase.from("onramp_transactions").upsert(
+      supabase.from("onramp_transactions").insert(
         {
+          request_id: uuidv4(),
           user_id: userId,
           amount: amount,
           destination_user_id: userId,
@@ -117,8 +119,8 @@ const processVirtualAccountEvent = async (event) => {
           fiat_provider: "MANUAL_DEPOSIT",
           crypto_provider: "BRIDGE",
           bridge_deposit_id: deposit_id,
-        },
-        { onConflict: "bridge_deposit_id" }
+          source_manual_deposit: event.source
+        }
       )
     );
     if (initialRecordError) {
