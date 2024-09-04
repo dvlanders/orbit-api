@@ -84,10 +84,8 @@ const updateStatus = async (transaction) => {
 			
 			// if the on-chain transfer is completed, it means we can execute the payout for the Blindpay offramp
 			if(hifiOfframpTransactionStatus === 'COMPLETED_ONCHAIN' && transaction.fiat_provider === "BLINDPAY"){
-				console.log("Checking if we can schedule the Blindpay payout")
 				const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id)
 				if (canSchedule) {
-					console.log("Scheduling the Blindpay payout")
 					await createJob("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id, null)
 				}
 			}

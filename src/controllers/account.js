@@ -968,8 +968,6 @@ exports.createBlindpayReceiver = async (req, res) => {
 	const { profileId } = req.query;
 	const fields = req.body;
 
-	console.log(fields)
-
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 	
 	let receiverRecord
@@ -984,7 +982,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
-	console.log("receiverRecord: \n", receiverRecord)
+	// console.log("receiverRecord: \n", receiverRecord)
 	try {
 		const response = await createReceiver(receiverRecord)
 

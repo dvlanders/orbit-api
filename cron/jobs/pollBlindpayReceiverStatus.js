@@ -20,7 +20,6 @@ const updateStatus = async (receiver) => {
     );
 
     const responseBody = await response.json();
-    console.log(responseBody);
 
     if (!response.ok) {
       await createLog(
@@ -33,7 +32,6 @@ const updateStatus = async (receiver) => {
 
     const kyc_status = responseBody.kyc_status;
     if (receiver.kyc_status != kyc_status) {
-      console.log("Update receiver status for receiver", responseBody);
       const { error: updateError } = await supabaseCall(() =>
         supabase
           .from("blindpay_receivers_kyc")
