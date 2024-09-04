@@ -1,3 +1,4 @@
+const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService")
 const { fetchReapAccountInformation } = require("../../../account/getAccount/main/fetchReapAccount")
 const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const supabase = require("../../../supabaseClient")
@@ -8,9 +9,9 @@ const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchReque
 const fetchReapCryptoToFiatTransferRecord = async(id, profileId) => {
     // get transactio record
     const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "REAP", "BASTION")
-
     if (!record) return null
-    const accountInfo = await fetchReapAccountInformation(null, null, profileId, record.destination_account_id)
+    const account = await fetchAccountProviders(record.destination_account_id, profileId)
+    const accountInfo = await fetchReapAccountInformation(null, profileId, account.account_id)
         
     const result = {
         transferType: transferType.CRYPTO_TO_FIAT,

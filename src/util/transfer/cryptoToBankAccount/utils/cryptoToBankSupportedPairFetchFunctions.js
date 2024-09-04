@@ -41,6 +41,8 @@ const placeholder = (recordId, profileId) => {
 
 const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {
     try {
+        console.log("cryptoProvider", cryptoProvider)
+        console.log("fiatProvider", fiatProvider)
         return FetchCryptoToBankSupportedPairFunctions[cryptoProvider][fiatProvider] || FetchCryptoToBankSupportedPairFunctions.DEFAULT
     }catch (error){
         return FetchCryptoToBankSupportedPairFunctions.DEFAULT
@@ -49,13 +51,11 @@ const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {
 
 const FetchCryptoToBankSupportedPairFunctions = {
    BASTION:{
-    BRIDGE: fetchBridgeCryptoToFiatTransferRecord
+    BRIDGE: fetchBridgeCryptoToFiatTransferRecord,
+    REAP: fetchReapCryptoToFiatTransferRecord
    },
    EXTERNAL:{
     BRIDGE: fetchDirectBridgeCryptoToFiatTransferRecord
-   },
-   BASTION: {
-    REAP: fetchReapCryptoToFiatTransferRecord
    },
    DEFAULT: placeholder
 }

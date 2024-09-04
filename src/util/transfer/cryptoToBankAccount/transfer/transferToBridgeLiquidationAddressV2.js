@@ -34,7 +34,6 @@ const initTransferData = async (config) => {
 	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail } = config
 
 
-	console.log("****payment rail", paymentRail)
 
 	// get conversion rate
 	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
@@ -133,12 +132,17 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 
 	if (feeRecordError) throw feeRecordError
 
-	//get payment rail
-	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
+
 	// get account info
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
-	if (!accountInfo) throw new Error(`destinationAccountId not exist`)
+	if (!accountInfo || !accountInfo.account_id) throw new Error(`destinationAccountId not exist`)
 	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
+
+	const internalAccountId = accountInfo.account_id
+
+	// TODO: determine if we still need bridgeRailCheck here. Could we just pass the interalAccountId and destinationCurrency to the destination object which we pass to createBridgeTransfer?
+	//get payment rail
+	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(internalAccountId, destinationCurrency)
 
 	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
 	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
@@ -204,15 +208,19 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const amount = initialTransferRecord.amount
 	const sourceWalletAddress = initialTransferRecord.from_wallet_address
 	const bastionUserId = initialTransferRecord.bastion_user_id
-	//get payment rail
-	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
+
 	// get account info
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
-	if (!accountInfo) throw new Error(`destinationAccountId not exist`)
+	if (!accountInfo || !accountInfo.account_id) throw new Error(`destinationAccountId not exist`)
 	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
 
+	const internalAccountId = accountInfo.account_id
 	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
 	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
+
+
+	//get payment rail
+	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(internalAccountId, destinationCurrency)
 
 	//create transfer without fee
 	// create a bridge transfer
@@ -312,12 +320,18 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
-
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId } = config
+
+
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 
+	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
+	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
+	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
+	if (!accountInfo || !accountInfo.account_id) return { isExternalAccountExist: false, transferResult: null }
+
 	// check destination bank account information
-	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
+	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(accountInfo.account_id, destinationCurrency)
 	config.destinationUserId = destinationUserId
 	config.destinationUserBridgeId = destinationUserBridgeId
 	config.bridgeExternalAccountId = bridgeExternalAccountId

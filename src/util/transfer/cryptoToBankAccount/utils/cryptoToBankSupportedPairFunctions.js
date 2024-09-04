@@ -19,8 +19,8 @@ const CryptoToBankSupportedPairFunctions = {
 	wire: {
 		usdc: {
 			usd: {
-				transferFunc: transferToCircleWallet,
-				directWithdrawFunc: null
+				transferFunc: createTransferToBridgeLiquidationAddress,
+				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
 			},
 		}
 	},

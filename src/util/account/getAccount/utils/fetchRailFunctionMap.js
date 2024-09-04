@@ -4,62 +4,91 @@ const fetchPlaidAccountInformation = require("../main/fetchPlaidAccountInformati
 const fetchCircleAccount = require("../main/fetchCircleAccount")
 const fetchBlindpayAccount = require("../main/fetchBlindpayAccount")
 const { fetchReapAccountInformation } = require("../main/fetchReapAccount")
+const createLog = require("../../../logger/supabaseLogger")
 
-const fetchRailFunctionsMap = {
-	USD_ONRAMP_ACH: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchPlaidAccountInformation(profileId, accountId, userId, limit, createdAfter, createdBefore),
-	USD_OFFRAMP_ACH: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBridgeExternalAccountInformation("usd", profileId, accountId, userId, limit, createdAfter, createdBefore),
-	USD_OFFRAMP_WIRE: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchCircleAccount("us", profileId, accountId, userId, limit, createdAfter, createdBefore),
-	EUR_OFFRAMP_SEPA: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBridgeExternalAccountInformation("eur", profileId, accountId, userId, limit, createdAfter, createdBefore),
-	BRL_OFFRAMP_PIX: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchBlindpayAccount("brl", profileId, accountId, userId, limit, createdAfter, createdBefore),
-	HKD_OFFRAMP_FPS: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchReapAccountInformation("hkd", "fps", profileId, accountId, userId, limit, createdAfter, createdBefore),
-	USD_OFFRAMP_CHATS: async (accountId, profileId, userId, limit, createdAfter, createdBefore) => await fetchReapAccountInformation("usd", "chats", profileId, accountId, userId, limit, createdAfter, createdBefore)
+const railFunctionsMap = {
+	ONRAMP: {
+		USD: {
+			ACH: {
+				CHECKBOOK: async (accountId) => await fetchPlaidAccountInformation(null, accountId)
+			}
+		}
+	},
+	OFFRAMP:{
+		USD: {
+			ACH: {
+				BRIDGE: async (accountId) => await fetchBridgeExternalAccountInformation("usd", null, accountId)
+			},
+			WIRE: {
+				CIRCLE: async (accountId) => await fetchCircleAccount("us", null, accountId), // will be deprecated, but keep it here for now
+				BRIDGE: async (accountId) => await fetchBridgeExternalAccountInformation("usd", null, accountId)
+			},
+			CHATS: {
+				REAP: async (accountId) => await fetchReapAccountInformation("usd", null, accountId)
+			}
+		},
+		EUR: {
+			SEPA: {
+				BRIDGE: async (accountId) => await fetchBridgeExternalAccountInformation("eur", null, accountId)
+			}
+		},
+		BRL: {
+			PIX: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount("BRL", null, accountId)
+			}
+		},
+		HKD: {
+			FPS:{
+				REAP: async (accountId) => await fetchReapAccountInformation("hkd", null, accountId)
+			}
+		}
+	},
 }
 
 /**
- * Generates a composite key for the rail.
- * Only allow these rail key combinations: currency, railType, currency_railType, railType_paymentRail, currency_railType_paymentRail
- * @param {string} currency - currency of the rail. Eg. usd, eur, brl
- * @param {string} railType - type of the rail. Eg. onramp, offramp
- * @param {string} paymentRail - payment rail. Eg. ach, wire, sepa, pix
- * @returns {string} - composite key. Eg. USD_ONRAMP_ACH
+ * 	
+ * Get the function to fetch account information based on the currency, railType, paymentRail, and provider.
+ * 
+ * @param {string} currency - The currency of the account
+ * @param {string} railType - The rail type of the account
+ * @param {string} paymentRail - The payment rail of the account
+ * @param {string} provider - The provider of the account
+ * @returns {Function} - The function to fetch account information
  */
-const generateRailCompositeKey = (currency, railType, paymentRail) => {
-	if(currency && !railType) return currency.toUpperCase();
-	if(!currency && railType && !paymentRail) return railType.toUpperCase();
-	if(currency && railType && !paymentRail) return `${currency}_${railType}`.toUpperCase();
-	if(!currency && railType && paymentRail) return `${railType}_${paymentRail}`.toUpperCase();
-	if(currency && railType && paymentRail) return `${currency}_${railType}_${paymentRail}`.toUpperCase();
-	return ""
+const getRailFunction = (currency, railType, paymentRail, provider) => {
+
+	if(!currency || !railType || !paymentRail || !provider) return null;
+	currency = currency.toUpperCase();
+	railType = railType.toUpperCase();
+	paymentRail = paymentRail.toUpperCase();
+	provider = provider.toUpperCase();
+
+	const func = railFunctionsMap[railType]?.[currency]?.[paymentRail]?.[provider];
+
+	// not supposed to happen
+	if(!func) throw new Error(`No function found for ${currency} ${railType} ${paymentRail} ${provider}`);
+
+	return func;
 }
 
-/**
- * Validates if the key is a valid composite key for the rail.
- * @param {string} key - composite key
- * @returns {boolean} - true if valid, false otherwise
- */
-const validateRailCompositeKey = (key) => {
-    const regex = new RegExp(key, 'i');
-    return Object.keys(fetchRailFunctionsMap).some(mapKey => regex.test(mapKey));
-}
+const accountInfoAggregator = async (funcs) => {
+        
+	const results = await Promise.all(Object.keys(funcs).map(async (key) => {
+            const { func, accountId, currency, railType, paymentRail } = funcs[key];
+            let accountInfo = await func(accountId); // this will always be one account object
 
-const accountInfoAggregator = (funcs) => (async (accountId, profileId, userId, limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
-        const results = await Promise.all(Object.keys(funcs).map(async (key) => {
-            const func = funcs[key];
-            let accountInfo = await func(accountId, profileId, userId, limit, createdAfter, createdBefore);
-			if(!accountInfo)return { count: 0, banks: [] };
-			if(!accountInfo.hasOwnProperty('count')) accountInfo = { count: 1, banks: [accountInfo] };
-			const [currency, railType, paymentRail] = key.toLowerCase().split('_');
-            const banksWithRail = accountInfo.banks.map(bank => ({
-                ...bank,
-                rail: {
-            		currency,
-            		railType,
-            		paymentRail
-        		}
-            }));
+			if(!accountInfo) throw new Error(`No account found for accountId ${accountId}`);
+			
+			accountInfo.accountId = key;
+			accountInfo.rail = {
+				currency,
+				railType,
+				paymentRail				
+			}
+
             return {
-                count: accountInfo.count,
-                banks: banksWithRail
+                count: 1,
+                banks: [accountInfo]
             };
             
         }));
@@ -69,32 +98,33 @@ const accountInfoAggregator = (funcs) => (async (accountId, profileId, userId, l
 			return acc;
 		}, []);
 
-		// TODO: can get top 'limit' banks in O(limit) with min-heap, but this works for now
-		allBanks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-		const topBanks = allBanks.slice(0, limit);
-
         return {
-			count: topBanks.length,
-			banks: topBanks
+			count: allBanks.length,
+			banks: allBanks
 		};
     
-	})
+}
 
 /**
- * Returns an aggregator function that aggregates the account info results from multiple rail function calls
- * @param {string} railKey - key to match the rail functions. Will do a substring match.
- * @returns {function} - aggregator function
+ * 
+ * Get the account information for the given accounts
+ * 
+ * @param {Array<Object>} accounts - The accounts to get information for
+ * @returns {Object} - The accounts information
  */
-const getFetchRailFunctions = (railKey) => {
-	const regex = new RegExp(railKey, 'i');
-    const funcs = Object.keys(fetchRailFunctionsMap)
-        .filter(key => regex.test(key))
-        .reduce((acc, key) => {
-            acc[key] = fetchRailFunctionsMap[key];
-            return acc;
-        }, {});
-
-	return accountInfoAggregator(funcs);
+const getAccountsInfo = async (accounts) => {
+	const funcs = accounts.reduce((acc, account) => {
+		const obj = {
+			func: getRailFunction(account.currency, account.rail_type, account.payment_rail, account.provider),
+			accountId: account.account_id,
+			currency: account.currency,
+			railType: account.rail_type,
+			paymentRail: account.payment_rail,
+		}
+		acc[account.id] = obj;
+		return acc;
+		}, {});
+	return await accountInfoAggregator(funcs);
 }
 
 const getFetchOnRampVirtualAccountFunctions = (rail, destinationCurrency, destinationChain) => {
@@ -127,9 +157,6 @@ const fetchOnRampVirtualAccountFunctionsMap = {
 }
 
 module.exports = {
-	fetchRailFunctionsMap,
+	getAccountsInfo,
 	getFetchOnRampVirtualAccountFunctions,
-	getFetchRailFunctions,
-	generateRailCompositeKey,
-	validateRailCompositeKey
 }

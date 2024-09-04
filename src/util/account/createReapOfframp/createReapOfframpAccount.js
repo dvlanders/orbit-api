@@ -1,4 +1,4 @@
-const { generateRailCompositeKey, getFetchRailFunctions } = require("../getAccount/utils/fetchRailFunctionMap")
+const { generateRailCompositeKey, getFetchRailFunctions, getAccountsInfo } = require("../getAccount/utils/fetchRailFunctionMap")
 const createLog = require("../../logger/supabaseLogger")
 const supabase = require("../../supabaseClient")
 
@@ -76,9 +76,8 @@ const createReapOfframpAccount = async(config) => {
         .select("*")
         .single()
     if (accountProviderError) throw accountProviderError
-    const railKey = generateRailCompositeKey(currency, "offramp", network)
-    const func = getFetchRailFunctions(railKey);
-	let accountInfo = await func(accountProvider.id)
+
+    let accountInfo = await getAccountsInfo([accountProvider]);
     return accountInfo.banks[0]
 }
 
