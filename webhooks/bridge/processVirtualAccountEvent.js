@@ -27,7 +27,7 @@ const processVirtualAccountEvent = async (event) => {
 
   try {
     const referenceId = description
-      .split(" ")
+      ?.split(" ")
       .slice(-5)
       .join("-")
       .toLowerCase();
