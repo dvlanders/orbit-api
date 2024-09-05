@@ -18,7 +18,6 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 		if (key == "originProfileId") return
 		if (key == "profileEmail") return
 
-
 		if (!(key in acceptedFields)) {
 			invalidFields.push(key);
 			return; // Skip further checks if field is not accepted
@@ -26,18 +25,21 @@ const fieldsValidation = (fields, requiredFields, acceptedFields) => {
 
 		const expectedType = acceptedFields[key];
 		const actualType = Array.isArray(fields[key]) ? "array" : typeof fields[key];
-		if (Array.isArray(expectedType) && !expectedType.includes(actualType)) {
+		if (typeof expectedType == "function") {
+			if (!expectedType(fields[key])) {
+				invalidFields.push(key);
+			}
+
+		}else if (Array.isArray(expectedType) && !expectedType.includes(actualType)) {
 			console.log(`Invalid type for field: ${key}, expected: ${expectedType}, got: ${actualType}`);
 			invalidFields.push(key);
-		}
 
-		if (typeof expectedType == "string" && actualType !== expectedType) {
+		}else if (typeof expectedType == "string" && actualType !== expectedType) {
 			console.log(`Invalid type for field: ${key}, expected: ${expectedType}, got: ${actualType}`);
 			invalidFields.push(key);
 			console.log('invalid fields', key, invalidFields)
 		}
 	});
-
 	return { missingFields, invalidFields };
 };
 
@@ -51,6 +53,7 @@ const isValidISODateFormat = (dateString) => {
 	const date = new Date(dateString);
 	return isoDateRegex.test(dateString) && !isNaN(date.getTime());
 }
+
 
 module.exports = {
 	isUUID,

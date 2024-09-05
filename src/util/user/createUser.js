@@ -1,5 +1,6 @@
 const { sanctionedCountries, allowedUsState } = require("../bastion/utils/restrictedArea");
 const { fieldsValidation } = require("../common/fieldsValidation");
+const { isValidDate, isValidEmail, isValidState, isValidCountryCode, isValidUrl, isValidIPv4, inStringEnum } = require("../common/filedValidationCheckFunctions");
 const createLog = require("../logger/supabaseLogger");
 const { uploadFileFromUrl, fileUploadErrorType } = require("../supabase/fileUpload");
 const supabase = require("../supabaseClient");
@@ -15,6 +16,7 @@ const individualRequiredFields = [
 	"dateOfBirth",
 	"taxIdentificationNumber",
 	"govIdCountry",
+	"govIdFront",
 	"country",
 	"addressLine1",
 	"city",
@@ -24,41 +26,77 @@ const individualRequiredFields = [
 	"ipAddress"
 ];
 
-
-
 const individualAcceptedFields = {
 	"legalFirstName": "string",
 	"legalLastName": "string",
-	"dateOfBirth": "string",
-	"complianceEmail": "string",
+	"dateOfBirth": (value) => isValidDate(value),
+	"complianceEmail": (value) => isValidEmail(value),
 	"compliancePhone": "string",
 	"addressLine1": "string",
 	"addressLine2": "string",
 	"city": "string",
-	"stateProvinceRegion": "string",
+	"stateProvinceRegion": (value) => isValidState(value),
 	"postalCode": "string",
-	"country": "string",
+	"country": (value) => isValidCountryCode(value),
 	"addressType": "string",
 	"taxIdentificationNumber": "string",
 	"idType": "string",
-	"proofOfResidency": "string",
-	"govIdFront": "string",
-	"govIdBack": "string",
-	"govIdCountry": "string",
-	"proofOfOwnership": "string",
-	"formationDoc": "string",
+	"proofOfResidency": (value) => isValidUrl(value),
+	"govIdFront": (value) => isValidUrl(value),
+	"govIdBack": (value) => isValidUrl(value),
+	"govIdCountry": (value) => isValidCountryCode(value),
+	"proofOfOwnership": (value) => isValidUrl(value),
+	"formationDoc": (value) => isValidUrl(value),
 	"businessName": "string",
 	"businessDescription": "string",
-	"businessType": "string",
-	"website": "string",
+	"businessType": (value) => inStringEnum(value, ["cooperative", "corporation", "llc", "partnership", "sole_prop", "trust", "other"]),
+	"website": (value) => isValidUrl(value),
 	"statementOfFunds": "string",
 	"isDao": "boolean",
 	"transmitsCustomerFunds": "boolean",
 	"complianceScreeningExplanation": "string",
-	"ipAddress": "string",
+	"ipAddress": (value) => isValidIPv4(value),
 	"signedAgreementId": "string",
 	"userType": "string"
 };
+
+const UBORequiredFields = [
+	"legalFirstName",
+	"legalLastName",
+	"complianceEmail",
+	"compliancePhone",
+	"dateOfBirth",
+	"taxIdentificationNumber",
+	"govIdCountry",
+	"govIdFront",
+	"country",
+	"addressLine1",
+	"city",
+	"postalCode",
+	"stateProvinceRegion",
+];
+
+const UBOAcceptedFields = {
+	"legalFirstName": "string",
+	"legalLastName": "string",
+	"dateOfBirth": (value) => isValidDate(value),
+	"complianceEmail": (value) => isValidEmail(value),
+	"compliancePhone": "string",
+	"addressLine1": "string",
+	"addressLine2": "string",
+	"city": "string",
+	"stateProvinceRegion": (value) => isValidState(value),
+	"postalCode": "string",
+	"country": (value) => isValidCountryCode(value),
+	"taxIdentificationNumber": "string",
+	"idType": "string",
+	"proofOfResidency": (value) => isValidUrl(value),
+	"govIdFront": (value) => isValidUrl(value),
+	"govIdBack": (value) => isValidUrl(value),
+	"govIdCountry": (value) => isValidCountryCode(value),
+};
+
+
 
 const businessRequiredFields = [
 	"userType",
@@ -88,37 +126,37 @@ const businessRequiredFields = [
 const businessAcceptedFields = {
 	"legalFirstName": "string",
 	"legalLastName": "string",
-	"dateOfBirth": "string",
-	"complianceEmail": "string",
+	"dateOfBirth": (value) => isValidDate(value),
+	"complianceEmail": (value) => isValidEmail(value),
 	"compliancePhone": "string",
 	"addressLine1": "string",
 	"addressLine2": "string",
 	"city": "string",
-	"stateProvinceRegion": "string",
+	"stateProvinceRegion": (value) => isValidState(value),
 	"postalCode": "string",
-	"country": "string",
+	"country": (value) => isValidCountryCode(value),
 	"addressType": "string",
 	"taxIdentificationNumber": "string",
 	"idType": "string",
-	"proofOfResidency": "string",
-	"govIdFront": "string",
-	"govIdBack": "string",
-	"govIdCountry": "string",
-	"proofOfOwnership": "string",
-	"formationDoc": "string",
+	"proofOfResidency": (value) => isValidUrl(value),
+	"govIdFront": (value) => isValidUrl(value),
+	"govIdBack": (value) => isValidUrl(value),
+	"govIdCountry": (value) => isValidCountryCode(value),
+	"proofOfOwnership": (value) => isValidUrl(value),
+	"formationDoc": (value) => isValidUrl(value),
 	"businessName": "string",
 	"businessDescription": "string",
-	"businessType": "string",
-	"website": "string",
+	"businessType": (value) => inStringEnum(value, ["cooperative", "corporation", "llc", "partnership", "sole_prop", "trust", "other"]),
+	"website": (value) => isValidUrl(value),
 	"sourceOfFunds": "string",
 	"statementOfFunds": "string",
 	"isDao": "boolean",
 	"transmitsCustomerFunds": "boolean",
 	"complianceScreeningExplanation": "string",
-	"ipAddress": "string",
+	"ipAddress": (value) => isValidIPv4(value),
 	"signedAgreementId": "string",
 	"userType": "string",
-	"ultimateBeneficialOwners": "array"
+	"ultimateBeneficialOwners": (value) => Array.isArray(value) && value.length > 0
 
 };
 
@@ -213,8 +251,20 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	// check if required fields are uploaded and validate field values
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
 	if (missingFields.length > 0 || invalidFields.length > 0) {
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields });
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
 	}
+
+	// check if the ultimate beneficial owners are valid
+	if (fields.userType == "business") {
+		fields.ultimateBeneficialOwners.map((owner, index) => {
+			// check UBO field values
+			const { missingFields, invalidFields } = fieldsValidation(owner, UBORequiredFields, UBOAcceptedFields);
+			if (missingFields.length > 0 || invalidFields.length > 0) {
+				throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Fields of ultimateBeneficialOwner[${index}] provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
+			}
+		})
+	}
+
 
 	// Create new user
 	let userId;
@@ -417,6 +467,10 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 			if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 				throw new InformationUploadError(error.type, 400, "", { error: error.message })
 			}
+
+			if (error.type && error.type == InformationUploadErrorType.INVALID_FIELD) {
+				throw error
+			}
 			// internal server error
 			throw new InformationUploadError(InformationUploadErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" })
 
@@ -449,7 +503,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 	// check if the field that is passsed is a valid field that we allow updates on
 	const { missingFields, invalidFields } = fieldsValidation(fields, [], acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
-		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 	}
 
 	// STEP 1: Save the updated fields to the user_kyc table

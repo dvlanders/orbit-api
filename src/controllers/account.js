@@ -18,6 +18,7 @@ const { stringify } = require('querystring');
 const { virtualAccountPaymentRailToChain } = require('../util/bridge/utils');
 const { account } = require('.');
 const { create } = require('lodash');
+const { isInRange, isValidDate, inStringEnum, isHIFISupportedChain, isValidEmail, isValidUrl } = require('../util/common/filedValidationCheckFunctions');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -37,7 +38,7 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 	const acceptedFields = { plaidProcessorToken: "string", bankName: "string", accountType: "string", createVirtualAccount: "boolean" };
 	const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) {
-		return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 	}
 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 	const checkbookAccountResult = await createCheckbookBankAccountWithProcessorToken(userId, accountType, plaidProcessorToken, bankName);
@@ -122,7 +123,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 
 	// Define accepted fields and their types
 	const bridgeRequestStructureTyping = {
-		userId: 'string',
+		userId: (value) => isUUID(value),
 		currency: 'string',
 		bankName: 'string',
 		accountOwnerName: 'string',
@@ -140,15 +141,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	// Validate fields
 	const { missingFields, invalidFields } = fieldsValidation({ ...req.body, userId }, requiredFields, bridgeRequestStructureTyping);
 
-	if (missingFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
-
-	if (invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Invalid fields', invalidFields });
-	}
-	let accountProviderRecord
-
 	try {
 		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({
@@ -276,7 +271,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 	// Define accepted fields and their types
 	const bridgeRequestStructureTyping = {
-		userId: 'string',
+		userId: (value) => isUUID(value),
 		currency: 'string',
 		bankName: 'string',
 		accountOwnerName: 'string',
@@ -423,11 +418,11 @@ exports.getAccount = async (req, res) => {
 	const { accountId, profileId } = req.query;
 
 	const requiredFields = ["accountId"]
-	const acceptedFields = { accountId: "string" }
+	const acceptedFields = { accountId: (value) => isUUID(value) }
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		if (!isUUID(accountId)) return res.status(400).json({ error: 'Invalid accountId' });
 
 		const account = await fetchAccountProviders(accountId, profileId); // returns an account object
@@ -459,11 +454,19 @@ exports.getAllAccounts = async (req, res) => {
 	if (!currency && !railType) {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
-	const acceptedFields = { currency: "string", currency: "string", railType: "string", paymentRail: "string", limit: "string", createdAfter: "string", createdBefore: "string", userId: "string" }
+	const acceptedFields = { 
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]), 
+		railType: (value) => inStringEnum(value, ["onramp", "offramp"]), 
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps"]), 
+		limit: (value) => isInRange(value, 1, 100), 
+		createdAfter: (value) => isValidDate(value), 
+		createdBefore: (value) => isValidDate(value), 
+		userId: (value) => isUUID(value) 
+	}
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 
 		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
@@ -488,7 +491,11 @@ exports.activateOnRampRail = async (req, res) => {
 	let { rail, destinationCurrency, destinationChain } = fields
 	// fields validation
 	const requiredFields = ["rail"]
-	const acceptedFields = { "rail": "string", "destinationCurrency": "string", "destinationChain": "string" }
+	const acceptedFields = { 
+		"rail": (value) => inStringEnum(value, ["US_ACH_WIRE"]), 
+		"destinationCurrency": (value) => inStringEnum(value, ["usdc", "usdt"]), 
+		"destinationChain": (value) => isHIFISupportedChain(value) 
+	}
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields });
@@ -842,17 +849,16 @@ exports.getVirtualAccount = async (req, res) => {
 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
 	const acceptedFields = {
 		profileId: "string",
-		rail: "string",
-		destinationCurrency: "string",
-		userId: "string",
-		destinationChain: "string",
-		limit: "string",
-		createdBefore: "string",
-		createdAfter: "string"
+		rail: (value) => inStringEnum(value, ["US_ACH_WIRE"]),
+		destinationCurrency: (value) => inStringEnum(value, ["usdc", "usdt"]),
+		userId: (value) => isUUID(value),
+		destinationChain: (value) => isHIFISupportedChain(value),
+		limit: (value) => isInRange(value, 1, 100),
+		createdBefore: (value) => isValidISODateFormat(value),
+		createdAfter: (value) => isValidISODateFormat(value)
 	}
 
 	try {
-		if (parseInt(limit) <= 0 || parseInt(limit) > 100) return res.status(400).json({ error: "Limit should be between 1 to 100" })
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
@@ -867,36 +873,6 @@ exports.getVirtualAccount = async (req, res) => {
 	}
 
 }
-
-// exports.getVirtualAccountMicroDepositInstructions = async (req, res) => {
-// 	if (req.method !== 'GET') {
-// 		return res.status(405).json({ error: 'Method not allowed' });
-// 	}
-// 	const fields = req.query
-// 	const { profileId, rail, destinationCurrency, destinationChain, userId } = fields
-// 	const requiredFields = ["profileId", "rail", "destinationCurrency", "userId", "destinationChain"]
-// 	const acceptedFields = {
-// 		profileId: "string",
-// 		rail: "string",
-// 		destinationCurrency: "string",
-// 		userId: "string",
-// 		destinationChain: "string"
-// 	}
-
-// 	try {
-// 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-// 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
-// 		const fetchFunc = getFetchOnRampVirtualAccountFunctions(rail, destinationCurrency, destinationChain)
-// 		if (!fetchFunc) return res.status(400).json({ message: "Rail is not yet available" })
-// 		const despositInformation = await fetchFunc(userId)
-// 		if (!despositInformation) return res.status(404).json({ message: "Rail is not yet activated, please use POST account/activateOnRampRail to activate required rail first" })
-// 		return res.status(200).json(despositInformation)
-
-// 	} catch (error) {
-// 		await createLog("account/getVirtualAccount", userId, error.message, error)
-// 		return res.status(500).json({ error: "Unexpected error happened" })
-// 	}
-// }
 
 exports.createBlindpayBankAccount = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -921,14 +897,9 @@ exports.createBlindpayBankAccount = async (req, res) => {
 
 	// Execute fields validation
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
-
-	if (invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Invalid fields', invalidFields });
-	}
-
 
 	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
@@ -1039,22 +1010,16 @@ exports.createBlindpayReceiver = async (req, res) => {
 	];
 
 	const acceptedFields = {
-		'email': "string", 'tax_id': "string", 'type': "string", 'address_line_1': "string", 'address_line_2': "string",
-		'city': "string", 'state_province_region': "string", 'country': "string", 'postal_code': "string", 'image_url': "string",
-		'userId': "string", "firstName": "string", "lastName": "string", "dateOfBirth": "string"
+		'email': (value) => isValidEmail(value), 'tax_id': "string", 'type': "string", 'address_line_1': "string", 'address_line_2': "string",
+		'city': "string", 'state_province_region': "string", 'country': (value) => value.length === 2, 'postal_code': "string", 'image_url': (value) => isValidUrl(value),
+		'userId': (value) => isUUID(value), "firstName": "string", "lastName": "string", "dateOfBirth": (value) => isValidDate(value)
 	};
 
 	// Execute fields validation
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields });
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
-
-	if (invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Invalid fields', invalidFields });
-	}
-
-	if (fields.dateOfBirth && !isValidISODateFormat(fields.dateOfBirth)) return res.status(400).json({ error: "Invalid date of birth" });
 
 	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "UserId not found" })
 
@@ -1162,23 +1127,15 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 
 	const acceptedFields = {
 		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
-		'lastName': "string", 'businessName': "string", 'accountOwnerType': "string", 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
-		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": "string"
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
+		'accountType': (value) => inStringEnum(value, ["us", "iban"])
 	};
 
 	// Execute fields validation
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields });
-	}
-
-	if (invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Invalid fields', invalidFields });
-	}
-
-	// make sure that accountType is either us or iban
-	if (!['us', 'iban'].includes(accountType)) {
-		return res.status(400).json({ error: 'The accountType must be passed as "us" or "iban' });
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
 
 	// if the accountOwnerType is business, make sure that the businessName is provided. if individual, then make sure that the firstName and lastName are provided
