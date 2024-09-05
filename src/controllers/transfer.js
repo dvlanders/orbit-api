@@ -738,7 +738,7 @@ exports.acceptQuoteTypeCryptoToFiatTransfer = async(req, res) => {
 		const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId)
 		if (!record) return res.status(400).json({error: `No quote found for id: ${id}`})
 		// check if transaction is OPEN_QUOTE
-		// if (record.transaction_status != "OPEN_QUOTE") return res.status(200).json({error: `Expired or invalid quote`})
+		if (record.transaction_status != "OPEN_QUOTE") return res.status(200).json({error: `Expired or invalid quote`})
 
 		// get account Info
 		const accountInfo = await fetchAccountProviders(record.destination_account_id, profileId)
