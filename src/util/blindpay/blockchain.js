@@ -11,6 +11,10 @@ const getBlindpayChain = (chain) => {
   return blindpayChain;
 };
 
+const getBlindpayToken = () => {
+  return process.env.NODE_ENV == "development" ? "USDB" : "USDC";
+}
+
 const blindpayContractAddressMapping = {
   POLYGON_MAINNET: {
     usdc: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // registered
@@ -33,5 +37,6 @@ const getBlindpayContractAddress = (chain, currency) => {
 };
 module.exports = {
   getBlindpayChain,
+  getBlindpayToken,
   getBlindpayContractAddress,
 };

@@ -8,7 +8,11 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
     if (!record) return null;
 
     const bankAccountInfo = await getBankAccountInfo(record.to_blindpay_account_id);
-
+    const conversionRate = record.conversion_rate;
+    if (conversionRate) {
+        delete conversionRate.id;
+        delete conversionRate.expires_at;
+    }
     const result = {
         transferType: transferType.CRYPTO_TO_FIAT,
         transferDetails: {
@@ -40,7 +44,7 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
                 transactionHash: record.developer_fees.transaction_hash,
                 failedReason: record.developer_fees.failed_reason
             } : null,
-            conversionRate: record.conversion_rate
+            conversionRate: conversionRate
         }
     }
 

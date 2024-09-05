@@ -13,7 +13,7 @@ const blindpayRailCheck = async (globalAccountId) => {
     );
   if (blindpayAccountError) throw blindpayAccountError;
   if (!blindpayAccountData || !blindpayAccountData.blindpay_account_id)
-    return { isExternalAccountExist: false, blindpayAccountId: null };
+    return { isExternalAccountExist: false, blindpayAccountId: null, destinationUserId: null };
 
   return {
     isExternalAccountExist: true,
