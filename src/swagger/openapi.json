@@ -867,6 +867,13 @@
         "type": "object",
         "title": "USD Offramp Wire to US Bank Account",
         "properties": {
+          "accountType": {
+            "type": "string",
+            "enum": [
+              "us",
+              "iban"
+            ]
+          },
           "currency": {
             "type": "string",
             "description": "Currency denomination of the destination bank account. Must be usd.",
@@ -940,6 +947,7 @@
           }
         },
         "required": [
+          "accountType",
           "currency",
           "bankName",
           "accountOwnerName",
@@ -957,6 +965,13 @@
         "type": "object",
         "title": "USD Offramp Wire to Non-US Bank Account",
         "properties": {
+          "accountType": {
+            "type": "string",
+            "enum": [
+              "us",
+              "iban"
+            ]
+          },
           "currency": {
             "type": "string",
             "enum": [
@@ -1035,6 +1050,7 @@
           }
         },
         "required": [
+          "accountType",
           "currency",
           "bankName",
           "accountOwnerName",
@@ -4916,9 +4932,6 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/UserIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/AccountTypeParameter"
           }
         ],
         "requestBody": {

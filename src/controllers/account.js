@@ -1136,7 +1136,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 }
 
 
-exports.createAPACOfframpDestination = async(req, res) => {
+exports.createAPACOfframpDestination = async (req, res) => {
 
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -1166,7 +1166,7 @@ exports.createAPACOfframpDestination = async(req, res) => {
 		city,
 		postalCode,
 		network
-	  } = fields
+	} = fields
 
 	const requiredFields = [
 		"recipientType",
@@ -1207,24 +1207,24 @@ exports.createAPACOfframpDestination = async(req, res) => {
 		city: "string",
 		postalCode: "string",
 		network: "string"
-	  };
-	
-	try{
+	};
 
-		const {invalidFields, missingFields} = fieldsValidation(fields, requiredFields, acceptedFields)
+	try {
+
+		const { invalidFields, missingFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0) {
 			return res.status(400).json({ error: 'Missing required fields', missingFields });
 		}
-	
+
 		if (invalidFields.length > 0) {
 			return res.status(400).json({ error: 'Invalid fields', invalidFields });
 		}
-		if (recipientType != "company") return res.status(400).json({ error: 'Only company is allowed to create HK offramp for now'});
-		if (recipientType == "company" && !companyName) return res.status(400).json({ error: 'companyName is missing'});
-		if (recipientType == "individual" && (!firstName || !lastName)) return res.status(400).json({ error: 'firstName or lastName is missing'});
-		if (!networkCheck(network, currency)) return res.status(400).json({error: "Currency and network not matched"})
-		if (!basicReapAccountInfoCheck(fields)) return res.status(400).json({error: "Invalid banking information"})
-		const account = await createReapOfframpAccount({...fields, userId})
+		if (recipientType != "company") return res.status(400).json({ error: 'Only company is allowed to create HK offramp for now' });
+		if (recipientType == "company" && !companyName) return res.status(400).json({ error: 'companyName is missing' });
+		if (recipientType == "individual" && (!firstName || !lastName)) return res.status(400).json({ error: 'firstName or lastName is missing' });
+		if (!networkCheck(network, currency)) return res.status(400).json({ error: "Currency and network not matched" })
+		if (!basicReapAccountInfoCheck(fields)) return res.status(400).json({ error: "Invalid banking information" })
+		const account = await createReapOfframpAccount({ ...fields, userId })
 		let accountInfo = {
 			status: "ACTIVE",
 			invalidFields: [],
@@ -1233,9 +1233,9 @@ exports.createAPACOfframpDestination = async(req, res) => {
 		};
 		return res.status(200).json(accountInfo)
 
-	}catch (error){
+	} catch (error) {
 		await createLog("account/createHKOfframpDestination", userId, error.message, error)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 
@@ -1244,9 +1244,9 @@ exports.createAPACOfframpDestination = async(req, res) => {
 
 
 exports.createInternationalWireOfframpDestination = async (req, res) => {
-	const { userId, profileId, accountType } = req.query;
+	const { userId, profileId } = req.query;
 	const {
-		currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
 		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
 		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
 	} = req.body;
@@ -1261,11 +1261,11 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	// verify required fields
 
 	const requiredFields = [
-		'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'city', 'state', 'postalCode', "country"
+		'accountType', 'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'city', 'state', 'postalCode', "country"
 	];
 
 	const acceptedFields = {
-		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
+		'accountType': "string", 'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
 		'lastName': "string", 'businessName': "string", 'accountOwnerType': "string", 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": "string"
 	};
