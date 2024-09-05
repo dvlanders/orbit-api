@@ -3,6 +3,8 @@ const fetchBridgeVirtualAccount = require("../main/fetchBridgeVirtualAccount")
 const fetchPlaidAccountInformation = require("../main/fetchPlaidAccountInformation")
 const fetchCircleAccount = require("../main/fetchCircleAccount")
 const fetchBlindpayAccount = require("../main/fetchBlindpayAccount")
+const { fetchReapAccountInformation } = require("../main/fetchReapAccount")
+const createLog = require("../../../logger/supabaseLogger")
 
 const railFunctionsMap = {
 	ONRAMP: {
@@ -20,6 +22,9 @@ const railFunctionsMap = {
 			WIRE: {
 				CIRCLE: async (accountId) => await fetchCircleAccount("us", null, accountId), // will be deprecated, but keep it here for now
 				BRIDGE: async (accountId) => await fetchBridgeExternalAccountInformation("usd", null, accountId)
+			},
+			CHATS: {
+				REAP: async (accountId) => await fetchReapAccountInformation("usd", null, accountId)
 			}
 		},
 		EUR: {
@@ -30,6 +35,11 @@ const railFunctionsMap = {
 		BRL: {
 			PIX: {
 				BLINDPAY: async (accountId) => await fetchBlindpayAccount("BRL", null, accountId)
+			}
+		},
+		HKD: {
+			FPS:{
+				REAP: async (accountId) => await fetchReapAccountInformation("hkd", null, accountId)
 			}
 		}
 	},

@@ -19,6 +19,7 @@ const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { regsiterFeeWallet } = require("../util/smartContract/registerWallet/registerFeeWallet");
 const { isFeeWalletRegistered } = require("../util/smartContract/registerWallet/checkFeeWalletIsRegistered");
 const supabaseSandbox = require("../util/sandboxSupabaseClient");
+const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -327,4 +328,75 @@ exports.testGetVirtualAccountAmount = async(req, res) => {
         return res.status(500).json({error: "error"})
     }
 
+}
+
+exports.testReapAccount = async(req, res) => {
+    try{
+        // const responseBody = await getUserReapWalletAddress("", process.env.REAP_API_KEY, process.env.REAP_BUSINESS_UUID)
+        const requestBody = {
+            "receivingParty": {
+                "type": "company",
+                "name": {
+                    "name": "HK testing company"
+                },
+                "accounts": [
+                    {
+                        "type": "bank",
+                        "identifier": {
+                            "standard": "fps_id",
+                            "value": "8882312"
+                        },
+                        "network": "FPS",
+                        "currencies": [
+                            "HKD"
+                        ],
+                        "provider": {
+                            "name": "HSBC HK",
+                            "country": "HK",
+                            "networkIdentifier": "004"
+                        },
+                        "addresses": [
+                            {
+                                "type": "postal",
+                                "street": "Flat A, 2/F, Beauty Avenue",
+                                "city": "Quarry Bay",
+                                "state": "HK Island",
+                                "country": "HK",
+                                "postalCode": "999077"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "payment": {
+                "receivingAmount": 200.007,
+                "receivingCurrency": "HKD",
+                "senderCurrency": "USDC",
+                "description": "Test payment",
+                "purposeOfPayment": "payment_for_goods"
+            }
+        }
+
+        const url = `${process.env.REAP_URL}/payments`
+        console.log(url)
+        const headers = {
+            "accept": "application/json",
+            "content-type": "application/json;schema=PAAS",
+            "x-reap-api-key": process.env.REAP_API_KEY,
+            "x-reap-entity-id": process.env.REAP_BUSINESS_UUID
+        }
+        const options = {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody)
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+    
+        return res.status(200).json(responseBody)
+
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
 }

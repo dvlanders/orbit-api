@@ -1,0 +1,3 @@
+const calculateAmount = async(stableCoinAmount) => {
+    
+}

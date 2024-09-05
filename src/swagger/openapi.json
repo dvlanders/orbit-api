@@ -867,6 +867,13 @@
         "type": "object",
         "title": "USD Offramp Wire to US Bank Account",
         "properties": {
+          "accountType": {
+            "type": "string",
+            "enum": [
+              "us",
+              "iban"
+            ]
+          },
           "currency": {
             "type": "string",
             "description": "Currency denomination of the destination bank account. Must be usd.",
@@ -940,6 +947,7 @@
           }
         },
         "required": [
+          "accountType",
           "currency",
           "bankName",
           "accountOwnerName",
@@ -957,6 +965,13 @@
         "type": "object",
         "title": "USD Offramp Wire to Non-US Bank Account",
         "properties": {
+          "accountType": {
+            "type": "string",
+            "enum": [
+              "us",
+              "iban"
+            ]
+          },
           "currency": {
             "type": "string",
             "enum": [
@@ -1035,6 +1050,7 @@
           }
         },
         "required": [
+          "accountType",
           "currency",
           "bankName",
           "accountOwnerName",
@@ -2334,14 +2350,14 @@
               "ConversionRate": {
                 "type": "object",
                 "properties": {
-                  "vaildFrom": {
+                  "validFrom": {
                     "type": "string",
                     "format": "date-time"
                   },
                   "toCurrency": {
                     "type": "string"
                   },
-                  "vaildUntil": {
+                  "validUntil": {
                     "type": "string",
                     "format": "date-time"
                   },
@@ -2414,9 +2430,9 @@
               "failedReason": null
             },
             "conversionRate": {
-              "vaildFrom": "2024-08-11T03:35:30.809Z",
+              "validFrom": "2024-08-11T03:35:30.809Z",
               "toCurrency": "usd",
-              "vaildUntil": "2024-08-11T03:36:00.809Z",
+              "validUntil": "2024-08-11T03:36:00.809Z",
               "fromCurrency": "usdc",
               "conversionRate": 1
             }
@@ -2823,9 +2839,9 @@
               "failedReason": null
             },
             "conversionRate": {
-              "vaildFrom": "2024-08-11T03:35:30.809Z",
+              "validFrom": "2024-08-11T03:35:30.809Z",
               "toCurrency": "usd",
-              "vaildUntil": "2024-08-11T03:36:00.809Z",
+              "validUntil": "2024-08-11T03:36:00.809Z",
               "fromCurrency": "usdc",
               "conversionRate": 1
             }
@@ -3343,9 +3359,9 @@
                   "failedReason": null
                 },
                 "conversionRate": {
-                  "vaildFrom": "2024-08-11T03:35:30.809Z",
+                  "validFrom": "2024-08-11T03:35:30.809Z",
                   "toCurrency": "usd",
-                  "vaildUntil": "2024-08-11T03:36:00.809Z",
+                  "validUntil": "2024-08-11T03:36:00.809Z",
                   "fromCurrency": "usdc",
                   "conversionRate": 1
                 }
@@ -4916,9 +4932,6 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/UserIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/AccountTypeParameter"
           }
         ],
         "requestBody": {

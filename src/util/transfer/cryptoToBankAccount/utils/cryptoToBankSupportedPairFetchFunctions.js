@@ -2,6 +2,7 @@ const { now } = require("moment")
 const { transferType } = require("../../utils/transfer")
 const fetchBridgeCryptoToFiatTransferRecord = require("../transfer/fetchBridgeCryptoToFiatTransferRecordV2")
 const fetchDirectBridgeCryptoToFiatTransferRecord = require("../transfer/fetchDirectBridgeCryptoToFiatTransferRecord")
+const fetchReapCryptoToFiatTransferRecord = require("../transfer/fetchReapCryptoToFiatTransferRecord")
 
 const placeholder = (recordId, profileId) => {
     return {
@@ -48,7 +49,8 @@ const FetchCryptoToBankSupportedPairCheck = (cryptoProvider, fiatProvider) => {
 
 const FetchCryptoToBankSupportedPairFunctions = {
    BASTION:{
-    BRIDGE: fetchBridgeCryptoToFiatTransferRecord
+    BRIDGE: fetchBridgeCryptoToFiatTransferRecord,
+    REAP: fetchReapCryptoToFiatTransferRecord
    },
    EXTERNAL:{
     BRIDGE: fetchDirectBridgeCryptoToFiatTransferRecord

@@ -4,6 +4,7 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
 const { v4: uuidv4 } = require("uuid");
+const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
 
 const processVirtualAccountEvent = async (event) => {
   const {
@@ -28,42 +29,69 @@ const processVirtualAccountEvent = async (event) => {
   try {
     const referenceId = description
       ?.split(" ")
-      .slice(-5)
-      .join("-")
-      .toLowerCase();
+      ?.slice(-5)
+      ?.join("-")
+      ?.toLowerCase();
 
     // if we can parse a referenceId, then we check whether this event is for an existing onramp transaction
-    if (isUUID(referenceId)) {
-      const { data: existingTransaction, error: existingTransactionError } =
-        await supabaseCall(() =>
-          supabase
-            .from("onramp_transactions")
-            .select("id, bridge_deposit_id")
-            .eq("id", referenceId)
-            .maybeSingle()
-        );
+    if (referenceId && referenceId != "") {
+      let existingTransaction
+      if (isUUID(referenceId)){
+          // match exact uuid
+          const { data, error } =
+          await supabaseCall(() =>
+            supabase
+              .from("onramp_transactions")
+              .select("id, bridge_deposit_id")
+              .eq("id", referenceId)
+              .maybeSingle()
+          );
 
-      if (existingTransactionError) {
-        throw existingTransactionError;
+        if (error) {
+          throw error;
+        }
+
+        existingTransaction = data
+      }else{
+        // match partial uuid
+        const { data, error } =
+          await supabaseCall(() =>
+            supabase
+              .from("onramp_transactions")
+              .select("id, bridge_deposit_id")
+              .like("reference_id", `%${referenceId}%`)
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.length == 1) existingTransaction = data[0]
+        else if (data.length > 1) throw new Error("Multiple onramp transactions found for referenceId " + referenceId)
       }
 
       if (existingTransaction && !existingTransaction.bridge_deposit_id) {
-        const { error: updateTransactionError } = await supabaseCall(() =>
+        const { data: updateTransaction, error: updateTransactionError } = await supabaseCall(() =>
           supabase
             .from("onramp_transactions")
             .update({ bridge_deposit_id: deposit_id })
             .eq("id", referenceId)
+            .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
+            .single()
         );
 
         if (updateTransactionError) {
           throw updateTransactionError;
         }
+
+        await notifyFiatToCryptoTransfer(updateTransaction);
       }
 
       // dont need to process existing onramp transactions
       if (existingTransaction) {
         return;
       }
+
     }
 
     // check if this manual deposit event has already been inserted into the onramp_transactions table
@@ -100,7 +128,7 @@ const processVirtualAccountEvent = async (event) => {
     }
     const userId = virtualAccount.user_id;
 
-    const { error: initialRecordError } = await supabaseCall(() =>
+    const { data: initialRecord, error: initialRecordError } = await supabaseCall(() =>
       supabase.from("onramp_transactions").insert(
         {
           request_id: uuidv4(),
@@ -121,11 +149,13 @@ const processVirtualAccountEvent = async (event) => {
           bridge_deposit_id: deposit_id,
           source_manual_deposit: event.source
         }
-      )
+      ).select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
+       .single()
     );
     if (initialRecordError) {
       throw initialRecordError;
     }
+    await notifyFiatToCryptoTransfer(initialRecord);
   } catch (error) {
     await createLog(
       "webhooks/bridge/processVirtualAccountEvent",
