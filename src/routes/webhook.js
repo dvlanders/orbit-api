@@ -1,5 +1,6 @@
 const { externalWebhooks } = require("../controllers");
 const { signatureVerification } = require("../util/bridge/webhook/middleware");
+const { verifyReapSignature } = require("../util/reap/webhooks/verifySignature");
 
 module.exports = (router) => {
   router.post(
@@ -7,4 +8,6 @@ module.exports = (router) => {
     signatureVerification,
     externalWebhooks.bridgeWebhook
   );
+
+  router.post("/webhook/reap", verifyReapSignature, externalWebhooks.reapWebhook);
 };
