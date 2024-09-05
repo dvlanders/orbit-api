@@ -57,3 +57,39 @@ exports.bridgeWebhook = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+exports.reapWebhook = async (req, res) => {
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
+  // console.log(req.body);
+  const {
+    eventType,
+    eventName,
+    data
+  } = req.body;
+  try {
+
+    const now = new Date().toISOString();
+    // insert or update incoming Bridge webhook messages.
+    const { error } = await supabase
+        .from("reap_webhook_messages")
+        .insert(
+          {
+            event_category: eventType,
+            event_type: eventName,
+            event_object: data,
+            full_event: req.body,
+            process_status: "PENDING",
+            retry_count: 0,
+            next_retry_at: now,
+          }
+        )
+
+    if (error) throw error;
+
+    return res.status(200).json({ status: "OK" });
+  } catch (error) {
+    await createLog("webhook/reapWebhook", null, error.message, error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};

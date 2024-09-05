@@ -81,6 +81,11 @@ UsdOfframpWireUSAccount:
   type: object
   title: "USD Offramp Wire to US Bank Account"
   properties:
+    accountType:
+      type: string
+      enum:
+        - us
+        - iban
     currency:
       type: string
       description: "Currency denomination of the destination bank account. Must be usd."
@@ -136,6 +141,7 @@ UsdOfframpWireUSAccount:
       description: "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec."
       example: "USA"
   required:
+    - accountType
     - currency
     - bankName
     - accountOwnerName
@@ -151,6 +157,11 @@ UsdOfframpWireNonUSAccount:
   type: object
   title: "USD Offramp Wire to Non-US Bank Account"
   properties:
+    accountType:
+      type: string
+      enum:
+        - us
+        - iban
     currency:
       type: string
       enum:
@@ -210,6 +221,7 @@ UsdOfframpWireNonUSAccount:
       type: string
       example: "Germany"
   required:
+    - accountType
     - currency
     - bankName
     - accountOwnerName
