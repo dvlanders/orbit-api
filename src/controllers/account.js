@@ -1264,18 +1264,19 @@ exports.getBlindpayReceiver = async (req, res) => {
 	}
 
 	const { profileId, userId, receiverId} = req.query;
-	const fields = {user_id: userId, receiver_id: receiverId};
+	const fields = {user_id: userId, ...(receiverId && { receiver_id: receiverId })};
 
 	const requiredFields = ["user_id"]
 	const acceptedFields = { user_id: "string", receiver_id: "string" }
 
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
-	if(!isUUID(fields.receiver_id)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if(fields.receiver_id && !isUUID(fields.receiver_id)) return res.status(400).json({ error: "Invalid receiver_id" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 
 	try {
 		const receiverInfo = await getReceiverInfo(fields.user_id, fields.receiver_id);
+		if(fields.receiver_id && receiverInfo.count === 1) return res.status(200).json(receiverInfo.data[0]);
 		return res.status(200).json(receiverInfo);
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error);
@@ -1311,7 +1312,6 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
-	console.log("receiverRecord: \n", receiverRecord)
 	try {
 		const response = await updateReceiver(receiverRecord)
 
