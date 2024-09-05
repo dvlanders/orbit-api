@@ -51,7 +51,7 @@ const initTransferData = async (config) => {
 			chain: chain,
 			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
 			to_wallet_address: isAddress(userReapWalletAddress) ? getAddress(userReapWalletAddress) : userReapWalletAddress,
-			transaction_status: 'CREATED',
+			transaction_status: 'OPEN_QUOTE',
 			contract_address: contractAddress,
 			action_name: "transfer",
 			fiat_provider: "REAP",
@@ -271,7 +271,7 @@ const acceptReapCryptoToFiatTransfer = async(config) => {
 			failed_reason = "Quote expired"
 		}
 		const toUpdate = {
-			transaction_status: "NOT_INITIATED",
+			transaction_status: "QUOTE_FAILED",
             reap_payment_response: responseBody,
             failed_reason
 		}
