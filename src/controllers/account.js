@@ -965,8 +965,9 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId } = req.query;
+	const { profileId, userId } = req.query;
 	const fields = req.body;
+	fields.user_id = userId;
 
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
 	

@@ -5662,6 +5662,11 @@
         "tags": [
           "Account"
         ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
         "requestBody": {
           "$ref": "#/components/requestBodies/BrlOfframpReceiverCreateBody"
         },

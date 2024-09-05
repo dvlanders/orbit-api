@@ -365,8 +365,6 @@ BrlReceiverCreateIndividualLightKYCAccount:
   type: object
   title: "BRL Receiver Individual Light KYC Account"
   properties:
-    user_id:
-      type: string
     type:
       type: string
       enum: [individual]
@@ -389,7 +387,6 @@ BrlReceiverCreateIndividualLightKYCAccount:
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
   required:
     - type
-    - user_id
     - kyc_type
     - first_name
     - last_name
@@ -400,8 +397,6 @@ BrlReceiverCreateIndividualStandardKYCAccount:
   type: object
   title: "BRL Receiver Individual Standard KYC Account"
   properties:
-    user_id:
-      type: string
     type:
       type: string
       enum: [individual]
@@ -454,7 +449,6 @@ BrlReceiverCreateIndividualStandardKYCAccount:
       type: string
   required:
     - type
-    - user_id
     - kyc_type
     - first_name
     - last_name
@@ -474,8 +468,6 @@ BrlReceiverCreateBusinessLightKYBAccount:
   type: object
   title: "BRL Receiver Business Light KYB Account"
   properties:
-    user_id:
-      type: string
     type:
       type: string
       enum: [business]
@@ -498,7 +490,6 @@ BrlReceiverCreateBusinessLightKYBAccount:
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
   required:
     - type
-    - user_id
     - kyc_type
     - legal_name
     - tax_id
@@ -509,8 +500,6 @@ BrlReceiverCreateBusinessStandardKYBAccount:
   type: object
   title: "BRL Receiver Business Standard KYB Account"
   properties:
-    user_id:
-      type: string
     type:
       type: string
       enum: [business]
@@ -555,7 +544,6 @@ BrlReceiverCreateBusinessStandardKYBAccount:
         $ref: "#/components/schemas/ReceiverBusinessOwner"
   required:
     - type
-    - user_id
     - kyc_type
     - legal_name
     - tax_id

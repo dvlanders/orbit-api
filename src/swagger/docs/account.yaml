@@ -109,6 +109,8 @@
       adding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.
     tags:
       - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
     requestBody:
       $ref: '#/components/requestBodies/BrlOfframpReceiverCreateBody'
     responses:
