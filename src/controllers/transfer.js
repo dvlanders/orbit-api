@@ -35,83 +35,7 @@ const { fetchAccountProviders } = require("../util/account/accountProviders/acco
 const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walletType");
 const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
 const { transferObjectReconstructor } = require("../util/transfer/utils/transfer");
-
-
-const BASTION_API_KEY = process.env.BASTION_API_KEY;
-const BASTION_URL = process.env.BASTION_URL;
-
-const createCryptoToCryptoWithdrawForDeveloperUser_DEPRECATED = async (req, res) => {
-	if (req.method !== 'POST') {
-		return res.status(405).json({ error: 'Method not allowed' });
-	}
-
-	// should gather senderUserId, profileId, amount, requestId, recipientUserId, recipientAddress, chain
-	const { profileId } = req.query
-	const fields = req.body
-	const { senderUserId, amount, requestId, recipientAddress, chain, currency, walletType } = fields
-
-
-	try {
-		const requiredFields = ["senderUserId", "amount", "requestId", "recipientAddress", "chain", "currency", "walletType"]
-		const acceptedFields = {
-			"senderUserId": "string",
-			"amount": ["number", "string"],
-			"requestId": "string",
-			"recipientAddress": "string",
-			"chain": "string",
-			"currency": "string",
-			"walletType": "string"
-		};
-
-		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		// check if required fileds provided
-		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		}
-		fields.profileId = profileId
-		//check if sender is under profileId
-		if (!(await verifyUser(senderUserId, profileId))) return res.status(401).json({ error: "senderUserId not found" })
-		// check if chain is supported
-		if (!(chain in cryptoToCryptoSupportedFunctions)) return res.status(400).json({ error: `Chain ${chain} is not supported` })
-		// check if currency is supported
-		if (!(currency in cryptoToCryptoSupportedFunctions[chain])) return res.status(400).json({ error: `Currency ${currency} is not supported` })
-		// check is request id valid
-		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
-		// check is request_id exist
-		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
-		// get transfer function
-		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
-		// fetch sender wallet address information
-		// fetch sender wallet address information
-		if (walletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-		if (walletType == "INDIVIDUAL") return res.status(400).json({ error: `wallet type is not allowed` })
-		if (walletType && !allowedWalletTypes.includes(walletType)) return res.status(400).json({ error: `wallet type ${walletType} is not supported` })
-		const { walletAddress: senderAddress, bastionUserId: senderBastionUserId } = await getBastionWallet(senderUserId, chain, walletType)
-		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
-		fields.senderAddress = senderAddress
-		fields.senderBastionUserId = senderBastionUserId
-		fields.senderWalletType = walletType
-
-		// check privilege
-		if (!(await isBastionKycPassedDeveloperUser(senderUserId, walletType)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
-
-		// transfer
-		const receipt = await transferFunc(fields)
-
-		return res.status(200).json(receipt)
-	} catch (error) {
-		if (error instanceof CreateCryptoToCryptoTransferError) {
-			if (error.type == CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR) {
-				return res.status(400).json({ error: error.message })
-			} else {
-				return res.status(500).json({ error: "Unexpected error happened" })
-			}
-		}
-		await createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error)
-		return res.status(500).json({ error: "Unexpected error happened" })
-	}
-}
+const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -128,7 +52,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		}
 		fields.profileId = profileId
 		// check if fee config is correct
@@ -202,13 +126,13 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 	const fields = req.query
 	const { profileId, userId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
+	const acceptedFields = { userId: (value) => isUUID(value), limit: (value) => isInRange(value, 1, 100), createdAfter: (value) => isValidDate(value), createdBefore: (value) => isValidDate(value), profileId: "string" }
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		}
 		if (limit && !isValidLimit(limit)) return res.status(400).json({ error: "Invalid limit" })
 		if ((createdAfter && !isValidDate(createdAfter)) ||
@@ -266,12 +190,29 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// field validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "chain", "sourceCurrency", "destinationCurrency"]
 		const acceptedFields = {
-			"feeType": "string", "feeValue": ["string", "number"],
-			"requestId": "string", "sourceUserId": "string", "destinationUserId": "string", "destinationAccountId": "string", "amount": ["number", "string"], "chain": "string", "sourceCurrency": "string", "destinationCurrency": "string", "paymentRail": "string", "description": "string", "purposeOfPayment": "string", "sourceWalletType": "string", "sameDayAch": "boolean", "receivedAmount": ["number", "string"] ,"achReference": "string", "sepaReference": "string", "wireMessage": "string", "swiftReference": "string"
+			"feeType": (value) => inStringEnum(value, ["FIX", "PERCENT"]),
+			"feeValue": (value) => isValidAmount(value),
+			"requestId": (value) => isUUID(value),
+			"sourceUserId": (value) => isUUID(value), 
+			"destinationUserId": (value) => isUUID(value), 
+			"destinationAccountId": (value) => isUUID(value), 
+			"amount": (value) => isValidAmount(value), 
+			"chain": (value) => isHIFISupportedChain(value), 
+			"sourceCurrency": "string", 
+			"destinationCurrency": "string", 
+			"paymentRail": "string", 
+			"description": "string", 
+			"purposeOfPayment": "string", 
+			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]), 
+			"sameDayAch": "boolean", 
+			"achReference": "string", 
+			"sepaReference": "string", 
+			"wireMessage": "string", 
+			"swiftReference": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		}
 		if (!amount && !receivedAmount) return res.status(401).json({ error: "Either amount and receivedAmount is required" })
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
@@ -356,13 +297,13 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 	const fields = req.query
 	const { profileId, userId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string" }
+	const acceptedFields = { userId: (value) => isUUID(value), limit: (value) => isInRange(value, 1, 100), createdAfter: (value) => isValidDate(value), createdBefore: (value) => isValidDate(value), profileId: "string" }
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		}
 		if (limit && !isValidLimit(limit)) return res.status(400).json({ error: "Invalid limit" })
 		if ((createdAfter && !isValidDate(createdAfter)) ||
@@ -437,21 +378,21 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 	try {
 		const requiredFields = ["requestId", "sourceUserId", "destinationUserId", "amount", "sourceCurrency", "destinationCurrency", "chain", "sourceAccountId", "isInstant"]
 		const acceptedFields = {
-			"feeType": "string",
-			"feeValue": ["number", "string"],
-			"requestId": "string",
-			"sourceUserId": "string",
-			"destinationUserId": "string",
-			"amount": ["number", "string"],
+			"feeType": (value) => inStringEnum(value, ["FIX", "PERCENT"]),
+    		"feeValue": (value) => isValidAmount(value),
+			"requestId": (value) => isUUID(value),
+			"sourceUserId": (value) => isUUID(value),
+			"destinationUserId": (value) => isUUID(value),
+			"amount": (value) => isValidAmount(value),
 			"sourceCurrency": "string",
 			"destinationCurrency": "string",
-			"chain": "string",
-			"sourceAccountId": "string",
+			"chain": (value) => isHIFISupportedChain(value),
+			"sourceAccountId": (value) => isUUID(value),
 			"isInstant": "boolean"
 		}
 
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 
 		//check if sender is under profileId
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
@@ -551,13 +492,20 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 	const fields = req.query
 	const { profileId, userId, virtualAccountId, limit, createdAfter, createdBefore } = fields
 	const requiredFields = []
-	const acceptedFields = { userId: "string", limit: "string", createdAfter: "string", createdBefore: "string", profileId: "string", virtualAccountId: "string" }
+	const acceptedFields = { 
+		userId: (value) => isUUID(value), 
+		limit: (value) => isInRange(value, 1, 100), 
+		createdAfter: (value) => isValidDate(value), 
+		createdBefore: (value) => isValidDate(value), 
+		profileId: "string", 
+		virtualAccountId: (value) => isUUID(value) 
+	}
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		// check if required fileds provided
 		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		}
 		if (limit && !isValidLimit(limit)) return res.status(400).json({ error: "Invalid limit" })
 		if ((createdAfter && !isValidDate(createdAfter)) ||
@@ -667,7 +615,7 @@ exports.createDirectCryptoToFiatTransfer = async(req, res) => {
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
-			return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		}
 		// FIXME diable fee for now
 		if (feeType || feeValue) return res.status(400).json({ error: "Fee collection in not available yet" })

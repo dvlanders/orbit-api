@@ -65,7 +65,7 @@ exports.createApiKey = async (req, res) => {
 
 		// field validation
 		const { missingFields, invalidFields } = fieldsValidation(fields, ["apiKeyName", "expiredAt", "env"], { "apiKeyName": "string", "expiredAt": "string", "env": "string" });
-		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `Fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields });
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `Fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
 
 		const apikeyInfo = await createApiKeyFromProvider(organizationId, apiKeyName, expiredAt, env);
 		return res.status(200).json(apikeyInfo);
