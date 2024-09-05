@@ -1,24 +1,17 @@
+const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService")
+const { fetchReapAccountInformation } = require("../../../account/getAccount/main/fetchReapAccount")
 const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
-const { convertKeysToCamelCase } = require("../../../utils/object")
 const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 
-const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
+const fetchReapCryptoToFiatTransferRecord = async(id, profileId) => {
     // get transactio record
-    const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "BRIDGE", "BASTION")
-
+    const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "REAP", "BASTION")
     if (!record) return null
-    // get external account information
-
-    let { data: bridgeExternalAccount, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
-        .from('bridge_external_accounts')
-        .select('id, account_owner_name, bank_name, account_number, routing_number, account_type, business_identifier_code, bank_country, iban, beneficiary_first_name, beneficiary_last_name')
-        .eq("bridge_external_account_id", record.to_bridge_external_account_id)
-        .single())
-
-    if (bridgeExternalAccountError) throw bridgeExternalAccountError
+    const account = await fetchAccountProviders(record.destination_account_id, profileId)
+    const accountInfo = await fetchReapAccountInformation(null, profileId, account.account_id)
         
     const result = {
         transferType: transferType.CRYPTO_TO_FIAT,
@@ -40,7 +33,7 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
             contractAddress: record.contract_address,
             sourceUser: record.source_user.user_kyc,
             destinationUser: record.destination_user.user_kyc,
-            destinationAccount: convertKeysToCamelCase(bridgeExternalAccount),
+            destinationAccount: accountInfo,
             failedReason: record.failed_reason,
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,
@@ -51,7 +44,15 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
                 transactionHash: record.developer_fees.transaction_hash,
                 failedReason: record.developer_fees.failed_reason
             } : null,
-            conversionRate: record.conversion_rate
+            conversionRate: record.conversion_rate,
+            quoteInformation: record.conversion_rate ? {
+                validFrom: record.conversion_rate.validFrom,
+                validUntil: record.conversion_rate.validUntil,
+                sendingCurrency: record.source_currency,
+                sendingAmount: record.amount,
+                receivingCurrency: record.destination_currency,
+                receivingAmount: record.destination_currency_amount
+            } : null
         }
 
     }
@@ -59,4 +60,4 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
     return result
 }
 
-module.exports = fetchBridgeCryptoToFiatTransferRecord
+module.exports = fetchReapCryptoToFiatTransferRecord

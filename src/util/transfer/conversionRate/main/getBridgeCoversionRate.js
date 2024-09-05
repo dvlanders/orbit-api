@@ -5,17 +5,17 @@ const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
     try{
-        let vaildFrom = new Date();
-        let vaildUntil = new Date(vaildFrom);
-        vaildUntil.setSeconds(vaildUntil.getSeconds() + 30);
+        let validFrom = new Date();
+        let validUntil = new Date(validFrom);
+        validUntil.setSeconds(validUntil.getSeconds() + 30);
         
         if (toCurrency == "usd") {
             return {
                 fromCurrency,
                 toCurrency,
                 conversionRate: 1,
-                vaildFrom,
-                vaildUntil
+                validFrom,
+                validUntil
             }
         }
 
@@ -36,8 +36,8 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
                 fromCurrency,
                 toCurrency,
                 conversionRate: null,
-                vaildFrom,
-                vaildUntil,
+                validFrom,
+                validUntil,
                 message: "Not available"
             }
         }
@@ -46,8 +46,8 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
             fromCurrency,
             toCurrency,
             conversionRate: responseBody.midmarket_rate,
-            vaildFrom,
-            vaildUntil
+            validFrom,
+            validUntil
         }
 
     }catch (error){
@@ -56,8 +56,8 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
             fromCurrency,
             toCurrency,
             conversionRate: null,
-            vaildFrom,
-            vaildUntil,
+            validFrom,
+            validUntil,
             message: "Not available"
         }
     }

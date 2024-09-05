@@ -16,8 +16,9 @@ const { requiredFields } = require('../util/transfer/cryptoToCrypto/utils/create
 const { verifyUser } = require("../util/helper/verifyUser");
 const { stringify } = require('querystring');
 const { virtualAccountPaymentRailToChain } = require('../util/bridge/utils');
-const { account } = require('.');
-const { create } = require('lodash');
+const createReapOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
+const { networkCheck } = require('../util/reap/utils/networkCheck');
+const { basicReapAccountInfoCheck } = require('../util/reap/utils/basicAccountInfoCheck');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -1135,11 +1136,114 @@ exports.createBlindpayReceiver = async (req, res) => {
 }
 
 
-exports.createInternationalWireOfframpDestination = async (req, res) => {
+exports.createAPACOfframpDestination = async (req, res) => {
+
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	const { userId, profileId } = req.query;
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+	const fields = req.body
+	const {
+		recipientType,
+		companyName,
+		firstName,
+		lastName,
+		middleName,
+		legalFullName,
+		accountType,
+		accountIdentifierStandard,
+		accountIdentifierValue,
+		currency,
+		bankName,
+		bankCountry,
+		bankCode,
+		addressType,
+		street,
+		state,
+		country,
+		city,
+		postalCode,
+		network
+	} = fields
+
+	const requiredFields = [
+		"recipientType",
+		"accountType",
+		"accountIdentifierStandard",
+		"accountIdentifierValue",
+		"currency",
+		"bankName",
+		"bankCountry",
+		"bankCode",
+		"addressType",
+		"street",
+		"state",
+		"country",
+		"city",
+		"postalCode",
+		"network"
+	]
+
+	const acceptedFields = {
+		recipientType: "string",
+		companyName: "string",
+		firstName: "string",
+		lastName: "string",
+		middleName: "string",
+		legalFullName: "string",
+		accountType: "string",
+		accountIdentifierStandard: "string",
+		accountIdentifierValue: "string",
+		currency: "string",
+		bankName: "string",
+		bankCountry: "string",
+		bankCode: "string",
+		addressType: "string",
+		street: "string",
+		state: "string",
+		country: "string",
+		city: "string",
+		postalCode: "string",
+		network: "string"
+	};
+
+	try {
+
+		const { invalidFields, missingFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+		if (missingFields.length > 0) {
+			return res.status(400).json({ error: 'Missing required fields', missingFields });
+		}
+
+		if (invalidFields.length > 0) {
+			return res.status(400).json({ error: 'Invalid fields', invalidFields });
+		}
+		if (recipientType != "company") return res.status(400).json({ error: 'Only company is allowed to create HK offramp for now' });
+		if (recipientType == "company" && !companyName) return res.status(400).json({ error: 'companyName is missing' });
+		if (recipientType == "individual" && (!firstName || !lastName)) return res.status(400).json({ error: 'firstName or lastName is missing' });
+		if (!networkCheck(network, currency)) return res.status(400).json({ error: "Currency and network not matched" })
+		if (!basicReapAccountInfoCheck(fields)) return res.status(400).json({ error: "Invalid banking information" })
+		const account = await createReapOfframpAccount({ ...fields, userId })
+		let accountInfo = {
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: account.accountId
+		};
+		return res.status(200).json(accountInfo)
+
+	} catch (error) {
+		await createLog("account/createHKOfframpDestination", userId, error.message, error)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+
+
+
+}
+
+
+exports.createInternationalWireOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	const {
 		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
@@ -1284,4 +1388,3 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	}
 
 };
-
