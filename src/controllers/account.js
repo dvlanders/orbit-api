@@ -1002,6 +1002,9 @@ exports.createBlindpayReceiver = async (req, res) => {
 
 		const responseObject = {
 			id: receiverRecord.id,
+			type: fields.type,
+			kyc_status: "verifying",
+			user_id: fields.user_id
 		};
 
 		return res.status(200).json(responseObject);
