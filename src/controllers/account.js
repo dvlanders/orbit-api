@@ -1140,9 +1140,9 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { userId, profileId, accountType } = req.query;
+	const { userId, profileId } = req.query;
 	const {
-		currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
 		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
 		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
 	} = req.body;
@@ -1157,11 +1157,11 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	// verify required fields
 
 	const requiredFields = [
-		'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'city', 'state', 'postalCode', "country"
+		'accountType', 'currency', 'bankName', 'accountOwnerName', 'accountOwnerType', 'streetLine1', 'city', 'state', 'postalCode', "country"
 	];
 
 	const acceptedFields = {
-		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
+		'accountType': "string", 'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
 		'lastName': "string", 'businessName': "string", 'accountOwnerType': "string", 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": "string"
 	};
