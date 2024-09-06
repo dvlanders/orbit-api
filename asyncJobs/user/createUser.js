@@ -4,6 +4,7 @@ const { createIndividualBridgeCustomer } = require("../../src/util/bridge/endpoi
 const { createCheckbookUser } = require("../../src/util/checkbook/endpoint/createCheckbookUser");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
+const notifyUserStatusUpdate = require("../../webhooks/user/notifyUserStatusUpdate");
 const { JobError, JobErrorType } = require("../error");
 
 
@@ -35,6 +36,8 @@ const createUserAsync = async(config) => {
             bridgeFunction(config.userId),
             createCheckbookUser(config.userId)
         ]);
+
+		if (process.env.NODE_ENV === "development") await notifyUserStatusUpdate(config.userId)
 
     }catch (error){
         await createLog("createUserAsync", config.userId, error.message, error)

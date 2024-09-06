@@ -32,6 +32,7 @@ const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { inStringEnum, isValidUrl, isHIFISupportedChain } = require('../util/common/filedValidationCheckFunctions');
+const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -248,6 +249,8 @@ exports.createHifiUser = async (req, res) => {
 			status = 400;
 		}
 
+		// send webhookmessage if sandbox
+		if (process.env.NODE_ENV === "development") await notifyUserStatusUpdate(userId)
 
 		return res.status(status).json(createHifiUserResponse);
 	} catch (error) {

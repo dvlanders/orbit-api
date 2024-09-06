@@ -31,6 +31,8 @@ const fetchReapCryptoToFiatTransferRecord = require("./fetchReapCryptoToFiatTran
 const getUserReapWalletAddress = require("../../../reap/main/getUserWallet");
 const acceptPaymentQuote = require("../../../reap/main/acceptPaymentQuote");
 const getReapPayment = require("../../../reap/main/getPayment");
+const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 
 const initTransferData = async (config) => {
 	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description } = config
@@ -172,12 +174,17 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 		// in sandbox, just return SUBMITTED_ONCHAIN status
 		if (process.env.NODE_ENV == "development") {
-			toUpdate.bastion_transaction_status = "CONFIRMED"
-			toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
+			toUpdate.transaction_status = "COMPLETED"
 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+
+		// send out webhook message if in sandbox
+		if (process.env.NODE_ENV == "development") {
+			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+		}
+
 	} else {
 
 		const toUpdate = {
@@ -189,6 +196,8 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		}
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
+
+	await notifyCryptoToFiatTransfer(initialTransferRecord)
 
 	// gas check
 	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)

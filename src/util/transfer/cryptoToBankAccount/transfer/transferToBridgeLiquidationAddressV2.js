@@ -27,6 +27,8 @@ const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
 const { initial } = require("lodash");
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
+const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -330,14 +332,19 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 			failed_reason: message
 		}
 
-		// in sandbox, just return SUBMITTED_ONCHAIN status
+		// in sandbox, just return completed the transfer
 		if (process.env.NODE_ENV == "development") {
-			toUpdate.bastion_transaction_status = "CONFIRMED"
-			toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
+			toUpdate.transaction_status = "COMPLETED"
 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+
+		// send out webhook message if in sandbox
+		if (process.env.NODE_ENV == "development") {
+			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+		}
+
 	} else {
 
 		const toUpdate = {
@@ -349,6 +356,9 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		}
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
+
+	// send webhook message in production
+	await notifyCryptoToFiatTransfer(initialTransferRecord)
 
 	// gas check
 	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
