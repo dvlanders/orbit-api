@@ -6,6 +6,8 @@ const { JobError, JobErrorType } = require("../../error")
 const { updateRequestRecord } = require("../../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord")
 const { executePayout } = require("../../../src/util/blindpay/endpoint/executePayout")
 const { ExecutePayoutError } = require("../../../src/util/blindpay/errors")
+const notifyCryptoToFiatTransfer = require("../../../webhooks/transfer/notifyCryptoToFiatTransfer")
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
 
 exports.executeBlindpayPayout = async (config) => {
 	try {
@@ -23,6 +25,10 @@ exports.executeBlindpayPayout = async (config) => {
     } catch (error) {
 		if (error instanceof ExecutePayoutError) {
 			await updateRequestRecord(config.recordId, { blindpay_payout_response: error.rawResponse, transaction_status: "QUOTE_FAILED" });
+			// send out webhook message if in sandbox
+			if (process.env.NODE_ENV == "development") {
+				await simulateSandboxCryptoToFiatTransactionStatus(record)
+			}
 		}
       throw new Error("Blindpay payout execution failed");
     }
@@ -34,6 +40,7 @@ exports.executeBlindpayPayout = async (config) => {
       	transaction_status: blindpayPayoutStatusMap[blindpayExecutePayoutBody.status] || "UNKNOWN"
 	}
     await updateRequestRecord(config.recordId, toUpdate);
+	await notifyCryptoToFiatTransfer(record);
 
 	} catch (error) {
 		console.error(error)
