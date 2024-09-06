@@ -31,7 +31,7 @@ const { Chain, currencyContractAddress, hifiSupportedChain } = require('../util/
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
-const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange } = require('../util/common/filedValidationCheckFunctions');
+const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 
 const Status = {
