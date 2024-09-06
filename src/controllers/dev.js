@@ -91,7 +91,8 @@ exports.testwebhook = async(req, res) => {
     try {
         console.log("received")
         const token = req.headers['authorization'].split(' ')[1];
-        const public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyy6f6moGJlxroxFVK6fn\nBh/5RIw7XmTUPx8PglbBjBHWt5xDPD/oSnplCrmG0nBINCBgALxppsRJyN70Waxu\nRB5KibQHyi6/UrKU/rUZhqw2PDDsar2RpLbqE2YT2P8XlSjSzZoKm5tBPNsGkYE/\nmusLdnsjTMpa+8BzdGpZ9OoXh8p1vu8a+8PES3TmryszfwZxmgBwWp7gpQiOarsr\nKmktoXkyvtaUXd21m97rnO2cR21J56LYaeoLt3uwqb/XrEjbx9WNrJ3a8CC0g/P1\nfeIpujg5zuJPfx6LuqhL0F898ogoaXTSuSy1FAde2EZLBC2rq1eOgslJpb5JVogw\nyQIDAQAB\n-----END PUBLIC KEY-----\n"
+        const public_key = process.env.INTERNAL_WEBHOOK_PUBLICKEY
+        if (!public_key) return res.status(500).json({message: "No public token found"})
         // Verify the token
         jwt.verify(token, public_key.replace(/\\n/g, '\n'), { algorithms: ['RS256'] },(err, decoded) => {
             if (err) {
