@@ -425,7 +425,6 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 
 		let transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
-		console.log(transferResult)
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);
