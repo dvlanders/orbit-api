@@ -1,7 +1,12 @@
 const { checkIsSignedAgreementIdSigned } = require("../user/signedAgreement");
 const { hifiSupportedChain } = require("./blockchain");
 
-const isValidDate = (input) => {
+const isValidDate = (input, type="YYYY-MM-DD") => {
+    if (type === "ISO"){
+        const date = new Date(input);
+        return !isNaN(date.getTime());
+    }
+
     // Check if the input is a string
     if (typeof input !== 'string') {
         return false;
