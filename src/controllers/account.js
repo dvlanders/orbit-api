@@ -460,8 +460,8 @@ exports.getAllAccounts = async (req, res) => {
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]), 
 		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps"]), 
 		limit: (value) => isInRange(value, 1, 100), 
-		createdAfter: (value) => isValidDate(value), 
-		createdBefore: (value) => isValidDate(value), 
+		createdAfter: (value) => isValidDate(value, "ISO"), 
+		createdBefore: (value) => isValidDate(value, "ISO"), 
 		userId: (value) => isUUID(value) 
 	}
 

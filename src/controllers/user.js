@@ -527,8 +527,8 @@ exports.getAllHifiUser = async (req, res) => {
 	const requiredFields = []
 	const acceptedFields = { 
 		limit: (value) => isInRange(value, 1, 100), 
-		createdAfter: (value) => isValidDate(value), 
-		createdBefore: (value) => isValidDate(value), 
+		createdAfter: (value) => isValidDate(value, "ISO"), 
+		createdBefore: (value) => isValidDate(value, "ISO"), 
 		userType: (value) => inStringEnum(value, ["individual", "business"]), 
 		userId: "string" 
 	}
