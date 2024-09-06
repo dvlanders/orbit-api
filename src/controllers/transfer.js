@@ -192,6 +192,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const acceptedFields = {
 			"feeType": (value) => inStringEnum(value, ["FIX", "PERCENT"]),
 			"feeValue": (value) => isValidAmount(value),
+			"receivedAmount": (value) => isValidAmount(value),
 			"requestId": (value) => isUUID(value),
 			"sourceUserId": (value) => isUUID(value), 
 			"destinationUserId": (value) => isUUID(value), 
