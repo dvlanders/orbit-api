@@ -28,6 +28,7 @@ exports.executeBlindpayPayout = async (config) => {
 			// send out webhook message if in sandbox
 			if (process.env.NODE_ENV == "development") {
 				await simulateSandboxCryptoToFiatTransactionStatus(record)
+				await notifyCryptoToFiatTransfer(record);
 			}
 		}
       throw new Error("Blindpay payout execution failed");
