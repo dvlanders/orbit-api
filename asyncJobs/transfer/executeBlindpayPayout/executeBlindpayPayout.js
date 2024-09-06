@@ -8,7 +8,6 @@ const { executePayout } = require("../../../src/util/blindpay/endpoint/executePa
 const { ExecutePayoutError } = require("../../../src/util/blindpay/errors")
 
 exports.executeBlindpayPayout = async (config) => {
-	// console.log("executeBlindpayPayout", config)
 	try {
 		const { data: record, error } = await supabase
 			.from("offramp_transactions")
@@ -23,7 +22,7 @@ exports.executeBlindpayPayout = async (config) => {
       blindpayExecutePayoutBody = await executePayout(record.blindpay_quote_id,record.from_wallet_address);
     } catch (error) {
 		if (error instanceof ExecutePayoutError) {
-			await updateRequestRecord(config.recordId, { blindpay_payout_response: error.rawResponse, transaction_status: "FAILED_ONCHAIN" });
+			await updateRequestRecord(config.recordId, { blindpay_payout_response: error.rawResponse, transaction_status: "QUOTE_FAILED" });
 		}
       throw new Error("Blindpay payout execution failed");
     }

@@ -25,6 +25,7 @@ const { getBlindpayChain, getBlindpayToken } = require("../../../blindpay/blockc
 const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 const fetchBlindpayCryptoToFiatTransferRecord = require("./fetchBlindpayCryptoToFiatTransferRecord");
 
+// This function is not used in the current implementation
 const createAndApproveQuote = async (config) => {
     const {recordId, blindpayAccountId, chain, amount, sourceUserId, contractAddress, bastionRequestId} = config;
 
@@ -107,13 +108,99 @@ const createAndApproveQuote = async (config) => {
     }
 }
 
+const createPaymentQuote = async (config) => {
+    const {recordId, blindpayAccountId, chain, amount, sourceUserId, contractAddress, bastionRequestId} = config;
+
+    let blindpayQuoteResponse;
+    try{
+        const quoteAmount = amount * 100; // 100 represents 1
+        const network = getBlindpayChain(chain);
+        const token = getBlindpayToken(); // Blindpay uses USDB for sandbox. USDC for production.
+        blindpayQuoteResponse = await createQuote(blindpayAccountId, quoteAmount, network, token);
+    }catch(error){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Quote creation failed, please contact HIFI for more information"
+        }
+        if(error instanceof CreateQuoteError){
+            await createLog("transfer/util/transferToBlindpaySmartContractV2/createPaymentQuote", sourceUserId, error.message, error.rawResponse)
+            toUpdate.blindpay_quote_response = error.rawResponse;
+        }else{
+            await createLog("transfer/util/transferToBlindpaySmartContractV2/createPaymentQuote", sourceUserId, error.message, error)
+        }
+        await updateRequestRecord(recordId, toUpdate);
+        throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
+    }
+
+    return blindpayQuoteResponse;
+
+}
+
+const acceptPaymentQuote = async (config) => {
+    const {recordId, blindpayQuoteContract, bastionRequestId, sourceUserId, contractAddress, chain} = config;
+
+    const abi = blindpayQuoteContract.abi;
+    const approveFunctionAbi = abi.find(func => func.name === 'approve');
+    const inputs = approveFunctionAbi.inputs;
+
+    const actionParams = inputs.map(input => {
+        const value = input.name.includes('spender')
+          ? blindpayQuoteContract.blindpayContractAddress
+          : input.name.includes('value')
+          ? blindpayQuoteContract.amount
+          : null;
+      
+        return {
+          name: input.name,
+          value: value
+        };
+      });
+
+    const bodyObject = {
+        requestId: bastionRequestId,
+        userId: sourceUserId,
+        contractAddress: contractAddress, // blindpayQuoteResponse.contract.address,
+        actionName: blindpayQuoteContract.functionName,
+        chain: chain === "POLYGON_AMOY" ? "BASE_SEPOLIA" : chain, 
+        actionParams: actionParams
+    };
+    const response = await submitUserAction(bodyObject)
+    const responseBody = await response.json();
+    if (!response.ok) {
+        // fail to transfer
+        await createLog("transfer/util/transferToBlindpaySmartContractV2/acceptPaymentQuote", sourceUserId, responseBody.message, responseBody)
+        const { message, type } = getMappedError(responseBody.message)
+
+        const toUpdate = {
+            bastion_response: responseBody,
+            bastion_transaction_status: "FAILED",
+            transaction_status: "QUOTE_FAILED",
+            failed_reason: message,
+        }
+
+        const updatedRecord = await updateRequestRecord(recordId, toUpdate)
+        return updatedRecord
+    } else {
+        const toUpdate = {
+            bastion_response: responseBody,
+            transaction_hash: responseBody.transactionHash,
+            bastion_transaction_status: responseBody.status,
+            transaction_status: responseBody.status == "FAILED" ? "QUOTE_FAILED" : "SUBMITTED_ONCHAIN",
+            failed_reason: responseBody.failureDetails,
+        }
+        const updatedRecord = await updateRequestRecord(recordId, toUpdate)
+        return updatedRecord
+    }
+    
+}
+
 const initTransferData = async (config) => {
-    const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceWalletType, destinationUserId, blindpayAccountId } = config
+    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId } = config
 
 	const contractAddress = getBlindpayContractAddress(chain, sourceCurrency)
 
 	//insert the initial record
-	let { data: record, error: recordError } = await supabase
+	const { data: record, error: recordError } = await supabase
 		.from('offramp_transactions')
 		.insert({
 			request_id: requestId,
@@ -123,7 +210,7 @@ const initTransferData = async (config) => {
 			chain: chain,
 			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
 			to_blindpay_account_id: blindpayAccountId,
-			transaction_status: 'CREATED',
+			transaction_status: 'OPEN_QUOTE',
 			contract_address: contractAddress,
 			action_name: "transfer",
 			fiat_provider: "BLINDPAY",
@@ -132,15 +219,13 @@ const initTransferData = async (config) => {
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
-			bastion_user_id: sourceUserId
+			bastion_user_id: sourceBastionUserId
 		})
 		.select()
 		.single()
 
 	if (recordError) {
-		console.error('initialBastionTransfersInsertError', recordError);
-		await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, recordError.message)
-		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
+		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened", recordError)
 	}
 
     if (!feeType || parseFloat(feeValue) <= 0) return record
@@ -161,9 +246,7 @@ const initTransferData = async (config) => {
 			transaction_status: "NOT_INITIATED",
 			failed_reason: `Amount after subtracting fee is less than 1 dollar`
 		}
-		record = await updateRequestRecord(record.id, toUpdate)
-		const result = await fetchBlindpayCryptoToFiatTransferRecord(record.id, profileId)
-		return result
+		return await updateRequestRecord(record.id, toUpdate)
 	}
 
 	// get payment processor contract
@@ -174,16 +257,14 @@ const initTransferData = async (config) => {
 			transaction_status: "NOT_INITIATED",
 			failed_reason: `Fee feature not available for ${sourceCurrency} on ${chain}`
 		}
-		record = await updateRequestRecord(record.id, toUpdate)
-		const result = await fetchBlindpayCryptoToFiatTransferRecord(record.id, profileId)
-		return result
+		return await updateRequestRecord(record.id, toUpdate)
 	}
 
 	// update into crypto to crypto table
-	const result = await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
-	return result
+	return await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
 }
 
+// This function is not used in the current implementation
 const transferWithFee = async (initialTransferRecord, profileId) => {
 	const sourceUserId = initialTransferRecord.user_id
 	const destinationAccountId = initialTransferRecord.destination_account_id
@@ -225,6 +306,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     return { isExternalAccountExist: true, transferResult: result }
 }
 
+// This function is not used in the current implementation
 const transferWithoutFee = async (initialTransferRecord, profileId) => {
     const recordId = initialTransferRecord.id;
     const chain = initialTransferRecord.chain;
@@ -248,7 +330,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBlindpaySmartContract = async (config) => {
-    const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceWalletType } = config
+    const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType } = config
     if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
     if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route")
     const { isExternalAccountExist, blindpayAccountId, destinationUserId } = await blindpayRailCheck(destinationAccountId)
@@ -256,17 +338,45 @@ const createTransferToBlindpaySmartContract = async (config) => {
 	config.blindpayAccountId = blindpayAccountId
     config.destinationUserId = destinationUserId
     const initialTransferRecord = await initTransferData(config);
-	// create Job
-	const jobConfig = {
-		recordId: initialTransferRecord.id
-	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
-	}
+
+    let quoteAmount = initialTransferRecord.amount; 
+    if(initialTransferRecord.developer_fee_id){
+        // get fee config
+        const { data: feeRecord, error: feeRecordError } = await supabase
+            .from("developer_fees")
+            .select("*")
+            .eq("id", initialTransferRecord.developer_fee_id)
+            .single()
+        if (feeRecordError) throw feeRecordError
+        if(!feeRecord) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Fee record not found")
+        quoteAmount = (quoteAmount - feeRecord.fee_amount).toFixed(2)
+    }
+
+    const quoteConfig = {
+        recordId: initialTransferRecord.id,
+        blindpayAccountId: initialTransferRecord.to_blindpay_account_id,
+        chain: initialTransferRecord.chain,
+        amount: quoteAmount,
+        sourceUserId: initialTransferRecord.bastion_user_id,
+        contractAddress: initialTransferRecord.contract_address,
+        bastionRequestId: initialTransferRecord.bastion_request_id
+    }
+    const blindpayQuoteResponse = await createPaymentQuote(quoteConfig);
+
+    const conversionRate = {...blindpayQuoteResponse};
+    delete conversionRate.contract;
+
+    const toUpdate = {
+        blindpay_quote_response: blindpayQuoteResponse,
+        blindpay_quote_id: blindpayQuoteResponse.id,
+        conversion_rate: conversionRate
+    }
+    await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	const result = await fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return { isExternalAccountExist: true, transferResult: result }
 }
 
+// This function is not used in the current implementation. We don't submit a async job for Blindpay transfer.
 const executeAsyncBlindpayTransferCryptoToFiat = async (config) => {
 	// fetch from created record
 	const { data, error } = await supabase
@@ -289,7 +399,34 @@ const executeAsyncBlindpayTransferCryptoToFiat = async (config) => {
 
 }
 
+const acceptBlindpayCryptoToFiatTransfer = async (config) => {
+	const {recordId, profileId} = config
+    // accept quote and update record
+	const {data: record, error: recordError} = await supabase
+		.from("offramp_transactions")
+		.select()
+		.eq("id", recordId)
+		.maybeSingle()
+
+	if (recordError) throw recordError
+	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
+	
+    const paymentConfig = {
+        recordId, 
+        blindpayQuoteContract: record.blindpay_quote_response?.contract, 
+        bastionRequestId: record.bastion_request_id, 
+        sourceUserId: record.bastion_user_id, 
+        contractAddress: record.contract_address, 
+        chain: record.chain
+    }
+	// accept quote
+	const updatedRecord = await acceptPaymentQuote(paymentConfig)
+	const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
+	return result
+}
+
 module.exports = {
 	createTransferToBlindpaySmartContract,
+    acceptBlindpayCryptoToFiatTransfer,
 	executeAsyncBlindpayTransferCryptoToFiat
 }
