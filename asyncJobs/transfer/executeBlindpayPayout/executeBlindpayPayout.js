@@ -24,12 +24,21 @@ exports.executeBlindpayPayout = async (config) => {
       blindpayExecutePayoutBody = await executePayout(record.blindpay_quote_id,record.from_wallet_address);
     } catch (error) {
 		if (error instanceof ExecutePayoutError) {
-			await updateRequestRecord(config.recordId, { blindpay_payout_response: error.rawResponse, transaction_status: "QUOTE_FAILED" });
+			const toUpdate = {
+				blindpay_payout_response: error.rawResponse,
+				transaction_status: "QUOTE_FAILED"
+			}
 			// send out webhook message if in sandbox
 			if (process.env.NODE_ENV == "development") {
-				await simulateSandboxCryptoToFiatTransactionStatus(record)
-				await notifyCryptoToFiatTransfer(record);
+				toUpdate.transaction_status = "COMPLETED"
+				toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 			}
+			await updateRequestRecord(config.recordId, toUpdate);
+
+			if(process.env.NODE_ENV == "development") {
+				await simulateSandboxCryptoToFiatTransactionStatus(record)
+			}
+			await notifyCryptoToFiatTransfer(record);
 		}
       throw new Error("Blindpay payout execution failed");
     }
