@@ -1,6 +1,7 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
 const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer, executeAsyncTransferCryptoToFiat: executeReapAsyncTransferCryptoToFiat } = require("../transfer/createReapCryptoToFiatTransfer");
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
+const { createTransferToBlindpaySmartContract, acceptBlindpayCryptoToFiatTransfer, executeAsyncBlindpayTransferCryptoToFiat } = require("../transfer/transferToBlindpaySmartContractV2");
 
 const { transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw } = require("../transfer/transferToBridgeLiquidationAddress");
 const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFiat: executeBridgeAsyncTransferCryptoToFiat } = require("../transfer/transferToBridgeLiquidationAddressV2");
@@ -68,8 +69,9 @@ const CryptoToBankSupportedPairFunctions = {
 	pix: {
 		usdc: {
 			brl: {
-				transferFunc: transferToBlindpaySmartContract,
-				directWithdrawFunc: null
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
 			},
 		}
 	},

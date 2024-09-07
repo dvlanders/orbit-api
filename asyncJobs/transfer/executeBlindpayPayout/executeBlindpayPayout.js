@@ -1,7 +1,13 @@
 const createLog = require("../../../src/util/logger/supabaseLogger")
 const supabase = require("../../../src/util/supabaseClient")
-
+const { BastionTransferStatus } = require("../../../src/util/bastion/utils/utils")
+const { blindpayPayoutStatusMap } = require("../../../src/util/blindpay/endpoint/utils")
 const { JobError, JobErrorType } = require("../../error")
+const { updateRequestRecord } = require("../../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord")
+const { executePayout } = require("../../../src/util/blindpay/endpoint/executePayout")
+const { ExecutePayoutError } = require("../../../src/util/blindpay/errors")
+const notifyCryptoToFiatTransfer = require("../../../webhooks/transfer/notifyCryptoToFiatTransfer")
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
 
 exports.executeBlindpayPayout = async (config) => {
 	try {
@@ -13,53 +19,38 @@ exports.executeBlindpayPayout = async (config) => {
 
 		if (error) throw error
 
+    let blindpayExecutePayoutBody;
+    try {
+      blindpayExecutePayoutBody = await executePayout(record.blindpay_quote_id,record.from_wallet_address);
+    } catch (error) {
+		if (error instanceof ExecutePayoutError) {
+			const toUpdate = {
+				blindpay_payout_response: error.rawResponse,
+				transaction_status: "QUOTE_FAILED"
+			}
+			// send out webhook message if in sandbox
+			if (process.env.NODE_ENV == "development") {
+				toUpdate.transaction_status = "COMPLETED"
+				toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
+			}
+			await updateRequestRecord(config.recordId, toUpdate);
 
-		// execute the payout with blindpay's api
-		const headers = {
-			'Accept': 'application/json',
-			'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
-			'Content-Type': 'application/json'
-		};
-
-		const payoutBody = {
-			"quote_id": record.blindpay_quote_response.id,
-			"sender_wallet_address": record.from_wallet_address
+			if(process.env.NODE_ENV == "development") {
+				await simulateSandboxCryptoToFiatTransactionStatus(record)
+			}
+			await notifyCryptoToFiatTransfer(record);
 		}
+      throw new Error("Blindpay payout execution failed");
+    }
 
-		const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/payouts/evm`;
-		const blindpayExecutePayoutResponse = await fetch(url, {
-			method: 'POST',
-			headers: headers,
-			body: JSON.stringify(payoutBody)
-		});
-
-		const blindpayExecutePayoutBody = await blindpayExecutePayoutResponse.json();
-
-
-		if (blindpayExecutePayoutResponse.status !== 200 || blindpayExecutePayoutBody.success === false) {
-			// if payout is successful, update the offramp transaction record
-			const { data: updatedRecord, error: updateError } = await supabase
-				.from("offramp_transactions")
-				.update({
-					blindpay_payout_response: blindpayExecutePayoutBody,
-					transaction_status: "FAILED_ONCHAIN"
-				})
-				.eq("id", config.recordId)
-				.single()
-
-			throw new Error("Blindpay payout execution failed")
-		}
-
-		const { data: updatedRecord, error: updateError } = await supabase
-			.from("offramp_transactions")
-			.update({
-				blindpay_payout_response: blindpayExecutePayoutBody,
-				transaction_status: "IN_PROGRESS_FIAT"
-			})
-			.eq("id", config.recordId)
-			.single()
-
-
+	const toUpdate = {
+		blindpay_payout_id: blindpayExecutePayoutBody.id,
+		blindpay_payout_response: blindpayExecutePayoutBody,
+      	blindpay_payout_status: blindpayExecutePayoutBody.status,
+      	transaction_status: blindpayPayoutStatusMap[blindpayExecutePayoutBody.status] || "UNKNOWN"
+	}
+    await updateRequestRecord(config.recordId, toUpdate);
+	await notifyCryptoToFiatTransfer(record);
 
 	} catch (error) {
 		console.error(error)
@@ -70,4 +61,3 @@ exports.executeBlindpayPayout = async (config) => {
 	}
 
 }
-
