@@ -1,5 +1,6 @@
 const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
 const { updateRequestRecord } = require("../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord")
 const notifyCryptoToFiatTransfer = require("../transfer/notifyCryptoToFiatTransfer")
 
@@ -16,6 +17,12 @@ const processPaymentEvent = async(event) => {
             return
         }else if (event.status == "under_review"){
             toUpdate.transaction_status = "IN_PROGRESS_FIAT"
+
+            if (process.env.NODE_ENV == "development") {
+                toUpdate.transaction_status = "COMPLETED"
+                toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
+            }
+
         }else if (event.status == "requires_action"){
             toUpdate.transaction_status = "ACTION_REQUIRED"
         }else if (event.status == "payout_completed"){
@@ -38,6 +45,11 @@ const processPaymentEvent = async(event) => {
         
         if (error) throw error
         if (!data) throw new Error(`No reap payment record found for reap payment id: ${paymentId}`)
+
+        // send out webhook message if in sandbox
+        if (process.env.NODE_ENV == "development") {
+            await simulateSandboxCryptoToFiatTransactionStatus(data, ["COMPLETED_ONCHAIN", "IN_PROGRESS_FIAT", "INITIATED_FIAT"])
+        }
         
         
         await notifyCryptoToFiatTransfer(data)

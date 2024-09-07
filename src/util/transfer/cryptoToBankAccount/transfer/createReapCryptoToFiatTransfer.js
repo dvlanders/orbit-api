@@ -174,16 +174,11 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 		// in sandbox, just return SUBMITTED_ONCHAIN status
 		if (process.env.NODE_ENV == "development") {
-			toUpdate.transaction_status = "COMPLETED"
+			toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-		// send out webhook message if in sandbox
-		if (process.env.NODE_ENV == "development") {
-			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-		}
 
 	} else {
 

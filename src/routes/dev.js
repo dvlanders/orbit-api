@@ -26,4 +26,7 @@ module.exports = (router) => {
 	router.post("/dev/testSendMessage", dev.testSendMessage)
 	router.get("/dev/testGetVirtualAccountAmount", dev.testGetVirtualAccountAmount)
 	router.get("/dev/testReapAccount", dev.testReapAccount)
+	router.post("/dev/testMintUSDHIFI", dev.testMintUSDHIFI)
+	router.post("/dev/testBurnUSDHIFI", dev.testBurnUSDHIFI)
+	router.post("/dev/testTransferUSDHIFI", dev.testTransferUSDHIFI)
 };

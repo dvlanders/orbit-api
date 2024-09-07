@@ -36,6 +36,7 @@ const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walle
 const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
 const { transferObjectReconstructor } = require("../util/transfer/utils/transfer");
 const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
+const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -195,6 +196,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"requestId": (value) => isUUID(value),
 			"sourceUserId": (value) => isUUID(value), 
 			"destinationUserId": (value) => isUUID(value), 
+			"receivedAmount": (value) => isValidAmount(value),
 			"destinationAccountId": (value) => isUUID(value), 
 			"amount": (value) => isValidAmount(value), 
 			"chain": (value) => isHIFISupportedChain(value), 
@@ -252,13 +254,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			return res.status(400).json({ error: `sameDayAch is only available for ACH transfers, but the destinationAccountId passed was not for an ACH account.` })
 		}
 
-
-		//check is source-destination pair supported
-		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
-		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-		const { transferFunc } = funcs
-		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-
 		// get user wallet
 		// fetch sender wallet address information
 		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -268,6 +263,20 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!sourceWalletAddress || !sourceBastionUserId) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
+
+		if (process.env.NODE_ENV == "development" && sourceCurrency == "usdHifi") {
+			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
+			if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+			const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
+			return res.status(200).json(receipt);
+		}
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc } = funcs
+		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+
 
 		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });

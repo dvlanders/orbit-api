@@ -35,9 +35,6 @@ const simulateSandboxFiatToCryptoTransactionStatus = async (record) => {
     // simulate success fiat in process
     receipt.transferDetails.status = "CRYPTO_SUBMITTED"
     await sendSimulatedMessage(receipt, user.profile_id)
-    // simulate success fiat in process
-    receipt.transferDetails.status = "CONFIRMED"
-    await sendSimulatedMessage(receipt, user.profile_id)
 }
 
 module.exports = {
