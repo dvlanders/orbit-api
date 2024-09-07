@@ -1,4 +1,5 @@
 const supabase = require("../../../src/util/supabaseClient")
+const areObjectsEqual = require("../../utils/configCompare")
 
 
 const mintScheduleCheck = async(job, config, userId, profileId) => {

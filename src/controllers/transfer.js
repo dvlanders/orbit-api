@@ -37,6 +37,7 @@ const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccoun
 const { transferObjectReconstructor } = require("../util/transfer/utils/transfer");
 const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
+const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -411,27 +412,29 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
-		//check is source-destination pair supported
-		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
-		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
-
+			
 		// check fee config
 		if (feeType || feeValue) {
 			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
 			if (!valid) return res.status(400).json({ error })
 		}
-
-		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		// if (process.env.NODE_ENV === "development") {
-		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
-		// }
-		// onramp
-
+		
+			
 		// look up the provider to get the actual internal account id
 		const providerResult = await fetchAccountProviders(sourceAccountId, profileId);
 		if (!providerResult || !providerResult.account_id) return res.status(400).json({ error: `No provider found for id: ${sourceAccountId}` });
 		const internalAccountId = providerResult.account_id;
 
+		// simulation in sandbox
+		if (process.env.NODE_ENV == "development" && destinationCurrency == "usdHifi"){
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
+			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
+			return res.status(200).json(transferResult);
+		}
+				
+		//check is source-destination pair supported
+		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
 		let transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);

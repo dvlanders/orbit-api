@@ -140,7 +140,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
             // perform instant crypto transfer
         }
 
-        if (process.env.NODE_ENV === "development") await simulateSandboxFiatToCryptoTransactionStatus(updatedRecord)
+        if (process.env.NODE_ENV === "development") await simulateSandboxFiatToCryptoTransactionStatus(updatedRecord, ["FIAT_SUBMITTED", "FIAT_PROCESSED", "CRYPTO_SUBMITTED", "CONFIRMED"])
 
         const result = await fetchCheckbookBridgeFiatToCryptoTransferRecord(updatedRecord.id, profileId)
 

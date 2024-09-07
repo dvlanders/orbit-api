@@ -10,6 +10,7 @@ const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/u
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../../../src/util/transfer/fiatToCrypto/utils/simulateSandboxFiatToCryptoTransaction")
 const notifyFiatToCryptoTransfer = require("../../../webhooks/transfer/notifyFiatToCryptoTransfer")
 const supabase = require("../../../src/util/supabaseClient")
+const { USDHIFIContractAddressMap } = require("../../../src/util/smartContract/sandboxUSDHIFI/utils")
 
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
@@ -19,6 +20,7 @@ const mintCheck = async(config) => {
     const onRampRecordId = config.onRampRecordId
     const userId = config.userId
     const contractActionRecordId = config.contractActionRecordId
+    const profileId = config.profileId
     try{
         // check contract actions
         const {data, error} = await supabase
@@ -109,6 +111,7 @@ const mint = async(config) => {
         // mint USDHIFI
         const requestId = v4()
         const contractAddress = USDHIFIContractAddressMap[chain];
+        const unitsAmount = amount * Math.pow(10, 6)
         // insert initial record
         const requestInfo = {
             bastionRequestId: requestId,
@@ -130,7 +133,7 @@ const mint = async(config) => {
         const record = await insertContractActionRecord(requestInfo)
 
         // submit user action to bastion
-        const response = await mintUSDHIFI(walletAddress, amount, chain)
+        const response = await mintUSDHIFI(walletAddress, amount, chain, requestId)
         const responseBody = await response.json()
 
         const toUpdate = {
@@ -161,9 +164,18 @@ const mint = async(config) => {
         await createLog("asyncJob/mint", userId, error.message, error, profileId)
         const toUpdate = {
             status: "FAILED",
-            failed_reason: error.message
+            failed_reason: "Please contact HIFI for more information",
+            updated_at: new Date().toISOString()
         }
-        await updateContractActionRecord(record.id, toUpdate)
+        // update onramp record
+        const {data: onrampRecord, error: onrampRecordError} = await supabase
+            .from("onramp_transactions")
+            .update(toUpdate)
+            .eq("id", onRampRecordId)
+            .select("*")
+            .maybeSingle()
+        
+        throw new Error("Failed to mint USDHIFI to user")
     }
 }
 
