@@ -5,6 +5,7 @@ const fetchCircleAccount = require("../main/fetchCircleAccount")
 const fetchBlindpayAccount = require("../main/fetchBlindpayAccount")
 const { fetchReapAccountInformation } = require("../main/fetchReapAccount")
 const createLog = require("../../../logger/supabaseLogger")
+const supabase = require("../../../supabaseClient")
 
 const railFunctionsMap = {
 	ONRAMP: {
@@ -34,7 +35,7 @@ const railFunctionsMap = {
 		},
 		BRL: {
 			PIX: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount("BRL", null, accountId)
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount("brl", null, accountId)
 			}
 		},
 		HKD: {
@@ -119,7 +120,7 @@ const getAccountsInfo = async (accounts) => {
 			accountId: account.account_id,
 			currency: account.currency,
 			railType: account.rail_type,
-			paymentRail: account.payment_rail,
+			paymentRail: account.payment_rail
 		}
 		acc[account.id] = obj;
 		return acc;

@@ -1,5 +1,5 @@
 const supabase = require("../../../src/util/supabaseClient")
-
+const areObjectsEqual = require("../../utils/configCompare")
 
 exports.cryptoToFiatTransferScheduleCheck = async(job, config, userId, profileId) => {
 
@@ -15,5 +15,5 @@ exports.cryptoToFiatTransferScheduleCheck = async(job, config, userId, profileId
         if (areObjectsEqual(record.config, config)) return false
     }
 
-    return false
+    return true
 }

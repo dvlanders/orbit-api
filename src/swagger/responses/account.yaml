@@ -28,12 +28,24 @@ EurOfframpSepaAccountResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccountObject'
-BrlOfframpReceiverResponse:
+BrlOfframpReceiverCreateResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverObject'
+        $ref: '#/components/schemas/BrlOfframpReceiverCreateObject'
+BrlOfframpReceiverUpdateResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/BrlOfframpReceiverUpdateObject'
+BrlOfframpReceiverGetResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/BrlOfframpReceiverGetObject'
 BrlOfframpPixAccountResponse:
   description: Success
   content:

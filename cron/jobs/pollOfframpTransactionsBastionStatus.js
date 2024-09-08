@@ -6,6 +6,8 @@ const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCrypto
 const createLog = require('../../src/util/logger/supabaseLogger');
 const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
 const { simulateSandboxCryptoToFiatTransactionStatus } = require('../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction');
+const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
+const createJob = require('../../asyncJobs/createJob');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const hifiOfframpTransactionStatusMap = {
@@ -127,7 +129,15 @@ const updateStatus = async (transaction) => {
 				}
 			}
 
-			console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+			// console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
+			
+			// if the on-chain transfer is completed, it means we can execute the payout for the Blindpay offramp
+			if(hifiOfframpTransactionStatus === 'COMPLETED_ONCHAIN' && transaction.fiat_provider === "BLINDPAY"){
+				const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id)
+				if (canSchedule) {
+					await createJob("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id, null)
+				}
+			}
 
 			// send webhook message
 			if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
@@ -143,7 +153,6 @@ const updateStatus = async (transaction) => {
 }
 
 async function pollOfframpTransactionsBastionStatus() {
-
 	// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
 	const { data: offrampTransactionData, error: offrampTransactionError } = await supabaseCall(() => supabase
 		.from('offramp_transactions')
@@ -153,7 +162,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.not('bastion_transaction_status', 'is', null)
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider')
 	)
 
 
