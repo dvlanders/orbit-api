@@ -55,7 +55,10 @@ const mintCheck = async(config) => {
 
         // reinsert check job if not yet in final status
         if (responseBody.status && (responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED")){
-            await createJob("mintCheck", config, userId, profileId)
+            const currentTime = new Date();
+            currentTime.setSeconds(currentTime.getSeconds() + 30);
+            const nextRetry = currentTime.toISOString()
+            await createJob("mintCheck", config, userId, profileId, currentTime.toISOString(), 0, nextRetry)
             return
         }
 
@@ -153,11 +156,26 @@ const mint = async(config) => {
 
         await updateContractActionRecord(record.id, toUpdate)
 
+        // update onramp record
+        const {data: onrampRecord, error: onrampRecordError} = await supabase
+            .from("onramp_transactions")
+            .update({
+                status: responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED" ? "FIAT_SUBMITTED" : "FAILED",
+                updated_at: new Date().toISOString(),
+                transaction_hash: responseBody.transactionHash
+            })
+            .eq("id", onRampRecordId)
+            .select("*")
+            .maybeSingle()
+
         // insert mint check if success
         if (responseBody.status && (responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED")){
             const newJogConfig = {...config, contractActionRecordId: record.id}
             if (!(await mintCheckScheduleCheck("mintCheck", newJogConfig, userId, profileId))) return
-            await createJob("mintCheck", newJogConfig, userId, profileId)
+            const currentTime = new Date();
+            currentTime.setSeconds(currentTime.getSeconds() + 30);
+            const nextRetry = currentTime.toISOString()
+            await createJob("mintCheck", newJogConfig, userId, profileId, currentTime.toISOString(), 0, nextRetry)
         }
 
     }catch (error){
