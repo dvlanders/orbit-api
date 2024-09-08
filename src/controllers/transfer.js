@@ -38,6 +38,7 @@ const { transferObjectReconstructor } = require("../util/transfer/utils/transfer
 const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
+const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -77,9 +78,6 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
 
-		// get transfer function
-		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
-
 		// fetch sender wallet address information
 		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
 		if (senderWalletType && !allowedWalletTypes.includes(senderWalletType)) return res.status(400).json({ error: `wallet type ${senderWalletType} is not supported` })
@@ -104,6 +102,13 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
 		}
 
+		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && currency == "usdHifi"){
+			const receipt = await createBastionSandboxCryptoTransfer(fields)
+			return res.status(200).json(receipt)
+		}
+
+		// get transfer function
+		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
 		// transfer
 		const receipt = await transferFunc(fields)
 
@@ -265,7 +270,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
 
-		if (process.env.NODE_ENV == "development" && sourceCurrency == "usdHifi") {
+		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && sourceCurrency == "usdHifi") {
 			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
 			if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 			const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
@@ -426,7 +431,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const internalAccountId = providerResult.account_id;
 
 		// simulation in sandbox
-		if (process.env.NODE_ENV == "development" && destinationCurrency == "usdHifi"){
+		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && destinationCurrency == "usdHifi"){
 			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
 			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 			return res.status(200).json(transferResult);

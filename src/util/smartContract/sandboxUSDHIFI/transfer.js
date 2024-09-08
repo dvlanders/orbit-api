@@ -25,8 +25,6 @@ const transferUSDHIFI = async (fromWalletAddress, toWalletAddress, amount, chain
     };
 
     const response = await submitUserAction(bodyObject)
-    const responseData = await response.json()
-    console.log(responseData)
     return response
 }  
 

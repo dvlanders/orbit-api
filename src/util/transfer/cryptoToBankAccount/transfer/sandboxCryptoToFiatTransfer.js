@@ -33,7 +33,7 @@ const { mintUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/burn");
 const { USDHIFIContractAddressMap } = require("../../../smartContract/sandboxUSDHIFI/utils");
 const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSupportedPairFetchFunctions");
-const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/transfer/sandbox/scheduleCheck");
+const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
 const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'

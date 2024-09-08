@@ -16,7 +16,8 @@ const hifiSupportedChain = NODE_ENV == "development" ?
 
 const currencyDecimal = {
 	"usdc": 6,
-	"usdt": 6
+	"usdt": 6,
+	"usdHifi": 6
 }
 
 const currencyContractAddress = {

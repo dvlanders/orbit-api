@@ -18,7 +18,7 @@ const pollReapWebhookEvents = require('./jobs/pollReapWebhookEvents');
 
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
-cron.schedule('*/10 * * * * *', pollOfframpTransactionsBastionStatus); // every 20 seconds
+cron.schedule('*/20 * * * * *', pollOfframpTransactionsBastionStatus); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollBastionCryptoToCryptoTransferStatus); // every 20 seconds

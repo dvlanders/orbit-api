@@ -121,6 +121,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
 
         if (process.env.NODE_ENV === "development"){
             toUpdate.status = "CONFIRMED"
+            toUpdate.checkbook_status = "PAID"
         }
 
         // update record
