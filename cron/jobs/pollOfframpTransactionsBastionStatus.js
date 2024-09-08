@@ -82,7 +82,7 @@ const updateStatus = async (transaction) => {
 
 
 		// update specific for sandbox
-		if (process.env.NODE_ENV == "development" && transaction.fiat_provider != "BLINDPAY"){
+		if (process.env.NODE_ENV == "development" && transaction.source_currency == "usdHifi"){
 			await _simulateSandbox(transaction, data)
 			return
 		}
