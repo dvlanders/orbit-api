@@ -73,7 +73,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
 		const {isAlreadyUsed} = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
-		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId` })
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// get transfer function
 		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
@@ -220,8 +220,8 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+		const {isAlreadyUsed} = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// FIX ME SHOULD put it in the field validation 
 		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
