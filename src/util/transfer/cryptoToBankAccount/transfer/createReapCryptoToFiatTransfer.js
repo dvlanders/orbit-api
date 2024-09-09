@@ -46,8 +46,7 @@ const initTransferData = async (config) => {
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
 		.from('offramp_transactions')
-		.insert({
-			request_id: requestId,
+		.update({
 			user_id: sourceUserId,
 			destination_user_id: destinationUserId,
 			chain: chain,
@@ -67,6 +66,7 @@ const initTransferData = async (config) => {
             description: description, 
             destination_currency_amount: receivedAmount
 		})
+		.eq("request_id", requestId)
 		.select()
 		.single()
 

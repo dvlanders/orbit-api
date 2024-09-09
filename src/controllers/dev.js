@@ -404,35 +404,3 @@ exports.testReapAccount = async(req, res) => {
         return res.status(500).json({error: "error"})
     }
 }
-
-exports.testMintUSDHIFI = async(req, res) => {
-    const {walletAddress, amount} = req.body
-    try{
-        const response = await mintUSDHIFI(walletAddress, amount, Chain.POLYGON_AMOY)
-        const responseBody = await response.json()
-        return res.status(200).json(responseBody)
-    }catch (error){
-        console.error(error)
-        return res.status(500).json({error: "error"})
-    }
-}
-
-exports.testTransferUSDHIFI = async(req, res) => {
-    try{
-        await transferUSDHIFI("0x35a53e7E6fd979Fcc12BDCE83cc81632a8F175ce", "0x35a53e7E6fd979Fcc12BDCE83cc81632a8F175ce", 10, Chain.POLYGON_AMOY)
-        return res.status(200).json({message: "success"})
-    }catch (error){
-        console.error(error)
-        return res.status(500).json({error: "error"})
-    }
-}
-
-exports.testBurnUSDHIFI = async(req, res) => {
-    try{
-        await burnUSDHIFI("0x35a53e7E6fd979Fcc12BDCE83cc81632a8F175ce", 11, Chain.POLYGON_AMOY)
-        return res.status(200).json({message: "success"})
-    }catch (error){
-        console.error(error)
-        return res.status(500).json({error: "error"})
-    }
-}

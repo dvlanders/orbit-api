@@ -75,8 +75,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
-		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+		const {isAlreadyUsed} = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// fetch sender wallet address information
 		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -228,8 +228,8 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+		const {isAlreadyUsed} = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// FIX ME SHOULD put it in the field validation 
 		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
@@ -416,9 +416,9 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request id valid
-		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
-			
+		const {isAlreadyUsed} = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+
 		// check fee config
 		if (feeType || feeValue) {
 			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)

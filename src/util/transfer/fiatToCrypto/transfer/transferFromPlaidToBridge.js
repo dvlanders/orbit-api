@@ -26,8 +26,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
-            .insert({
-                request_id: requestId,
+            .update({
                 user_id: sourceUserId,
                 destination_user_id: destinationUserId,
                 amount: amount,
@@ -39,6 +38,7 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 fiat_provider: "CHECKBOOK",
                 crypto_provider: "BRIDGE"
             })
+            .eq("request_id", requestId)
             .select()
             .single())
         if (initialRecordError) {

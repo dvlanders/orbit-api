@@ -30,8 +30,7 @@ const sandboxMintUSDHIFI = async(config) => {
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
-            .insert({
-                request_id: requestId,
+            .update({
                 user_id: sourceUserId,
                 destination_user_id: destinationUserId,
                 amount: amount,
@@ -42,6 +41,7 @@ const sandboxMintUSDHIFI = async(config) => {
                 fiat_provider: "CHECKBOOK",
                 crypto_provider: "BRIDGE"
             })
+            .eq("request_id", requestId)
             .select()
             .single())
         if (initialRecordError) {

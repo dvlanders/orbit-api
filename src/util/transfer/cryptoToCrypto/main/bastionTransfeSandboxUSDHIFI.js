@@ -31,9 +31,8 @@ const insertRecord = async(fields) => {
     // insert record
     const { data: requestRecord, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
-    .insert(
+    .update(
         { 
-            request_id: fields.requestId, 
             sender_user_id: fields.senderUserId,
             amount: fields.amount,
             recipient_user_id: fields.recipientUserId ? fields.recipientUserId : null,
@@ -51,6 +50,7 @@ const insertRecord = async(fields) => {
             recipient_bastion_user_id: fields.recipientBastionUserId
         },
     )
+    .eq("request_id", fields.requestId)
     .select("*")
     .single())
 
