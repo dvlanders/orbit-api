@@ -33,18 +33,41 @@ return request
 }
 
 const checkIsCryptoToCryptoRequestIdAlreadyUsed = async(requestId, senderUserId) => {
-    let { data: request, error:requestError } = await supabaseCall(() => supabase
+    // check if record already exists
+    let { data: record, error:requestError } = await supabaseCall(() => supabase
         .from('crypto_to_crypto')
         .select('*')
         .eq("request_id", requestId)
         .eq("sender_user_id", senderUserId)
         .maybeSingle())
 
-
     if (requestError) throw requestError
-    if (!request) return null
+    if (record) return {existingRecord: record, isAlreadyUsed: true, newRecord: null}
 
-    return request
+    // insert new record
+    let { data: newRecord, error:insertError } = await supabaseCall(() => supabase
+        .from('crypto_to_crypto')
+        .insert({
+            request_id: requestId,
+        })
+        .select("*")
+        .single())
+    
+    // record already exists
+    if (insertError && (insertError.code == '23505' || insertError.message == 'duplicate key value violates unique constraint "crypto_to_crypto_request_id_key"')){
+        let { data: record, error:requestError } = await supabaseCall(() => supabase
+        .from('crypto_to_crypto')
+        .select('*')
+        .eq("request_id", requestId)
+        .eq("sender_user_id", senderUserId)
+        .maybeSingle())
+
+        if (requestError) throw requestError
+        if (record) return {existingRecord: record, isAlreadyUsed: true, newRecord: null}
+    }
+
+    // new record
+    return {existingRecord: null, isAlreadyUsed: false, newRecord: newRecord}
 }
 
 module.exports = {

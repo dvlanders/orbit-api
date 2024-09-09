@@ -401,3 +401,20 @@ exports.testReapAccount = async(req, res) => {
         return res.status(500).json({error: "error"})
     }
 }
+
+exports.testSupabaseDobuleInsert = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .from("crypto_to_crypto")
+            .insert({
+                request_id: "dc0cc709-c5d3-4d2f-9dc1-619a6173bb85",
+            })
+            .select("*")
+            .single()
+        if (error) throw error
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+}
