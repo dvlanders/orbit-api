@@ -6,6 +6,7 @@ const { createSingleCheckbookUser } = require("../../checkbook/endpoint/createCh
 const createLog = require("../../logger/supabaseLogger")
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
+const fetchBridgeVirtualAccount = require("../../account/getAccount/main/fetchBridgeVirtualAccount")
 
 const checkUsAchOnRampRail = async(checkbookUserId) => {
 
@@ -57,7 +58,10 @@ const activateUsAchOnRampRail = async(config) => {
         // every time create a virtual account pairs will create a new checkbook user
         const checkbookUserId = `${userId}-${destinationChain}-${destinationCurrency}`
         // check if record is already exist
-        if (await checkUsAchOnRampRail(checkbookUserId)) return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false, virtualAccountInfo: null}
+        if (await checkUsAchOnRampRail(checkbookUserId)) {
+            const virtualAccountInfo = await fetchBridgeVirtualAccount(userId, "usd", destinationCurrency, destinationChain, null, null, null, false);
+            return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false, virtualAccountInfo}
+        }
         // check if user is allowed to create 
         const userBridgeInfo = await getUserBridgeInfo(userId)
         if (!userBridgeInfo || userBridgeInfo.status != BridgeCustomerStatus.ACTIVE || userBridgeInfo.base_status != "approved") return {isCreated: false, alreadyExisted: false, isAllowedTocreate: false, virtualAccountInfo: null}
@@ -68,11 +72,15 @@ const activateUsAchOnRampRail = async(config) => {
             destinationCurrency,
             destinationPaymentRail: chainToVirtualAccountPaymentRail[destinationChain]
         }
-        const {isCreated, alreadyExisted, virtualAccount} = await createBridgeVirtualAccount(userId, userBridgeInfo.bridge_id, rail)
-
+        const {virtualAccount, alreadyExisted} = await createBridgeVirtualAccount(userId, userBridgeInfo.bridge_id, rail)
         if(alreadyExisted){
+            if(await checkUsAchOnRampRail(checkbookUserId)){
+                const virtualAccountInfo = await fetchBridgeVirtualAccount(userId, "usd", destinationCurrency, destinationChain, null, null, null, false);
+                return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false, virtualAccountInfo}
+            }
             return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false, virtualAccountInfo: null}
         }
+
         // get user name
         const {data: user, error: userError} = await supabase
             .from("user_kyc")
