@@ -33,16 +33,6 @@ return request
 }
 
 const checkIsCryptoToCryptoRequestIdAlreadyUsed = async(requestId, senderUserId) => {
-    // check if record already exists
-    let { data: record, error:requestError } = await supabaseCall(() => supabase
-        .from('crypto_to_crypto')
-        .select('*')
-        .eq("request_id", requestId)
-        .maybeSingle())
-
-    if (requestError) throw requestError
-    if (record) return {isAlreadyUsed: true, newRecord: null}
-
     // insert new record
     let { data: newRecord, error:insertError } = await supabaseCall(() => supabase
         .from('crypto_to_crypto')
@@ -54,14 +44,7 @@ const checkIsCryptoToCryptoRequestIdAlreadyUsed = async(requestId, senderUserId)
     
     // record already exists
     if (insertError && (insertError.code == '23505' || insertError.message == 'duplicate key value violates unique constraint "crypto_to_crypto_request_id_key"')){
-        let { data: record, error:requestError } = await supabaseCall(() => supabase
-        .from('crypto_to_crypto')
-        .select('*')
-        .eq("request_id", requestId)
-        .maybeSingle())
-
-        if (requestError) throw requestError
-        if (record) return {isAlreadyUsed: true, newRecord: null}
+        return {isAlreadyUsed: true, newRecord: null}
     }
 
     // new record
