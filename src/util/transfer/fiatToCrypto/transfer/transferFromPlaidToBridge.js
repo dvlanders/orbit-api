@@ -15,7 +15,8 @@ const { v4 } = require("uuid");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
-const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId) => {
+const transferFromPlaidToBridge = async(configs) => {
+    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId} = configs
     try{
         if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const transferInfo = await bridgePlaidRailCheck(sourceAccountId, sourceCurrency, destinationCurrency, chain, sourceUserId, destinationUserId)
@@ -35,7 +36,9 @@ const transferFromPlaidToBridge = async(requestId, amount, sourceCurrency, desti
                 last_bridge_virtual_account_event_id: lastBridgeVirtualAccountActivity,
                 status: "CREATED",
                 fiat_provider: "CHECKBOOK",
-                crypto_provider: "BRIDGE"
+                crypto_provider: "BRIDGE",
+                source_currency: sourceCurrency,
+                destination_currency: destinationCurrency
             })
             .select()
             .single())

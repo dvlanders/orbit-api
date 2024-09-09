@@ -328,3 +328,37 @@ exports.testGetVirtualAccountAmount = async(req, res) => {
     }
 
 }
+
+
+exports.fillCurrency = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .from("onramp_transactions")
+            .select("*")
+
+        await Promise.all(data.map(async(transaction) => {
+            const {data: bridgeVirtualAccount, error: bridgeVirtualAccountError} = await supabase
+                .from("bridge_virtual_accounts")
+                .select("*")
+                .eq("virtual_account_id", transaction.bridge_virtual_account_id)
+                .single()
+            if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
+
+            const {data, error} = await supabase
+                .from("onramp_transactions")
+                .update({
+                    source_currency: bridgeVirtualAccount.source_currency,
+                    destination_currency: bridgeVirtualAccount.destination_currency
+                })
+                .eq("id", transaction.id)
+                .select()
+                .single()
+            if (error) throw error
+            
+        }))
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+}

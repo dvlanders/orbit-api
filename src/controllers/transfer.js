@@ -630,7 +630,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
 		// }
 		// onramp
-		const transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
+		const transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
 		return res.status(200).json(transferResult);
 
 	} catch (error) {
