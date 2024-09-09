@@ -534,7 +534,11 @@ exports.activateOnRampRail = async (req, res) => {
 			destinationChain
 		}
 		const result = await activateFunction(config)
-		if (result.alreadyExisted) return res.status(200).json({ message: `Virtual account for the rail already existed` })
+		if (result.alreadyExisted){
+			const resObj = { message: `Virtual account for the rail already existed`};
+			if(result.virtualAccountInfo) resObj.account = result.virtualAccountInfo
+			return res.status(200).json(resObj)
+		}
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create a virtual account for the rail` })
 
 		return res.status(200).json({ message: `Virtual account for ${rail} created successfully`, account: result.virtualAccountInfo })
