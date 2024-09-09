@@ -64,10 +64,15 @@ const activateUsAchOnRampRail = async(config) => {
         //create bridge virtual account
         const rail = {
             sourceCurrency: "usd",
+            sourcePaymentRails: ["ach_push","wire"],
             destinationCurrency,
             destinationPaymentRail: chainToVirtualAccountPaymentRail[destinationChain]
         }
-        const virtualAccount = await createBridgeVirtualAccount(userId, userBridgeInfo.bridge_id, rail)
+        const {isCreated, alreadyExisted, virtualAccount} = await createBridgeVirtualAccount(userId, userBridgeInfo.bridge_id, rail)
+
+        if(alreadyExisted){
+            return {isCreated: false, alreadyExisted: true, isAllowedTocreate: false, virtualAccountInfo: null}
+        }
         // get user name
         const {data: user, error: userError} = await supabase
             .from("user_kyc")

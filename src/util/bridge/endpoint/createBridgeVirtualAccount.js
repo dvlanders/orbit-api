@@ -44,13 +44,38 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 	let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
 		.from('bridge_virtual_accounts')
 		.select('*')
-		.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail, destination_wallet_address: address, source_currency: rail.sourceCurrency, source_payment_rail: rail.sourcePaymentRail, destination_currency: rail.destinationCurrency})
+		.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail, destination_wallet_address: address, source_currency: rail.sourceCurrency, destination_currency: rail.destinationCurrency})
+		.contains('source_payment_rails', JSON.stringify(rail.sourcePaymentRails))
 		.maybeSingle()
 	if (bridgeVirtualAccountError) {
 		throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, bridgeVirtualAccountError.message, bridgeVirtualAccountError);
 	}
 
-	if (bridgeVirtualAccount) return bridgeVirtualAccount
+	if (bridgeVirtualAccount) return {isCreated: true, alreadyExisted: true, virtualAccount: bridgeVirtualAccount}
+
+	// insert virtual account record
+	const { data: baseVirtualAccount, error: baseVirtualAccountError } = await supabaseCall(() => supabase
+	.from('bridge_virtual_accounts')
+	.insert({
+		user_id: userId,
+		source_currency: rail.sourceCurrency,
+		source_payment_rails: rail.sourcePaymentRails,
+		destination_currency: rail.destinationCurrency,
+		destination_payment_rail: rail.destinationPaymentRail,
+	})
+	.select()
+	.single())
+
+	if(baseVirtualAccountError || !baseVirtualAccount){
+		if (baseVirtualAccountError.code === '23505') {
+			console.error('Duplicate entry for composite key:', baseVirtualAccountError.message);
+			return {isCreated: true, alreadyExisted: true, virtualAccount: baseVirtualAccount}
+		} else {
+			console.error('Error inserting virtual account:', baseVirtualAccountError.message);
+			throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, baseVirtualAccountError.message, baseVirtualAccountError);
+		}
+	}
+
 
 	// create virtual account
 	const idempotencyKey = v4();
@@ -81,7 +106,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 		// insert virtual account record
 		const { data: virtualAccount, error: virtualAccountError } = await supabaseCall(() => supabase
 			.from('bridge_virtual_accounts')
-			.insert({
+			.update({
 				user_id: userId,
 				status: responseBody.status,
 				source_currency: responseBody.source_deposit_instructions.currency,
@@ -98,10 +123,11 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 				deposit_institutions_bank_account_number: responseBody.source_deposit_instructions.bank_account_number,
 				bridge_response: responseBody
 			})
+			.eq('id', baseVirtualAccount.id)
 			.select()
 			.single())
 		if (virtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, virtualAccountError.message, virtualAccountError)
-		return virtualAccount
+		return {isCreated: true, alreadyExisted: false, virtualAccount}
 	} else {
 		throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, "something went wrong when creating virtual account", responseBody)
 	}
