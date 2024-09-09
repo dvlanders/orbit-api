@@ -13,8 +13,8 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
         fromCurrency: record.source_currency,
         toCurrency: record.destination_currency,
         conversionRate: record.conversion_rate?.blindpay_quotation / 100,
-        vaildFrom: new Date(),
-        vaildUntil: record.conversion_rate?.expires_at ? new Date(record.conversion_rate?.expires_at).toISOString() : new Date(),
+        vaildFrom: new Date().toISOString(),
+        vaildUntil: record.conversion_rate?.expires_at ? new Date(record.conversion_rate?.expires_at).toISOString() : new Date().toISOString(),
     }
     const quoteInformation = {
         fromCurrency: conversionRate.fromCurrency,
