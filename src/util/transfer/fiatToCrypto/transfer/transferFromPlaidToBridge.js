@@ -38,7 +38,8 @@ const transferFromPlaidToBridge = async(configs) => {
                 fiat_provider: "CHECKBOOK",
                 crypto_provider: "BRIDGE",
                 source_currency: sourceCurrency,
-                destination_currency: destinationCurrency
+                destination_currency: destinationCurrency,
+                chain: chain
             })
             .select()
             .single())

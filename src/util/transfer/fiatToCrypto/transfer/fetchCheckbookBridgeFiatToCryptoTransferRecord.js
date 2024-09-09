@@ -8,15 +8,6 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
     // get transactio record
     const record = await fetchFiatToCryptoRequestInfortmaionById(id, profileId)
     if (!record) return null
-    // get rail information
-    let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
-        .from('bridge_virtual_accounts')
-        .select('destination_payment_rail, source_currency, destination_currency')
-        .eq("virtual_account_id", record.bridge_virtual_account_id)
-        .single())
-
-    if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
-
     // get source plaid account information
 
     let { data: plaidAccount, error: plaidAccountError } = await supabaseCall(() => supabase
@@ -35,7 +26,7 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
             sourceUserId: record.user_id,
             destinationUserId: record.destination_user_id,
             transactionHash: record.transaction_hash,
-            chain: virtualAccountPaymentRailToChain[bridgeVirtualAccount.destination_payment_rail],
+            chain: record.chain,
             sourceCurrency: record.source_currency,
             amount: record.amount,
             destinationCurrency: record.destination_currency,
