@@ -401,8 +401,8 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request id valid
-		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+		const {isAlreadyUsed} = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 		//check is source-destination pair supported
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
