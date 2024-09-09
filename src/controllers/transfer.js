@@ -72,8 +72,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
-		const {existingRecord, isAlreadyUsed} = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
-		if (isAlreadyUsed) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${existingRecord.id}` })
+		const {isAlreadyUsed} = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId` })
 
 		// get transfer function
 		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
