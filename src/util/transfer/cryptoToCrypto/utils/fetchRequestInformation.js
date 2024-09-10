@@ -36,19 +36,15 @@ const checkIsCryptoToCryptoRequestIdAlreadyUsed = async(requestId, senderUserId)
     // insert new record
     let { data: newRecord, error:insertError } = await supabaseCall(() => supabase
         .from('crypto_to_crypto')
-        .insert({
+        .upsert({
             request_id: requestId,
-        })
+        }, 
+        {onConflict: "request_id", ignoreDuplicates: true})
         .select("*")
-        .single())
-    
-    // record already exists
-    if (insertError && (insertError.code == '23505' || insertError.message == 'duplicate key value violates unique constraint "crypto_to_crypto_request_id_key"')){
-        return {isAlreadyUsed: true, newRecord: null}
-    }
-
+        .maybeSingle())
+    if (insertError) throw insertError
     // new record
-    return {isAlreadyUsed: false, newRecord: newRecord}
+    return {isAlreadyUsed: !newRecord, newRecord: newRecord}
 }
 
 module.exports = {

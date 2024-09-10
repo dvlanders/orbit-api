@@ -40,17 +40,40 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 	const {walletAddress: address} = await getBastionWallet(userId, virtualAccountPaymentRailToChain[rail.destinationPaymentRail])
 	if (!address) throw new Error (`No user wallet found`)
 
-	// check if virtual account is already created
-	let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
+	// upsert virtual account record, if fail to upsert since there is conflict, select will return no record
+	let { data: baseVirtualAccount, error: baseVirtualAccountError } = await supabaseCall(() => supabase
+	.from('bridge_virtual_accounts')
+	.upsert({
+		user_id: userId,
+		source_currency: rail.sourceCurrency,
+		source_payment_rails: rail.sourcePaymentRails,
+		destination_currency: rail.destinationCurrency,
+		destination_payment_rail: rail.destinationPaymentRail,
+	}, { onConflict: 'user_id, source_currency, source_payment_rails, destination_currency, destination_payment_rail', ignoreDuplicates: true })
+	.select()
+	.maybeSingle())
+
+	if(baseVirtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, baseVirtualAccountError.message, baseVirtualAccountError);
+
+	if(!baseVirtualAccount){
+		console.log("baseVirtualAccount not found, which means race condition detected")
+		let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
 		.from('bridge_virtual_accounts')
 		.select('*')
-		.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail, destination_wallet_address: address, source_currency: rail.sourceCurrency, source_payment_rail: rail.sourcePaymentRail, destination_currency: rail.destinationCurrency})
+		.match({user_id: userId, destination_payment_rail: rail.destinationPaymentRail, source_currency: rail.sourceCurrency, destination_currency: rail.destinationCurrency})
+		.contains('source_payment_rails', JSON.stringify(rail.sourcePaymentRails))
 		.maybeSingle()
-	if (bridgeVirtualAccountError) {
-		throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, bridgeVirtualAccountError.message, bridgeVirtualAccountError);
+
+		if (bridgeVirtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, bridgeVirtualAccountError.message, bridgeVirtualAccountError);
+
+		if (!bridgeVirtualAccount) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.RECORD_NOT_FOUND, "No virtual account found", bridgeVirtualAccount);
+
+		// baseVirtualAccount = bridgeVirtualAccount;
+		return {virtualAccount:bridgeVirtualAccount , alreadyExisted: true}
 	}
 
-	if (bridgeVirtualAccount) return bridgeVirtualAccount
+	// only return here when the base virtual account also has an associate virtual account id
+	// if(baseVirtualAccount && baseVirtualAccount.virtual_account_id) return baseVirtualAccount;
 
 	// create virtual account
 	const idempotencyKey = v4();
@@ -81,7 +104,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 		// insert virtual account record
 		const { data: virtualAccount, error: virtualAccountError } = await supabaseCall(() => supabase
 			.from('bridge_virtual_accounts')
-			.insert({
+			.update({
 				user_id: userId,
 				status: responseBody.status,
 				source_currency: responseBody.source_deposit_instructions.currency,
@@ -98,10 +121,11 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 				deposit_institutions_bank_account_number: responseBody.source_deposit_instructions.bank_account_number,
 				bridge_response: responseBody
 			})
+			.eq('id', baseVirtualAccount.id)
 			.select()
 			.single())
 		if (virtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, virtualAccountError.message, virtualAccountError)
-		return virtualAccount
+		return {virtualAccount, alreadyExisted: false}
 	} else {
 		throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, "something went wrong when creating virtual account", responseBody)
 	}
