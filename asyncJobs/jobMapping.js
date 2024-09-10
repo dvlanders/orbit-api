@@ -12,6 +12,13 @@ const { chargeFeeOnFundReceivedBastionAsync } = require("./transfer/chargeFeeOnF
 const { executeBlindpayPayoutScheduleCheck } = require("./transfer/executeBlindpayPayout/scheduleCheck");
 const { executeBlindpayPayout } = require("./transfer/executeBlindpayPayout/executeBlindpayPayout");
 const { updateDeveloperUserAsyncCheck, updateDeveloperUserAsync } = require("./user/updateDeveloperUser");
+const { mintCheckScheduleCheck, mintScheduleCheck } = require("./sandbox/mint/scheduleCheck");
+const { mint, mintCheck } = require("./sandbox/mint/mint");
+const { cryptoToFiatTransferSandboxScheduleCheck } = require("./sandbox/cryptoToFiatTransfer/scheduleCheck");
+const { cryptoToFiatTransferSandboxAsync } = require("./sandbox/cryptoToFiatTransfer/cryptoToFiatTransfer");
+const { cryptoToCryptoTransferSandboxScheduleCheck } = require("./sandbox/cryptoToCryptoTransfer/scheduleCheck");
+const { cryptoToCryptoTransferSandboxAsync } = require("./sandbox/cryptoToCryptoTransfer/cryptoToCryptoTransfer");
+
 
 exports.jobMapping = {
 	fundGas: {
@@ -53,6 +60,22 @@ exports.jobMapping = {
 	updateDeveloperUser: {
 		scheduleCheck: updateDeveloperUserAsyncCheck,
 		execute: updateDeveloperUserAsync
+	},
+	mint: {
+		scheduleCheck: mintScheduleCheck,
+		execute: mint
+	},
+	mintCheck: {
+		scheduleCheck: mintCheckScheduleCheck,
+		execute: mintCheck
+	},
+	cryptoToFiatTransferSandbox:{
+		scheduleCheck: cryptoToFiatTransferSandboxScheduleCheck,
+		execute: cryptoToFiatTransferSandboxAsync
+	},
+	cryptoToCryptoTransferSandbox: {
+		scheduleCheck: cryptoToCryptoTransferSandboxScheduleCheck,
+		execute: cryptoToCryptoTransferSandboxAsync
 	}
 }
 

@@ -16,7 +16,8 @@ const hifiSupportedChain = NODE_ENV == "development" ?
 
 const currencyDecimal = {
 	"usdc": 6,
-	"usdt": 6
+	"usdt": 6,
+	"usdHifi": 6
 }
 
 const currencyContractAddress = {
@@ -27,7 +28,8 @@ const currencyContractAddress = {
 		usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" //registered
 	},
 	POLYGON_AMOY: {
-		usdc: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582" //registered
+		usdc: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", //registered
+		usdHifi: process.env.POLYGON_AMOY_USDHIFI_CONTRACT_ADDRESS //registered
 	},
 	BASE_MAINNET: {
 		usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" //registered

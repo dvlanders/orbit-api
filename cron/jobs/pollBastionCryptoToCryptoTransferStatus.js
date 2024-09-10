@@ -98,7 +98,6 @@ async function pollBastionCryptoToCryptoTransferStatus() {
 			.select('*')
 		)
 
-
 		if (cryptoTransactionDataError) {
 			console.error('Failed to fetch transactions for pollCryptoToCryptoTransferStatus', cryptoTransactionDataError);
 			await createLog('pollCryptoToCryptoTransferStatus', null, 'Failed to fetch transactions', cryptoTransactionDataError);

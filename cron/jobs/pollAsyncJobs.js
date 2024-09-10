@@ -66,6 +66,13 @@ const pollAsyncJobs = async() => {
                         rawResponse: error.rawResponse,
                         needToReschedule: error.needToReschedule
                     }
+                }else{
+                    jobError = {
+                        type: "INTERNAL_ERROR",
+                        message: error.message,
+                        json: error,
+                        rawResponse: error,
+                    }
                 }
                 success = false
             }finally{

@@ -84,6 +84,7 @@ async function pollOnrampTransactionsCheckbookStatus() {
 		.from('onramp_transactions')
 		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id, status')
         .eq('fiat_provider', "CHECKBOOK")
+        .not('checkbook_payment_id', 'is', null)
         .or('status.eq.FIAT_SUBMITTED, checkbook_status.eq.IN_PROCESS')
         .order('updated_at', {ascending: true})
     )

@@ -5,7 +5,7 @@ const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
-const { transferType } = require("../../utils/transfer");
+const { transferType, transferObjectReconstructor } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion");
@@ -29,19 +29,45 @@ const { safeStringToFloat } = require("../../../utils/number");
 const { initial } = require("lodash");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const { mintUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/mint");
+const { burnUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/burn");
+const { USDHIFIContractAddressMap } = require("../../../smartContract/sandboxUSDHIFI/utils");
+const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSupportedPairFetchFunctions");
+const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
+const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
 
-const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
-const BRIDGE_URL = process.env.BRIDGE_URL;
+const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
+
+const getExchangeRate = async (userId, profileId,toCurrency) => {
+    if (toCurrency == "usd" || toCurrency == "eur") {
+        const conversionRate = await getBridgeConversionRate("usdc", toCurrency, profileId)
+        return conversionRate.conversionRate
+    }else if (toCurrency == "hkd") {
+        const responseBody = await getReapExchangeRate(userId, "usdc", toCurrency)
+        return responseBody.exchangeRate
+    }else if (toCurrency == "brl") {
+        //FIXME
+        return 5.6
+    }
+}
+
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, fiat_provider, crypto_provider, paymentRail, achReference, sepaReference, wireMessage, swiftReference, receivedAmount } = config
 
-
-
-	// get conversion rate
-	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
+	// get USDHIFI conversion rate
+	const conversionRate = {
+        fromCurrency: sourceCurrency,
+        toCurrency: destinationCurrency,
+        conversionRate: await getExchangeRate(sourceUserId, profileId, destinationCurrency),
+        validFrom: new Date().toISOString(),
+        validUntil: new Date().toISOString()
+    }
 	//get crypto contract address
-	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+	const contractAddress = USDHIFIContractAddressMap[chain]
+
+    // convert received amount to amount
+    const sentAmount = amount || parseFloat((receivedAmount / conversionRate.conversionRate).toFixed(2))
 
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -49,21 +75,20 @@ const initTransferData = async (config) => {
 		.update({
 			user_id: sourceUserId,
 			destination_user_id: destinationUserId,
-			amount: amount,
+			amount: sentAmount,
 			chain: chain,
 			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
-			to_bridge_external_account_id: bridgeExternalAccountId, // actual id that bridge return to us
 			transaction_status: 'CREATED',
 			contract_address: contractAddress,
 			action_name: "transfer",
-			fiat_provider: "BRIDGE",
-			crypto_provider: "BASTION",
+			fiat_provider: fiat_provider,
+			crypto_provider: crypto_provider,
 			conversion_rate: conversionRate,
 			source_currency: sourceCurrency,
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
-			bastion_user_id: sourceBastionUserId,
+			bastion_user_id: gasStation,
 			same_day_ach: paymentRail == "sameDayAch",
 			ach_reference: achReference,
 			sepa_reference: sepaReference,
@@ -224,105 +249,20 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 
 const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const sourceUserId = initialTransferRecord.user_id
-	const destinationAccountId = initialTransferRecord.destination_account_id
-	const sourceCurrency = initialTransferRecord.source_currency
-	const destinationCurrency = initialTransferRecord.destination_currency
 	const chain = initialTransferRecord.chain
 	const amount = initialTransferRecord.amount
 	const sourceWalletAddress = initialTransferRecord.from_wallet_address
-	const bastionUserId = initialTransferRecord.bastion_user_id
-
-	// get account info
-	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
-	if (!accountInfo || !accountInfo.account_id) throw new Error(`destinationAccountId not exist`)
-	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
-
-	const internalAccountId = accountInfo.account_id
-	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
-	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
-
-
-	//get payment rail
-	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(internalAccountId, destinationCurrency)
-
-	//create transfer without fee
-	// create a bridge transfer
-	const source = {
-		currency: sourceCurrency,
-		payment_rail: chainToVirtualAccountPaymentRail[chain],
-		from_address: sourceWalletAddress
-	}
-	const destination = {
-		currency: destinationCurrency,
-		payment_rail: paymentRail,
-		external_account_id: bridgeExternalAccountId
-	}
-
-	// if paymentRail is "wire" then we add wire_message to the destination object
-	if (paymentRail == "wire") {
-		destination.wire_message = initialTransferRecord.wire_message
-	}
-
-	// if the paymentrail is "sepa" then we attach sepa_reference to the destination object
-	if (paymentRail == "sepa") {
-		destination.sepa_reference = initialTransferRecord.sepa_reference
-	}
-
-	// if the paymentrail is "ach" or "ach_same_day" then we attach ach_reference to the destination object
-	if (paymentRail == "ach" || paymentRail == "ach_same_day") {
-		destination.ach_reference = initialTransferRecord.ach_reference
-	}
-
-	const clientReceivedAmount = amount.toFixed(2)
-	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
-	const bridgeResponseBody = await bridgeResponse.json()
-	if (!bridgeResponse.ok) {
-		// failed to create tranfser
-		await createLog("transfer/createTransferToBridgeLiquidationAddress", sourceUserId, bridgeResponseBody.message, bridgeResponseBody)
-		const toUpdate = {
-			transaction_status: "NOT_INITIATED",
-			updated_at: new Date().toISOString(),
-			bridge_response: bridgeResponseBody,
-			failed_reason: "Please contact HIFI for more information"
-		}
-		const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
-		const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
-		return result
-	}
-
-	// update record
-	const liquidationAddress = bridgeResponseBody.source_deposit_instructions.to_address
-	const providerFee = safeStringToFloat(bridgeResponseBody.receipt.developer_fee) + safeStringToFloat(bridgeResponseBody.receipt.exchange_fee) + safeStringToFloat(bridgeResponseBody.receipt.gas_fee)
-	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount || bridgeResponseBody.receipt.subtotal_amount) * parseFloat(initialTransferRecord.conversion_rate.conversionRate)
-	const toUpdate = {
-		updated_at: new Date().toISOString(),
-		bridge_transaction_status: bridgeResponseBody.state,
-		bridge_response: bridgeResponseBody,
-		bridge_transfer_id: bridgeResponseBody.id,
-		provider_fee: providerFee,
-		destination_currency_amount: finalClientReceivedAmount,
-		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
-	}
-	await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-	const decimals = currencyDecimal[sourceCurrency]
-	const transferAmount = toUnitsString(amount, decimals)
-	const bodyObject = {
-		requestId: initialTransferRecord.bastion_request_id,
-		userId: bastionUserId,
-		contractAddress: initialTransferRecord.contract_address,
-		actionName: "transfer",
-		chain: chain,
-		actionParams: erc20Transfer(sourceCurrency, chain, liquidationAddress, transferAmount)
-	};
-
-	const bastionResponse = await submitUserAction(bodyObject)
-	const bastionResponseBody = await bastionResponse.json();
+	const bastionRequestId = initialTransferRecord.bastion_request_id
+	// transfer
+    await updateRequestRecord(initialTransferRecord.id, {bastion_user_id: gasStation})
+		// call mint function
+    const bastionResponse = await burnUSDHIFI(sourceWalletAddress, amount, chain, bastionRequestId)	
+	const bastionResponseBody = await bastionResponse.json()
 
 	// map status
 	if (!bastionResponse.ok) {
 		// fail to transfer
-		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
+		await createLog("transfer/util/createSandboxCryptoToFiatTransfer/transferWithoutFee", sourceUserId, bastionResponseBody.message, bastionResponseBody)
 		const { message, type } = getMappedError(bastionResponseBody.message)
 
 		const toUpdate = {
@@ -332,18 +272,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 			failed_reason: message
 		}
 
-		// in sandbox, just return completed the transfer
-		if (process.env.NODE_ENV == "development") {
-			toUpdate.transaction_status = "COMPLETED"
-			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
-		}
-
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-		// send out webhook message if in sandbox
-		if (process.env.NODE_ENV == "development") {
-			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-		}
 
 	} else {
 
@@ -359,30 +288,19 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 	// send webhook message in production
 	await notifyCryptoToFiatTransfer(initialTransferRecord)
-
-	// gas check
-	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
-	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
-	return result
 }
 
-const createTransferToBridgeLiquidationAddress = async (config) => {
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
-	console.log(wireMessage)
+
+const createSandboxCryptoToFiatTransfer = async (config) => {
+	const { destinationAccountId, amount, profileId, sourceUserId } = config
 
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
-
-	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
-	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
+    
+    // get account info and provider
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
 	if (!accountInfo || !accountInfo.account_id) return { isExternalAccountExist: false, transferResult: null }
-	
-	// check destination bank account information
-	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(accountInfo.account_id, destinationCurrency)
-	config.destinationUserId = destinationUserId
-	config.destinationUserBridgeId = destinationUserBridgeId
-	config.bridgeExternalAccountId = bridgeExternalAccountId
-	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
+    config.fiat_provider = accountInfo.provider
+    config.crypto_provider = "BASTION"
 
 	// fetch or insert request record
 	const initialTransferRecord = await initTransferData(config)
@@ -390,16 +308,18 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	const jobConfig = {
 		recordId: initialTransferRecord.id
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
+	if (await cryptoToFiatTransferSandboxScheduleCheck("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)) {
+		await createJob("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)
 	}
 
-	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+    const func = FetchCryptoToBankSupportedPairCheck(initialTransferRecord.crypto_provider, initialTransferRecord.fiat_provider)
+    const result = await func(initialTransferRecord.id, profileId)
+
 	return { isExternalAccountExist: true, transferResult: result }
 }
 
 // this should already contain every information needed for transfer
-const executeAsyncTransferCryptoToFiat = async (config) => {
+const executeSandboxAsyncTransferCryptoToFiat = async (config) => {
 	// fetch from created record
 	const { data, error } = await supabase
 		.from('offramp_transactions')
@@ -408,7 +328,7 @@ const executeAsyncTransferCryptoToFiat = async (config) => {
 		.single()
 
 	if (error) {
-		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, error.message)
+		await createLog("transfer/util/executeSandboxAsyncTransferCryptoToFiat", sourceUserId, error.message)
 		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 	}
 
@@ -422,6 +342,6 @@ const executeAsyncTransferCryptoToFiat = async (config) => {
 }
 
 module.exports = {
-	createTransferToBridgeLiquidationAddress,
-	executeAsyncTransferCryptoToFiat
+    createSandboxCryptoToFiatTransfer,
+    executeSandboxAsyncTransferCryptoToFiat
 }
