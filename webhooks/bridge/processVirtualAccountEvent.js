@@ -75,7 +75,7 @@ const processVirtualAccountEvent = async (event) => {
           supabase
             .from("onramp_transactions")
             .update({ bridge_deposit_id: deposit_id })
-            .eq("id", referenceId)
+            .eq("id", existingTransaction.id)
             .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
             .single()
         );
