@@ -48,13 +48,13 @@ async function createLog(source, userId, log, response, profileId = null) {
 
 	if(logError) throw new Error("Failed to insert new log");
 
-	let parsedResponse;
-	try {
-		parsedResponse = JSON.parse(logData.response);
-	} catch (error) {
-		parsedResponse = logData.response;
-	}
-	await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
+	// let parsedResponse;
+	// try {
+	// 	parsedResponse = JSON.parse(logData.response);
+	// } catch (error) {
+	// 	parsedResponse = logData.response;
+	// }
+	// await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
 }
 
 module.exports = createLog;
