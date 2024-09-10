@@ -9,6 +9,15 @@ const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer
 const createJob = require('../../asyncJobs/createJob');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
+
+const hifiOfframpTransactionStatusMap = {
+	ACCEPTED: 'SUBMITTED_ONCHAIN',
+	SUBMITTED: 'SUBMITTED_ONCHAIN',
+	CONFIRMED: 'COMPLETED_ONCHAIN',
+	FAILED: 'FAILED_ONCHAIN',
+	DEFAULT: 'UNKNOWN',
+  };
+
 const updateStatus = async (transaction) => {
 	const bastionUserId = transaction.bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
@@ -32,11 +41,7 @@ const updateStatus = async (transaction) => {
 		}
 
 		// Map the data.status to our transaction_status
-		const hifiOfframpTransactionStatus =
-			data.status === 'ACCEPTED' || data.status === 'SUBMITTED' ? 'SUBMITTED_ONCHAIN' :
-				data.status === 'CONFIRMED' ? 'COMPLETED_ONCHAIN' :
-					data.status === 'FAILED' ? 'FAILED_ONCHAIN' :
-						'UNKNOWN';
+		const hifiOfframpTransactionStatus = hifiOfframpTransactionStatusMap[data.status] || hifiOfframpTransactionStatusMap.DEFAULT
 
 		// If the hifiOfframpTransactionStatus is different from the current transaction_status or if the data.status is different than the transaction.bastion_transaction_status, update the transaction_status
 		if (hifiOfframpTransactionStatus !== transaction.transaction_status || data.status !== transaction.bastion_transaction_status) {
@@ -110,9 +115,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.from('offramp_transactions')
 		.update({updated_at: new Date().toISOString()})
 		.eq("crypto_provider", "BASTION")
-		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
-		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
-		.not('bastion_transaction_status', 'is', null)
+		.eq("status", "SUBMITTED_ONCHAIN")
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider')
 	)
