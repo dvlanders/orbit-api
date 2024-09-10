@@ -46,11 +46,9 @@ const updateStatus = async (customer) => {
 				await createLog('pollBridgeCustomerStatus', customer.user_id, 'Failed to update bridge customer status', updateError);
 				return
 			}
-			if (!customer.is_developer) {
-				await notifyUserStatusUpdate(customer.user_id)
-			} else {
-
-			}
+			// if (!customer.is_developer) {
+			// 	await notifyUserStatusUpdate(customer.user_id)
+			// }
 		}
 	} catch (error) {
 		console.error('Failed to fetch customer status from Bridge API', error);
