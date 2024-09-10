@@ -1196,3 +1196,173 @@ FeeObject:
     status: CONFIRMED
     transactionHash: 0x91ebabf2867d7b28532c8ac9bc9e37f442c121486583d659aef9531fa97eacc0
     failedReason: null
+AcceptFiatToCryptoQuoteObject:
+  type: object
+  properties:
+    transferType:
+      type: string
+    transferDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+        sourceUserId:
+          type: string
+          format: uuid
+        destinationUserId:
+          type: string
+          format: uuid
+        chain:
+          type: string
+        sourceCurrency:
+          type: string
+        amount:
+          type: number
+        destinationCurrency:
+          type: string
+        liquidationAddress:
+          type: string
+          nullable: true
+        destinationAccountId:
+          type: string
+          format: uuid
+        transactionHash:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        contractAddress:
+          type: string
+        sourceUser:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_first_name:
+              type: string
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+        destinationUser:
+          type: object
+          properties:
+            business_name:
+              type: string
+              nullable: true
+            legal_first_name:
+              type: string
+            legal_last_name:
+              type: string
+            compliance_email:
+              type: string
+        destinationAccount:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            type:
+              type: string
+            name:
+              type: string
+            pix_key:
+              type: string
+        failedReason:
+          type: string
+          nullable: true
+        fee:
+          type: number
+          nullable: true
+        conversionRate:
+          type: object
+          properties:
+            fromCurrency:
+              type: string
+            toCurrency:
+              type: string
+            conversionRate:
+              type: number
+            vaildFrom:
+              type: string
+              format: date-time
+            vaildUntil:
+              type: string
+              format: date-time
+        quoteInformation:
+          type: object
+          properties:
+            fromCurrency:
+              type: string
+            toCurrency:
+              type: string
+            vaildFrom:
+              type: string
+              format: date-time
+            vaildUntil:
+              type: string
+              format: date-time
+            sendingAmount:
+              type: number
+            receivingAmount:
+              type: number
+  example:
+    transferType: "CRYPTO_TO_FIAT"
+    transferDetails:
+      id: "e9044d6c-6683-492c-b206-2adbb75c5022"
+      requestId: "3da09d1a-13f2-40a0-9cb3-2628da485g93"
+      sourceUserId: "9010c7fc-9k1a-4924-a0bf-449cec4fba64"
+      destinationUserId: "9020c7fc-9f1a-4924-b0bf-449cek4fba64"
+      chain: "POLYGON_AMOY"
+      sourceCurrency: "usdc"
+      amount: 10
+      destinationCurrency: "brl"
+      liquidationAddress: null
+      destinationAccountId: "a69ec62c-7b42-4f63-9945-920eca3ad91e"
+      transactionHash: null
+      createdAt: "2024-09-09T14:28:40.780154+00:00"
+      updatedAt: "2024-09-09T14:28:40.780154+00:00"
+      status: "CREATED"
+      contractAddress: "0x4D423D2cfB373862B8E12843B6175752dc75f795"
+      sourceUser:
+        business_name: null
+        legal_first_name: "Henry"
+        legal_last_name: "Wu"
+        compliance_email: "henry@hifibridge.com"
+      destinationUser:
+        business_name: null
+        legal_first_name: "Sam"
+        legal_last_name: "Yoon"
+        compliance_email: "sam@hifibridge.com"
+      destinationAccount:
+        id: "a69ec62c-7b42-4f63-9945-920eca3ad91e"
+        type: "pix"
+        name: "Bank Account Name"
+        pix_key: "14947677768"
+      failedReason: null
+      fee: null
+      conversionRate:
+        fromCurrency: "usdc"
+        toCurrency: "brl"
+        conversionRate: 5.5539
+        vaildFrom: "2024-09-09T14:29:40.898Z"
+        vaildUntil: "2024-09-09T14:33:42.827Z"
+      quoteInformation:
+        fromCurrency: "usdc"
+        toCurrency: "brl"
+        vaildFrom: "2024-09-09T14:29:40.898Z"
+        vaildUntil: "2024-09-09T14:33:42.827Z"
+        sendingAmount: 10
+        receivingAmount: 55.54
+
