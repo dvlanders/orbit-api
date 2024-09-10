@@ -38,16 +38,33 @@ EurOfframpSepaAccountBody:
   content:
     application/json:
       schema:
-        $ref: "#/components/schemas/EurOfframpSepaAccount"
-BrlOfframpReceiverBody:
+        $ref: '#/components/schemas/EurOfframpSepaAccount'
+BrlOfframpReceiverCreateBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: "#/components/schemas/BrlReceiverAccount"
-BrlOfframpPixAccountBody:
+        oneOf:
+          - $ref: '#/components/schemas/BrlReceiverCreateIndividualLightKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverCreateIndividualStandardKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverCreateBusinessLightKYBAccount'
+          - $ref: '#/components/schemas/BrlReceiverCreateBusinessStandardKYBAccount'
+BrlOfframpReceiverUpdateBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: "#/components/schemas/BrlOfframpPixAccount"
+        oneOf:
+          - $ref: '#/components/schemas/BrlReceiverUpdateIndividualLightKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverUpdateIndividualStandardKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverUpdateBusinessLightKYBAccount'
+          - $ref: '#/components/schemas/BrlReceiverUpdateBusinessStandardKYBAccount'
+BrlOfframpAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: '#/components/schemas/BrlOfframpPixAccount'
+          - $ref: '#/components/schemas/BrlOfframpAchAccount'
+          - $ref: '#/components/schemas/BrlOfframpWireAccount'

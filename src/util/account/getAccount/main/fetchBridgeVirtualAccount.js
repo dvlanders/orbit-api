@@ -5,7 +5,7 @@ const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 
 
-const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurrency, destinationChain, limit, createdBefore, createdAfter) => {
+const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurrency, destinationChain, limit, createdBefore, createdAfter, includeMicroDeposit = true) => {
     try{
         // get virtual account info
         const {data, error} = await supabase
@@ -20,8 +20,10 @@ const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurre
         if (error) throw error
         if (!data) return null
 
-        // get micro deposit activity
-        const microDeposits = await fetchBridgeVirtualAccountMicroDeposit(userId, data.virtual_account_id, limit, createdBefore, createdAfter)
+        let microDeposits = null;
+        if(includeMicroDeposit){
+            microDeposits = await fetchBridgeVirtualAccountMicroDeposit(userId, data.virtual_account_id, limit, createdBefore, createdAfter)
+        }
 
         const virtualAccountInfo = {
             virtualAccountId: data.id,
@@ -38,8 +40,9 @@ const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurre
                 accountNumber: data.deposit_institutions_bank_account_number,
                 bankAddress: data.deposit_institutions_bank_address
             },
-            microDeposits
         }
+
+        if(microDeposits) virtualAccountInfo.microDeposits = microDeposits
 
         return virtualAccountInfo
 

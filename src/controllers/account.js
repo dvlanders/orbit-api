@@ -20,6 +20,16 @@ const { isInRange, isValidDate, inStringEnum, isHIFISupportedChain, isValidEmail
 const createReapOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
 const { networkCheck } = require('../util/reap/utils/networkCheck');
 const { basicReapAccountInfoCheck } = require('../util/reap/utils/basicAccountInfoCheck');
+const { account } = require('.');
+const { create } = require('lodash');
+const { uploadReceiverKYCInfo } = require('../util/blindpay/uploadReceiverInfo');
+const { updateReceiverKYCInfo } = require('../util/blindpay/updateReceiverInfo');
+const { uploadBankAccountInfo } = require('../util/blindpay/uploadBankAccountInfo');
+const { ReceiverInfoUploadError, BankAccountInfoUploadError, CreateBankAccountError, ReceiverInfoGetError } = require('../util/blindpay/errors');
+const { createReceiver } = require('../util/blindpay/endpoint/createReceiver');
+const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
+const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
+const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -524,7 +534,11 @@ exports.activateOnRampRail = async (req, res) => {
 			destinationChain
 		}
 		const result = await activateFunction(config)
-		if (result.alreadyExisted) return res.status(200).json({ message: `Virtual account for the rail already existed` })
+		if (result.alreadyExisted){
+			const resObj = { message: `Virtual account for the rail already existed`};
+			if(result.virtualAccountInfo) resObj.account = result.virtualAccountInfo
+			return res.status(200).json(resObj)
+		}
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create a virtual account for the rail` })
 
 		return res.status(200).json({ message: `Virtual account for ${rail} created successfully`, account: result.virtualAccountInfo })
@@ -880,117 +894,71 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId } = req.query;
-
+	const { profileId, userId, receiverId } = req.query;
+	if(!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
 
 	const fields = req.body;
-
-	const requiredFields = [
-		'name', 'currency', 'bankCountry', 'pixKey', "receiverId", "userId"
-	];
-
-	const acceptedFields =
-	{
-		'name': "string", 'currency': "string", 'bankCountry': "string", 'pixKey': "string", "receiverId": "string", "userId": "string"
-	};
-
-
-
-	// Execute fields validation
-	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0 || invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	fields.user_id = userId;
+	fields.receiver_id = receiverId;
+	if(!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
+	
+	let bankAccountExist, bankAccountRecord
+	// upload information and create new user
+	try {
+		({ bankAccountExist, bankAccountRecord } = await uploadBankAccountInfo(fields))
+	} catch (error) {
+		if (error instanceof BankAccountInfoUploadError) {
+			return res.status(error.status).json(error.rawResponse)
+		}
+		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
-	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "UserId not found" })
-
-	const headers = {
-		'Accept': 'application/json',
-		'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
-		'Content-Type': 'application/json'
-	};
-
-	const requestBody = {
-		"name": fields.name,
-		"currency": fields.currency,
-		"bank_country": fields.bankCountry,
-		"bank_details": {
-			"pix_key": fields.pixKey
-		}
-	};
+	if(bankAccountExist){
+		const responseObject = {
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account already exists",
+			id: bankAccountRecord.global_account_id
+		};
+		return res.status(200).json(responseObject);
+	}
 
 	try {
-		//get the record on the blindpay_receivers table for a given receiverId
-		const { data: blindpayReceiverData, error: blindpayReceiverError } = await supabase
-			.from('blindpay_receivers')
-			.select()
-			.match({ id: fields.receiverId })
-			.maybeSingle();
-
-		// if error or no receiver is found
-		if (blindpayReceiverError || !blindpayReceiverData) {
-			return res.status(500).json({ error: 'Internal Server Error' });
-		}
-
-		const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers/${blindpayReceiverData.blindpay_receiver_id}/bank-accounts`;
-		const response = await fetch(url, {
-			method: 'POST',
-			headers: headers,
-			body: JSON.stringify(requestBody)
-		});
-
-		// Check if the response is successful
-		if (response.status !== 200) {
-			const errorData = await response.text();
-			await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error)
-
-			return res.status(400).json({ error: `An error occurred while creating your bank account. Please try again later.` }); // TODO: test for blindpay error types
-		}
-
-		const responseData = await response.json();
-
-
-
+		const response = await createBankAccount(bankAccountRecord)
+		const account = await insertAccountProviders(bankAccountRecord.id, "brl", "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id)
 		// insert the record to the blindpay_accounts table
-		const { data: blindpayAccountData, error: blindpayAccountError } = await supabase
-			.from('blindpay_accounts')
-			.insert({
-				name: fields.name,
-				currency: fields.currency,
-				bank_country: fields.bankCountry,
-				pix_key: fields.pixKey,
-				blindpay_receiver_id: blindpayReceiverData.blindpay_receiver_id,
-				blindpay_account_id: responseData.id,
-				user_id: fields.userId,
-				blockchain_address: responseData.blockchain_address,
-				receiver_id: fields.receiverId
-				// brex_vendor_id: responseData.brexVendorId,
-			}).select();
+		const {error: bankAccountUpdateError } = await supabase
+			.from('blindpay_bank_accounts')
+			.update({
+				blindpay_response: response,
+				blindpay_account_id: response.id,
+				blockchain_address: response.blockchain_address,
+				global_account_id: account.id,
+			})
+			.eq('id', bankAccountRecord.id)
 
-		if (blindpayAccountError) {
-			await createLog("account/createBlindpayBankAccount", fields.userId, blindpayAccountError.message, blindpayAccountError)
+		if (bankAccountUpdateError) {
+			await createLog("account/createBlindpayBankAccount", fields.user_id, bankAccountUpdateError.message, bankAccountUpdateError)
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
-		accountProviderRecord = await insertAccountProviders(blindpayAccountData[0].id, "brl", "offramp", "pix", "BLINDPAY", fields.userId)
-
-		// structure a responseObject with the id from the supabase table, name, currency, bank country, pix key, and receiver id
 		const responseObject = {
-			id: accountProviderRecord.id,
-			name: fields.name,
-			currency: fields.currency,
-			bankCountry: fields.bankCountry,
-			pixKey: fields.pixKey,
-			receiverId: fields.receiverId
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: account.id
 		};
-
-
 
 		// return response object wiht success code
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
 		await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error)
+		if (error instanceof CreateBankAccountError) {
+			return res.status(error.status).json(error.rawResponse)
+		}
 		return res.status(500).json({ error: "An error occurred while creating the BR bank account. Please try again later." })
 	}
 
@@ -1001,95 +969,47 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId } = req.query;
+	const { profileId, userId } = req.query;
 	const fields = req.body;
+	fields.user_id = userId;
 
-
-	// TODO: Blindpay is in the process of updating their API to include more fields. Update this function when the new API is available
-	const requiredFields = [
-		'email', 'tax_id', 'type', 'address_line_1', 'city', 'state_province_region', 'country', 'postal_code', 'image_url', 'userId', "firstName", "lastName", "dateOfBirth"
-	];
-
-	const acceptedFields = {
-		'email': (value) => isValidEmail(value), 'tax_id': "string", 'type': "string", 'address_line_1': "string", 'address_line_2': "string",
-		'city': "string", 'state_province_region': "string", 'country': (value) => value.length === 2, 'postal_code': "string", 'image_url': (value) => isValidUrl(value),
-		'userId': (value) => isUUID(value), "firstName": "string", "lastName": "string", "dateOfBirth": (value) => isValidDate(value)
-	};
-
-	// Execute fields validation
-	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0 || invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
+	
+	let receiverRecord
+	// upload information
+	try {
+		receiverRecord = await uploadReceiverKYCInfo(fields)
+	} catch (error) {
+		if (error instanceof ReceiverInfoUploadError) {
+			return res.status(error.status).json(error.rawResponse)
+		}
+		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
-	if (!(await verifyUser(fields.userId, profileId))) return res.status(401).json({ error: "UserId not found" })
-
-	const headers = {
-		'Accept': 'application/json',
-		'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
-		'Content-Type': 'application/json'
-	};
-
-
+	// console.log("receiverRecord: \n", receiverRecord)
 	try {
-		// Create Blindpay Receiver
-		const receiverRequestBody = {
-			email: fields.email,
-			tax_id: fields.tax_id,
-			type: fields.type,
-			country: fields.country,
-			individual: {
-				first_name: fields.firstName,
-				last_name: fields.lastName,
-				date_of_birth: new Date(fields.dateOfBirth).toISOString()
-			},
-			// address_line_1: fields.address_line_1,
-			// address_line_2: fields.address_line_2,
-			// city: fields.city,
-			// state_province_region: fields.state_province_region,
-			// postal_code: fields.postal_code,
-			// image_url: fields.image_url
-		};
-
-
-		const receiverResponse = await fetch(`${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers`, {
-			method: 'POST',
-			headers: headers,
-			body: JSON.stringify(receiverRequestBody)
-		});
-
-		if (receiverResponse.status !== 200) {
-			const errorData = await receiverResponse.json();
-			await createLog("account/createBlindpayReceiver", fields.userId, errorData, receiverResponse);
-			return res.status(400).json({ error: `An error occurred while creating the receiver. Please try again later.`, message: errorData.message, path: errorData.errors });
-		}
-
-		const receiverData = await receiverResponse.json();
-
+		const response = await createReceiver(receiverRecord)
 
 		// Insert receiver data into blindpay_receivers table
-		const { data: receiverRecord, error: receiverError } = await supabase
-			.from('blindpay_receivers')
-			.insert({
-				email: fields.email,
-				type: fields.type,
-				country: fields.country,
-				blindpay_receiver_id: receiverData.id,
-				user_id: fields.userId
-			}).select().single();
+		const { error: receiverUpdateError } = await supabase
+		.from('blindpay_receivers_kyc')
+		.update({
+			blindpay_receiver_id: response.id,
+			blindpay_response: response,
+			kyc_status: "verifying"
+		}).eq('id', receiverRecord.id);
 
-		if (receiverError) {
-			await createLog("account/createBlindpayReceiver", fields.userId, receiverError.message, receiverError);
-			return res.status(500).json({ error: 'Internal Server Error' });
+		if (receiverUpdateError) {
+			await createLog("account/createBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError);
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
-
 
 		const responseObject = {
 			id: receiverRecord.id,
-			email: fields.email,
 			type: fields.type,
-			country: fields.country,
-
+			kyc_status: "verifying",
+			user_id: fields.user_id
 		};
 
 		return res.status(200).json(responseObject);
@@ -1100,9 +1020,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 	}
 }
 
-
-exports.createAPACOfframpDestination = async (req, res) => {
-
+exports.createAPACOfframpDestination = async(req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
@@ -1343,5 +1261,87 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		console.error('Error in createInternationalWireOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
-
 };
+
+exports.getBlindpayReceiver = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId, userId, receiverId} = req.query;
+	const fields = {user_id: userId, ...(receiverId && { receiver_id: receiverId })};
+
+	const requiredFields = ["user_id"]
+	const acceptedFields = { user_id: "string", receiver_id: "string" }
+
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+	if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
+	if(fields.receiver_id && !isUUID(fields.receiver_id)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
+
+	try {
+		const receiverInfo = await getReceiverInfo(fields.user_id, fields.receiver_id);
+		if(fields.receiver_id && receiverInfo.count === 1) return res.status(200).json(receiverInfo.data[0]);
+		return res.status(200).json(receiverInfo);
+	} catch (error) {
+		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error);
+		if (error instanceof ReceiverInfoGetError) {
+			return res.status(error.status).json(error.rawResponse)
+		}
+		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
+	}
+}
+
+exports.updateBlindpayReceiver = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId, userId, receiverId } = req.query;
+	if(!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
+	const fields = req.body;
+	fields.user_id = userId;
+	fields.receiver_id = receiverId;
+	if(!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
+	
+	let receiverRecord
+	// upload information
+	try {
+		receiverRecord = await updateReceiverKYCInfo(fields)
+	} catch (error) {
+		if (error instanceof ReceiverInfoUploadError) {
+			return res.status(error.status).json(error.rawResponse)
+		}
+		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId)
+		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+	}
+
+	try {
+		const response = await updateReceiver(receiverRecord)
+
+		// Insert receiver data into blindpay_receivers table
+		const { error: receiverUpdateError } = await supabase
+		.from('blindpay_receivers_kyc')
+		.update({
+			blindpay_response: response,
+			kyc_status: "verifying"
+		}).eq('id', receiverRecord.id);
+
+		if (receiverUpdateError) {
+			await createLog("account/updateBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError);
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		}
+
+		const responseObject = {
+			success: response.success ? response.success : false,
+			id: receiverRecord.id
+		};
+
+		return res.status(200).json(responseObject);
+
+	} catch (error) {
+		await createLog("account/updateBlindpayReceiver", fields.userId, error.message, error);
+		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
+	}
+}

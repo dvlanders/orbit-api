@@ -1,5 +1,5 @@
 const supabase = require("../../../src/util/supabaseClient")
-
+const areObjectsEqual = require("../../utils/configCompare")
 
 exports.executeBlindpayPayoutScheduleCheck = async (job, config, userId) => {
 
@@ -15,5 +15,5 @@ exports.executeBlindpayPayoutScheduleCheck = async (job, config, userId) => {
 		if (areObjectsEqual(record.config, config)) return false
 	}
 
-	return false
+	return true
 }

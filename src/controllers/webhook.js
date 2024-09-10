@@ -3,6 +3,7 @@ const { supabaseCall } = require("../util/supabaseWithRetry");
 const supabase = require("../util/supabaseClient");
 const { fieldsValidation } = require("../util/common/fieldsValidation");
 const { bridgeWebhookEventRequiredFields, bridgeWebhookEventAcceptedFields } = require("../util/bridge/webhook/utils");
+const { blindpayWebhookEventRequiredFields, blindpayWebhookEventAcceptedFields } = require("../util/blindpay/webhook/utils");
 
 exports.bridgeWebhook = async (req, res) => {
   if (req.method !== "POST")
@@ -93,3 +94,22 @@ exports.reapWebhook = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+exports.blindpayWebhook = async (req, res) => {
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
+
+  try{
+  // const { missingFields, invalidFields } = fieldsValidation(req.body, bridgeWebhookEventRequiredFields, bridgeWebhookEventAcceptedFields)
+  // if (missingFields.length > 0 || invalidFields.length > 0) {
+  //   await createLog("webhook/blindpayWebhook", null, "Blindpay webhook might have changed their event structure", { missingFields, invalidFields });
+  // }
+  //TODO: in the future we can use Blindpay webhook
+  console.log(req.body);
+
+  return res.status(200).json({ status: "OK" });
+  }catch(error){
+    await createLog("webhook/blindpayWebhook", null, error.message, error);
+    return res.status(500).json({ error: "Internal server error" });    
+  }
+}

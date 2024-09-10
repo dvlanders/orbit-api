@@ -1,8 +1,10 @@
 const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
+const { getBlindpayContractAddress } = require("../../../blindpay/blockchain");
 const supabase = require("../../../supabaseClient");
 const blindpayRailCheck = require("../railCheck/blindpayRailCheck");
 const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
+const { CreateQuoteError, CreateQuoteErrorType } = require("../../../blindpay/errors");
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
@@ -18,73 +20,49 @@ const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
-const { ethers } = require("ethers");
-const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck");
-
-
-const BASTION_API_KEY = process.env.BASTION_API_KEY;
-const BASTION_URL = process.env.BASTION_URL;
+const { getBlindpayChain } = require("../../../blindpay/blockchain");
+const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 
 const transferToBlindpaySmartContract = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, createdRecordId } = config
+	const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceWalletType } = config
+	// console.log("transferToBlindpaySmartContract", config)
 	// disable fee feature
 	if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route")
 	if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
-	const { isExternalAccountExist, blindpayAccountId } = await blindpayRailCheck(destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain)
+	const { isExternalAccountExist, blindpayAccountId, destinationUserId } = await blindpayRailCheck(destinationAccountId)
 	if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 
-	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+	const contractAddress = getBlindpayContractAddress(chain, sourceCurrency)
 
-	// fetch or insert request record
-	let initialBastionTransfersInsertData
-	if (createdRecordId) {
-		// fetch from created record
-		const { data, error } = await supabase
-			.from('offramp_transactions')
-			.select("*")
-			.eq("id", createdRecordId)
-			.single()
+	//insert the initial record
+	const { data: initialBastionTransfersInsertData, error: initialBastionTransfersInsertError } = await supabase
+		.from('offramp_transactions')
+		.insert({
+			request_id: requestId,
+			user_id: sourceUserId,
+			destination_user_id: destinationUserId,
+			amount: amount,
+			chain: chain,
+			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
+			to_blindpay_account_id: blindpayAccountId,
+			transaction_status: 'CREATED',
+			contract_address: contractAddress,
+			action_name: "transfer",
+			fiat_provider: "BLINDPAY",
+			crypto_provider: "BASTION",
+			source_currency: sourceCurrency,
+			destination_currency: destinationCurrency,
+			destination_account_id: destinationAccountId,
+			transfer_from_wallet_type: sourceWalletType,
+			bastion_user_id: sourceUserId
+		})
+		.select()
+		.single()
 
-		if (error) {
-			await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, error.message)
-			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
-		}
-
-		initialBastionTransfersInsertData = data
-
-	} else {
-		//insert the initial record
-		const { data, error: initialBastionTransfersInsertError } = await supabase
-			.from('offramp_transactions')
-			.insert({
-				request_id: requestId,
-				user_id: sourceUserId,
-				destination_user_id: destinationUserId,
-				amount: amount,
-				chain: chain,
-				from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
-				to_blindpay_account_id: blindpayAccountId,
-				transaction_status: 'CREATED',
-				contract_address: contractAddress,
-				action_name: "transfer",
-				fiat_provider: "BLINDPAY",
-				crypto_provider: "BASTION",
-				source_currency: sourceCurrency,
-				destination_currency: destinationCurrency,
-				destination_account_id: destinationAccountId,
-				bastion_user_id: sourceUserId
-			})
-			.select()
-			.single()
-
-		if (initialBastionTransfersInsertError) {
-			console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
-			await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, initialBastionTransfersInsertError.message)
-			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
-		}
-
-		initialBastionTransfersInsertData = data
-
+	if (initialBastionTransfersInsertError) {
+		console.error('initialBastionTransfersInsertError', initialBastionTransfersInsertError);
+		await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, initialBastionTransfersInsertError.message)
+		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 	}
 
 	// TODO: Configure for Blindpay isntead of Bridge offramp
@@ -96,7 +74,7 @@ const transferToBlindpaySmartContract = async (config) => {
 			// no paymentProcessorContract available
 			const toUpdate = {
 				status: "NOT_INITIATED",
-				failed_reason: `Fee feature not available for ${currency} on ${chain}`
+				failed_reason: `Fee feature not available for ${sourceCurrency} on ${chain}`
 			}
 			record = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
 			return {
@@ -207,47 +185,51 @@ const transferToBlindpaySmartContract = async (config) => {
 
 	} else {
 
-		// Step 1: generate the quote for approval
-		const headers = {
-			'Accept': 'application/json',
-			'Authorization': `Bearer ${process.env.BLINDPAY_API_KEY}`,
-			'Content-Type': 'application/json'
-		};
-
-		let blindpayQuoteAmount = amount * 100
-		const quoteBody = {
-			"bank_account_id": blindpayAccountId,
-			"currency_type": "sender",
-			"cover_fees": false,
-			"request_amount": blindpayQuoteAmount,
-			// "network": chain == "POLYGON_MAINNET" ? "polygon" : chain.toLowerCase(),
-			"network": "base_sepolia", // "sepolia", "base_sepolia", "arbitrum_sepolia"
-			"token": "USDB" // on development instance is always "USDB"
+		let blindpayQuoteResponse;
+		try{
+			const quoteAmount = amount * 100; // 100 represents 1
+			const network = getBlindpayChain(chain);
+			const token = process.env.NODE_ENV == "development" ? "USDB" : "USDC"; // Blindpay uses USDB for sandbox, I think its their own token?
+			blindpayQuoteResponse = await createQuote(blindpayAccountId, quoteAmount, network, token);
+		}catch(error){
+			if(error instanceof CreateQuoteError){
+				await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, error.message, error.rawResponse)
+				await updateRequestRecord(initialBastionTransfersInsertData.id, {blindpay_quote_response: error.rawResponse})
+			}else{
+				await createLog("transfer/util/transferToBlindpaySmartContract", sourceUserId, error.message, error)
+			}
+			throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
 		}
 
-		const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/quotes`;
-		const blindpayQuoteResponse = await fetch(url, {
-			method: 'POST',
-			headers: headers,
-			body: JSON.stringify(quoteBody)
-		});
+		const conversionRate = {...blindpayQuoteResponse};
+		delete conversionRate.contract;
 
-		const blindpayQuoteResponseBody = await blindpayQuoteResponse.json();
+		const abi = blindpayQuoteResponse.contract.abi;
+		const approveFunctionAbi = abi.find(func => func.name === 'approve');
+		const inputs = approveFunctionAbi.inputs;
 
+		const actionParams = inputs.map(input => {
+			const value = input.name.includes('spender')
+			  ? blindpayQuoteResponse.contract.blindpayContractAddress
+			  : input.name.includes('value')
+			  ? blindpayQuoteResponse.contract.amount
+			  : null;
+		  
+			return {
+			  name: input.name,
+			  value: value
+			};
+		  });
 
-		//create transfer without fee
-		const decimals = currencyDecimal[sourceCurrency]
-		const transferAmount = toUnitsString(amount, decimals)
 		const bodyObject = {
 			requestId: initialBastionTransfersInsertData.bastion_request_id,
 			userId: sourceUserId,
-			contractAddress: contractAddress,
-			actionName: "approve",
-			chain: chain,
-			actionParams: erc20Approve(sourceCurrency, blindpayQuoteResponseBody.contract.address, transferAmount)
+			contractAddress: contractAddress, // blindpayQuoteResponse.contract.address,
+			actionName: blindpayQuoteResponse.contract.functionName,
+			chain: chain === "POLYGON_AMOY" ? "BASE_SEPOLIA" : chain, 
+			actionParams: actionParams
 		};
-
-
+		// console.log(bodyObject)
 		const response = await submitUserAction(bodyObject)
 		const responseBody = await response.json();
 		const result = {
@@ -281,8 +263,9 @@ const transferToBlindpaySmartContract = async (config) => {
 				bastion_transaction_status: "FAILED",
 				transaction_status: "NOT_INITIATED",
 				failed_reason: message,
-				blindpay_quote_response: blindpayQuoteResponseBody
-
+				blindpay_quote_response: blindpayQuoteResponse,
+				blindpay_quote_id: blindpayQuoteResponse.id,
+				conversion_rate: conversionRate
 			}
 
 			// in sandbox, just return SUBMITTED_ONCHAIN status
@@ -306,18 +289,11 @@ const transferToBlindpaySmartContract = async (config) => {
 				bastion_transaction_status: responseBody.status,
 				transaction_status: result.transferDetails.status,
 				failed_reason: responseBody.failureDetails,
-				blindpay_quote_response: blindpayQuoteResponseBody
+				blindpay_quote_response: blindpayQuoteResponse,
+				blindpay_quote_id: blindpayQuoteResponse.id,
+				conversion_rate: conversionRate
 			}
 			const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
-
-
-			// If the bastion approval is SUBMITTED_ONCHAIN, then schedule the payout with Blindpay's payout endpoints
-			if (result.transferDetails.status == "SUBMITTED_ONCHAIN") {
-				const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.user_id)
-				if (canSchedule) {
-					await createJob("executeBlindpayPayout", { recordId: initialBastionTransfersInsertData.id }, initialBastionTransfersInsertData.destination_user_id, null, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
-				}
-			}
 		}
 
 		// gas check
