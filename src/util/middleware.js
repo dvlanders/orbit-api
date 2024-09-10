@@ -160,7 +160,6 @@ exports.logRequestResponse = (req, res, next) => {
 			statusCode: res.statusCode,
 			body: parsedBody
 		}
-
 		//define list of emails where we dont want to send slack message
 		const excludedEmails = [
 			"test@gmail.com",
@@ -178,9 +177,12 @@ exports.logRequestResponse = (req, res, next) => {
 			{ method: "GET", route: "/auth/webhook" },
 		]
 
-		if (!excludedEmails.includes(reqObject.query.profileEmail) && !excludedEndpoints.some(endpoint => endpoint.method === reqObject.method && endpoint.route === reqObject.route)) {
+		if (!excludedEmails.includes(reqObject.query.profileEmail) &&
+			!excludedEndpoints.some(endpoint => endpoint.method === reqObject.method && endpoint.route === reqObject.route) &&
+			res.statusCode !== 200) {
 			sendSlackReqResMessage(reqObject, resObject);
 		}
+
 
 		originalSend.call(this, body);
 	};
@@ -242,15 +244,15 @@ function logToLoki(message) {
 		});
 }
 
-exports.localAdmin = async(req, res, next) => {
-	try{
+exports.localAdmin = async (req, res, next) => {
+	try {
 		const { userId, profileId } = req.query
-		if (!profileId) return res.status(400).jsno({error: "profileId is required"})
+		if (!profileId) return res.status(400).jsno({ error: "profileId is required" })
 		if (userId && (!isUUID(userId) || !(await verifyUser(userId, profileId)))) return res.status(401).json({ error: "userId not found or not under provided profileId" });
 
 		next()
-	}catch (error){
+	} catch (error) {
 		await createLog("middleware/localAdmin", null, error.message, error)
-		return res.status(500).json({error: "Internal server error"})
+		return res.status(500).json({ error: "Internal server error" })
 	}
 }

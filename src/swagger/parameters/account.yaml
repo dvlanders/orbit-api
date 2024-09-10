@@ -79,5 +79,19 @@ AccountTypeParameter:
   in: query
   schema:
     type: string
-    enum: ["us", "nonUsIbanSupported", "nonUsIbanUnsupported"]
+    enum: ["us", "iban"]
   required: true
+ReceiverIdParameter:
+  name: receiverId
+  in: query
+  schema:
+    type: string
+  description: ID of the receiver
+  required: true
+ReceiverIdOptionalParameter:
+  name: receiverId
+  in: query
+  schema:
+    type: string
+  description: ID of the receiver
+  required: false

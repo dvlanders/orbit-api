@@ -61,11 +61,13 @@
         "schema": {
           "type": "string",
           "enum": [
-            "usdc"
+            "usd",
+            "eur",
+            "brl"
           ]
         },
-        "description": "The type of currency to check the balance for. Currently, only USDC is supported.",
-        "required": true
+        "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
+        "required": false
       },
       "RailTypeParameter": {
         "name": "railType",
@@ -166,11 +168,28 @@
           "type": "string",
           "enum": [
             "us",
-            "nonUsIbanSupported",
-            "nonUsIbanUnsupported"
+            "iban"
           ]
         },
         "required": true
+      },
+      "ReceiverIdParameter": {
+        "name": "receiverId",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID of the receiver",
+        "required": true
+      },
+      "ReceiverIdOptionalParameter": {
+        "name": "receiverId",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "ID of the receiver",
+        "required": false
       },
       "LimitParameter": {
         "name": "limit",
@@ -278,6 +297,18 @@
         },
         "description": "The blockchain network to retrieve the balance from. Currently, only POLYGON_MAINNET is supported in production and only POLYGON_AMOY is supported in sandbox.",
         "required": true
+      },
+      "CryptoCurrencyParameter": {
+        "name": "currency",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "usdc"
+          ]
+        },
+        "description": "The type of currency to check the balance for. Currently, only USDC is supported.",
+        "required": true
       }
     },
     "requestBodies": {
@@ -321,10 +352,7 @@
                   "$ref": "#/components/schemas/UsdOfframpWireUSAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount"
-                },
-                {
-                  "$ref": "#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount"
+                  "$ref": "#/components/schemas/UsdOfframpWireNonUSAccount"
                 }
               ]
             }
@@ -341,22 +369,68 @@
           }
         }
       },
-      "BrlOfframpReceiverBody": {
+      "BrlOfframpReceiverCreateBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlReceiverAccount"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/BrlReceiverCreateIndividualLightKYCAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlReceiverCreateIndividualStandardKYCAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlReceiverCreateBusinessLightKYBAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlReceiverCreateBusinessStandardKYBAccount"
+                }
+              ]
             }
           }
         }
       },
-      "BrlOfframpPixAccountBody": {
+      "BrlOfframpReceiverUpdateBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpPixAccount"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/BrlReceiverUpdateIndividualLightKYCAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlReceiverUpdateIndividualStandardKYCAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlReceiverUpdateBusinessLightKYBAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlReceiverUpdateBusinessStandardKYBAccount"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "BrlOfframpAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/BrlOfframpPixAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlOfframpAchAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/BrlOfframpWireAccount"
+                }
+              ]
             }
           }
         }
@@ -487,12 +561,32 @@
           }
         }
       },
-      "BrlOfframpReceiverResponse": {
+      "BrlOfframpReceiverCreateResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverObject"
+              "$ref": "#/components/schemas/BrlOfframpReceiverCreateObject"
+            }
+          }
+        }
+      },
+      "BrlOfframpReceiverUpdateResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BrlOfframpReceiverUpdateObject"
+            }
+          }
+        }
+      },
+      "BrlOfframpReceiverGetResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BrlOfframpReceiverGetObject"
             }
           }
         }
@@ -855,70 +949,208 @@
       },
       "UsdOfframpWireUSAccount": {
         "type": "object",
-        "title": "USD Offramp Wire US",
+        "title": "USD Offramp Wire to US Bank Account",
         "properties": {
-          "accountNumber": {
+          "accountType": {
             "type": "string",
-            "description": "Either a swift account number or iban must be provided."
+            "enum": [
+              "us",
+              "iban"
+            ]
           },
-          "routingNumber": {
-            "type": "string"
-          },
-          "accountHolderName": {
-            "type": "string"
-          },
-          "accountHolderCity": {
-            "type": "string"
-          },
-          "accountHolderCountry": {
-            "type": "string"
-          },
-          "accountHolderStreetLine1": {
-            "type": "string"
-          },
-          "accountHolderStreetLine2": {
-            "type": "string"
-          },
-          "accountHolderStateProvinceRegion": {
-            "type": "string"
-          },
-          "accountHolderPostalCode": {
-            "type": "string"
+          "currency": {
+            "type": "string",
+            "description": "Currency denomination of the destination bank account. Must be usd.",
+            "enum": [
+              "usd"
+            ]
           },
           "bankName": {
             "type": "string",
-            "description": "e.g. Chase, Bank of America"
+            "example": "Bank of America"
           },
-          "bankCity": {
-            "type": "string"
+          "accountOwnerName": {
+            "type": "string",
+            "example": "John Doe"
           },
-          "bankCountry": {
-            "type": "string"
+          "accountOwnerType": {
+            "type": "string",
+            "description": "Specify 'business' if the account is owned by a business, otherwise 'individual'. If 'business', 'businessName' is required. If 'individual', 'firstName' and 'lastName' are required.",
+            "enum": [
+              "business",
+              "individual"
+            ]
           },
-          "bankStreetLine1": {
-            "type": "string"
+          "businessName": {
+            "type": "string",
+            "description": "Required if 'accountOwnerType' is 'business'.",
+            "example": "Doe Enterprises"
           },
-          "bankStreetLine2": {
-            "type": "string"
+          "firstName": {
+            "type": "string",
+            "description": "Required if 'accountOwnerType' is 'individual'.",
+            "example": "John"
           },
-          "bankStateProvinceRegion": {
-            "type": "string"
+          "lastName": {
+            "type": "string",
+            "description": "Required if 'accountOwnerType' is 'individual'.",
+            "example": "Doe"
+          },
+          "accountNumber": {
+            "type": "string",
+            "example": "1234567890"
+          },
+          "routingNumber": {
+            "type": "string",
+            "example": "011000138"
+          },
+          "streetLine1": {
+            "type": "string",
+            "example": "123 Main St"
+          },
+          "streetLine2": {
+            "type": "string",
+            "example": "Suite 100"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY"
+          },
+          "postalCode": {
+            "type": "string",
+            "example": "10001"
+          },
+          "country": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.",
+            "example": "USA"
           }
         },
         "required": [
+          "accountType",
+          "currency",
+          "bankName",
+          "accountOwnerName",
+          "accountOwnerType",
           "accountNumber",
           "routingNumber",
-          "accountHolderName",
-          "accountHolderCity",
-          "accountHolderCountry",
-          "accountHolderStreetLine1",
-          "accountHolderPostalCode",
-          "bankCountry"
+          "streetLine1",
+          "city",
+          "state",
+          "postalCode",
+          "country"
+        ]
+      },
+      "UsdOfframpWireNonUSAccount": {
+        "type": "object",
+        "title": "USD Offramp Wire to Non-US Bank Account",
+        "properties": {
+          "accountType": {
+            "type": "string",
+            "enum": [
+              "us",
+              "iban"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usd"
+            ]
+          },
+          "bankName": {
+            "type": "string",
+            "example": "Deutsche Bank"
+          },
+          "accountOwnerName": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "ibanAccountNumber": {
+            "type": "string",
+            "description": "The IBAN for the bank account.",
+            "example": "DE89 3704 0044 0532 0130 00"
+          },
+          "accountOwnerType": {
+            "type": "string",
+            "description": "Specify 'business' or 'individual'. Relevant name fields must be provided based on this type.",
+            "enum": [
+              "business",
+              "individual"
+            ]
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Required if 'accountOwnerType' is 'individual'.",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Required if 'accountOwnerType' is 'individual'.",
+            "example": "Doe"
+          },
+          "businessName": {
+            "type": "string",
+            "description": "Required if 'accountOwnerType' is 'business'.",
+            "example": "Doe Enterprises"
+          },
+          "businessIdentifierCode": {
+            "type": "string",
+            "description": "Also known as SWIFT code.",
+            "example": "DEUTDEDBFRA"
+          },
+          "ibanCountryCode": {
+            "type": "string",
+            "description": "Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.",
+            "example": "DEU"
+          },
+          "streetLine1": {
+            "type": "string",
+            "example": "123 Berlin St"
+          },
+          "streetLine2": {
+            "type": "string",
+            "example": "Building A"
+          },
+          "city": {
+            "type": "string",
+            "example": "Berlin"
+          },
+          "state": {
+            "type": "string",
+            "example": "Berlin"
+          },
+          "postalCode": {
+            "type": "string",
+            "example": "10115"
+          },
+          "country": {
+            "type": "string",
+            "example": "Germany"
+          }
+        },
+        "required": [
+          "accountType",
+          "currency",
+          "bankName",
+          "accountOwnerName",
+          "accountOwnerType",
+          "ibanAccountNumber",
+          "businessIdentifierCode",
+          "ibanCountryCode",
+          "streetLine1",
+          "city",
+          "postalCode",
+          "country"
         ]
       },
       "UsdOfframpWireNonUSIbanSupportedAccount": {
         "type": "object",
-        "title": "USD Offramp Wire Non-US Iban Supported",
+        "title": "USD Offramp Wire Iban Supported",
         "properties": {
           "iban": {
             "type": "string",
@@ -1097,26 +1329,29 @@
           "ibanCountryCode"
         ]
       },
-      "BrlReceiverAccount": {
+      "BrlReceiverCreateIndividualLightKYCAccount": {
         "type": "object",
+        "title": "BRL Receiver Individual Light KYC Account",
         "properties": {
-          "userId": {
-            "type": "string"
-          },
           "type": {
             "type": "string",
             "enum": [
-              "individual",
-              "business"
+              "individual"
             ]
           },
-          "firstName": {
+          "kyc_type": {
+            "type": "string",
+            "enum": [
+              "light"
+            ]
+          },
+          "first_name": {
             "type": "string"
           },
-          "lastName": {
+          "last_name": {
             "type": "string"
           },
-          "dateOfBirth": {
+          "date_of_birth": {
             "type": "string",
             "description": "Date of birth in format yyyy-mm-dd",
             "format": "date"
@@ -1125,7 +1360,592 @@
             "type": "string",
             "format": "email"
           },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          }
+        },
+        "required": [
+          "type",
+          "kyc_type",
+          "first_name",
+          "last_name",
+          "date_of_birth",
+          "email",
+          "country"
+        ]
+      },
+      "BrlReceiverCreateIndividualStandardKYCAccount": {
+        "type": "object",
+        "title": "BRL Receiver Individual Standard KYC Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "individual"
+            ]
+          },
+          "kyc_type": {
+            "type": "string",
+            "enum": [
+              "standard"
+            ]
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
           "tax_id": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state_province_region": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "id_doc_country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "id_doc_type": {
+            "type": "string",
+            "enum": [
+              "passport",
+              "id_card"
+            ]
+          },
+          "id_doc_front_file": {
+            "type": "string"
+          },
+          "id_doc_back_file": {
+            "type": "string"
+          },
+          "proof_of_address_doc_type": {
+            "type": "string"
+          },
+          "proof_of_address_doc_file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "kyc_type",
+          "first_name",
+          "last_name",
+          "date_of_birth",
+          "email",
+          "country",
+          "tax_id",
+          "ip_address",
+          "address_line_1",
+          "city",
+          "state_province_region",
+          "postal_code",
+          "id_doc_country",
+          "id_doc_type",
+          "id_doc_front_file"
+        ]
+      },
+      "BrlReceiverCreateBusinessLightKYBAccount": {
+        "type": "object",
+        "title": "BRL Receiver Business Light KYB Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "business"
+            ]
+          },
+          "kyc_type": {
+            "type": "string",
+            "enum": [
+              "light"
+            ]
+          },
+          "legal_name": {
+            "type": "string"
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "formation_date": {
+            "type": "string",
+            "description": "date in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          }
+        },
+        "required": [
+          "type",
+          "kyc_type",
+          "legal_name",
+          "tax_id",
+          "formation_date",
+          "email",
+          "country"
+        ]
+      },
+      "BrlReceiverCreateBusinessStandardKYBAccount": {
+        "type": "object",
+        "title": "BRL Receiver Business Standard KYB Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "business"
+            ]
+          },
+          "kyc_type": {
+            "type": "string",
+            "enum": [
+              "standard"
+            ]
+          },
+          "legal_name": {
+            "type": "string"
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "formation_date": {
+            "type": "string",
+            "description": "date in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "website": {
+            "type": "string"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state_province_region": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "incorporation_doc_file": {
+            "type": "string"
+          },
+          "proof_of_ownership_doc_file": {
+            "type": "string"
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceiverBusinessOwner"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "kyc_type",
+          "legal_name",
+          "tax_id",
+          "formation_date",
+          "email",
+          "country",
+          "ip_address",
+          "address_line_1",
+          "city",
+          "state_province_region",
+          "postal_code",
+          "incorporation_doc_file",
+          "proof_of_ownership_doc_file",
+          "owners"
+        ]
+      },
+      "BrlReceiverUpdateIndividualLightKYCAccount": {
+        "type": "object",
+        "title": "BRL Receiver Individual Light KYC Account",
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          }
+        }
+      },
+      "BrlReceiverUpdateIndividualStandardKYCAccount": {
+        "type": "object",
+        "title": "BRL Receiver Individual Standard KYC Account",
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state_province_region": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "id_doc_country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "id_doc_type": {
+            "type": "string",
+            "enum": [
+              "passport",
+              "id_card"
+            ]
+          },
+          "id_doc_front_file": {
+            "type": "string"
+          },
+          "id_doc_back_file": {
+            "type": "string"
+          },
+          "proof_of_address_doc_type": {
+            "type": "string"
+          },
+          "proof_of_address_doc_file": {
+            "type": "string"
+          }
+        }
+      },
+      "BrlReceiverUpdateBusinessLightKYBAccount": {
+        "type": "object",
+        "title": "BRL Receiver Business Light KYB Account",
+        "properties": {
+          "legal_name": {
+            "type": "string"
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "formation_date": {
+            "type": "string",
+            "description": "date in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          }
+        }
+      },
+      "BrlReceiverUpdateBusinessStandardKYBAccount": {
+        "type": "object",
+        "title": "BRL Receiver Business Standard KYB Account",
+        "properties": {
+          "legal_name": {
+            "type": "string"
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "formation_date": {
+            "type": "string",
+            "description": "date in format yyyy-mm-dd",
+            "format": "date"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "website": {
+            "type": "string"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "address_line_2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state_province_region": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "incorporation_doc_file": {
+            "type": "string"
+          },
+          "proof_of_ownership_doc_file": {
+            "type": "string"
+          },
+          "owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceiverBusinessOwner"
+            }
+          }
+        }
+      },
+      "ReceiverBusinessOwner": {
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string"
+          },
+          "tax_id": {
+            "type": "string"
+          },
+          "address_line_1": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state_province_region": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "id_doc_country": {
+            "type": "string",
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+          },
+          "id_doc_type": {
+            "type": "string",
+            "enum": [
+              "passport",
+              "id_card"
+            ]
+          },
+          "id_doc_front_file": {
+            "type": "string"
+          },
+          "id_doc_back_file": {
+            "type": "string"
+          },
+          "proof_of_address_doc_type": {
+            "type": "string"
+          },
+          "proof_of_address_doc_file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "first_name",
+          "last_name",
+          "role",
+          "date_of_birth",
+          "tax_id",
+          "address_line_1",
+          "city",
+          "country",
+          "state_province_region",
+          "postal_code",
+          "id_doc_country",
+          "id_doc_type",
+          "id_doc_front_file",
+          "id_doc_back_file",
+          "proof_of_address_doc_type",
+          "proof_of_address_doc_file"
+        ]
+      },
+      "BrlOfframpPixAccount": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "pix"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "pix_key": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "pix_key"
+        ]
+      },
+      "BrlOfframpAchAccount": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ach"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "beneficiary_name": {
+            "type": "string"
+          },
+          "routing_number": {
+            "type": "string"
+          },
+          "account_number": {
+            "type": "string"
+          },
+          "account_type": {
+            "type": "string"
+          },
+          "account_class": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "beneficiary_name",
+          "routing_number",
+          "account_number",
+          "account_type",
+          "account_class"
+        ]
+      },
+      "BrlOfframpWireAccount": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "wire"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "beneficiary_name": {
+            "type": "string"
+          },
+          "routing_number": {
+            "type": "string"
+          },
+          "account_number": {
             "type": "string"
           },
           "address_line_1": {
@@ -1146,60 +1966,20 @@
           },
           "postal_code": {
             "type": "string"
-          },
-          "image_url": {
-            "type": "string"
           }
         },
         "required": [
-          "email",
-          "tax_id",
           "type",
+          "name",
+          "beneficiary_name",
+          "routing_number",
+          "account_number",
           "address_line_1",
+          "address_line_2",
           "city",
           "state_province_region",
           "country",
-          "postal_code",
-          "image_url",
-          "userId",
-          "firstName",
-          "lastName",
-          "dateOfBirth"
-        ]
-      },
-      "BrlOfframpPixAccount": {
-        "type": "object",
-        "properties": {
-          "userId": {
-            "type": "string"
-          },
-          "receiverId": {
-            "type": "string",
-            "description": "You can get the receiver id by making a Create BRL Offramp Receiver call."
-          },
-          "name": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "BRL"
-            ]
-          },
-          "bankCountry": {
-            "type": "string"
-          },
-          "pixKey": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "currency",
-          "bankCountry",
-          "pixKey",
-          "receiverId",
-          "userId"
+          "postal_code"
         ]
       },
       "UsdOnrampAchAccountObject": {
@@ -1385,58 +2165,82 @@
           "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
         }
       },
-      "BrlOfframpReceiverObject": {
+      "BrlOfframpReceiverCreateObject": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
-          },
-          "email": {
             "type": "string"
           },
           "type": {
             "type": "string"
           },
-          "country": {
+          "kyc_type": {
             "type": "string"
           }
         },
         "example": {
           "id": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3",
-          "email": "johndoe@gmail.com",
           "type": "individual",
-          "country": "US"
+          "kyc_type": "light"
+        }
+      },
+      "BrlOfframpReceiverUpdateObject": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "success": true,
+          "id": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
+        }
+      },
+      "BrlOfframpReceiverGetObject": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "example": {
+          "count": 0,
+          "data": []
         }
       },
       "BrlOfframpPixAccountObject": {
         "type": "object",
         "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
           "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string"
-          },
-          "bankCountry": {
-            "type": "string"
-          },
-          "pixKey": {
-            "type": "string"
-          },
-          "receiverId": {
             "type": "string"
           }
         },
         "example": {
-          "id": "4016d72a-889d-4810-b207-fc0f2b892b84",
-          "name": "Bank of Nowhere",
-          "currency": "BRL",
-          "bankCountry": "BR",
-          "pixKey": "14947677759",
-          "receiverId": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
         }
       },
       "AccountObject": {
@@ -1873,14 +2677,6 @@
             "type": "boolean",
             "description": "Routes offramp for same day ACH transfer for a $1 additional fee"
           },
-          "description": {
-            "type": "string",
-            "description": "Required if paymentRail for the account for the destinationAccountId is \"wire\""
-          },
-          "purposeOfPayment": {
-            "type": "string",
-            "description": "Required if paymentRail for the account for the destinationAccountId is \"wire\""
-          },
           "feeType": {
             "type": "string",
             "enum": [
@@ -1893,6 +2689,22 @@
             "format": "float",
             "minimum": 0,
             "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          },
+          "wireMessage": {
+            "type": "string",
+            "description": "A message to be sent with a wire transfer, only allowed when the payment rail is a wire. This message will be validated against 4 lines, each with a max length of 35 char according to the Fedwire standard."
+          },
+          "achReference": {
+            "type": "string",
+            "description": "A reference message to be sent with an ACH transaction. It can be at most 10 characters, A-Z, a-z, 0-9, and spaces. Note that as of 2024-08-06, setting this field is only supported for certain developers while we work on rolling out general support for everyone."
+          },
+          "sepaReference": {
+            "type": "string",
+            "description": "A reference message to be sent with a SEPA transaction. It must be from 6 to 140 characters. The allowed characters are a-z, A-Z, 0-9, spaces, ampersand (&), hyphen (-), full stop (.), and solidus (/)."
+          },
+          "swiftReference": {
+            "type": "string",
+            "description": "A payment reference message or remittance information to be included in a SWIFT transaction. It can have at most 4 lines (separated by \"\\n\"), each line with a max length of 35 chars. The allowed characters are a-z, A-Z, 0-9, special characters (/ - ? : ( ) . , ' +), and spaces.\n"
           }
         },
         "required": [
@@ -2194,14 +3006,14 @@
               "ConversionRate": {
                 "type": "object",
                 "properties": {
-                  "vaildFrom": {
+                  "validFrom": {
                     "type": "string",
                     "format": "date-time"
                   },
                   "toCurrency": {
                     "type": "string"
                   },
-                  "vaildUntil": {
+                  "validUntil": {
                     "type": "string",
                     "format": "date-time"
                   },
@@ -2274,9 +3086,9 @@
               "failedReason": null
             },
             "conversionRate": {
-              "vaildFrom": "2024-08-11T03:35:30.809Z",
+              "validFrom": "2024-08-11T03:35:30.809Z",
               "toCurrency": "usd",
-              "vaildUntil": "2024-08-11T03:36:00.809Z",
+              "validUntil": "2024-08-11T03:36:00.809Z",
               "fromCurrency": "usdc",
               "conversionRate": 1
             }
@@ -2683,9 +3495,9 @@
               "failedReason": null
             },
             "conversionRate": {
-              "vaildFrom": "2024-08-11T03:35:30.809Z",
+              "validFrom": "2024-08-11T03:35:30.809Z",
               "toCurrency": "usd",
-              "vaildUntil": "2024-08-11T03:36:00.809Z",
+              "validUntil": "2024-08-11T03:36:00.809Z",
               "fromCurrency": "usdc",
               "conversionRate": 1
             }
@@ -3203,9 +4015,9 @@
                   "failedReason": null
                 },
                 "conversionRate": {
-                  "vaildFrom": "2024-08-11T03:35:30.809Z",
+                  "validFrom": "2024-08-11T03:35:30.809Z",
                   "toCurrency": "usd",
-                  "vaildUntil": "2024-08-11T03:36:00.809Z",
+                  "validUntil": "2024-08-11T03:36:00.809Z",
                   "fromCurrency": "usdc",
                   "conversionRate": 1
                 }
@@ -4678,7 +5490,7 @@
     "/account/usd/onramp/plaid": {
       "post": {
         "summary": "Link Plaid Account for USD Onramp (ACH)",
-        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. \n\n***Note: Create Virtual Account is a billable event.***\n",
+        "description": "HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid \nprocessor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.\n\nLinking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body \nor you can create one manually later on through the `Create Onramp Virtual Account` endpoint. Creating a Virtual Account is a billable event.\n",
         "tags": [
           "Account"
         ],
@@ -4767,18 +5579,15 @@
         }
       }
     },
-    "/account/wire/offramp": {
+    "/account/wire/international/offramp": {
       "post": {
-        "summary": "Add USD Offramp Bank Account (Wire)",
+        "summary": "Add Offramp Bank Account for Receiving International Wires",
         "tags": [
           "Account"
         ],
         "parameters": [
           {
             "$ref": "#/components/parameters/UserIdParameter"
-          },
-          {
-            "$ref": "#/components/parameters/AccountTypeParameter"
           }
         ],
         "requestBody": {
@@ -4837,12 +5646,78 @@
         "tags": [
           "Account"
         ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpReceiverBody"
+          "$ref": "#/components/requestBodies/BrlOfframpReceiverCreateBody"
         },
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverResponse"
+            "$ref": "#/components/responses/BrlOfframpReceiverCreateResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get BRL Offramp Receiver",
+        "description": "Get an existing BRL Offramp Receiver detail.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/ReceiverIdOptionalParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BrlOfframpReceiverGetResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update BRL Offramp Receiver",
+        "description": "Update an existing BRL Offramp Receiver detail.",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/ReceiverIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/BrlOfframpReceiverUpdateBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BrlOfframpReceiverUpdateResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -4863,8 +5738,16 @@
         "tags": [
           "Account"
         ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          },
+          {
+            "$ref": "#/components/parameters/ReceiverIdParameter"
+          }
+        ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpPixAccountBody"
+          "$ref": "#/components/requestBodies/BrlOfframpAccountBody"
         },
         "responses": {
           "200": {
@@ -5480,7 +6363,7 @@
             "$ref": "#/components/parameters/ChainParameter"
           },
           {
-            "$ref": "#/components/parameters/CurrencyParameter"
+            "$ref": "#/components/parameters/CryptoCurrencyParameter"
           }
         ],
         "responses": {

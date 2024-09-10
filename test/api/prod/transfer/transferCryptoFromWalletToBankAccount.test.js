@@ -71,8 +71,8 @@ describe("POST /transfer/crypto-to-fiat", function () {
         const tx = txRes.body;
         // console.log(account);
         expect(tx.error).toBe("fields provided are either missing or invalid");
-        expect(tx.missing_fields).toBeDefined();
-        expect(tx.invalid_fields).toBeDefined();
+        expect(tx.missingFields).toBeDefined();
+        expect(tx.invalidFields).toBeDefined();
       }, 10000);
     });
   });

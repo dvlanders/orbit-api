@@ -12,6 +12,8 @@ const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getFeeConfig } = require("../../fee/utils");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { v4 } = require("uuid");
+const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("./fetchCheckbookBridgeFiatToCryptoTransferRecord");
+const { simulateSandboxFiatToCryptoTransactionStatus } = require("../utils/simulateSandboxFiatToCryptoTransaction");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -61,34 +63,8 @@ const transferFromPlaidToBridge = async(configs) => {
                     failed_reason: `Fee feature not available for ${destinationCurrency} on ${chain}`
                 }
                 updatedRecord = await updateRequestRecord(initialRecord.id, toUpdate)
-                return {
-                    transferType: transferType.FIAT_TO_CRYPTO,
-                    transferDetails: {
-                        id: initialRecord.id,
-                        requestId,
-                        sourceUserId,
-                        destinationUserId,
-                        chain,
-                        sourceCurrency,
-                        amount,
-                        destinationCurrency,
-                        sourceAccountId,
-                        createdAt: updatedRecord.created_at,
-                        updatedAt: updatedRecord.updated_at,
-                        status: updatedRecord.status,
-                        isInstant,
-                        failedReason: updatedRecord.failed_reason,
-                        fee: {
-                            feeId: null,
-                            feeType,
-                            feeAmount,
-                            feePercent,
-                            status: "FAILED",
-                            transactionHash: null,
-                            failedReason: `Fee feature not available for ${destinationCurrency} on ${chain}`
-                        },
-                    }
-                }
+                const result = await fetchCheckbookBridgeFiatToCryptoTransferRecord(updatedRecord.id, profileId)
+                return result
             }
             const info = {
                 chargedUserId: destinationUserId,
@@ -140,15 +116,21 @@ const transferFromPlaidToBridge = async(configs) => {
             const { message, type } = getMappedError(responseBody.error)
             throw new CreateFiatToCryptoTransferError(type, message, responseBody)
         }
+        const toUpdate = {
+            checkbook_response: responseBody,
+            status: "FIAT_SUBMITTED",
+            checkbook_payment_id: responseBody.id,
+            checkbook_status: responseBody.status
+        }
+
+        if (process.env.NODE_ENV === "development"){
+            toUpdate.status = "CONFIRMED"
+        }
+
         // update record
         const {data: updatedRecord, error: updatedRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
-            .update({
-                checkbook_response: responseBody,
-                status: "FIAT_SUBMITTED",
-                checkbook_payment_id: responseBody.id,
-                checkbook_status: responseBody.status
-            })
+            .update(toUpdate)
             .eq("id", initialRecord.id)
             .select()
             .single())
@@ -162,32 +144,9 @@ const transferFromPlaidToBridge = async(configs) => {
             // perform instant crypto transfer
         }
 
-        const result = {
-            transferType: transferType.FIAT_TO_CRYPTO,
-            transferDetails: {
-                id: initialRecord.id,
-                requestId,
-                sourceUserId,
-                destinationUserId,
-                chain,
-                sourceCurrency,
-                amount,
-                destinationCurrency,
-                sourceAccountId,
-                createdAt: updatedRecord.created_at,
-                status: "FIAT_SUBMITTED",
-                isInstant,
-                fee: feeRecord ? {
-                    feeId: feeRecord.id,
-                    feeType: feeRecord.fee_type,
-                    feeAmount: feeRecord.fee_amount,
-                    feePercent: feeRecord.fee_percent,
-                    status: "CREATED",
-                    transactionHash: null,
-                    failedReason: null
-                }: null
-            }
-        }
+        if (process.env.NODE_ENV === "development") await simulateSandboxFiatToCryptoTransactionStatus(updatedRecord)
+
+        const result = await fetchCheckbookBridgeFiatToCryptoTransferRecord(updatedRecord.id, profileId)
 
         return result
 

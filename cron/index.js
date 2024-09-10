@@ -14,7 +14,9 @@ const pollBillingCreate = require('./jobs/pollBillingCreate');
 const pollBastionGasTransaction = require('./jobs/pollBastionGasTransaction');
 const pollContractAction = require('./jobs/pollContractActions');
 const pollBridgeWebhookEvents = require('./jobs/pollBridgeWebhookEvents');
-
+const pollReapWebhookEvents = require('./jobs/pollReapWebhookEvents');
+const pollBlindpayReceiverStatus = require('./jobs/pollBlindpayReceiverStatus');
+const pollOfframpTransactionsBlindpayStatus = require('./jobs/pollOfframpTransactionsBlindpayStatus');
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollOfframpTransactionsBastionStatus); // every 20 seconds
@@ -31,3 +33,6 @@ cron.schedule('*/60 * * * * *', pollDeveloperFeeStatus)
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsForCircleWireExecution); // every 60 seconds
 cron.schedule('0 10 * * *', pollBillingCreate) // every day at 10 AM
 cron.schedule('*/60 * * * * *', pollBridgeWebhookEvents) // every 60 seconds
+cron.schedule('*/60 * * * * *', pollReapWebhookEvents) // every 60 seconds
+cron.schedule('*/60 * * * * *', pollBlindpayReceiverStatus); // every 60 seconds
+cron.schedule('*/60 * * * * *', pollOfframpTransactionsBlindpayStatus); // every 60 seconds

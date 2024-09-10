@@ -28,7 +28,6 @@ const executeCircleWirePayout = async (id, user_id, destination_currency, amount
 	const formattedAmount = parseFloat(amount).toFixed(2);
 
 
-	console.log("circle_account_id", circle_account_id)
 	try {
 		const idempotencyKey = v4();
 		const circlePayoutsUrlRequestBody = {

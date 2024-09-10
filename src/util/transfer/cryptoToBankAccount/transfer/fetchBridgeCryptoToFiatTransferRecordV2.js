@@ -1,6 +1,7 @@
 const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
+const { convertKeysToCamelCase } = require("../../../utils/object")
 const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 
@@ -39,7 +40,7 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
             contractAddress: record.contract_address,
             sourceUser: record.source_user.user_kyc,
             destinationUser: record.destination_user.user_kyc,
-            destinationAccount: bridgeExternalAccount,
+            destinationAccount: convertKeysToCamelCase(bridgeExternalAccount),
             failedReason: record.failed_reason,
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,

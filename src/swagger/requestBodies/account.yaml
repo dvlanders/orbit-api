@@ -3,43 +3,68 @@ UsdOnrampAchAccountBody:
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UsdOnrampAchAccount'
+        $ref: "#/components/schemas/UsdOnrampAchAccount"
 UsdOnrampWireAccountBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UsdOnrampWireAccount'
+        $ref: "#/components/schemas/UsdOnrampWireAccount"
 UsdOfframpAchAccountBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/UsdOfframpAchAccount'
+        $ref: "#/components/schemas/UsdOfframpAchAccount"
+# UsdOfframpWireAccountBody:
+#   required: true
+#   content:
+#     application/json:
+#       schema:
+#         oneOf:
+#           - $ref: '#/components/schemas/UsdOfframpWireUSAccount'
+#           - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount'
+#           - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount'
 UsdOfframpWireAccountBody:
   required: true
   content:
     application/json:
       schema:
         oneOf:
-          - $ref: '#/components/schemas/UsdOfframpWireUSAccount'
-          - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount'
-          - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount'
+          - $ref: "#/components/schemas/UsdOfframpWireUSAccount"
+          - $ref: "#/components/schemas/UsdOfframpWireNonUSAccount"
 EurOfframpSepaAccountBody:
   required: true
   content:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccount'
-BrlOfframpReceiverBody:
+BrlOfframpReceiverCreateBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlReceiverAccount'
-BrlOfframpPixAccountBody:
+        oneOf:
+          - $ref: '#/components/schemas/BrlReceiverCreateIndividualLightKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverCreateIndividualStandardKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverCreateBusinessLightKYBAccount'
+          - $ref: '#/components/schemas/BrlReceiverCreateBusinessStandardKYBAccount'
+BrlOfframpReceiverUpdateBody:
   required: true
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpPixAccount'
+        oneOf:
+          - $ref: '#/components/schemas/BrlReceiverUpdateIndividualLightKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverUpdateIndividualStandardKYCAccount'
+          - $ref: '#/components/schemas/BrlReceiverUpdateBusinessLightKYBAccount'
+          - $ref: '#/components/schemas/BrlReceiverUpdateBusinessStandardKYBAccount'
+BrlOfframpAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: '#/components/schemas/BrlOfframpPixAccount'
+          - $ref: '#/components/schemas/BrlOfframpAchAccount'
+          - $ref: '#/components/schemas/BrlOfframpWireAccount'

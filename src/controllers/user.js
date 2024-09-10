@@ -31,8 +31,8 @@ const { Chain, currencyContractAddress, hifiSupportedChain } = require('../util/
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
-
-
+const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
+const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -67,7 +67,7 @@ exports.createHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}`, error, profileId)
+			await createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}, error: ${error.message}`, error, profileId)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -249,6 +249,8 @@ exports.createHifiUser = async (req, res) => {
 			status = 400;
 		}
 
+		// send webhookmessage if sandbox
+		if (process.env.NODE_ENV === "development") await notifyUserStatusUpdate(userId)
 
 		return res.status(status).json(createHifiUserResponse);
 	} catch (error) {
@@ -523,11 +525,16 @@ exports.getAllHifiUser = async (req, res) => {
 	const fields = req.query
 	const { profileId, limit, createdAfter, createdBefore, userType, userId } = fields
 	const requiredFields = []
-	const acceptedFields = { limit: "string", createdAfter: "string", createdBefore: "string", userType: "string", userId: "string" }
+	const acceptedFields = { 
+		limit: (value) => isInRange(value, 1, 100), 
+		createdAfter: (value) => isValidDate(value, "ISO"), 
+		createdBefore: (value) => isValidDate(value, "ISO"), 
+		userType: (value) => inStringEnum(value, ["individual", "business"]), 
+		userId: "string" 
+	}
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
-		if (missingFields.length > 0 || invalidFields.lenght > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missing_fields: missingFields, invalid_fields: invalidFields })
-		if (limit && limit > 100) return res.status(400).json({ error: "At most request 100 users at a time" })
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		if (userId && !isUUID(userId)) return res.status(404).json({ error: "User not found" })
 		const users = await getAllUsers(userId, profileId, userType, limit, createdAfter, createdBefore)
 		return res.status(200).json({ count: users.length, users })
@@ -548,14 +555,18 @@ exports.generateToSLink = async (req, res) => {
 	const { profileId } = req.query
 	let { redirectUrl, idempotencyKey, templateId } = req.body
 
+	const requiredFields = ["idempotencyKey"]
+	const acceptedFields = {
+		idempotencyKey: (value) => isUUID(value),
+		redirectUrl: (value) => isValidUrl(value),
+		templateId: "string"
+	}
 	try {
+		const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		const env = process.env.NODE_ENV
-		// Validate idempotencyKey directly using regex for UUID v4
-		if (!isUUID(idempotencyKey)) return res.status(404).json({ error: "idempotencyKey must be a uuid v4" })
-
 		// fallback to HIFI template
 		if (!templateId) templateId = "2fb2da24-472a-4e5b-b160-038d9dc82a40"
-		if (!idempotencyKey) return res.status(400).json({ error: "idempotencyKey is required" })
 		// check is template exist
 		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
 		let encodedUrl
@@ -600,10 +611,15 @@ exports.acceptToSLink = async (req, res) => {
 
 	const { profileId } = req.query
 	const { sessionToken, isSandbox } = req.body
+	const requiredFields = ["sessionToken"]
+	const acceptedFields = {
+		sessionToken: (value) => isUUID(value),
+		isSandbox: "boolean"
+	}
 	try {
+		const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		const env = isSandbox ? "development" : "production"
-		console.log(env)
-		if (!sessionToken) return res.status(400).json({ error: "Session token is required" })
 		const signedAgreementId = await updateSignedAgreementRecord(sessionToken, env)
 		if (!signedAgreementId) return res.status(400).json({ error: "Session token is invalid" })
 
@@ -1243,16 +1259,21 @@ exports.getUserWalletBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
 	const { userId, chain, currency, profileId } = req.query
-
-	if (!userId || !chain || !currency) return res.status(400).json({ error: "userId, chain, and currency are required" })
-
-
-	// check is chain supported
-	if (!hifiSupportedChain.includes(chain)) return res.status(400).json({ error: `Unsupported chain: ${chain}` });
-
+	const requiredFields = ["userId", "chain", "currency"]
+	const acceptedFields = {
+		userId: "string",
+		chain: (value) => isHIFISupportedChain(value),
+		currency: "string"
+	}
 	try {
-		let bastionUserId = userId
+		// fields validation
+		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
+		// check is supported currency
+		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase()
+		if (!currencyContract) return res.status(400).json({ error: "Currency is not supported for the chain" })
 
+		let bastionUserId = userId
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 
@@ -1260,8 +1281,6 @@ exports.getUserWalletBalance = async (req, res) => {
 			createLog("user/getUserWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody)
 			return res.status(500).json({ error: 'Internal server error' });
 		}
-
-		const currencyContract = currencyContractAddress[chain][currency].toLowerCase()
 
 		const tokenInfo = responseBody.tokenBalances[currencyContract];
 		if (!tokenInfo) {

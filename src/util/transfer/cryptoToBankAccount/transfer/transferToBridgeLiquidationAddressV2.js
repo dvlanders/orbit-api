@@ -26,15 +26,17 @@ const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
+const { initial } = require("lodash");
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
+const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, achReference, sepaReference, wireMessage, swiftReference } = config
 
 
-	console.log("****payment rail", paymentRail)
 
 	// get conversion rate
 	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
@@ -64,6 +66,10 @@ const initTransferData = async (config) => {
 			transfer_from_wallet_type: sourceWalletType,
 			bastion_user_id: sourceBastionUserId,
 			same_day_ach: paymentRail == "sameDayAch",
+			ach_reference: achReference,
+			sepa_reference: sepaReference,
+			wire_message: wireMessage,
+			swift_reference: swiftReference,
 		})
 		.select()
 		.single()
@@ -133,12 +139,17 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 
 	if (feeRecordError) throw feeRecordError
 
-	//get payment rail
-	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
+
 	// get account info
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
-	if (!accountInfo) throw new Error(`destinationAccountId not exist`)
+	if (!accountInfo || !accountInfo.account_id) throw new Error(`destinationAccountId not exist`)
 	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
+
+	const internalAccountId = accountInfo.account_id
+
+	// TODO: determine if we still need bridgeRailCheck here. Could we just pass the interalAccountId and destinationCurrency to the destination object which we pass to createBridgeTransfer?
+	//get payment rail
+	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(internalAccountId, destinationCurrency)
 
 	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
 	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
@@ -154,6 +165,22 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 		currency: destinationCurrency,
 		payment_rail: paymentRail,
 		external_account_id: bridgeExternalAccountId
+	}
+
+	// if paymentRail is "wire" then we add wire_message to the destination object
+	if (paymentRail == "wire") {
+		destination.wire_message = initialTransferRecord.wire_message
+		destination.swift_reference = initialTransferRecord.swift_reference
+	}
+
+	// if the paymentrail is "sepa" then we attach sepa_reference to the destination object
+	if (paymentRail == "sepa") {
+		destination.sepa_reference = initialTransferRecord.sepa_reference
+	}
+
+	// if the paymentrail is "ach" or "ach_same_day" then we attach ach_reference to the destination object
+	if (paymentRail == "ach" || paymentRail == "ach_same_day") {
+		destination.ach_reference = initialTransferRecord.ach_reference
 	}
 
 	const response = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
@@ -175,14 +202,14 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	// update record
 	const liquidationAddress = responseBody.source_deposit_instructions.to_address
 	const providerFee = safeStringToFloat(responseBody.receipt.developer_fee) + safeStringToFloat(responseBody.receipt.exchange_fee) + safeStringToFloat(responseBody.receipt.gas_fee)
-	const finalClientReceivedAmount = safeStringToFloat(responseBody.receipt.final_amount)
+	const finalClientReceivedAmount = safeStringToFloat(responseBody.receipt.final_amount || responseBody.receipt.subtotal_amount) * parseFloat(initialTransferRecord.conversion_rate.conversionRate)
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: responseBody.state,
 		bridge_response: responseBody,
 		bridge_transfer_id: responseBody.id,
 		provider_fee: providerFee,
-		final_received_amount: finalClientReceivedAmount,
+		destination_currency_amount: finalClientReceivedAmount,
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
@@ -204,15 +231,19 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const amount = initialTransferRecord.amount
 	const sourceWalletAddress = initialTransferRecord.from_wallet_address
 	const bastionUserId = initialTransferRecord.bastion_user_id
-	//get payment rail
-	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
+
 	// get account info
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
-	if (!accountInfo) throw new Error(`destinationAccountId not exist`)
+	if (!accountInfo || !accountInfo.account_id) throw new Error(`destinationAccountId not exist`)
 	if (accountInfo.rail_type != "offramp") throw new Error(`destinationAccountId is not a offramp bank account`)
 
+	const internalAccountId = accountInfo.account_id
 	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
 	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
+
+
+	//get payment rail
+	const { destinationUserBridgeId, bridgeExternalAccountId } = await bridgeRailCheck(internalAccountId, destinationCurrency)
 
 	//create transfer without fee
 	// create a bridge transfer
@@ -226,6 +257,22 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		payment_rail: paymentRail,
 		external_account_id: bridgeExternalAccountId
 	}
+
+	// if paymentRail is "wire" then we add wire_message to the destination object
+	if (paymentRail == "wire") {
+		destination.wire_message = initialTransferRecord.wire_message
+	}
+
+	// if the paymentrail is "sepa" then we attach sepa_reference to the destination object
+	if (paymentRail == "sepa") {
+		destination.sepa_reference = initialTransferRecord.sepa_reference
+	}
+
+	// if the paymentrail is "ach" or "ach_same_day" then we attach ach_reference to the destination object
+	if (paymentRail == "ach" || paymentRail == "ach_same_day") {
+		destination.ach_reference = initialTransferRecord.ach_reference
+	}
+
 	const clientReceivedAmount = amount.toFixed(2)
 	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
 	const bridgeResponseBody = await bridgeResponse.json()
@@ -246,14 +293,14 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	// update record
 	const liquidationAddress = bridgeResponseBody.source_deposit_instructions.to_address
 	const providerFee = safeStringToFloat(bridgeResponseBody.receipt.developer_fee) + safeStringToFloat(bridgeResponseBody.receipt.exchange_fee) + safeStringToFloat(bridgeResponseBody.receipt.gas_fee)
-	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount)
+	const finalClientReceivedAmount = safeStringToFloat(bridgeResponseBody.receipt.final_amount || bridgeResponseBody.receipt.subtotal_amount) * parseFloat(initialTransferRecord.conversion_rate.conversionRate)
 	const toUpdate = {
 		updated_at: new Date().toISOString(),
 		bridge_transaction_status: bridgeResponseBody.state,
 		bridge_response: bridgeResponseBody,
 		bridge_transfer_id: bridgeResponseBody.id,
 		provider_fee: providerFee,
-		final_received_amount: finalClientReceivedAmount,
+		destination_currency_amount: finalClientReceivedAmount,
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	await updateRequestRecord(initialTransferRecord.id, toUpdate)
@@ -285,14 +332,19 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 			failed_reason: message
 		}
 
-		// in sandbox, just return SUBMITTED_ONCHAIN status
+		// in sandbox, just return completed the transfer
 		if (process.env.NODE_ENV == "development") {
-			toUpdate.bastion_transaction_status = "CONFIRMED"
-			toUpdate.transaction_status = "SUBMITTED_ONCHAIN"
+			toUpdate.transaction_status = "COMPLETED"
 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+
+		// send out webhook message if in sandbox
+		if (process.env.NODE_ENV == "development") {
+			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+		}
+
 	} else {
 
 		const toUpdate = {
@@ -305,6 +357,9 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
 
+	// send webhook message in production
+	await notifyCryptoToFiatTransfer(initialTransferRecord)
+
 	// gas check
 	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
 	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
@@ -312,12 +367,18 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
+	console.log(wireMessage)
 
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId } = config
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 
+	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
+	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
+	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
+	if (!accountInfo || !accountInfo.account_id) return { isExternalAccountExist: false, transferResult: null }
+	
 	// check destination bank account information
-	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(destinationAccountId, destinationCurrency)
+	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(accountInfo.account_id, destinationCurrency)
 	config.destinationUserId = destinationUserId
 	config.destinationUserBridgeId = destinationUserBridgeId
 	config.bridgeExternalAccountId = bridgeExternalAccountId

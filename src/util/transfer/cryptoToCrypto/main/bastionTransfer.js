@@ -21,6 +21,7 @@ const { getMappedError } = require("../../../bastion/utils/errorMappings")
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap")
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
 const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
+const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
 
 
 const insertRecord = async(fields) => {
@@ -140,6 +141,9 @@ const transferWithoutFee = async(record, profileId) => {
         
         await updateRequestRecord(record.id, toUpdate)
     }
+
+    // send notification
+    await notifyCryptoToCryptoTransfer(record)
 
     // gas check
     await bastionGasCheck(record.sender_bastion_user_id, record.chain, record.transfer_from_wallet_type)

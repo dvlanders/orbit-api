@@ -20,6 +20,7 @@ const { regsiterFeeWallet } = require("../util/smartContract/registerWallet/regi
 const { isFeeWalletRegistered } = require("../util/smartContract/registerWallet/checkFeeWalletIsRegistered");
 const supabaseSandbox = require("../util/sandboxSupabaseClient");
 const { virtualAccountPaymentRailToChain } = require("../util/bridge/utils");
+const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -91,7 +92,8 @@ exports.testwebhook = async(req, res) => {
     try {
         console.log("received")
         const token = req.headers['authorization'].split(' ')[1];
-        const public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyy6f6moGJlxroxFVK6fn\nBh/5RIw7XmTUPx8PglbBjBHWt5xDPD/oSnplCrmG0nBINCBgALxppsRJyN70Waxu\nRB5KibQHyi6/UrKU/rUZhqw2PDDsar2RpLbqE2YT2P8XlSjSzZoKm5tBPNsGkYE/\nmusLdnsjTMpa+8BzdGpZ9OoXh8p1vu8a+8PES3TmryszfwZxmgBwWp7gpQiOarsr\nKmktoXkyvtaUXd21m97rnO2cR21J56LYaeoLt3uwqb/XrEjbx9WNrJ3a8CC0g/P1\nfeIpujg5zuJPfx6LuqhL0F898ogoaXTSuSy1FAde2EZLBC2rq1eOgslJpb5JVogw\nyQIDAQAB\n-----END PUBLIC KEY-----\n"
+        const public_key = process.env.INTERNAL_WEBHOOK_PUBLICKEY
+        if (!public_key) return res.status(500).json({message: "No public token found"})
         // Verify the token
         jwt.verify(token, public_key.replace(/\\n/g, '\n'), { algorithms: ['RS256'] },(err, decoded) => {
             if (err) {
@@ -328,4 +330,75 @@ exports.testGetVirtualAccountAmount = async(req, res) => {
         return res.status(500).json({error: "error"})
     }
 
+}
+
+exports.testReapAccount = async(req, res) => {
+    try{
+        // const responseBody = await getUserReapWalletAddress("", process.env.REAP_API_KEY, process.env.REAP_BUSINESS_UUID)
+        const requestBody = {
+            "receivingParty": {
+                "type": "company",
+                "name": {
+                    "name": "HK testing company"
+                },
+                "accounts": [
+                    {
+                        "type": "bank",
+                        "identifier": {
+                            "standard": "fps_id",
+                            "value": "8882312"
+                        },
+                        "network": "FPS",
+                        "currencies": [
+                            "HKD"
+                        ],
+                        "provider": {
+                            "name": "HSBC HK",
+                            "country": "HK",
+                            "networkIdentifier": "004"
+                        },
+                        "addresses": [
+                            {
+                                "type": "postal",
+                                "street": "Flat A, 2/F, Beauty Avenue",
+                                "city": "Quarry Bay",
+                                "state": "HK Island",
+                                "country": "HK",
+                                "postalCode": "999077"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "payment": {
+                "receivingAmount": 200.007,
+                "receivingCurrency": "HKD",
+                "senderCurrency": "USDC",
+                "description": "Test payment",
+                "purposeOfPayment": "payment_for_goods"
+            }
+        }
+
+        const url = `${process.env.REAP_URL}/payments`
+        console.log(url)
+        const headers = {
+            "accept": "application/json",
+            "content-type": "application/json;schema=PAAS",
+            "x-reap-api-key": process.env.REAP_API_KEY,
+            "x-reap-entity-id": process.env.REAP_BUSINESS_UUID
+        }
+        const options = {
+            method: "POST",
+            headers,
+            body: JSON.stringify(requestBody)
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+    
+        return res.status(200).json(responseBody)
+
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
 }

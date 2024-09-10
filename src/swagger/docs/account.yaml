@@ -2,107 +2,105 @@
   post:
     summary: Link Plaid Account for USD Onramp (ACH)
     description: |
-       HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid 
-       processor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.
-       
-       Linking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body 
-       or you can create one manually later on through the `Create Onramp Virtual Account` endpoint. 
-      
-       ***Note: Create Virtual Account is a billable event.***
+      HIFI and Plaid have partnered to enable you to link your existing Plaid account to HIFI for USD Onramp with ACH pull. To get started, follow the Plaid [guide](https://plaid.com/docs/api/processors/) to create a Plaid 
+      processor token. Passing the processor_token to this endpoint will allow you to link your Plaid account for USD onramp.
+
+      Linking a Plaid account alone will not allow the user to onramp as onramping requires a Virtual Account. To create a virtual account, you can set the parameter `createVirtualAccount` to `true` in the request body 
+      or you can create one manually later on through the `Create Onramp Virtual Account` endpoint. Creating a Virtual Account is a billable event.
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
     requestBody:
-      $ref: '#/components/requestBodies/UsdOnrampAchAccountBody'
+      $ref: "#/components/requestBodies/UsdOnrampAchAccountBody"
     responses:
-      '200':
-        $ref: '#/components/responses/UsdOnrampAchAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/UsdOnrampAchAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/activateOnRampRail:
   post:
     summary: Create Onramp Virtual Account
     description: |
-       HIFI will create a virtual bank account for you that allows you to onramp by simply deposit fiat into the bank account.
+      HIFI will create a virtual bank account for you that allows you to onramp by simply deposit fiat into the bank account.
 
-       The created virtual bank account only supports the specified onramp `rail`. eg. ACH and WIRE with USD. If you need to support a different rail, you'll need to generate another virtual bank account for that specific rail.
+      The created virtual bank account only supports the specified onramp `rail`. eg. ACH and WIRE with USD. If you need to support a different rail, you'll need to generate another virtual bank account for that specific rail.
 
-       ***Note: Create Virtual Account is a billable event.***
+      ***Note: Create Virtual Account is a billable event.***
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
     requestBody:
-      $ref: '#/components/requestBodies/UsdOnrampWireAccountBody'
+      $ref: "#/components/requestBodies/UsdOnrampWireAccountBody"
     responses:
-      '200':
-        $ref: '#/components/responses/UsdOnrampWireAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/UsdOnrampWireAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/usd/offramp:
   post:
     summary: Add USD Offramp Bank Account (ACH)
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
     requestBody:
-      $ref: '#/components/requestBodies/UsdOfframpAchAccountBody'
+      $ref: "#/components/requestBodies/UsdOfframpAchAccountBody"
     responses:
-      '200':
-        $ref: '#/components/responses/UsdOfframpAchAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
-/account/wire/offramp:
+      "200":
+        $ref: "#/components/responses/UsdOfframpAchAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/wire/international/offramp:
   post:
-    summary: Add USD Offramp Bank Account (Wire)
+    summary: Add Offramp Bank Account for Receiving International Wires
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
-      - $ref: '#/components/parameters/AccountTypeParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
+      # - $ref: "#/components/parameters/AccountTypeParameter"
     requestBody:
-      $ref: '#/components/requestBodies/UsdOfframpWireAccountBody'
+      $ref: "#/components/requestBodies/UsdOfframpWireAccountBody"
     responses:
-      '200':
-        $ref: '#/components/responses/UsdOfframpWireAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/UsdOfframpWireAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/euro/offramp:
   post:
     summary: Add EURO Offramp Bank Account (SEPA)
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
     requestBody:
-      $ref: '#/components/requestBodies/EurOfframpSepaAccountBody'
+      $ref: "#/components/requestBodies/EurOfframpSepaAccountBody"
     responses:
-      '200':
-        $ref: '#/components/responses/EurOfframpSepaAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/EurOfframpSepaAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/brl/receiver:
   post:
     summary: Create BRL Offramp Receiver
@@ -111,11 +109,49 @@
       adding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.
     tags:
       - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
     requestBody:
-      $ref: '#/components/requestBodies/BrlOfframpReceiverBody'
+      $ref: '#/components/requestBodies/BrlOfframpReceiverCreateBody'
     responses:
       '200':
-        $ref: '#/components/responses/BrlOfframpReceiverResponse'
+        $ref: '#/components/responses/BrlOfframpReceiverCreateResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+  get:
+    summary: Get BRL Offramp Receiver
+    description: Get an existing BRL Offramp Receiver detail.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/ReceiverIdOptionalParameter'
+    responses:
+      '200':
+        $ref: '#/components/responses/BrlOfframpReceiverGetResponse'
+      '401':
+        $ref: '#/components/responses/UnauthorizedResponse'
+      '404':
+        $ref: '#/components/responses/NotFoundResponse'
+      '500':
+        $ref: '#/components/responses/InternalServerErrorResponse'
+  put:
+    summary: Update BRL Offramp Receiver
+    description: Update an existing BRL Offramp Receiver detail.
+    tags:
+      - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/ReceiverIdParameter'
+    requestBody:
+      $ref: '#/components/requestBodies/BrlOfframpReceiverUpdateBody'
+    responses:
+      '200':
+        $ref: '#/components/responses/BrlOfframpReceiverUpdateResponse'
       '401':
         $ref: '#/components/responses/UnauthorizedResponse'
       '404':
@@ -129,17 +165,20 @@
       Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id by making a `Create BRL Offramp Receiver` call.
     tags:
       - Account
+    parameters:
+      - $ref: '#/components/parameters/UserIdParameter'
+      - $ref: '#/components/parameters/ReceiverIdParameter'
     requestBody:
-      $ref: '#/components/requestBodies/BrlOfframpPixAccountBody'
+      $ref: '#/components/requestBodies/BrlOfframpAccountBody'
     responses:
-      '200':
-        $ref: '#/components/responses/BrlOfframpPixAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/BrlOfframpPixAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account:
   get:
     summary: Get Account
@@ -147,16 +186,16 @@
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/AccountIdParameter'
+      - $ref: "#/components/parameters/AccountIdParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/GetAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/GetAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/all:
   get:
     summary: Get all Accounts
@@ -164,22 +203,22 @@
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdOptionalParameter'
-      - $ref: '#/components/parameters/CurrencyParameter'
-      - $ref: '#/components/parameters/RailTypeParameter'
-      - $ref: '#/components/parameters/PaymentRailParameter'
-      - $ref: '#/components/parameters/LimitParameter'
-      - $ref: '#/components/parameters/CreatedBeforeParameter'
-      - $ref: '#/components/parameters/CreatedAfterParameter'
+      - $ref: "#/components/parameters/UserIdOptionalParameter"
+      - $ref: "#/components/parameters/CurrencyParameter"
+      - $ref: "#/components/parameters/RailTypeParameter"
+      - $ref: "#/components/parameters/PaymentRailParameter"
+      - $ref: "#/components/parameters/LimitParameter"
+      - $ref: "#/components/parameters/CreatedBeforeParameter"
+      - $ref: "#/components/parameters/CreatedAfterParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/GetAllAccountsResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/GetAllAccountsResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/onRampRail/virtualAccount:
   get:
     summary: Retrieve Onramp Virtual Account Details
@@ -187,19 +226,19 @@
     tags:
       - Account
     parameters:
-      - $ref: '#/components/parameters/UserIdParameter'  
-      - $ref: '#/components/parameters/RailParameter'
-      - $ref: '#/components/parameters/DestinationCurrencyParameter'
-      - $ref: '#/components/parameters/DestinationChainParameter'
-      - $ref: '#/components/parameters/VALimitParameter'
-      - $ref: '#/components/parameters/VACreatedBeforeParameter'
-      - $ref: '#/components/parameters/VACreatedAfterParameter'
+      - $ref: "#/components/parameters/UserIdParameter"
+      - $ref: "#/components/parameters/RailParameter"
+      - $ref: "#/components/parameters/DestinationCurrencyParameter"
+      - $ref: "#/components/parameters/DestinationChainParameter"
+      - $ref: "#/components/parameters/VALimitParameter"
+      - $ref: "#/components/parameters/VACreatedBeforeParameter"
+      - $ref: "#/components/parameters/VACreatedAfterParameter"
     responses:
-      '200':
-        $ref: '#/components/responses/GetVirtualAccountResponse'
-      '401':
-        $ref: '#/components/responses/UnauthorizedResponse'
-      '404':
-        $ref: '#/components/responses/NotFoundResponse'
-      '500':
-        $ref: '#/components/responses/InternalServerErrorResponse'
+      "200":
+        $ref: "#/components/responses/GetVirtualAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
