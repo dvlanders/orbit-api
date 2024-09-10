@@ -159,12 +159,7 @@ async function pollOfframpTransactionsBridgeStatus() {
 		.from('offramp_transactions')
 		.update({ updated_at: new Date().toISOString() })
 		.eq("fiat_provider", "BRIDGE")
-		.neq("transaction_status", "NOT_INITIATED")
-		.neq("transaction_status", "CREATED")
-		.neq("transaction_status", "FAILED_ONCHAIN")
-		.neq("transaction_status", "FAILED_FIAT_REFUNDED")
-		.neq("transaction_status", "SUBMITTED_ONCHAIN")
-		.or('bridge_transaction_status.is.null,and(bridge_transaction_status.neq.payment_processed,bridge_transaction_status.neq.refunded,bridge_transaction_status.neq.error,bridge_transaction_status.neq.canceled)')
+		.or('trasaction_status.eq.COMPLETED_ONCHAIN, transaction_status.eq.INITIATED_FIAT, transaction_status.eq.IN_PROGRESS_FIAT, transaction_status.eq.FAILED_FIAT_RETURNED')
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id, transfer_from_wallet_type, bridge_transfer_id')
 
