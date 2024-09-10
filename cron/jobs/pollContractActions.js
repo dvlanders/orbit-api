@@ -57,9 +57,7 @@ async function pollContractAction() {
 		const { data: contractActions, error: contractActionsError } = await supabaseCall(() => supabase
 			.from('contract_actions')
 			.update({updated_at: new Date().toISOString()})
-			.neq('status', "CONFIRMED")
-			.neq('status', "FAILED")
-			.neq('status', "CREATED")
+			.eq('status', "SUBMITTED")
 			.order('updated_at', { ascending: true })
 			.select('*')
 		)
