@@ -159,7 +159,7 @@ async function pollOfframpTransactionsBridgeStatus() {
 		.from('offramp_transactions')
 		.update({ updated_at: new Date().toISOString() })
 		.eq("fiat_provider", "BRIDGE")
-		.or('trasaction_status.eq.COMPLETED_ONCHAIN, transaction_status.eq.INITIATED_FIAT, transaction_status.eq.IN_PROGRESS_FIAT, transaction_status.eq.FAILED_FIAT_RETURNED')
+		.or('transaction_status.eq.COMPLETED_ONCHAIN, transaction_status.eq.INITIATED_FIAT, transaction_status.eq.IN_PROGRESS_FIAT, transaction_status.eq.FAILED_FIAT_RETURNED')
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, transaction_status, to_bridge_liquidation_address_id, bridge_transaction_status, transaction_hash, destination_user_id, transfer_from_wallet_type, bridge_transfer_id')
 

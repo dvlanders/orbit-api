@@ -158,7 +158,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.from('offramp_transactions')
 		.update({updated_at: new Date().toISOString()})
 		.eq("crypto_provider", "BASTION")
-		.eq("status", "SUBMITTED_ONCHAIN")
+		.eq("transaction_status", "SUBMITTED_ONCHAIN")
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider')
 	)
