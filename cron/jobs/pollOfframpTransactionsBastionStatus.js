@@ -5,9 +5,55 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
+const { simulateSandboxCryptoToFiatTransactionStatus } = require('../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction');
 const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
 const createJob = require('../../asyncJobs/createJob');
 const { BASTION_URL, BASTION_API_KEY } = process.env;
+
+const hifiOfframpTransactionStatusMap = {
+	"ACCEPTED": "SUBMITTED_ONCHAIN",
+	"SUBMITTED": "SUBMITTED_ONCHAIN",
+	"CONFIRMED": "COMPLETED_ONCHAIN",
+	"FAILED": "FAILED_ONCHAIN"
+}
+
+const sandboxHifiOfframpTransactionStatusMap = {
+	"ACCEPTED": "SUBMITTED_ONCHAIN",
+	"SUBMITTED": "SUBMITTED_ONCHAIN",
+	"CONFIRMED": "COMPLETED",
+	"FAILED": "FAILED_ONCHAIN"
+}
+
+
+const _simulateSandbox = async(transaction, data) => {
+	const hifiOfframpTransactionStatus = sandboxHifiOfframpTransactionStatusMap[data.status] || 'UNKNOWN';
+
+	const toUpdate = {
+		transaction_status: hifiOfframpTransactionStatus,
+		bastion_transaction_status: data.status,
+		bastion_response: data,
+		updated_at: new Date().toISOString()
+	}
+
+	const { data: updateData, error: updateError } = await supabaseCall(() => supabase
+		.from('offramp_transactions')
+		.update(toUpdate)
+		.eq('id', transaction.id)
+		.select()
+		.single()
+	)
+
+	if (updateError) throw updateError
+
+	if (data.status == "CONFIRMED"){
+		await simulateSandboxCryptoToFiatTransactionStatus(updateData, ["COMPLETED_ONCHAIN", "IN_PROGRESS_FIAT", "INITIATED_FIAT"])
+	}
+
+	if (data.status == "FAILED" || data.status == "CONFIRMED"){
+		await notifyCryptoToFiatTransfer(updateData)
+	}
+	
+}
 
 const updateStatus = async (transaction) => {
 	const bastionUserId = transaction.bastion_user_id
@@ -32,11 +78,14 @@ const updateStatus = async (transaction) => {
 		}
 
 		// Map the data.status to our transaction_status
-		const hifiOfframpTransactionStatus =
-			data.status === 'ACCEPTED' || data.status === 'SUBMITTED' ? 'SUBMITTED_ONCHAIN' :
-				data.status === 'CONFIRMED' ? 'COMPLETED_ONCHAIN' :
-					data.status === 'FAILED' ? 'FAILED_ONCHAIN' :
-						'UNKNOWN';
+		const hifiOfframpTransactionStatus = hifiOfframpTransactionStatusMap[data.status] || 'UNKNOWN';
+
+
+		// update specific for sandbox
+		if (process.env.NODE_ENV == "development" && transaction.source_currency == "usdHifi"){
+			await _simulateSandbox(transaction, data)
+			return
+		}
 
 		// If the hifiOfframpTransactionStatus is different from the current transaction_status or if the data.status is different than the transaction.bastion_transaction_status, update the transaction_status
 		if (hifiOfframpTransactionStatus !== transaction.transaction_status || data.status !== transaction.bastion_transaction_status) {
@@ -99,8 +148,7 @@ const updateStatus = async (transaction) => {
 
 		}
 	} catch (error) {
-		console.error('Failed to fetch transaction status from Bastion API', error);
-		await createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, 'Failed to fetch transaction status from Bastion API', error);
+		await createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, error.message, error);
 	}
 }
 

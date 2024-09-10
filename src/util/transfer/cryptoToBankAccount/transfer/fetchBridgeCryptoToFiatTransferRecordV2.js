@@ -1,3 +1,4 @@
+const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService")
 const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
@@ -12,10 +13,12 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
     if (!record) return null
     // get external account information
 
+    const accountInfo = await fetchAccountProviders(record.destination_account_id, profileId)
+
     let { data: bridgeExternalAccount, error: bridgeExternalAccountError } = await supabaseCall(() => supabase
         .from('bridge_external_accounts')
         .select('id, account_owner_name, bank_name, account_number, routing_number, account_type, business_identifier_code, bank_country, iban, beneficiary_first_name, beneficiary_last_name')
-        .eq("bridge_external_account_id", record.to_bridge_external_account_id)
+        .eq("id", accountInfo.account_id)
         .single())
 
     if (bridgeExternalAccountError) throw bridgeExternalAccountError

@@ -1,4 +1,5 @@
 const { createBastionCryptoTransfer } = require("../main/bastionTransfer")
+const { createBastionSandboxCryptoTransfer } = require("../main/bastionTransfeSandboxUSDHIFI")
 
 /**
 transfer information should include
@@ -25,6 +26,10 @@ const cryptoToCryptoSupportedFunctions = {
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: createBastionCryptoTransfer,
+        },
+        usdHifi: {
+            walletProviderTable: "bastion_wallets",
+            transferFunc: createBastionSandboxCryptoTransfer,
         }
     },
     ETHEREUM_TESTNET:{

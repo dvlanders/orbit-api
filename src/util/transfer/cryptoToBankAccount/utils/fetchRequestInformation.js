@@ -32,18 +32,20 @@ return request
 }
 
 const checkIsCryptoToFiatRequestIdAlreadyUsed = async(requestId, profileId) => {
-    let { data: request, error:requestError } = await supabaseCall(() => supabase
+    // insert new record
+    let { data: newRecord, error:insertError } = await supabaseCall(() => supabase
         .from('offramp_transactions')
-        .select('*, users: user_id!inner(profile_id)')
-        .eq("request_id", requestId)
-        .eq("users.profile_id", profileId)
+        .upsert({
+            request_id: requestId,
+        }, {onConflict: "request_id", ignoreDuplicates: true})
+        .select("*")
         .maybeSingle())
+    
+    // record already exists
+    if (insertError) throw insertError
 
-
-    if (requestError) throw requestError
-    if (!request) return null
-
-    return request
+    // new record
+    return {isAlreadyUsed: !newRecord, newRecord: newRecord}
 }
 
 module.exports = {
