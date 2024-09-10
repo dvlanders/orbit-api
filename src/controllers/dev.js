@@ -19,6 +19,7 @@ const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { regsiterFeeWallet } = require("../util/smartContract/registerWallet/registerFeeWallet");
 const { isFeeWalletRegistered } = require("../util/smartContract/registerWallet/checkFeeWalletIsRegistered");
 const supabaseSandbox = require("../util/sandboxSupabaseClient");
+const { virtualAccountPaymentRailToChain } = require("../util/bridge/utils");
 const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
 const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");

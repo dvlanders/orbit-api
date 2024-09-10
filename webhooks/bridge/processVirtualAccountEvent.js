@@ -1,7 +1,7 @@
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
-const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
+const { BridgeTransactionStatusMap, virtualAccountPaymentRailToChain } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
 const { v4: uuidv4 } = require("uuid");
 const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
@@ -117,7 +117,7 @@ const processVirtualAccountEvent = async (event) => {
       await supabaseCall(() =>
         supabase
           .from("bridge_virtual_accounts")
-          .select("user_id")
+          .select("user_id, source_currency, destination_payment_rail, destination_currency")
           .eq("virtual_account_id", virtual_account_id)
           .limit(1)
           .single()
@@ -128,30 +128,36 @@ const processVirtualAccountEvent = async (event) => {
     }
     const userId = virtualAccount.user_id;
 
-    const { data: initialRecord, error: initialRecordError } = await supabaseCall(() =>
-      supabase.from("onramp_transactions").insert(
-        {
-          request_id: uuidv4(),
-          user_id: userId,
-          amount: amount,
-          destination_user_id: userId,
-          bridge_virtual_account_id: virtual_account_id,
-          last_bridge_virtual_account_event_id: id,
-          bridge_status: type,
-          bridge_response: event,
-          status:
-            type in BridgeTransactionStatusMap
-              ? BridgeTransactionStatusMap[type]
-              : "UNKNOWN",
-          transaction_hash: destination_tx_hash,
-          fiat_provider: "MANUAL_DEPOSIT",
-          crypto_provider: "BRIDGE",
-          bridge_deposit_id: deposit_id,
-          source_manual_deposit: event.source
-        }
-      ).select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
-       .single()
-    );
+    const { data: initialRecord, error: initialRecordError } = await supabase
+        .from("onramp_transactions")
+        .insert(
+          {
+            request_id: uuidv4(),
+            user_id: userId,
+            amount: amount,
+            destination_user_id: userId,
+            bridge_virtual_account_id: virtual_account_id,
+            last_bridge_virtual_account_event_id: id,
+            bridge_status: type,
+            bridge_response: event,
+            status:
+              type in BridgeTransactionStatusMap
+                ? BridgeTransactionStatusMap[type]
+                : "UNKNOWN",
+            transaction_hash: destination_tx_hash,
+            fiat_provider: "MANUAL_DEPOSIT",
+            crypto_provider: "BRIDGE",
+            bridge_deposit_id: deposit_id,
+            source_currency: virtualAccount.source_currency,
+            destination_currency: virtualAccount.destination_currency,
+            chain: virtualAccountPaymentRailToChain[virtualAccount.destination_payment_rail],
+            source_manual_deposit: event.source
+        },
+        { onConflict: "bridge_deposit_id" }
+        )
+        .select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, fiat_provider, crypto_provider")
+        .single()
+
     if (initialRecordError) {
       throw initialRecordError;
     }
