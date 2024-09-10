@@ -405,9 +405,9 @@ exports.testReapAccount = async(req, res) => {
 exports.testSelectOnEnum = async(req, res) => {
     try{
         const {data, error} = await supabase
-            .from("offramp_transactions")
+            .from("bridge_customers")
             .select("*")
-            .or("transaction_status.eq.NOT_INITIATED,transaction_status.eq.CREATED")
+            .or("status.eq.active")
             .limit(10)
             
         return res.status(200).json({data, error})
