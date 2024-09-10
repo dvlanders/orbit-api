@@ -1,7 +1,7 @@
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
-const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
+const { BridgeTransactionStatusMap, virtualAccountPaymentRailToChain } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
 
 const processVirtualAccountEvent = async (event) => {
@@ -88,7 +88,7 @@ const processVirtualAccountEvent = async (event) => {
       await supabaseCall(() =>
         supabase
           .from("bridge_virtual_accounts")
-          .select("user_id")
+          .select("user_id, source_currency, destination_payment_rail, destination_currency")
           .eq("virtual_account_id", virtual_account_id)
           .limit(1)
           .single()
@@ -117,6 +117,9 @@ const processVirtualAccountEvent = async (event) => {
           fiat_provider: "MANUAL_DEPOSIT",
           crypto_provider: "BRIDGE",
           bridge_deposit_id: deposit_id,
+          source_currency: virtualAccount.source_currency,
+          destination_currency: virtualAccount.destination_currency,
+          chain: virtualAccountPaymentRailToChain[virtualAccount.destination_payment_rail],
         },
         { onConflict: "bridge_deposit_id" }
       )
