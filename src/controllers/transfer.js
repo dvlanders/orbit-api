@@ -36,6 +36,9 @@ const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walle
 const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
 const { transferObjectReconstructor } = require("../util/transfer/utils/transfer");
 const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
+const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
+const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
+const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
 	if (req.method !== 'POST') {
@@ -72,11 +75,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
-		const record = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
-
-		// get transfer function
-		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const {isAlreadyUsed} = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// fetch sender wallet address information
 		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -102,6 +102,13 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
 		}
 
+		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && currency == "usdHifi"){
+			const receipt = await createBastionSandboxCryptoTransfer(fields)
+			return res.status(200).json(receipt)
+		}
+
+		// get transfer function
+		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
 		// transfer
 		const receipt = await transferFunc(fields)
 
@@ -196,6 +203,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"requestId": (value) => isUUID(value),
 			"sourceUserId": (value) => isUUID(value), 
 			"destinationUserId": (value) => isUUID(value), 
+			"receivedAmount": (value) => isValidAmount(value),
 			"destinationAccountId": (value) => isUUID(value), 
 			"amount": (value) => isValidAmount(value), 
 			"chain": (value) => isHIFISupportedChain(value), 
@@ -220,8 +228,8 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const record = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
+		const {isAlreadyUsed} = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// FIX ME SHOULD put it in the field validation 
 		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
@@ -253,13 +261,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			return res.status(400).json({ error: `sameDayAch is only available for ACH transfers, but the destinationAccountId passed was not for an ACH account.` })
 		}
 
-
-		//check is source-destination pair supported
-		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
-		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-		const { transferFunc } = funcs
-		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-
 		// get user wallet
 		// fetch sender wallet address information
 		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -269,6 +270,20 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!sourceWalletAddress || !sourceBastionUserId) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
+
+		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && sourceCurrency == "usdHifi") {
+			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
+			if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
+			const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
+			return res.status(200).json(receipt);
+		}
+
+		//check is source-destination pair supported
+		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
+		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc } = funcs
+		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+
 
 		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
@@ -401,29 +416,31 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request id valid
-		const record = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
-		if (record) return res.status(400).json({ error: `Request for requestId is already exists, please use get transaction endpoint with id: ${record.id}` })
-		//check is source-destination pair supported
-		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
-		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
+		const {isAlreadyUsed} = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// check fee config
 		if (feeType || feeValue) {
 			const { valid, error } = await canChargeFee(profileId, feeType, feeValue)
 			if (!valid) return res.status(400).json({ error })
 		}
-
-		// if NODE_ENV is "development" then immediately return success with a message that says this endpoint is only available in production
-		// if (process.env.NODE_ENV === "development") {
-		// 	return res.status(200).json({ message: "This endpoint is only available in production" });
-		// }
-		// onramp
-
+		
+			
 		// look up the provider to get the actual internal account id
 		const providerResult = await fetchAccountProviders(sourceAccountId, profileId);
 		if (!providerResult || !providerResult.account_id) return res.status(400).json({ error: `No provider found for id: ${sourceAccountId}` });
 		const internalAccountId = providerResult.account_id;
 
+		// simulation in sandbox
+		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && destinationCurrency == "usdHifi"){
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
+			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
+			return res.status(200).json(transferResult);
+		}
+				
+		//check is source-destination pair supported
+		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
 		let transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);

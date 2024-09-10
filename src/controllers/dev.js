@@ -19,7 +19,11 @@ const { getBastionWallet } = require("../util/bastion/utils/getBastionWallet");
 const { regsiterFeeWallet } = require("../util/smartContract/registerWallet/registerFeeWallet");
 const { isFeeWalletRegistered } = require("../util/smartContract/registerWallet/checkFeeWalletIsRegistered");
 const supabaseSandbox = require("../util/sandboxSupabaseClient");
+const { virtualAccountPaymentRailToChain } = require("../util/bridge/utils");
 const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
+const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
+const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");
+const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transfer");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {

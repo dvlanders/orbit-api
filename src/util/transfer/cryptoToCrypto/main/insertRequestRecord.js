@@ -9,9 +9,8 @@ exports.insertRequestRecord = async(requestInfo) => {
 
     const { data, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
-    .insert(
+    .update(
         { 
-            request_id: requestInfo.requestId, 
             sender_user_id: requestInfo.senderUserId,
             amount: requestInfo.amount,
             recipient_user_id: requestInfo.recipientUserId ? requestInfo.recipientUserId : null,
@@ -30,6 +29,7 @@ exports.insertRequestRecord = async(requestInfo) => {
             recipient_bastion_user_id: requestInfo.recipientBastionUserId
         },
     )
+    .eq('request_id', requestInfo.requestId)
     .select("*")
     .single())
 

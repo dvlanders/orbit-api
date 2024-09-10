@@ -33,18 +33,18 @@ return request
 }
 
 const checkIsCryptoToCryptoRequestIdAlreadyUsed = async(requestId, senderUserId) => {
-    let { data: request, error:requestError } = await supabaseCall(() => supabase
+    // insert new record
+    let { data: newRecord, error:insertError } = await supabaseCall(() => supabase
         .from('crypto_to_crypto')
-        .select('*')
-        .eq("request_id", requestId)
-        .eq("sender_user_id", senderUserId)
+        .upsert({
+            request_id: requestId,
+        }, 
+        {onConflict: "request_id", ignoreDuplicates: true})
+        .select("*")
         .maybeSingle())
-
-
-    if (requestError) throw requestError
-    if (!request) return null
-
-    return request
+    if (insertError) throw insertError
+    // new record
+    return {isAlreadyUsed: !newRecord, newRecord: newRecord}
 }
 
 module.exports = {

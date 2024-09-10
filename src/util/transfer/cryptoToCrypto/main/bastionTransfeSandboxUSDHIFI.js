@@ -22,11 +22,41 @@ const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap")
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
 const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
 const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
+const { supabaseCall } = require("../../../supabaseWithRetry")
+const { transferUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/transfer")
 
+const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
 const insertRecord = async(fields) => {
     // insert record
-    const requestRecord = await insertRequestRecord(fields)
+    const { data: requestRecord, error } = await supabaseCall(() => supabase
+    .from('crypto_to_crypto')
+    .update(
+        { 
+            sender_user_id: fields.senderUserId,
+            amount: fields.amount,
+            recipient_user_id: fields.recipientUserId ? fields.recipientUserId : null,
+            recipient_address: fields.recipientAddress,
+            sender_address: fields.senderAddress,
+            chain: fields.chain,
+            units_amount: fields.unitsAmount,
+            currency: fields.currency,
+            contract_address: fields.contractAddress,
+            provider: fields.provider,
+            transfer_from_wallet_type: fields.senderWalletType || "INDIVIDUAL",
+            transfer_to_wallet_type: fields.recipientWalletType || "INDIVIDUAL",
+            status: "CREATED",
+            sender_bastion_user_id: gasStation,
+            recipient_bastion_user_id: fields.recipientBastionUserId
+        },
+    )
+    .eq("request_id", fields.requestId)
+    .select("*")
+    .single())
+
+    if (error) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.INTERNAL_ERROR, error.message)
+
+
     if (!fields.feeType || parseFloat(fields.feeValue) <= 0) return {validTransfer: true, record: requestRecord}
 
     // insert fee record
@@ -56,8 +86,8 @@ const insertRecord = async(fields) => {
     return {validTransfer: true, record: requestRecord}
 }
 
-const createBastionCryptoTransfer = async(fields) => {
-    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionuserId, profileId } = fields
+const createBastionSandboxCryptoTransfer = async(fields) => {
+    const { senderUserId, amount, chain, currency, profileId } = fields
     if (!isValidAmount(amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[currency]
@@ -75,9 +105,9 @@ const createBastionCryptoTransfer = async(fields) => {
     const jobConfig = {
         recordId: record.id
     }
-    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
+    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
     if (canSchedule){
-        await createJob("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
+        await createJob("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
     }
 
     return receipt
@@ -104,23 +134,12 @@ const transferWithFee = async(record, profileId) => {
 }
 
 const transferWithoutFee = async(record, profileId) => {
-    const decimal = currencyDecimal[record.currency]
-    const unitsAmount = toUnitsString(record.amount, decimal) 
-    // transfer without fee
-    const bodyObject = {
-        requestId: record.bastion_request_id,
-        userId: record.sender_bastion_user_id,
-        contractAddress: record.contract_address,
-        actionName: "transfer",
-        chain: record.chain,
-        actionParams: erc20Transfer(record.currency, record.chain, record.recipient_address, unitsAmount)
-    };
 
-    const response = await submitUserAction(bodyObject)
+    const response = await transferUSDHIFI(record.sender_address, record.recipient_address, record.amount, record.chain, record.bastion_request_id)
     const responseBody = await response.json()
 
     if (!response.ok) {
-        await createLog("transfer/bastionTransfer/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
+        await createLog("transfer/bastionTransferSandboxUSDHIFI/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
         const {message, type} = getMappedError(responseBody.message)
 
          // update to database
@@ -144,15 +163,9 @@ const transferWithoutFee = async(record, profileId) => {
 
     // send notification
     await notifyCryptoToCryptoTransfer(record)
-
-    // gas check
-    await bastionGasCheck(record.sender_bastion_user_id, record.chain, record.transfer_from_wallet_type)
-
-    //return record
-    return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
 }
 
-const executeAsyncBastionCryptoTransfer = async(config) => {
+const executeAsyncBastionSandboxCryptoTransfer = async(config) => {
     // fetch from created record
 	const {data, error} = await supabase
     .from('crypto_to_crypto')
@@ -174,8 +187,6 @@ const executeAsyncBastionCryptoTransfer = async(config) => {
 }
 
 module.exports = {
-    CreateCryptoToCryptoTransferError,
-    CreateCryptoToCryptoTransferErrorType,
-    createBastionCryptoTransfer,
-    executeAsyncBastionCryptoTransfer
+    createBastionSandboxCryptoTransfer,
+    executeAsyncBastionSandboxCryptoTransfer
 }

@@ -6,6 +6,13 @@ const { supabaseCall } = require("../../../supabaseWithRetry")
 const { FetchCryptoToBankSupportedPairCheck } = require("./cryptoToBankSupportedPairFetchFunctions")
 const { updateRequestRecord } = require("./updateRequestRecord")
 
+const defaultStatusFlow = [
+    "SUBMITTED_ONCHAIN",
+    "COMPLETED_ONCHAIN",
+    "IN_PROGRESS_FIAT",
+    "INITIATED_FIAT"
+]
+
 const sendSimulatedMessage = async (receipt, profileId) => {
     const message = {
         eventAction: webhookEventActionType.UPDATE,
@@ -15,7 +22,7 @@ const sendSimulatedMessage = async (receipt, profileId) => {
     await sendMessage(profileId, message)
 }
 
-const simulateSandboxCryptoToFiatTransactionStatus = async (record) => {
+const simulateSandboxCryptoToFiatTransactionStatus = async (record, flow = defaultStatusFlow) => {
     // get profileId
     let { data: user, error: userError } = await supabaseCall(() => supabase
     .from('users')
@@ -27,18 +34,10 @@ const simulateSandboxCryptoToFiatTransactionStatus = async (record) => {
     const fetchFunc = FetchCryptoToBankSupportedPairCheck(record.crypto_provider, record.fiat_provider)
 	const receipt = await fetchFunc(record.id, user.profile_id)
 
-    // simulate success bastion submitted onchain
-    receipt.transferDetails.status = "SUBMITTED_ONCHAIN"
-    await sendSimulatedMessage(receipt, user.profile_id)
-    // simulate success bastion transfer
-    receipt.transferDetails.status = "COMPLETED_ONCHAIN"
-    await sendSimulatedMessage(receipt, user.profile_id)
-    // simulate success fiat in process
-    receipt.transferDetails.status = "IN_PROGRESS_FIAT"
-    await sendSimulatedMessage(receipt, user.profile_id)
-    // simulate success fiat submitted
-    receipt.transferDetails.status = "INITIATED_FIAT"
-    await sendSimulatedMessage(receipt, user.profile_id)
+    for (const status of flow) {
+        receipt.transferDetails.status = status
+        await sendSimulatedMessage(receipt, user.profile_id)
+    }
 }
 
 module.exports = {
