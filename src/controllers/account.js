@@ -51,7 +51,7 @@ exports.createUsdOnrampSourceWithPlaid = async (req, res) => {
 	if (missingFields.length > 0 || invalidFields.length > 0) {
 		return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 	}
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 	const checkbookAccountResult = await createCheckbookBankAccountWithProcessorToken(userId, accountType, plaidProcessorToken, bankName);
 	let createUsdOnrampSourceWithPlaidResponse = {
 		status: null,
@@ -115,7 +115,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	}
 
 	const { userId, profileId } = req.query;
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 
 	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
 
@@ -465,21 +465,21 @@ exports.getAllAccounts = async (req, res) => {
 	if (!currency && !railType) {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
-	const acceptedFields = { 
-		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]), 
-		railType: (value) => inStringEnum(value, ["onramp", "offramp"]), 
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps"]), 
-		limit: (value) => isInRange(value, 1, 100), 
-		createdAfter: (value) => isValidDate(value, "ISO"), 
-		createdBefore: (value) => isValidDate(value, "ISO"), 
-		userId: (value) => isUUID(value) 
+	const acceptedFields = {
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]),
+		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps"]),
+		limit: (value) => isInRange(value, 1, 100),
+		createdAfter: (value) => isValidDate(value, "ISO"),
+		createdBefore: (value) => isValidDate(value, "ISO"),
+		userId: (value) => isUUID(value)
 	}
 
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 
-		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+		if (userId && !(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 
 		const accounts = await fetchAccountProvidersWithRail(currency, railType, paymentRail, userId, profileId, limit, createdAfter, createdBefore); // returns an accounts array
 		const accountsInfo = await getAccountsInfo(accounts);
@@ -502,10 +502,10 @@ exports.activateOnRampRail = async (req, res) => {
 	let { rail, destinationCurrency, destinationChain } = fields
 	// fields validation
 	const requiredFields = ["rail"]
-	const acceptedFields = { 
-		"rail": (value) => inStringEnum(value, ["US_ACH_WIRE"]), 
-		"destinationCurrency": (value) => inStringEnum(value, ["usdc", "usdt"]), 
-		"destinationChain": (value) => isHIFISupportedChain(value) 
+	const acceptedFields = {
+		"rail": (value) => inStringEnum(value, ["US_ACH_WIRE"]),
+		"destinationCurrency": (value) => inStringEnum(value, ["usdc", "usdt"]),
+		"destinationChain": (value) => isHIFISupportedChain(value)
 	}
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0) {
@@ -525,7 +525,7 @@ exports.activateOnRampRail = async (req, res) => {
 	}
 
 	try {
-		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+		if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 		const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
 		if (!activateFunction) return res.status(400).json({ error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported` })
 		const config = {
@@ -534,9 +534,9 @@ exports.activateOnRampRail = async (req, res) => {
 			destinationChain
 		}
 		const result = await activateFunction(config)
-		if (result.alreadyExisted){
-			const resObj = { message: `Virtual account for the rail already existed`};
-			if(result.virtualAccountInfo) resObj.account = result.virtualAccountInfo
+		if (result.alreadyExisted) {
+			const resObj = { message: `Virtual account for the rail already existed` };
+			if (result.virtualAccountInfo) resObj.account = result.virtualAccountInfo
 			return res.status(200).json(resObj)
 		}
 		else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create a virtual account for the rail` })
@@ -614,7 +614,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 	}
 
 
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 
 	// construct the requestBody object based on the accountType
 	let requestBody = {};
@@ -895,14 +895,14 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	}
 
 	const { profileId, userId, receiverId } = req.query;
-	if(!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
+	if (!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
 
 	const fields = req.body;
 	fields.user_id = userId;
 	fields.receiver_id = receiverId;
-	if(!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
-	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
-	
+	if (!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "userId not found" })
+
 	let bankAccountExist, bankAccountRecord
 	// upload information and create new user
 	try {
@@ -915,7 +915,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
-	if(bankAccountExist){
+	if (bankAccountExist) {
 		const responseObject = {
 			status: "ACTIVE",
 			invalidFields: [],
@@ -929,7 +929,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		const response = await createBankAccount(bankAccountRecord)
 		const account = await insertAccountProviders(bankAccountRecord.id, "brl", "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id)
 		// insert the record to the blindpay_accounts table
-		const {error: bankAccountUpdateError } = await supabase
+		const { error: bankAccountUpdateError } = await supabase
 			.from('blindpay_bank_accounts')
 			.update({
 				blindpay_response: response,
@@ -973,8 +973,8 @@ exports.createBlindpayReceiver = async (req, res) => {
 	const fields = req.body;
 	fields.user_id = userId;
 
-	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
-	
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "userId not found" })
+
 	let receiverRecord
 	// upload information
 	try {
@@ -993,12 +993,12 @@ exports.createBlindpayReceiver = async (req, res) => {
 
 		// Insert receiver data into blindpay_receivers table
 		const { error: receiverUpdateError } = await supabase
-		.from('blindpay_receivers_kyc')
-		.update({
-			blindpay_receiver_id: response.id,
-			blindpay_response: response,
-			kyc_status: "verifying"
-		}).eq('id', receiverRecord.id);
+			.from('blindpay_receivers_kyc')
+			.update({
+				blindpay_receiver_id: response.id,
+				blindpay_response: response,
+				kyc_status: "verifying"
+			}).eq('id', receiverRecord.id);
 
 		if (receiverUpdateError) {
 			await createLog("account/createBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError);
@@ -1020,13 +1020,13 @@ exports.createBlindpayReceiver = async (req, res) => {
 	}
 }
 
-exports.createAPACOfframpDestination = async(req, res) => {
+exports.createAPACOfframpDestination = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
 	const { userId, profileId } = req.query;
-	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "UserId not found" })
+	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 	const fields = req.body
 	const {
 		recipientType,
@@ -1125,7 +1125,6 @@ exports.createAPACOfframpDestination = async(req, res) => {
 
 }
 
-
 exports.createInternationalWireOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	const {
@@ -1138,7 +1137,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	const fields = req.body;
 
 	if (!(await verifyUser(userId, profileId))) {
-		return res.status(401).json({ error: "UserId not found" });
+		return res.status(401).json({ error: "userId not found" });
 	}
 
 	// verify required fields
@@ -1268,20 +1267,20 @@ exports.getBlindpayReceiver = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	const { profileId, userId, receiverId} = req.query;
-	const fields = {user_id: userId, ...(receiverId && { receiver_id: receiverId })};
+	const { profileId, userId, receiverId } = req.query;
+	const fields = { user_id: userId, ...(receiverId && { receiver_id: receiverId }) };
 
 	const requiredFields = ["user_id"]
 	const acceptedFields = { user_id: "string", receiver_id: "string" }
 
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
 	if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: "Fields provided are either invalid or missing", invalidFields, missingFields })
-	if(fields.receiver_id && !isUUID(fields.receiver_id)) return res.status(400).json({ error: "Invalid receiver_id" })
-	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
+	if (fields.receiver_id && !isUUID(fields.receiver_id)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "userId not found" })
 
 	try {
 		const receiverInfo = await getReceiverInfo(fields.user_id, fields.receiver_id);
-		if(fields.receiver_id && receiverInfo.count === 1) return res.status(200).json(receiverInfo.data[0]);
+		if (fields.receiver_id && receiverInfo.count === 1) return res.status(200).json(receiverInfo.data[0]);
 		return res.status(200).json(receiverInfo);
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error);
@@ -1298,13 +1297,13 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	}
 
 	const { profileId, userId, receiverId } = req.query;
-	if(!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
+	if (!userId || !receiverId) return res.status(400).json({ error: "userId or receiverId is missing" })
 	const fields = req.body;
 	fields.user_id = userId;
 	fields.receiver_id = receiverId;
-	if(!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
-	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "UserId not found" })
-	
+	if (!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
+	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "userId not found" })
+
 	let receiverRecord
 	// upload information
 	try {
@@ -1322,11 +1321,11 @@ exports.updateBlindpayReceiver = async (req, res) => {
 
 		// Insert receiver data into blindpay_receivers table
 		const { error: receiverUpdateError } = await supabase
-		.from('blindpay_receivers_kyc')
-		.update({
-			blindpay_response: response,
-			kyc_status: "verifying"
-		}).eq('id', receiverRecord.id);
+			.from('blindpay_receivers_kyc')
+			.update({
+				blindpay_response: response,
+				kyc_status: "verifying"
+			}).eq('id', receiverRecord.id);
 
 		if (receiverUpdateError) {
 			await createLog("account/updateBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError);
@@ -1345,3 +1344,70 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
+
+// exports.createFiatCheckbookAccount = async (req, res) => {
+// 	if (req.method !== 'POST') {
+// 		return res.status(405).json({ error: 'Method not allowed' });
+// 	}
+
+// 	const { userId, profileId } = req.query
+// 	const fields = req.body
+
+// 	// fields required for chekckbook creation: account number, routing number, type
+// 	let { accountNumber, routingNumber, type } = fields
+// 	// fields validation
+// 	const requiredFields = ["accountNumber", "routingNumber", "type"]
+// 	const acceptedFields = {
+// 		accountNumber: "string",
+// 		routingNumber: "string",
+// 		type: (value) => inStringEnum(value, ["CHECKING", "SAVINGS"]),
+// 	}
+// 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
+// 	if (missingFields.length > 0) {
+// 		return res.status(400).json({ error: 'Missing required fields', missingFields });
+// 	}
+
+// 	if (invalidFields.length > 0) {
+// 		return res.status(400).json({ error: 'Invalid fields', invalidFields });
+// 	}
+
+// 	if (!(destinationCurrency && destinationChain) && !(!destinationCurrency && !destinationChain))
+// 		return res.status(400).json({ error: 'Please provide both destinationCurrency and destinationChain or neither' });
+
+// 	if (!destinationCurrency && !destinationChain) {
+// 		destinationCurrency = "usdc"
+// 		destinationChain = virtualAccountPaymentRailToChain.polygon
+// 	}
+
+// 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
+
+
+// 	try {
+
+// 		await createSingleCheckbookUser(user, userId, checkbookUserId, "DESTINATION") // FIXME: Should we grab the specific error enums from this and return a more nuanced response?
+// 		// create checkbook account
+// 		await insertPreCheckbookAccountRecord(userId, virtualAccount) // FIXME: Should we grab the specific error enums from this and return a more nuanced response?
+// 		const result = await createCheckbookBankAccountForVirtualAccount(checkbookUserId, virtualAccount.virtual_account_id, virtualAccount.deposit_institutions_bank_account_number, virtualAccount.deposit_institutions_bank_routing_number)
+// 		// const activateFunction = activateOnRampRailFunctionsCheck(rail, destinationChain, destinationCurrency)
+// 		// if (!activateFunction) return res.status(400).json({ error: `Onramp rail for ${rail}, ${destinationChain}, ${destinationCurrency} is not yet supported` })
+// 		// const config = {
+// 		// 	userId,
+// 		// 	destinationCurrency,
+// 		// 	destinationChain
+// 		// }
+// 		// const result = await activateFunction(config)
+// 		// if (result.alreadyExisted) {
+// 		// 	const resObj = { message: `Virtual account for the rail already existed` };
+// 		// 	if (result.virtualAccountInfo) resObj.account = result.virtualAccountInfo
+// 		// 	return res.status(200).json(resObj)
+// 		// }
+// 		// else if (!result.isAllowedTocreate) return res.status(400).json({ message: `User is not allowed to create a virtual account for the rail` })
+
+// 		// return res.status(200).json({ message: `Virtual account for ${rail} created successfully`, account: result.virtualAccountInfo })
+
+// 	} catch (error) {
+// 		await createLog("account/activateOnRampRail", userId, error.message, error)
+// 		return res.status(500).json({ error: "Unexpected error happened" })
+// 	}
+
+// }
