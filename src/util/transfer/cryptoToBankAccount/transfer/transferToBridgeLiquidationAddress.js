@@ -13,7 +13,6 @@ const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
 const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const bastionGasCheck = require("../../../bastion/utils/gasCheck");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
@@ -201,8 +200,6 @@ const transferToBridgeLiquidationAddress = async (config) => {
 				destinationAccountId
 			}
             const result = await CryptoToFiatWithFeeBastion(initialBastionTransfersInsertData, feeRecord, paymentProcessorContractAddress, feeType, feePercent, feeAmount, profileId, info)
-            // gas check
-            await bastionGasCheck(sourceUserId, chain)
 			// allowance check
 			await allowanceCheck(sourceUserId, sourceWalletAddress, chain, sourceCurrency)
 			return { isExternalAccountExist: true, transferResult: result }
@@ -281,9 +278,6 @@ const transferToBridgeLiquidationAddress = async (config) => {
 			}
 			const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
 		}
-
-		// gas check
-		await bastionGasCheck(sourceUserId, chain)
 
 		return { isExternalAccountExist: true, transferResult: result }
 
@@ -400,9 +394,6 @@ const transferToBridgeLiquidationAddressDeveloperWithdraw = async (config) => {
 		}
 		const updatedRecord = await updateRequestRecord(initialBastionTransfersInsertData.id, toUpdate)
 	}
-
-	// gas check
-	await bastionGasCheck(bastionUserId, chain)
 
 	return { isExternalAccountExist: true, transferResult: result }
 }

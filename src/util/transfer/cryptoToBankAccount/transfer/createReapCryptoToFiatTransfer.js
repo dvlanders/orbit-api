@@ -13,7 +13,6 @@ const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
 const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const bastionGasCheck = require("../../../bastion/utils/gasCheck");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
@@ -129,10 +128,6 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	if (feeRecordError) throw feeRecordError
 
 	const result = await CryptoToFiatWithFeeBastion(initialTransferRecord, feeRecord, paymentProcessorContractAddress, profileId)
-	// gas check
-	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
-	// allowance check
-	await allowanceCheck(bastionUserId, sourceWalletAddress, chain, sourceCurrency)
 	return result
 
 }
@@ -198,9 +193,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	}
 
 	await notifyCryptoToFiatTransfer(initialTransferRecord)
-
-	// gas check
-	await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
 	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return result
 }

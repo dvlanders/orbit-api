@@ -15,7 +15,6 @@ const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
 const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const bastionGasCheck = require("../../../bastion/utils/gasCheck");
 const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
@@ -297,9 +296,6 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
     // TODO: This is for Bridge, we need to fix it for Blindpay in the future when we want to allow Fee transfer
     const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
-    // gas check
-    await bastionGasCheck(sourceUserId, chain, initialTransferRecord.transfer_from_wallet_type)
-    await allowanceCheck(bastionUserId, sourceWalletAddress, chain, sourceCurrency)
     return { isExternalAccountExist: true, transferResult: result }
 }
 
@@ -318,8 +314,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
         chain: initialTransferRecord.chain
     }
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
-    // gas check
-    await bastionGasCheck(bastionUserId, chain, initialTransferRecord.transfer_from_wallet_type)
 
     const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
     return { isExternalAccountExist: true, transferResult: result }
