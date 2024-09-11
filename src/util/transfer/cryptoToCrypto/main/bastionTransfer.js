@@ -1,7 +1,6 @@
 const createJob = require("../../../../../asyncJobs/createJob")
 const { transfer: bastionTransfer } = require("../../../bastion/endpoints/transfer")
 const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck")
-const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const { isValidAmount } = require("../../../common/transferValidation")
 const createLog = require("../../../logger/supabaseLogger")
@@ -96,10 +95,6 @@ const transferWithFee = async(record, profileId) => {
 
     // perfrom transfer with fee
     await CryptoToCryptoWithFeeBastion(record, feeRecord, record.payment_processor_contract_address, profileId)
-    // gas check
-    await bastionGasCheck(record.sender_bastion_user_id, record.chain, record.transfer_from_wallet_type)
-    // allowance check
-    await allowanceCheck(record.sender_bastion_user_id, record.sender_address, record.chain, record.currency)
     return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
 }
 
@@ -144,9 +139,6 @@ const transferWithoutFee = async(record, profileId) => {
 
     // send notification
     await notifyCryptoToCryptoTransfer(record)
-
-    // gas check
-    await bastionGasCheck(record.sender_bastion_user_id, record.chain, record.transfer_from_wallet_type)
 
     //return record
     return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
