@@ -405,3 +405,18 @@ exports.testReapAccount = async(req, res) => {
         return res.status(500).json({error: "error"})
     }
 }
+
+exports.testSelectOnEnum = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .from("bridge_customers")
+            .select("*")
+            .or("status.eq.active")
+            .limit(10)
+            
+        return res.status(200).json({data, error})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+}

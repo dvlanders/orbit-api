@@ -57,8 +57,7 @@ async function pollBastionGasTransaction() {
             .update({
                 updated_at: new Date().toISOString()
             })
-            .neq("status", "FAILED")
-            .neq("status", "CONFIRMED")
+            .or("status.eq.SUBMITTED,status.eq.ACCEPTED,status.eq.PENDING")
             .select("*")
             .order('updated_at', {ascending: true})
         await Promise.all(data.map(async(transation) => {

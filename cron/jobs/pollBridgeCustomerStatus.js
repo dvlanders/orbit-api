@@ -62,10 +62,7 @@ async function pollBridgeCustomerStatus() {
 	const { data: bridgeCustomerData, error: bridgeCustomerError } = await supabaseCall(() => supabase
 		.from('bridge_customers')
 		.update({ updated_at: new Date().toISOString() })
-		.neq('status', 'active')
-		.neq('status', 'rejected')
-		.neq('status', 'invalid_fields')
-		.neq('status', null)
+		.or("status.eq.not_started,status.eq.incomplete,status.eq.under_review,status.eq.awaiting_ubo")
 		.order('updated_at', { ascending: true })
 		.select('id, user_id, status, bridge_id, users(is_developer)'))
 
