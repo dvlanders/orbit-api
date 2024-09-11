@@ -46,7 +46,7 @@ async function createLog(source, userId, log, response, profileId = null) {
 	}
 	const { data: logData, error: logError } = await supabase.from(logTableName).insert(newLog).select().single();
 
-	if(logError) throw new Error("Failed to insert new log");
+	if (logError) throw new Error("Failed to insert new log");
 
 	let parsedResponse;
 	try {
@@ -54,7 +54,7 @@ async function createLog(source, userId, log, response, profileId = null) {
 	} catch (error) {
 		parsedResponse = logData.response;
 	}
-	await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
+	// await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
 }
 
 module.exports = createLog;

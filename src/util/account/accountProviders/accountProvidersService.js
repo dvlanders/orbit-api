@@ -16,9 +16,9 @@ const fetchAccountProvidersWithRail = async (currency, railType, paymentRail, us
 		query = userId ? query.eq("user_id", userId) : query;
 
 		query = query.lt("created_at", createdBefore ? createdBefore : new Date("2200-01-01").toISOString())
-					 .gt("created_at", createdAfter ? createdAfter : new Date("1900-01-01").toISOString())
-					 .order("created_at", {ascending: false})
-					 .limit(limit ? limit : 10);
+			.gt("created_at", createdAfter ? createdAfter : new Date("1900-01-01").toISOString())
+			.order("created_at", { ascending: false })
+			.limit(limit ? limit : 10);
 
 		const { data, error } = await supabaseCall(() => query);
 		if (error) throw error;
@@ -36,7 +36,7 @@ const fetchAccountProvidersWithRail = async (currency, railType, paymentRail, us
 		throw new Error(
 			"Something went wrong when looking up account"
 		);
-	}	
+	}
 }
 
 const getAccountProviderIDWithInternalID = async (internalAccountId, currency = null) => {
@@ -47,7 +47,7 @@ const getAccountProviderIDWithInternalID = async (internalAccountId, currency = 
 			.eq("account_id", internalAccountId);
 
 		query = currency ? query.eq("currency", currency) : query;
-		
+
 		// TODO: there is no real way for us to know which id to return in the case when we get multiple results.
 		const { data, error } = await supabaseCall(() => query.limit(1).single());
 		if (error) throw error;
@@ -103,9 +103,9 @@ const fetchAccountProviders = async (accountId, profileId) => {
 		);
 		if (error) throw error;
 
-		console.log(data);
 		return data;
 	} catch (error) {
+		console.log(error);
 		await createLog(
 			"account/accountRailsMapping/fetchAccountRailsMapping",
 			null,
