@@ -20,7 +20,6 @@ const { isInRange, isValidDate, inStringEnum, isHIFISupportedChain, isValidEmail
 const createReapOfframpAccount = require('../util/account/createReapOfframp/createReapOfframpAccount');
 const { networkCheck } = require('../util/reap/utils/networkCheck');
 const { basicReapAccountInfoCheck } = require('../util/reap/utils/basicAccountInfoCheck');
-const { account } = require('.');
 const { create } = require('lodash');
 const { uploadReceiverKYCInfo } = require('../util/blindpay/uploadReceiverInfo');
 const { updateReceiverKYCInfo } = require('../util/blindpay/updateReceiverInfo');

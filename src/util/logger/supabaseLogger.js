@@ -43,10 +43,21 @@ async function createLog(source, userId, log, response, profileId = null) {
 		// log to dev table if is 
 		logTableName = "dev_logs"
 		newLog.log_origin = process.env.LOG_ORIGIN || "LOCAL"
+		console.log(`
+			=== Error Log ===
+			Source: ${source}
+			User ID: ${userId || "N/A"}
+			Log: ${log}
+			Response: ${response}
+			Profile ID: ${profileId || "N/A"}
+			=================
+		`);
 	}
 	const { data: logData, error: logError } = await supabase.from(logTableName).insert(newLog).select().single();
 
 	if (logError) throw new Error("Failed to insert new log");
+
+	if (process.env.DEV_LOGGING && process.env.DEV_LOGGING.toUpperCase() === 'TRUE')return;
 
 	let parsedResponse;
 	try {
