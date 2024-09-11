@@ -3,7 +3,7 @@ TransferRecordIDParameter:
   in: query
   schema:
     type: string
-  description: Transfer record ID
+  description: Transfer record ID.
   required: true
 FromCurrencyParameter:
   name: fromCurrency
@@ -19,3 +19,26 @@ ToCurrencyParameter:
     type: string
     enum: [usd, eur, brl]
   required: true
+TransferRecordIDOptionalParameter:
+  name: id
+  in: query
+  schema:
+    type: string
+  description: Transfer record ID.
+  required: false
+TransferTypeParameter:
+  name: transferType
+  in: query
+  schema:
+    type: string
+    enum: [crypto-to-crypto, fiat-to-crypto, crypto-to-fiat]
+  description: Transfer type
+  required: true
+TransferTypeOptionalParameter:
+  name: transferType
+  in: query
+  schema:
+    type: string
+    enum: [crypto-to-crypto, fiat-to-crypto, crypto-to-fiat]
+  description: Transfer type
+  required: false

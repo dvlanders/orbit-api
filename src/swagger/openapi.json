@@ -228,7 +228,7 @@
         "schema": {
           "type": "string"
         },
-        "description": "Transfer record ID",
+        "description": "Transfer record ID.",
         "required": true
       },
       "FromCurrencyParameter": {
@@ -254,6 +254,43 @@
           ]
         },
         "required": true
+      },
+      "TransferRecordIDOptionalParameter": {
+        "name": "id",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Transfer record ID.",
+        "required": false
+      },
+      "TransferTypeParameter": {
+        "name": "transferType",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "crypto-to-crypto",
+            "fiat-to-crypto",
+            "crypto-to-fiat"
+          ]
+        },
+        "description": "Transfer type",
+        "required": true
+      },
+      "TransferTypeOptionalParameter": {
+        "name": "transferType",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "crypto-to-crypto",
+            "fiat-to-crypto",
+            "crypto-to-fiat"
+          ]
+        },
+        "description": "Transfer type",
+        "required": false
       },
       "UserIdParameter": {
         "name": "userId",
@@ -6585,6 +6622,49 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/AcceptFiatToCryptoQuoteResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer": {
+      "get": {
+        "summary": "Get Transfer Record(s)",
+        "description": "Get a single transfer record or all transfer records for a user, a specific transfer type, or all transfer records within your organization.\n\n* To get a **single record**, provide the required `id` and `transferType` parameters only.\n* To get **all records**, provide the optional `userId`, `transferType`, `limit`, `createdBefore`, and `createdAfter` parameters only. eg. Providing `userId` and `transferType` will return all transfer records of that user and transfer type.\n",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/TransferRecordIDOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/TransferTypeOptionalParameter"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedBeforeParameter"
+          },
+          {
+            "$ref": "#/components/parameters/CreatedAfterParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FiatToCryptoAllRecordsResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
