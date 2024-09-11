@@ -27,6 +27,8 @@ const processVirtualAccountEvent = async (event) => {
     event.source;
 
   try {
+
+    if(type === "funds_scheduled") return; // funds_scheduled events have no "deposit_id", so nothing to do here
     const referenceId = description
       ?.split(" ")
       ?.slice(-5)
