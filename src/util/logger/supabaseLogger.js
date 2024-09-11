@@ -65,7 +65,7 @@ async function createLog(source, userId, log, response, profileId = null) {
 	} catch (error) {
 		parsedResponse = logData.response;
 	}
-	// await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
+	await sendSlackLogMessage(logData.profile_email, logData.user_email, logData.source, logData.log, parsedResponse)
 }
 
 module.exports = createLog;
