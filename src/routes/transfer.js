@@ -15,6 +15,5 @@ module.exports = (router) => {
 	router.get("/transfer/conversionRate/crypto-to-fiat", authorize, logRequestResponse, transfer.cryptoToFiatConversionRate)
 	router.put("/transfer/crypto-to-fiat/acceptQuote", authorize, logRequestResponse, transfer.acceptQuoteTypeCryptoToFiatTransfer)
 	router.post("/transfer/ach/pull", authorize, logRequestResponse, transfer.createFiatTotFiatTransfer)
-
-
+	router.get("/transfer", authorize, logRequestResponse, transfer.getTransfers)
 };

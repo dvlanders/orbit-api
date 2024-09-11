@@ -73,9 +73,22 @@ const checkIsFiatToFiatRequestIdAlreadyUsed = async (requestId, userId, accountN
 	return { isAlreadyUsed: !newRecord, newRecord: newRecord }
 }
 
+const fetchFiatToCryptoProvidersInformationById = async(id) => {
+
+    const { data: record, error:recordError } = await supabaseCall(() => supabase
+        .from('onramp_transactions')
+        .select('fiat_provider, crypto_provider')
+        .eq("id", id)
+        .maybeSingle());
+
+    if (recordError) throw recordError;
+    return {fiatProvider: record?.fiat_provider, cryptoProvider: record?.crypto_provider};
+}
+
 module.exports = {
-	fetchFiatToCryptoRequestInfortmaionById,
-	fetchFiatToCryptoRequestInfortmaionByRequestId,
-	checkIsFiatToCryptoRequestIdAlreadyUsed,
-	checkIsFiatToFiatRequestIdAlreadyUsed
+    fetchFiatToCryptoRequestInfortmaionById,
+    fetchFiatToCryptoRequestInfortmaionByRequestId,
+    checkIsFiatToCryptoRequestIdAlreadyUsed,
+	checkIsFiatToFiatRequestIdAlreadyUsed,
+    fetchFiatToCryptoProvidersInformationById
 }
