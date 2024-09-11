@@ -17,12 +17,12 @@ const isBridgeKycPassed = async(userId) => {
 
 }
 
-const isBastionKycPassed = async(userId) => {
+const isBastionKycPassed = async(bastionUserId) => {
     
     const { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
     .from('bastion_users')
     .select('kyc_passed, jurisdiction_check_passed')
-    .eq('user_id', userId)
+    .eq('bastion_user_id', bastionUserId)
     .maybeSingle()
     )
 
