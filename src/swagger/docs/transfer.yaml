@@ -202,3 +202,20 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
+/transfer/ach/pull:
+  post:
+    summary: Transfer Fiat to Fiat
+    description: Transfer fiat currency from an USD Onramp Plaid bank account to the specified bank account through ACH pull.
+    tags:
+      - Transfer
+    requestBody:
+      $ref: "#/components/requestBodies/FiatToFiatTransferBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/FiatToFiatRecordResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"

@@ -34,6 +34,12 @@ FiatToCryptoRecordResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/FiatToCryptoRecordObject'
+FiatToFiatRecordResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/FiatToFiatRecordObject'
 CryptoToCryptoAllRecordsResponse:
   description: Success
   content:
