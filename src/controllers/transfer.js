@@ -86,9 +86,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
 		fields.senderAddress = senderAddress
 		fields.senderBastionUserId = senderBastionUserId
-
 		// check privilege
-		if (!(await isBastionKycPassed(senderBastionUserId)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		if (!(await isBastionKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
 		// check recipient wallet address if using recipientUserId
 		if (recipientUserId) {
@@ -99,7 +98,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!recipientAddress || !recipientBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
 			fields.recipientAddress = recipientAddress
 			fields.recipientBastionUserId = recipientBastionUserId
-			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
+			if (!(await isBastionKycPassed(recipientUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
 		}
 
 		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && currency == "usdHifi"){
