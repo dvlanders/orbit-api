@@ -45,7 +45,7 @@ const getBastionUser = async(userId) => {
         let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
         .from('bastion_users')
         .select('kyc_passed, jurisdiction_check_passed, kyc_level')
-        .eq("bastion_user_id", userId)
+        .eq("user_id", userId)
         .maybeSingle())
 
         if (bastionUserError) throw new GetBastionError(GetBastionErrorType.INTERNAL_ERROR, bastionUserError.message, bastionUserError)

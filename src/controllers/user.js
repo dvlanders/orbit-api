@@ -329,7 +329,7 @@ exports.updateHifiUser = async (req, res) => {
 		}
 		// STEP 2: Update the 3rd party providers with the new information
 
-
+		console.log("Pass check")
 		// if the user is an individual, update the individual bridge customer
 		// if the user is a business, update the business bridge customer
 		let bridgeFunction
