@@ -26,4 +26,5 @@ module.exports = (router) => {
 	router.post("/dev/testSendMessage", dev.testSendMessage)
 	router.get("/dev/testGetVirtualAccountAmount", dev.testGetVirtualAccountAmount)
 	router.get("/dev/testReapAccount", dev.testReapAccount)
+	router.get("/dev/testSelectOnEnum", dev.testSelectOnEnum)
 };

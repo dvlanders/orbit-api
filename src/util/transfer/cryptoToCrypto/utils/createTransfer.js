@@ -12,7 +12,7 @@ const acceptedFields = {
     "recipientUserId": (value) => isUUID(value),
     "recipientAddress": "string",
     "chain": (value) => isHIFISupportedChain(value),
-    "currency": "string",
+    "currency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]),
     "feeType": (value) => inStringEnum(value, ["FIX", "PERCENT"]),
     "feeValue": (value) => isValidAmount(value),
     "senderWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),

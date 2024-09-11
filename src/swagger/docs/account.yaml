@@ -66,7 +66,7 @@
         $ref: "#/components/responses/InternalServerErrorResponse"
 /account/wire/international/offramp:
   post:
-    summary: Add Offramp Bank Account for Receiving International Wires
+    summary: Add USD Offramp Bank Account (Wire)
     tags:
       - Account
     parameters:
@@ -160,9 +160,9 @@
         $ref: '#/components/responses/InternalServerErrorResponse'
 /account/brl/offramp:
   post:
-    summary: Add BRL Offramp Bank Account (Pix)
+    summary: Add BRL Offramp Bank Account (PIX)
     description: |
-      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id by making a `Create BRL Offramp Receiver` call.
+      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create BRL Offramp Receiver` endpoint.
     tags:
       - Account
     parameters:

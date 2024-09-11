@@ -63,7 +63,7 @@ const submitBastionKyc = async (userId, bastionUserId) => {
 				return {
 					status: 200,
 					walletStatus: CustomerStatus.INACTIVE,
-					invalidFileds: ["ip_address"],
+					invalidFileds: ["ipAddress"],
 					actions: ["update"],
 					message: "This region (ip address) is not supported by HIFI at this time"
 				}

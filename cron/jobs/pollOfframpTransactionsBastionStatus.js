@@ -72,8 +72,20 @@ const updateStatus = async (transaction) => {
 
 		if (response.status === 404 || !response.ok) {
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.bastion_request_id}`;
-			console.error(errorMessage);
 			await createLog('pollOfframpTransactionsBastionStatus', transaction.user_id, errorMessage, data);
+			const { data: updateData, error: updateError } = await supabaseCall(() => supabase
+				.from('offramp_transactions')
+				.update({
+					transaction_status: "UNKNOWN",
+					bastion_response: data,
+					updated_at: new Date().toISOString(),
+					failed_reason: "Please contact HIFI for more information"
+				})
+				.eq('id', transaction.id)
+				.select()
+				.single()
+			)
+
 			return
 		}
 
@@ -158,11 +170,9 @@ async function pollOfframpTransactionsBastionStatus() {
 		.from('offramp_transactions')
 		.update({updated_at: new Date().toISOString()})
 		.eq("crypto_provider", "BASTION")
-		.neq('bastion_transaction_status', BastionTransferStatus.CONFIRMED)
-		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
-		.not('bastion_transaction_status', 'is', null)
+		.eq("transaction_status", "SUBMITTED_ONCHAIN")
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider, source_currency')
 	)
 
 

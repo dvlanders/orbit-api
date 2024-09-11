@@ -58,3 +58,9 @@ CryptoToFiatConversionRateResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/CryptoToFiatConversionRateObject'
+AcceptFiatToCryptoQuoteResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/AcceptFiatToCryptoQuoteObject'
