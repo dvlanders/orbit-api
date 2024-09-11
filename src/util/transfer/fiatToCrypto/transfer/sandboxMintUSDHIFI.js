@@ -26,7 +26,8 @@ const sandboxMintUSDHIFI = async(config) => {
     try{
         if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const accountInfo = await fetchAccountProviders(sourceAccountId, profileId)
-        const transferInfo = await bridgePlaidRailCheck(accountInfo.account_id, sourceCurrency, "usdc", chain, sourceUserId, destinationUserId)
+        // in sandbox, for mocking we always use the virtual bank account with usdc on POLYGON_AMOY
+        const transferInfo = await bridgePlaidRailCheck(accountInfo.account_id, sourceCurrency, "usdc", "POLYGON_AMOY", sourceUserId, destinationUserId)
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
@@ -39,7 +40,10 @@ const sandboxMintUSDHIFI = async(config) => {
                 destination_checkbook_user_id: transferInfo.recipient_checkbook_user_id,
                 status: "CREATED",
                 fiat_provider: "CHECKBOOK",
-                crypto_provider: "BRIDGE"
+                crypto_provider: "BRIDGE",
+                source_currency: sourceCurrency,
+                destination_currency: destinationCurrency,
+                chain: chain
             })
             .eq("request_id", requestId)
             .select()

@@ -739,6 +739,7 @@ ReceiverBusinessOwner:
     - proof_of_address_doc_file
 BrlOfframpPixAccount:
   type: object
+  title: "BRL Offramp Pix Account"
   properties:
     type:
       type: string
@@ -753,6 +754,7 @@ BrlOfframpPixAccount:
     - pix_key
 BrlOfframpAchAccount:
   type: object
+  title: "BRL Offramp Ach Account"
   properties:
     type:
       type: string
@@ -779,6 +781,7 @@ BrlOfframpAchAccount:
     - account_class
 BrlOfframpWireAccount:
   type: object
+  title: "BRL Offramp Wire Account"
   properties:
     type:
       type: string

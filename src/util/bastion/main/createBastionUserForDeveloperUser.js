@@ -47,7 +47,8 @@ async function createBastionDeveloperWallet(userId, type) {
 						user_id: userId,
 						chain: chain,
 						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address,
-						type: type
+						type: type,
+						bastion_user_id: bastionUserId
 					}])
 					.select();
 

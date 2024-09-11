@@ -36,6 +36,10 @@ const cryptoToCryptoSupportedFunctions = {
         usdc: {
             walletProviderTable: "bastion_wallets",
             transferFunc: createBastionCryptoTransfer,
+        },
+        usdHifi: {
+            walletProviderTable: "bastion_wallets",
+            transferFunc: createBastionSandboxCryptoTransfer,
         }
     }
 }

@@ -5,7 +5,7 @@ const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
-const web = new WebClient(process.env.SLACK_BOT_TOKEN);
+const web = new WebClient(process.env.SLACK_BOT_TOKEN, { rejectRateLimitedCalls: true });
 
 const safeJsonStringify = (content) => {
   let requestBodyJson;
@@ -308,7 +308,7 @@ const sendSlackReqResMessage = async (request, response) => {
       blocks: await reqResBlockBuilder(caller, request, response),
     });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
   }
 };
 
@@ -333,7 +333,7 @@ const sendSlackLogMessage = async (
       ),
     });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
   }
 };
 
@@ -351,7 +351,7 @@ const sendSlackNewCustomerMessage = async (
       ),
     });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
   }
 };
 

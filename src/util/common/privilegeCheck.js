@@ -22,7 +22,7 @@ const isBastionKycPassed = async(userId) => {
     const { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
     .from('bastion_users')
     .select('kyc_passed, jurisdiction_check_passed')
-    .eq('bastion_user_id', userId)
+    .eq('user_id', userId)
     .maybeSingle()
     )
 

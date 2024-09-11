@@ -2,6 +2,8 @@ const createJob = require("../../../../asyncJobs/createJob");
 const { fundGasScheduleCheck } = require("../../../../asyncJobs/wallets/fundGas");
 const createLog = require("../../logger/supabaseLogger");
 const { Chain } = require("../../common/blockchain");
+const { getBastionWallet } = require("./getBastionWallet");
+const getBastionUser = require("../main/getBastionUser");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -23,7 +25,10 @@ const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL") => {
             return {needFund: false, fundSubmitted: false, error: false}
         }
 
-        const url = `${BASTION_URL}/v1/users/${userId}/balances?chain=${chain}`
+        // get user bastion user id
+        const { bastionUserId } = await getBastionWallet(userId, chain, walletType)
+
+        const url = `${BASTION_URL}/v1/users/${bastionUserId}/balances?chain=${chain}`
         const options = {
 			method: 'GET',
 			headers: {
