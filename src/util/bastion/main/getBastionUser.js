@@ -65,7 +65,7 @@ const getBastionUser = async(userId) => {
             return {
                 status: 200,
                 walletStatus: CustomerStatus.INACTIVE,
-                invalidFileds: ["ip_address"], // seems to only controlled by ip_address
+                invalidFileds: ["ipAddress"], // seems to only controlled by ip_address
                 actions: ["update"],
                 walletAddress: {},
                 message: "Unsupported ip_address area"
