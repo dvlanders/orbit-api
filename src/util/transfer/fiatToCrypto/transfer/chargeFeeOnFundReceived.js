@@ -57,7 +57,7 @@ exports.chargeFeeOnFundReceivedBastion = async(transferRecordId) => {
             }
             await chargeFeeBastion(onrampRecord, feeRecord, paymentProcessorContractAddress, info)
         }
-
+        // FIXME consider other wallet types
         await bastionGasCheck(onrampRecord.destination_user_id, chain)
 
     }catch(error){

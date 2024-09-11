@@ -466,6 +466,16 @@
           }
         }
       },
+      "FiatToFiatTransferBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FiatToFiatTransfer"
+            }
+          }
+        }
+      },
       "UserCreateBody": {
         "required": true,
         "content": {
@@ -728,6 +738,16 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/FiatToCryptoRecordObject"
+            }
+          }
+        }
+      },
+      "FiatToFiatRecordResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FiatToFiatRecordObject"
             }
           }
         }
@@ -2810,6 +2830,66 @@
           "isInstant"
         ]
       },
+      "FiatToFiatTransfer": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string",
+            "description": "User who owns the USD onramp Plaid bank account specified by the `sourceAccountId`.\n"
+          },
+          "sourceAccountId": {
+            "type": "string",
+            "description": "Account Id of the USD onramp Plaid bank account."
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "routingNumber": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string",
+            "description": "Name of the recipient."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHECKING",
+              "SAVINGS",
+              "BUSINESS"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "boolean",
+            "enum": [
+              "usd"
+            ]
+          },
+          "memo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "sourceAccountId",
+          "accountNumber",
+          "routingNumber",
+          "recipientName",
+          "type",
+          "amount",
+          "currency"
+        ]
+      },
       "CryptoToCryptoTransferObject": {
         "type": "object",
         "properties": {
@@ -3672,6 +3752,46 @@
               "failedReason": null
             }
           }
+        }
+      },
+      "FiatToFiatRecordObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "sourceAccountId": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "id": "0b9a8c80-3ce3-weee-9d94-8a8ac43a2543",
+          "requestId": "5d0a55aa-9a2a-486a-a57e-d5d9e576cf6d",
+          "createdAt": "2024-06-25T20:41:57.671322+00:00",
+          "recipientName": "John Doe",
+          "status": "CONFIRMED",
+          "amount": 10,
+          "currency": "usd",
+          "sourceAccountId": "0a472717-039b-48bb-894a-a4fc914a1fe4"
         }
       },
       "CryptoToCryptoAllRecordsObject": {
@@ -6465,6 +6585,32 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/AcceptFiatToCryptoQuoteResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/ach/pull": {
+      "post": {
+        "summary": "Transfer Fiat to Fiat",
+        "description": "Transfer fiat currency from an USD Onramp Plaid bank account to the specified bank account through ACH pull.",
+        "tags": [
+          "Transfer"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/FiatToFiatTransferBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/FiatToFiatRecordResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"

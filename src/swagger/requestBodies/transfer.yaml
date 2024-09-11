@@ -16,3 +16,9 @@ FiatToCryptoTransferBody:
     application/json:
       schema:
         $ref: '#/components/schemas/FiatToCryptoTransfer'
+FiatToFiatTransferBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/FiatToFiatTransfer'
