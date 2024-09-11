@@ -88,9 +88,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
 		fields.senderAddress = senderAddress
 		fields.senderBastionUserId = senderBastionUserId
-
 		// check privilege
-		if (!(await isBastionKycPassed(senderBastionUserId)) || !(await isBridgeKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		if (!(await isBastionKycPassed(senderUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
 		// check recipient wallet address if using recipientUserId
 		if (recipientUserId) {
@@ -101,10 +100,11 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 			if (!recipientAddress || !recipientBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
 			fields.recipientAddress = recipientAddress
 			fields.recipientBastionUserId = recipientBastionUserId
-			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
+			if (!(await isBastionKycPassed(recipientUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
 		}
 
-		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && currency == "usdHifi") {
+
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && currency == "usdHifi"){
 			const receipt = await createBastionSandboxCryptoTransfer(fields)
 			return res.status(200).json(receipt)
 		}
@@ -272,8 +272,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!sourceWalletAddress || !sourceBastionUserId) {
 			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		}
-
-		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && sourceCurrency == "usdHifi") {
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && sourceCurrency == "usdHifi") {
 			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
 			if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 			const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
@@ -434,8 +433,9 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const internalAccountId = providerResult.account_id;
 
 		// simulation in sandbox
-		if (process.env.NODE_ENV == "development" && chain == Chain.POLYGON_AMOY && destinationCurrency == "usdHifi") {
-			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
+
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi"){
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
 			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 			return res.status(200).json(transferResult);
 		}

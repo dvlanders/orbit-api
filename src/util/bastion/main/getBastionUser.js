@@ -45,7 +45,7 @@ const getBastionUser = async(userId) => {
         let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
         .from('bastion_users')
         .select('kyc_passed, jurisdiction_check_passed, kyc_level')
-        .eq("bastion_user_id", userId)
+        .eq("user_id", userId)
         .maybeSingle())
 
         if (bastionUserError) throw new GetBastionError(GetBastionErrorType.INTERNAL_ERROR, bastionUserError.message, bastionUserError)
@@ -65,10 +65,10 @@ const getBastionUser = async(userId) => {
             return {
                 status: 200,
                 walletStatus: CustomerStatus.INACTIVE,
-                invalidFileds: ["ip_address"], // seems to only controlled by ip_address
+                invalidFileds: ["ipAddress"], // seems to only controlled by ip_address
                 actions: ["update"],
                 walletAddress: {},
-                message: "Unsupported ip_address area"
+                message: "Unsupported ipAddress area"
             }
         }
     }catch (error){

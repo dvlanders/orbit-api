@@ -17,5 +17,5 @@ ToCurrencyParameter:
   in: query
   schema:
     type: string
-    enum: [usd, eur]
+    enum: [usd, eur, brl]
   required: true

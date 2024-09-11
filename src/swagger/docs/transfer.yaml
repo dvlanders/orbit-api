@@ -33,7 +33,16 @@
 /transfer/crypto-to-fiat:
   post:
     summary: Convert Stablecoin to Fiat
-    description: Transfer crypto to fiat currency and send it to an offramp bank account.
+    description: |
+      Transfer crypto to fiat currency and send it to an offramp bank account.
+
+      There are two types of transfers, **quote-based** and **non-quote-based** transfers. 
+      * For **non-quote-based transfers**, the transfers are initiated immediately.
+      * For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.
+      
+      Quote-based transfers:
+        * BRL offramp transfer
+
     tags:
       - Transfer
     requestBody:
@@ -166,6 +175,27 @@
     responses:
       "200":
         $ref: "#/components/responses/CryptoToFiatConversionRateResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/transfer/crypto-to-fiat/acceptQuote:
+  put:
+    summary: Accept Transfer Quote
+    description: |
+      Accept the transfer quote for quote-based transfers only. 
+      
+      For example, BRL offramp transfer is a quote-based transfer so its initial transfer status will be `OPEN_QUOTE`. This means you have to accept the transfer quote to initiate the transfer.
+    tags:
+      - Transfer
+    parameters: 
+      - $ref: "#/components/parameters/UserIdParameter"
+      - $ref: "#/components/parameters/TransferRecordIDParameter"
+    responses:
+      "200":
+        $ref: "#/components/responses/AcceptFiatToCryptoQuoteResponse"
       "401":
         $ref: "#/components/responses/UnauthorizedResponse"
       "404":
