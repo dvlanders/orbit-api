@@ -25,7 +25,8 @@ const currencyContractAddress = {
 		usdc: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359" //registered
 	},
 	ETHEREUM_TESTNET: {
-		usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" //registered
+		usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", //registered
+		usdHifi: process.env.ETHEREUM_SEPOLIA_USDHIFI_CONTRACT_ADDRESS //registered
 	},
 	POLYGON_AMOY: {
 		usdc: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582", //registered

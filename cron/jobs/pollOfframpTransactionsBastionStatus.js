@@ -162,7 +162,7 @@ async function pollOfframpTransactionsBastionStatus() {
 		.neq('bastion_transaction_status', BastionTransferStatus.FAILED)
 		.not('bastion_transaction_status', 'is', null)
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider')
+		.select('id, user_id, transaction_status, bastion_transaction_status, bastion_request_id, developer_fee_id, transfer_from_wallet_type, bastion_user_id, fiat_provider, source_currency')
 	)
 
 
