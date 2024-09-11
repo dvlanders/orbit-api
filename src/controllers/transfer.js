@@ -39,6 +39,7 @@ const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
 const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
+const { account } = require(".");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -730,16 +731,16 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 
 	const { profileId } = req.query
 	const fields = req.body
-	const { requestId, accountNumber, routingNumber, name, type, sourceUserId, sourceAccountId, amount, currency, memo } = fields
+	const { requestId, accountNumber, routingNumber, recipientName, type, sourceUserId, sourceAccountId, amount, currency, memo } = fields
 
 
 	try {
-		const requiredFields = ["requestId", "accountNumber", "routingNumber", "name", "type", "sourceUserId", "sourceAccountId", "amount", "currency"]
+		const requiredFields = ["requestId", "accountNumber", "routingNumber", "recipientName", "type", "sourceUserId", "sourceAccountId", "amount", "currency"]
 		const acceptedFields = {
 			"requestId": (value) => isUUID(value),
 			"accountNumber": "string",
 			"routingNumber": "string",
-			"name": "string",
+			"recipientName": "string",
 			"type": (value) => inStringEnum(value, ["CHECKING", "SAVINGS", "BUSINESS"]),
 			"sourceUserId": (value) => isUUID(value),
 			"sourceAccountId": (value) => isUUID(value),
@@ -755,11 +756,12 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 
 
 		// check is request id valid
-		const { isAlreadyUsed } = await checkIsFiatToFiatRequestIdAlreadyUsed(requestId, sourceUserId)
+		const { isAlreadyUsed } = await checkIsFiatToFiatRequestIdAlreadyUsed(requestId, sourceUserId, accountNumber, routingNumber, recipientName, type, sourceAccountId, amount, currency, memo)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 		// get the plaid connected bank account from supabase
 
 		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId)
+
 
 
 		// get the checkbook account representing checkbook account from supabase
@@ -786,15 +788,14 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 		if (checkbookUserError) throw checkbookUserError;
 		if (!checkbookUser) throw new Error('Checkbook user not found');
 
-		console.log('checkbookUser', checkbookUser)
 		// execute checkbook payment
 		const createDigitalPaymentUrl = `${process.env.CHECKBOOK_URL}/check/direct`;
 		const body = {
-			"recipient": requestId, // this is broken
+			"recipient": `${checkbookUser.user_id}@hifibridge.com`,
 			"account_type": type,
 			"routing_number": routingNumber,
 			"account_number": accountNumber,
-			"name": name,
+			"name": recipientName,
 			"amount": amount,
 			"account": checkbookAccount.checkbook_id,
 			"description": memo,
@@ -813,7 +814,6 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 		const response = await fetch(createDigitalPaymentUrl, options);
 		const responseBody = await response.json()
 
-		console.log('responseBody', responseBody)
 		if (!response.ok) {
 			const { data, error } = await supabase
 				.from("fiat_to_fiat_transactions")
@@ -841,20 +841,27 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 		const { data: updatedRecord, error: updatedRecordError } = await supabaseCall(() => supabase
 			.from("fiat_to_fiat_transactions")
 			.update(toUpdate)
-			.eq("id", requestId)
+			.eq("request_id", requestId)
 			.select()
 			.single())
 
 		if (updatedRecordError) {
 			await createLog("transfer/ach/pull", sourceUserId, updatedRecordError.message, updatedRecordError)
-			throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, updatedRecordError.message)
+			throw new Error(updatedRecordError.message)
 		}
 
+		let responseObject = {
+			id: updatedRecord.id,
+			requestId: updatedRecord.request_id,
+			createdAt: updatedRecord.created_at,
+			recipientName: updatedRecord.recipient_name,
+			status: updatedRecord.status,
+			amount: updatedRecord.amount,
+			currency: updatedRecord.currency,
+			sourceAccountId: updatedRecord.source_account_id,
+		}
 
-
-
-
-		return res.status(200).json(transferResult);
+		return res.status(200).json(responseObject);
 
 	} catch (error) {
 		console.log(error)

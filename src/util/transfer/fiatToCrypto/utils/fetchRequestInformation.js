@@ -48,11 +48,19 @@ const checkIsFiatToCryptoRequestIdAlreadyUsed = async (requestId, userId) => {
 	return { isAlreadyUsed: !newRecord, newRecord: newRecord }
 }
 
-const checkIsFiatToFiatRequestIdAlreadyUsed = async (requestId, userId) => {
+const checkIsFiatToFiatRequestIdAlreadyUsed = async (requestId, userId, accountNumber, routingNumber, recipientName, type, sourceAccountId, amount, currency, memo) => {
 	let { data: newRecord, error: insertError } = await supabaseCall(() => supabase
 		.from('fiat_to_fiat_transactions')
 		.upsert({
 			request_id: requestId,
+			account_number: accountNumber,
+			source_user_id: userId,
+			routing_number: routingNumber,
+			recipient_name: recipientName,
+			type: type,
+			amount: amount,
+			currency: currency,
+			memo: memo,
 		}, { onConflict: "request_id", ignoreDuplicates: true })
 		.select("*")
 		.maybeSingle())
