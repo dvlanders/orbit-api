@@ -3,6 +3,11 @@ const { supabaseCall } = require('../../supabaseWithRetry');
 
 const isUserFrozen = async (profileId, route) => {
 
+    // Strip away the /dashboard prefix if it exists
+    if (route.startsWith('/dashboard')) {
+        route = route.replace('/dashboard', '');
+    }
+
     const { data: frozenUser, error: frozenError } = await supabaseCall(() =>
         supabase
             .from('frozen_users')
