@@ -298,55 +298,55 @@ CryptoToFiatTransferObject:
         sourceUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         destinationUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         destinationAccount:
           type: object
           properties:
             id:
               type: string
-            account_owner_name:
+            accountOwnerName:
               type: string
-            bank_name:
+            bankName:
               type: string
-            account_number:
+            accountNumber:
               type: string
-            routing_number:
+            routingNumber:
               type: string
-            account_type:
+            accountType:
               type: string
-            business_identifier_code:
+            businessIdentifierCode:
               type: string
               nullable: true
-            bank_country:
+            bankCountry:
               type: string
               nullable: true
             iban:
               type: string
               nullable: true
-            beneficiary_first_name:
+            beneficiaryFirstName:
               type: string
               nullable: true
-            beneficiary_last_name:
+            beneficiaryLastName:
               type: string
               nullable: true
         ConversionRate:
@@ -386,27 +386,27 @@ CryptoToFiatTransferObject:
       status: CREATED
       contractAddress: 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
       sourceUser:
-        business_name: null
-        legal_last_name: YANG
-        compliance_email: william@hifibridge.com
-        legal_first_name: William
+        businessName: null
+        legalLastName: YANG
+        complianceEmail: william@hifibridge.com
+        legalFirstName: William 
       destinationUser:
-        business_name: null
-        legal_last_name: YANG
-        compliance_email: william@hifibridge.com
-        legal_first_name: William
+        businessName: null
+        legalLastName: YANG
+        complianceEmail: william@hifibridge.com
+        legalFirstName: William
       destinationAccount:
         id: daa6ad75-a4c2-486f-a937-1bbf4d19553c
-        account_owner_name: Wei Yu, Yang
-        bank_name: Bank of Aerica
-        account_number: 483101817874
-        routing_number: 021000322
-        account_type: us
-        business_identifier_code: null
-        bank_country: null
+        accountOwnerName: Wei Yu, Yang
+        bankName: Bank of Aerica
+        accountNumber: 483101817874
+        routingNumber: 021000322
+        accountType: us
+        businessIdentifierCode: null
+        bankCountry: null
         iban: null
-        beneficiary_first_name: null
-        beneficiary_last_name: null
+        beneficiaryFirstName: null
+        beneficiaryLastName: null
       failedReason: null
       fee:
         feeId: 20719aea-411f-4e0a-b377-61163c09435a
@@ -515,26 +515,26 @@ CryptoToCryptoRecordObject:
         recipient:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         sender:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         fee:
           $ref: "#/components/schemas/FeeObject"
@@ -554,15 +554,15 @@ CryptoToCryptoRecordObject:
       status: "CONFIRMED"
       contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
       recipient:
-        business_name: null
-        legal_last_name: "Wu"
-        compliance_email: "henry@hifibridge.com"
-        legal_first_name: "Henry"
+        businessName: null
+        legalLastName: "Wu"
+        complianceEmail: "henry@hifibridge.com"
+        legalFirstName: "Henry"
       sender:
-        business_name: null
-        legal_last_name: "Gutix"
-        compliance_email: "maxg@gmail.com"
-        legal_first_name: "Max"
+        businessName: null
+        legalLastName: "Gutix"
+        complianceEmail: "maxg@gmail.com"
+        legalFirstName: "Max"
       fee:
         feeId: c44b6d91-eb77-4a64-9b6e-99f32f6a5566
         feeType: PERCENT
@@ -615,55 +615,55 @@ CryptoToFiatRecordObject:
         sourceUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         destinationUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         destinationAccount:
           type: object
           properties:
             id:
               type: string
-            account_owner_name:
+            accountOwnerName:
               type: string
-            bank_name:
+            bankName:
               type: string
-            account_number:
+            accountNumber:
               type: string
-            routing_number:
+            routingNumber:
               type: string
-            account_type:
+            accountType:
               type: string
-            business_identifier_code:
+            businessIdentifierCode:
               type: string
               nullable: true
-            bank_country:
+            bankCountry:
               type: string
               nullable: true
             iban:
               type: string
               nullable: true
-            beneficiary_first_name:
+            beneficiaryFirstName:
               type: string
               nullable: true
-            beneficiary_last_name:
+            beneficiaryLastName:
               type: string
               nullable: true
         conversionRate:
@@ -689,27 +689,27 @@ CryptoToFiatRecordObject:
       status: CREATED
       contractAddress: 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
       sourceUser:
-        business_name: null
-        legal_last_name: YANG
-        compliance_email: william@hifibridge.com
-        legal_first_name: William
+        businessName: null
+        legalLastName: YANG
+        complianceEmail: william@hifibridge.com
+        legalFirstName: William
       destinationUser:
-        business_name: null
-        legal_last_name: YANG
-        compliance_email: william@hifibridge.com
-        legal_first_name: William
+        businessName: null
+        legalLastName: YANG
+        complianceEmail: william@hifibridge.com
+        legalFirstName: William
       destinationAccount:
         id: daa6ad75-a4c2-486f-a937-1bbf4d19553c
-        account_owner_name: Wei Yu, Yang
-        bank_name: Bank of Aerica
-        account_number: 483101817874
-        routing_number: 021000322
-        account_type: us
-        business_identifier_code: null
-        bank_country: null
+        accountOwnerName: Wei Yu, Yang
+        bankName: Bank of Aerica
+        accountNumber: 483101817874
+        routingNumber: 021000322
+        accountType: us
+        businessIdentifierCode: null
+        bankCountry: null
         iban: null
-        beneficiary_first_name: null
-        beneficiary_last_name: null
+        beneficiaryFirstName: null
+        beneficiaryLastName: null
       failedReason: null
       fee:
         feeId: 20719aea-411f-4e0a-b377-61163c09435a
@@ -765,37 +765,37 @@ FiatToCryptoRecordObject:
         sourceUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         destinationUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
-            legal_first_name:
+            legalFirstName:
               type: string
         sourceAccount:
           type: object
           properties:
             id:
               type: string
-            account_number:
+            accountNumber:
               type: string
-            routing_number:
+            routingNumber:
               type: string
-            bank_name:
+            bankName:
               type: string
         fee:
           $ref: "#/components/schemas/FeeObject"
@@ -816,20 +816,20 @@ FiatToCryptoRecordObject:
       updatedAt: "2024-08-07T18:03:01.704+00:00"
       status: "FIAT_PROCESSED"
       sourceUser:
-        business_name: null
-        legal_last_name: "Wu"
-        compliance_email: "henry@hifibridge.com"
-        legal_first_name: "Henry"
+        businessName: null
+        legalLastName: "Wu"
+        complianceEmail: "henry@hifibridge.com"
+        legalFirstName: "Henry" 
       destinationUser:
-        business_name: null
-        legal_last_name: "Gutix"
-        compliance_email: "maxg@gmail.com"
-        legal_first_name: "Max"
+        businessName: null
+        legalLastName: "Gutix"
+        complianceEmail: "maxg@gmail.com"
+        legalFirstName: "Max"   
       sourceAccount:
         id: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
-        account_number: "2374"
-        routing_number: "021234322"
-        bank_name: "Chase"
+        accountNumber: "2374"
+        routingNumber: "021234322"
+        bankName: "Chase"
       fee:
         feeId: c44b6d91-eb77-4a64-9b6e-99f32f6a5566
         feeType: PERCENT
@@ -912,26 +912,26 @@ CryptoToCryptoAllRecordsObject:
               recipient:
                 type: object
                 properties:
-                  business_name:
+                  businessName:
                     type: string
                     nullable: true
-                  legal_last_name:
+                  legalLastName:
                     type: string
-                  compliance_email:
+                  complianceEmail:
                     type: string
-                  legal_first_name:
+                  legalFirstName:
                     type: string
               sender:
                 type: object
                 properties:
-                  business_name:
+                  businessName:
                     type: string
                     nullable: true
-                  legal_last_name:
+                  legalLastName:
                     type: string
-                  compliance_email:
+                  complianceEmail:
                     type: string
-                  legal_first_name:
+                  legalFirstName:
                     type: string
               fee:
                 $ref: "#/components/schemas/FeeObject"
@@ -953,15 +953,15 @@ CryptoToCryptoAllRecordsObject:
           status: "CONFIRMED"
           contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
           recipient:
-            business_name: null
-            legal_last_name: "Wu"
-            compliance_email: "henry@hifibridge.com"
-            legal_first_name: "Henry"
+              businessName: null
+              legalLastName: "Wu"
+              complianceEmail: "henry@hifibridge.com"
+              legalFirstName: "Henry"      
           sender:
-            business_name: null
-            legal_last_name: "Gutix"
-            compliance_email: "maxg@gmail.com"
-            legal_first_name: "Max"
+            businessName: null
+            legalLastName: "Gutix"
+            complianceEmail: "maxg@gmail.com"
+            legalFirstName: "Max"         
           fee:
             feeId: c44b6d91-eb77-4a64-9b6e-99f32f6a5566
             feeType: PERCENT
@@ -1021,55 +1021,55 @@ CryptoToFiatAllRecordsObject:
               sourceUser:
                 type: object
                 properties:
-                  business_name:
+                  businessName:
                     type: string
                     nullable: true
-                  legal_last_name:
+                  legalLastName:
                     type: string
-                  compliance_email:
+                  complianceEmail:
                     type: string
-                  legal_first_name:
+                  legalFirstName:
                     type: string
               destinationUser:
                 type: object
                 properties:
-                  business_name:
+                  businessName:
                     type: string
                     nullable: true
-                  legal_last_name:
+                  legalLastName:
                     type: string
-                  compliance_email:
+                  complianceEmail:
                     type: string
-                  legal_first_name:
+                  legalFirstName:
                     type: string
               destinationAccount:
                 type: object
                 properties:
                   id:
                     type: string
-                  account_owner_name:
+                  accountOwnerName:
                     type: string
-                  bank_name:
+                  bankName:
                     type: string
-                  account_number:
+                  accountNumber:
                     type: string
-                  routing_number:
+                  routingNumber:
                     type: string
-                  account_type:
+                  accountType:
                     type: string
-                  business_identifier_code:
+                  businessIdentifierCode:
                     type: string
                     nullable: true
-                  bank_country:
+                  bankCountry:
                     type: string
                     nullable: true
                   iban:
                     type: string
                     nullable: true
-                  beneficiary_first_name:
+                  beneficiaryFirstName:
                     type: string
                     nullable: true
-                  beneficiary_last_name:
+                  beneficiaryLastName:
                     type: string
                     nullable: true
               fee:
@@ -1095,27 +1095,27 @@ CryptoToFiatAllRecordsObject:
           status: CREATED
           contractAddress: 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
           sourceUser:
-            business_name: null
-            legal_last_name: YANG
-            compliance_email: william@hifibridge.com
-            legal_first_name: William
+            businessName: null
+            legalLastName: YANG
+            complianceEmail: william@hifibridge.com
+            legalFirstName: William
           destinationUser:
-            business_name: null
-            legal_last_name: YANG
-            compliance_email: william@hifibridge.com
-            legal_first_name: William
+            businessName: null
+            legalLastName: YANG
+            complianceEmail: william@hifibridge.com
+            legalFirstName: William
           destinationAccount:
             id: daa6ad75-a4c2-486f-a937-1bbf4d19553c
-            account_owner_name: Wei Yu, Yang
-            bank_name: Bank of Aerica
-            account_number: 483101817874
-            routing_number: 021000322
-            account_type: us
-            business_identifier_code: null
-            bank_country: null
+            accountOwnerName: Wei Yu, Yang
+            bankName: Bank of Aerica
+            accountNumber: 483101817874
+            routingNumber: 021000322
+            accountType: us
+            businessIdentifierCode: null
+            bankCountry: null
             iban: null
-            beneficiary_first_name: null
-            beneficiary_last_name: null
+            beneficiaryFirstName: null
+            beneficiaryLastName: null
           failedReason: null
           fee:
             feeId: 20719aea-411f-4e0a-b377-61163c09435a
@@ -1192,20 +1192,20 @@ FiatToCryptoAllRecordsObject:
           updatedAt: "2024-08-07T18:03:01.704+00:00"
           status: "FIAT_PROCESSED"
           sourceUser:
-            business_name: null
-            legal_last_name: "Wu"
-            compliance_email: "henry@hifibridge.com"
-            legal_first_name: "Henry"
+            businessName: null
+            legalLastName: "Wu"
+            complianceEmail: "henry@hifibridge.com"
+            legalFirstName: "Henry"
           destinationUser:
-            business_name: null
-            legal_last_name: "Gutix"
-            compliance_email: "maxg@gmail.com"
-            legal_first_name: "Max"
+            businessName: null
+            legalLastName: "Gutix"
+            complianceEmail: "maxg@gmail.com"
+            legalFirstName: "Max"
           sourceAccount:
             id: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
-            account_number: "2374"
-            routing_number: "021234322"
-            bank_name: "Chase"
+            accountNumber: "2374"
+            routingNumber: "021234322"
+            bankName: "Chase"
           fee:
             feeId: c44b6d91-eb77-4a64-9b6e-99f32f6a5566
             feeType: PERCENT
@@ -1317,26 +1317,26 @@ AcceptFiatToCryptoQuoteObject:
         sourceUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_first_name:
+            legalFirstName:
               type: string
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
         destinationUser:
           type: object
           properties:
-            business_name:
+            businessName:
               type: string
               nullable: true
-            legal_first_name:
+            legalFirstName:
               type: string
-            legal_last_name:
+            legalLastName:
               type: string
-            compliance_email:
+            complianceEmail:
               type: string
         destinationAccount:
           type: object
@@ -1348,7 +1348,7 @@ AcceptFiatToCryptoQuoteObject:
               type: string
             name:
               type: string
-            pix_key:
+            pixKey:
               type: string
         failedReason:
           type: string
@@ -1407,20 +1407,20 @@ AcceptFiatToCryptoQuoteObject:
       status: "CREATED"
       contractAddress: "0x4D423D2cfB373862B8E12843B6175752dc75f795"
       sourceUser:
-        business_name: null
-        legal_first_name: "Henry"
-        legal_last_name: "Wu"
-        compliance_email: "henry@hifibridge.com"
+        businessName: null
+        legalFirstName: "Henry"
+        legalLastName: "Wu"
+        complianceEmail: "henry@hifibridge.com"
       destinationUser:
-        business_name: null
-        legal_first_name: "Sam"
-        legal_last_name: "Yoon"
-        compliance_email: "sam@hifibridge.com"
+        businessName: null
+        legalFirstName: "Sam"
+        legalLastName: "Yoon"
+        complianceEmail: "sam@hifibridge.com"
       destinationAccount:
         id: "a69ec62c-7b42-4f63-9945-920eca3ad91e"
         type: "pix"
         name: "Bank Account Name"
-        pix_key: "14947677768"
+        pixKey: "14947677768"
       failedReason: null
       fee: null
       conversionRate:
