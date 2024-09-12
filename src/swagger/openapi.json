@@ -2906,7 +2906,7 @@
             "minimum": 0
           },
           "currency": {
-            "type": "boolean",
+            "type": "string",
             "enum": [
               "usd"
             ]
