@@ -9,6 +9,7 @@ const readme = require('readmeio');
 const { sendSlackReqResMessage } = require('../util/logger/slackLogger');
 const cloneDeep = require('lodash.clonedeep');
 const createLog = require("./logger/supabaseLogger");
+const { isUserFrozen } = require("./internal/user/checkIsUserFrozen");
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
 const README_API_KEY = process.env.README_API_KEY
@@ -42,6 +43,7 @@ exports.authorize = async (req, res, next) => {
 
 		req.query.profileId = keyInfo.profile_id
 		req.query.profileEmail = keyInfo.profiles.email
+		if (await isUserFrozen(req.query.profileId, req.path)) return res.status(401).json({ error: "Not authorized for this route. Please contact HIFI for more information." });
 		next();
 	} catch (err) {
 		console.error(err)
@@ -82,6 +84,7 @@ exports.authorizeDashboard = async (req, res, next) => {
 			prodEnabled: data.organization.prod_enabled,
 			organizationRole: data.organization_role
 		}
+		if (await isUserFrozen(req.query.profileId, req.path)) return res.status(401).json({ error: "Not authorized for this route. Please contact HIFI for more information." });
 		next()
 	} catch (error) {
 		console.error(error)
