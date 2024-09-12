@@ -143,6 +143,7 @@ exports.logRequestResponse = (req, res, next) => {
 			path: originalReq.path,
 			query: filteredQuery,
 			params: originalReq.params,
+			body: originalReq.body,
 			statusCode: res.statusCode,
 			response: parsedBody
 		};
