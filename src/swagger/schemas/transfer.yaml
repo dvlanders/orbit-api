@@ -179,8 +179,8 @@ FiatToFiatTransfer:
       format: float
       minimum: 0
     currency:
-      type: boolean
-      enum: [usd]
+      type: string
+      enum: ["usd"]
     memo:
       type: string
   required:
