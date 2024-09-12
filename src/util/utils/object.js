@@ -3,15 +3,21 @@ function snakeToCamel(snakeCaseStr) {
   }
   
 function convertKeysToCamelCase(obj) {
-    if (Array.isArray(obj)) {
-        return obj.map(item => convertKeysToCamelCase(item));
-    } else if (obj !== null && typeof obj === 'object') {
-        return Object.keys(obj).reduce((accumulator, key) => {
-        const camelCaseKey = snakeToCamel(key);
-        accumulator[camelCaseKey] = convertKeysToCamelCase(obj[key]);
-        return accumulator;
-        }, {});
+
+    try{
+        if (Array.isArray(obj)) {
+            return obj.map(item => convertKeysToCamelCase(item));
+        } else if (obj !== null && typeof obj === 'object') {
+            return Object.keys(obj).reduce((accumulator, key) => {
+            const camelCaseKey = snakeToCamel(key);
+            accumulator[camelCaseKey] = convertKeysToCamelCase(obj[key]);
+            return accumulator;
+            }, {});
+        }
+    }catch(error){
+        return obj;
     }
+
     return obj;
 }
 

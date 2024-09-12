@@ -1,7 +1,8 @@
 const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
-const { fetchFiatToCryptoRequestInfortmaionById, fetchCryptoToCryptoRequestInfortmaionById } = require("../utils/fetchRequestInformation")
+const { fetchCryptoToCryptoRequestInfortmaionById } = require("../utils/fetchRequestInformation")
+const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
     // get transactio record
@@ -24,8 +25,8 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
             status: record.status,
             contractAddress: record.contract_address,
             failedReason: record.failed_reason,
-            recipient: record.recipient?.user_kyc,
-            sender: record.sender.user_kyc,
+            recipient: convertKeysToCamelCase(record.recipient?.user_kyc),
+            sender: convertKeysToCamelCase(record.sender?.user_kyc),
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,
                 feeType: record.developer_fees.fee_type,
