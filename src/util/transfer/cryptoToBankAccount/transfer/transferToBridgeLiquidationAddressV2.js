@@ -43,7 +43,7 @@ const initTransferData = async (config) => {
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
 
 	//insert the initial record
-	const { data: record, error: recordError } = await supabase
+	let { data: record, error: recordError } = await supabase
 		.from('offramp_transactions')
 		.update({
 			user_id: sourceUserId,

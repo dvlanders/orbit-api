@@ -3,6 +3,7 @@ const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
 const { fetchFiatToCryptoRequestInfortmaionById } = require("../utils/fetchRequestInformation")
+const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
     // get transactio record
@@ -34,9 +35,9 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
             createdAt: record.created_at,
             updatedAt: record.updated_at,
             status: record.status,
-            sourceUser: record.source_user.user_kyc,
-            destinationUser: record.destination_user.user_kyc,
-            sourceAccount: plaidAccount,
+            sourceUser: convertKeysToCamelCase(record.source_user.user_kyc),
+            destinationUser: convertKeysToCamelCase(record.destination_user.user_kyc),
+            sourceAccount: convertKeysToCamelCase(plaidAccount),
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,
                 feeType: record.developer_fees.fee_type,

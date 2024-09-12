@@ -1,6 +1,6 @@
 const supabase = require("../util/supabaseClient");
 const { fieldsValidation, isUUID } = require("../util/common/fieldsValidation");
-const { isValidLimit, isValidDateRange, isValidDate } = require("../util/common/transferValidation");
+const { isValidLimit, isValidDateRange, isValidDate, isValidTransferType, TransferType } = require("../util/common/transferValidation");
 const { requiredFields, acceptedFields, supportedCurrency } = require("../util/transfer/cryptoToCrypto/utils/createTransfer");
 const createLog = require("../util/logger/supabaseLogger");
 const { hifiSupportedChain, currencyDecimal, Chain } = require("../util/common/blockchain");
@@ -16,8 +16,8 @@ const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
 const FiatToCryptoSupportedPairFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
-const { checkIsCryptoToFiatRequestIdAlreadyUsed, fetchCryptoToFiatRequestInfortmaionById } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
-const { checkIsFiatToCryptoRequestIdAlreadyUsed, checkIsFiatToFiatRequestIdAlreadyUsed } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
+const { checkIsCryptoToFiatRequestIdAlreadyUsed, fetchCryptoToFiatRequestInfortmaionById, fetchCryptoToFiatProvidersInformationById } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
+const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoProvidersInformationById, checkIsFiatToFiatRequestIdAlreadyUsed } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
 const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
@@ -34,7 +34,7 @@ const getCryptoToFiatConversionRateFunction = require("../util/transfer/conversi
 const { fetchAccountProviders } = require("../util/account/accountProviders/accountProvidersService");
 const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walletType");
 const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
-const { transferObjectReconstructor } = require("../util/transfer/utils/transfer");
+const { transferObjectReconstructor, transferRecordsAggregator } = require("../util/transfer/utils/transfer");
 const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
@@ -445,7 +445,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
-		let transferResult = await transferFunc(requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId)
+		let transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);
@@ -875,6 +875,97 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 		}
 		await createLog("transfer/ach/pull", sourceUserId, error.message, error)
 		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
+
+exports.getTransfers = async(req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId, id, userId, limit, createdAfter, createdBefore, virtualAccountId, transferType } = req.query;
+	try{
+		if(id){
+			const requiredFields = ["id", "transferType"];
+			const acceptedFields = {id: (value) => isUUID(value), transferType: (type) => isValidTransferType(type), profileId: "string"};	
+
+			const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields);
+			if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
+
+			let fetchFunc, cryptoProvider, fiatProvider, transactionRecord;
+			switch (transferType){
+				case TransferType["crypto-to-fiat"]:
+					({cryptoProvider, fiatProvider} = await fetchCryptoToFiatProvidersInformationById(id));
+					if (!cryptoProvider || !fiatProvider) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
+					fetchFunc = await FetchCryptoToBankSupportedPairCheck(cryptoProvider, fiatProvider);
+					transactionRecord = await fetchFunc(id, profileId);
+					transactionRecord = await transferObjectReconstructor(transactionRecord, transactionRecord.transferDetails?.destinationAccountId);
+					break;
+				case TransferType["fiat-to-crypto"]:
+					({cryptoProvider, fiatProvider} = await fetchFiatToCryptoProvidersInformationById(id));
+					if (!cryptoProvider || !fiatProvider) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
+					fetchFunc = await FiatToCryptoSupportedPairFetchFunctionsCheck(cryptoProvider, fiatProvider);
+					transactionRecord = await fetchFunc(id, profileId);
+					transactionRecord = await transferObjectReconstructor(transactionRecord);
+					break;
+				case TransferType["crypto-to-crypto"]:
+					transactionRecord = await fetchCryptoToCryptoTransferRecord(id, profileId);
+					break;
+				default:
+					return res.status(400).json({error: `Invalid transfer type: ${transferType}`});
+			}
+
+			if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` })
+			return res.status(200).json(transactionRecord);
+
+		}else{
+			const requiredFields = [];
+			const acceptedFields = {
+				userId: (value) => isUUID(value), 
+				limit: (value) => isInRange(value, 1, 100), 
+				createdAfter: (value) => isValidDate(value), 
+				createdBefore: (value) => isValidDate(value), 
+				profileId: "string", 
+				virtualAccountId: (value) => isUUID(value),
+				transferType: (type) => isValidTransferType(type)
+			};
+
+			const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields);
+			// check if required fileds provided
+			if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
+			if (createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore)) return res.status(400).json({ error: "Invalid date range" });
+			
+			// if no transfer type provided, fetch all transfer records
+			if(!transferType){
+				const c2fRecords = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
+				const f2cRecords = await fetchAllFiatToCryptoTransferRecord(profileId, {userId, virtualAccountId}, limit, createdAfter, createdBefore);
+				const c2cRecords = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
+				const allRecords = transferRecordsAggregator(limit, c2fRecords, f2cRecords, c2cRecords);
+				return res.status(200).json(allRecords);
+			}
+
+			let records;
+			switch (transferType){
+				case TransferType["crypto-to-fiat"]:
+					records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
+					break;
+				case TransferType["fiat-to-crypto"]:
+					records = await fetchAllFiatToCryptoTransferRecord(profileId, {userId, virtualAccountId}, limit, createdAfter, createdBefore);
+					break;
+				case TransferType["crypto-to-crypto"]:
+					records = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
+					break;
+				default:
+					return res.status(400).json({error: `Invalid transfer type: ${transferType}`});
+			}
+
+			return res.status(200).json(records);
+
+		}
+
+	}catch (error){
+		await createLog("transfer/getTransfers", null, error.message, error, profileId)
+		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
 }

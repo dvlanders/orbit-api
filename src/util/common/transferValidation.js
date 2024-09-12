@@ -1,3 +1,9 @@
+const TransferType = {
+	'crypto-to-fiat': 'crypto-to-fiat',
+	'fiat-to-crypto': 'fiat-to-crypto',
+	'crypto-to-crypto': 'crypto-to-crypto'
+}
+
 
 const isValidAmount = (amount, min = 0.01) => { 
     return amount && !isNaN(Number(amount)) && amount >= min;
@@ -18,9 +24,15 @@ const isValidDateRange = (fromDateString, toDateString) => {
     return !isNaN(fromDate.getTime()) && !isNaN(toDate.getTime()) && fromDate.getTime() <= toDate.getTime();
 }
 
+const isValidTransferType = (transferType) => {
+    return transferType && Object.values(TransferType).includes(transferType);
+}
+
 module.exports = {
     isValidAmount,
     isValidLimit,
     isValidDate,
-    isValidDateRange
+    isValidDateRange,
+    isValidTransferType,
+    TransferType
 }
