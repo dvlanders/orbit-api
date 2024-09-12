@@ -44,7 +44,37 @@ const transferObjectReconstructor = async (transferInfo, externalAccountId = nul
     return transferInfo;
 }
 
+const transferRecordsSchemaValidator = (records) => {
+    if (typeof records !== 'object' || records === null) return false;
+    if (!records.hasOwnProperty('count') || !records.hasOwnProperty('records')) return false;
+    if (typeof records.count !== 'number') return false;
+    if (!Array.isArray(records.records)) return false;
+    return true;
+}
+
+const transferRecordsAggregator = (limit = 10, ...records) => {
+    const aggregatedRecords = {
+        count: 0,
+        records: []
+    };
+
+    records.forEach(record => {
+        if (!transferRecordsSchemaValidator(record)) {
+            throw new Error('Invalid records schema');
+        }
+        aggregatedRecords.count += record.count;
+        aggregatedRecords.records.push(...record.records);
+    });
+
+    aggregatedRecords.records.sort((a, b) => new Date(b.transferDetails.createdAt) - new Date(a.transferDetails.createdAt));
+    aggregatedRecords.records = aggregatedRecords.records.slice(0, limit);
+    aggregatedRecords.count = aggregatedRecords.records.length;
+
+    return aggregatedRecords;
+}
+
 module.exports = {
     transferType,
-    transferObjectReconstructor
+    transferObjectReconstructor,
+    transferRecordsAggregator
 }

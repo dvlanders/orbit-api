@@ -11,6 +11,7 @@ const createCheckbookErrorType = {
 	RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
 	INVALID_PROCESSOR_TOKEN: "INVALID_PROCESSOR_TOKEN",
 	INTERNAL_ERROR: "INTERNAL_ERROR",
+	PLAID_TOKEN_CREATION_ERROR: "PLAID_TOKEN_CREATION_ERROR",
 	UNAUTHORIZED: "UNAUTHORIZED"
 };
 
@@ -19,7 +20,7 @@ class createCheckbookError extends Error {
 		super(message);
 		this.type = type;
 		this.rawResponse = rawResponse;
-		Object.setPrototypeOf(this, createCheckbookErrorType.prototype);
+		Object.setPrototypeOf(this, createCheckbookError.prototype);
 	}
 }
 
@@ -147,6 +148,8 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				throw new createCheckbookError(createCheckbookErrorType.UNAUTHORIZED, plaidAccountData.message)
 			} else if (plaidAccountData.error == "Invalid processor token") {
 				throw new createCheckbookError(createCheckbookErrorType.INVALID_PROCESSOR_TOKEN, plaidAccountData.message)
+			} else if (plaidAccountData.error == "Oops, something went wrong"){ // this is temporary until checkbook fix this
+				throw new createCheckbookError(createCheckbookErrorType.PLAID_TOKEN_CREATION_ERROR, "Plaid processor token creation error, possibly due to an expired token.")
 			} else {
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, plaidAccountData.error || "unknown error", plaidAccountData)
 			}
@@ -166,9 +169,9 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				invalidFields: ["processor_token"],
 				message: error.message
 			}
-		} else if (error.type == createCheckbookErrorType.INTERNAL_ERROR) {
+		} else if (error.type == createCheckbookErrorType.PLAID_TOKEN_CREATION_ERROR) {
 			return {
-				status: 404,
+				status: 500,
 				invalidFields: [],
 				message: error.message
 			}

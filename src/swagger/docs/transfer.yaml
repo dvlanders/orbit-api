@@ -213,6 +213,26 @@
     responses:
       "200":
         $ref: "#/components/responses/FiatToFiatRecordResponse"
+/transfer:
+  get:
+    summary: Get Transfer Record(s)
+    description: |
+      Get a single transfer record or all transfer records for a user, a specific transfer type, or all transfer records within your organization.
+
+      * To get a **single record**, provide the required `id` and `transferType` parameters only.
+      * To get **all records**, provide the optional `userId`, `transferType`, `limit`, `createdBefore`, and `createdAfter` parameters only. eg. Providing `userId` and `transferType` will return all transfer records of that user and transfer type.
+    tags:
+      - Transfer
+    parameters:
+      - $ref: "#/components/parameters/UserIdOptionalParameter"
+      - $ref: "#/components/parameters/TransferRecordIDOptionalParameter"
+      - $ref: "#/components/parameters/TransferTypeOptionalParameter"
+      - $ref: "#/components/parameters/LimitParameter"
+      - $ref: "#/components/parameters/CreatedBeforeParameter"
+      - $ref: "#/components/parameters/CreatedAfterParameter"
+    responses:
+      "200":
+        $ref: "#/components/responses/FiatToCryptoAllRecordsResponse"
       "401":
         $ref: "#/components/responses/UnauthorizedResponse"
       "404":
