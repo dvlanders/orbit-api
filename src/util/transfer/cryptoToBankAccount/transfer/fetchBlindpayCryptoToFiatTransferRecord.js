@@ -1,6 +1,7 @@
 const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 const { getBankAccountInfo } = require("../../../blindpay/getBankAccountInfo")
+const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
 
@@ -43,9 +44,9 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
             updatedAt: record.updated_at,
             status: record.transaction_status,
             contractAddress: record.contract_address,
-            sourceUser: record.source_user.user_kyc,
-            destinationUser: record.destination_user.user_kyc,
-            destinationAccount: bankAccountInfo,
+            sourceUser: convertKeysToCamelCase(record.source_user.user_kyc),
+            destinationUser: convertKeysToCamelCase(record.destination_user.user_kyc),
+            destinationAccount: convertKeysToCamelCase(bankAccountInfo),
             failedReason: record.failed_reason,
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,

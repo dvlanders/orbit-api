@@ -3,6 +3,7 @@ const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
+const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchDirectBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
     // get transactio record
@@ -37,9 +38,9 @@ const fetchDirectBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
             updatedAt: record.updated_at,
             status: record.transaction_status,
             contractAddress: record.contract_address,
-            sourceUser: record.source_user.user_kyc,
-            destinationUser: record.destination_user.user_kyc,
-            destinationAccount: bridgeExternalAccount,
+            sourceUser: convertKeysToCamelCase(record.source_user.user_kyc),
+            destinationUser: convertKeysToCamelCase(record.destination_user.user_kyc),
+            destinationAccount: convertKeysToCamelCase(bridgeExternalAccount),
             failedReason: record.failed_reason,
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,

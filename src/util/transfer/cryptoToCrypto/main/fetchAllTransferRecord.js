@@ -1,6 +1,7 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
 const { transferType } = require("../../utils/transfer");
+const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const filledInfo = (record) => {
     return {
@@ -20,8 +21,8 @@ const filledInfo = (record) => {
             status: record.status,
             contractAddress: record.contract_address,
             failedReason: record.failed_reason,
-            sender: record.sender_user.user_kyc,
-            recipient: record.recipient_user?.user_kyc,
+            sender: convertKeysToCamelCase(record.sender_user.user_kyc),
+            recipient: convertKeysToCamelCase(record.recipient_user?.user_kyc),
             fee: record.developer_fees ? {
                 feeId: record.developer_fees.id,
                 feeType: record.developer_fees.fee_type,
