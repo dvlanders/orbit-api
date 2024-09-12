@@ -169,7 +169,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	// if paymentRail is "wire" then we add wire_message to the destination object
 	if (paymentRail == "wire") {
 		destination.wire_message = initialTransferRecord.wire_message
-		destination.swift_reference = initialTransferRecord.swift_reference
+		// destination.swift_reference = initialTransferRecord.swift_reference
 	}
 
 	// if the paymentrail is "sepa" then we attach sepa_reference to the destination object
@@ -368,7 +368,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
 	const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
 	if (!accountInfo || !accountInfo.account_id) return { isExternalAccountExist: false, transferResult: null }
-	
+
 	// check destination bank account information
 	const { isExternalAccountExist, destinationUserBridgeId, bridgeExternalAccountId, destinationUserId } = await bridgeRailCheck(accountInfo.account_id, destinationCurrency)
 	config.destinationUserId = destinationUserId
