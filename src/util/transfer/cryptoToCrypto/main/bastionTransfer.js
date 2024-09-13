@@ -95,6 +95,9 @@ const transferWithFee = async(record, profileId) => {
 
     // perfrom transfer with fee
     await CryptoToCryptoWithFeeBastion(record, feeRecord, record.payment_processor_contract_address, profileId)
+    // send notification
+    await notifyCryptoToCryptoTransfer(record)
+    
     return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
 }
 

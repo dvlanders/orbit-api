@@ -175,7 +175,7 @@ const acceptPaymentQuote = async (config) => {
             transaction_status: "QUOTE_FAILED",
             failed_reason: message,
         }
-
+        
         const updatedRecord = await updateRequestRecord(recordId, toUpdate)
         return updatedRecord
     } else {

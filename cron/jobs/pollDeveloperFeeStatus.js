@@ -2,7 +2,6 @@ const { BastionTransferStatus } = require("../../src/util/bastion/utils/utils");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
-const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
