@@ -192,7 +192,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
 
-	await notifyCryptoToFiatTransfer(initialTransferRecord)
 	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return result
 }
@@ -325,11 +324,15 @@ const executeAsyncTransferCryptoToFiat = async (config) => {
 	}
 
 	// transfer
+	let receipt
 	if (data.developer_fee_id) {
-		return await transferWithFee(data, config.profileId)
+		receipt = await transferWithFee(data, config.profileId)
 	} else {
-		return await transferWithoutFee(data, config.profileId)
+		receipt = await transferWithoutFee(data, config.profileId)
 	}
+	// notify user
+	await notifyCryptoToFiatTransfer(data)
+	return receipt
 
 }
 

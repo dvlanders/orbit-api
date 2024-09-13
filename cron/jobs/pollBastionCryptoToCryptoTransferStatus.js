@@ -3,7 +3,6 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
-const notifyDeveloperCryptoToCryptoWithdraw = require("../../webhooks/transfer/notifyDeveloperCryptoToCryptoWithdraw");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
@@ -38,7 +37,7 @@ const updateStatus = async (transaction) => {
 				updated_at: new Date().toISOString()
 			})
 			.eq('id', transaction.id)
-			.select()
+			.select("*")
 			.single())
 
 		if (updateError) {
@@ -69,11 +68,7 @@ const updateStatus = async (transaction) => {
 		}
 
 
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
-			await notifyDeveloperCryptoToCryptoWithdraw(updateData)
-		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
-			await notifyCryptoToCryptoTransfer(updateData)
-		}
+		await notifyCryptoToCryptoTransfer(updateData)
 
 
 	} catch (error) {

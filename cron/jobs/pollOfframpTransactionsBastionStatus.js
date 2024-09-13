@@ -152,11 +152,7 @@ const updateStatus = async (transaction) => {
 			}
 
 			// send webhook message
-			if (transaction.transfer_from_wallet_type == "FEE_COLLECTION"){
-				await notifyDeveloperCryptoToFiatWithdraw(updateData)
-			}else if (transaction.transfer_from_wallet_type == "INDIVIDUAL"){
-				await notifyCryptoToFiatTransfer(updateData)
-			}
+			await notifyCryptoToFiatTransfer(updateData)
 
 		}
 	} catch (error) {

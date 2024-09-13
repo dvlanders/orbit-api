@@ -4,25 +4,13 @@ const bridgeRailCheck = require("../railCheck/bridgeRailCheckV2");
 const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
-const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
-const { transferType } = require("../../utils/transfer");
-const { getFeeConfig } = require("../../fee/utils");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
-const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
-const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
-const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
-const createJob = require("../../../../../asyncJobs/createJob");
-const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
-const { getMappedError } = require("../../../bastion/utils/errorMappings");
-const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
 const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCoversionRate");
 const { v4 } = require("uuid");
 const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiatTransferRecordV2");
 const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
-const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
+
 
 const initTransferData = async(config) => {
 	const {requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, destinationUserBridgeId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, sameDayAch, paymentRail} = config
@@ -101,7 +89,6 @@ const initTransferData = async(config) => {
 		to_wallet_address: isAddress(liquidationAddress) ? getAddress(liquidationAddress) : liquidationAddress
 	}
 	const updatedRecord = await updateRequestRecord(record.id, toUpdate)
-
 	// return if no fee charged
     return updatedRecord
 }

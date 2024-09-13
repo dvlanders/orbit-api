@@ -281,8 +281,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
 
-	// send webhook message in production
-	await notifyCryptoToFiatTransfer(initialTransferRecord)
 }
 
 
@@ -329,10 +327,12 @@ const executeSandboxAsyncTransferCryptoToFiat = async (config) => {
 
 	// transfer
 	if (data.developer_fee_id) {
-		return await transferWithFee(data, config.profileId)
+		await transferWithFee(data, config.profileId)
 	} else {
-		return await transferWithoutFee(data, config.profileId)
+		await transferWithoutFee(data, config.profileId)
 	}
+	// send webhook message in production
+	await notifyCryptoToFiatTransfer(data)
 
 }
 

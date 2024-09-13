@@ -8,6 +8,11 @@ const { transferType } = require("../../src/util/transfer/utils/transfer")
 const { sendMessage } = require("../sendWebhookMessage")
 const { webhookEventType, webhookEventActionType } = require("../webhookConfig")
 
+const eventTypeMap = {
+	"INDIVIDUAL": webhookEventType["TRANSFER.CRYPTO_TO_FIAT"],
+	"FEE_COLLECTION": webhookEventType["DEVELOPER.WITHDRAW.FEE_COLLECTION.CRYPTO_TO_FIAT"]
+}
+
 
 const notifyCryptoToFiatTransfer = async (record) => {
 
@@ -28,7 +33,7 @@ const notifyCryptoToFiatTransfer = async (record) => {
 
 	const message = {
 		eventAction: webhookEventActionType.UPDATE,
-		eventType: webhookEventType["TRANSFER.CRYPTO_TO_FIAT"],
+		eventType: eventTypeMap[record.transfer_from_wallet_type],
 		data: receipt
 	}
 

@@ -29,11 +29,7 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 		}
 		const updateData = await updateRequestRecord(transaction.id, toUpdate);
 		// send webhook message
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
-			await notifyDeveloperCryptoToFiatWithdraw(updateData)
-		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
-			await notifyCryptoToFiatTransfer(updateData)
-		}
+		await notifyCryptoToFiatTransfer(updateData)
 
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Blindpay API', error);
