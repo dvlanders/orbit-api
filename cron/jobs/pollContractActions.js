@@ -3,8 +3,6 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const { updateContractActionRecord } = require("../../src/util/smartContract/updateContractActionRecord");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
-const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
-const notifyDeveloperCryptoToCryptoWithdraw = require("../../webhooks/transfer/notifyDeveloperCryptoToCryptoWithdraw");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 

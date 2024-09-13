@@ -17,8 +17,10 @@ const pollBridgeWebhookEvents = require('./jobs/pollBridgeWebhookEvents');
 const pollReapWebhookEvents = require('./jobs/pollReapWebhookEvents');
 const pollBlindpayReceiverStatus = require('./jobs/pollBlindpayReceiverStatus');
 const pollOfframpTransactionsBlindpayStatus = require('./jobs/pollOfframpTransactionsBlindpayStatus');
+const pollDeleteBridgeOfframpTransfer = require('./jobs/pollDeleteBridgeOfframpTransfer');
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
+cron.schedule('*/60 * * * * *', pollDeleteBridgeOfframpTransfer); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollOfframpTransactionsBastionStatus); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds

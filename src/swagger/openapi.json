@@ -342,10 +342,11 @@
         "schema": {
           "type": "string",
           "enum": [
-            "usdc"
+            "usdc",
+            "usdHifi"
           ]
         },
-        "description": "The type of currency to check the balance for. Currently, only USDC is supported.",
+        "description": "The type of currency to check the balance for. Currently, only usdc is supported.",
         "required": true
       }
     },
@@ -2674,8 +2675,10 @@
           "currency": {
             "type": "string",
             "enum": [
-              "usdc"
-            ]
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
           },
           "feeType": {
             "type": "string",
@@ -2733,8 +2736,10 @@
           "sourceCurrency": {
             "type": "string",
             "enum": [
-              "usdc"
-            ]
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
           },
           "destinationCurrency": {
             "type": "string",
@@ -2819,8 +2824,10 @@
             "type": "string",
             "enum": [
               "usdc",
-              "usdt"
-            ]
+              "usdt",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
           },
           "amount": {
             "type": "number",

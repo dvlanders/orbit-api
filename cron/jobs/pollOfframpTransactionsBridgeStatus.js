@@ -3,7 +3,6 @@ const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
-const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -61,11 +60,7 @@ const updateStatusWithBridgeTransferId = async (transaction) => {
 		}
 
 		// send webhook message
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
-			await notifyDeveloperCryptoToFiatWithdraw(updateData)
-		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
-			await notifyCryptoToFiatTransfer(updateData)
-		}
+		await notifyCryptoToFiatTransfer(updateData)
 
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Bridge API', error);
@@ -140,11 +135,7 @@ const updateStatus = async (transaction) => {
 
 		console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 		// send webhook message
-		if (transaction.transfer_from_wallet_type == "FEE_COLLECTION") {
-			await notifyDeveloperCryptoToFiatWithdraw(updateData)
-		} else if (transaction.transfer_from_wallet_type == "INDIVIDUAL") {
-			await notifyCryptoToFiatTransfer(updateData)
-		}
+		await notifyCryptoToFiatTransfer(updateData)
 
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Bridge API', error);
