@@ -4,7 +4,6 @@ const { BastionTransferStatus } = require('../../src/util/bastion/utils/utils');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const createLog = require('../../src/util/logger/supabaseLogger');
-const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
 const { simulateSandboxCryptoToFiatTransactionStatus } = require('../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction');
 const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
 const createJob = require('../../asyncJobs/createJob');

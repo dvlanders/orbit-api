@@ -3,7 +3,6 @@ const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
-const notifyDeveloperCryptoToFiatWithdraw = require('../../webhooks/transfer/notifyDeveloperCryptoToFiatWithdraw');
 const { blindpayPayoutStatusMap } = require('../../src/util/blindpay/endpoint/utils');
 const { getPayout } = require('../../src/util/blindpay/endpoint/getPayout');
 const { updateRequestRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord');
