@@ -39,5 +39,6 @@ CryptoCurrencyParameter:
     type: string
     enum:
       - usdc
-  description: The type of currency to check the balance for. Currently, only USDC is supported.
+      - usdHifi
+  description: The type of currency to check the balance for. Currently, only usdc is supported.
   required: true

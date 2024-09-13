@@ -23,7 +23,8 @@ CryptoToCryptoTransfer:
       enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
     currency:
       type: string
-      enum: ["usdc"]
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
     feeType:
       type: string
       enum: ["PERCENT", "FIX"]
@@ -62,7 +63,8 @@ CryptoToFiatTransfer:
       enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
     sourceCurrency:
       type: string
-      enum: ["usdc"]
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
     destinationCurrency:
       type: string
       enum: ["usd", "eur", "brl"]
@@ -120,7 +122,8 @@ FiatToCryptoTransfer:
       enum: ["usd"]
     destinationCurrency:
       type: string
-      enum: ["usdc", "usdt"]
+      enum: ["usdc", "usdt", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
     amount:
       type: number
       format: float
@@ -389,7 +392,7 @@ CryptoToFiatTransferObject:
         businessName: null
         legalLastName: YANG
         complianceEmail: william@hifibridge.com
-        legalFirstName: William 
+        legalFirstName: William
       destinationUser:
         businessName: null
         legalLastName: YANG
@@ -819,12 +822,12 @@ FiatToCryptoRecordObject:
         businessName: null
         legalLastName: "Wu"
         complianceEmail: "henry@hifibridge.com"
-        legalFirstName: "Henry" 
+        legalFirstName: "Henry"
       destinationUser:
         businessName: null
         legalLastName: "Gutix"
         complianceEmail: "maxg@gmail.com"
-        legalFirstName: "Max"   
+        legalFirstName: "Max"
       sourceAccount:
         id: "95e2ade1-53bb-4f9e-ac04-12a2de2a910d"
         accountNumber: "2374"
@@ -953,15 +956,15 @@ CryptoToCryptoAllRecordsObject:
           status: "CONFIRMED"
           contractAddress: "0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582"
           recipient:
-              businessName: null
-              legalLastName: "Wu"
-              complianceEmail: "henry@hifibridge.com"
-              legalFirstName: "Henry"      
+            businessName: null
+            legalLastName: "Wu"
+            complianceEmail: "henry@hifibridge.com"
+            legalFirstName: "Henry"
           sender:
             businessName: null
             legalLastName: "Gutix"
             complianceEmail: "maxg@gmail.com"
-            legalFirstName: "Max"         
+            legalFirstName: "Max"
           fee:
             feeId: c44b6d91-eb77-4a64-9b6e-99f32f6a5566
             feeType: PERCENT
@@ -1436,4 +1439,3 @@ AcceptFiatToCryptoQuoteObject:
         vaildUntil: "2024-09-09T14:33:42.827Z"
         sendingAmount: 10
         receivingAmount: 55.54
-
