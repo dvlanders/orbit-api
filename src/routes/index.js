@@ -14,6 +14,7 @@ module.exports = (app, express) => {
 	const webhooks = require("./dashboard/webhooks")
 	const localUser = require("./localAdmin.js/user")
 	const internalUser = require("./internal/user")
+	const internalBilling = require("./internal/billing")
 
 	user(router);
 	dev(router);
@@ -29,6 +30,7 @@ module.exports = (app, express) => {
 	webhooks(router)
 	localUser(router)
 	internalUser(router)
+	internalBilling(router)
 
 	app.use("/", router);
 };
