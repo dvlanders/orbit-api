@@ -6705,7 +6705,7 @@
     "/user/create": {
       "post": {
         "summary": "Create User",
-        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for more info.\n",
+        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.\n",
         "tags": [
           "User"
         ],
@@ -6757,7 +6757,7 @@
       },
       "put": {
         "summary": "Update User",
-        "description": "Update an existing Hifi user.\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for more info.\n",
+        "description": "Update an existing Hifi user.\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.\n",
         "tags": [
           "User"
         ],
