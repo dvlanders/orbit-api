@@ -4,7 +4,7 @@
     description: | 
       Create a new Hifi user (Individual/Business)
 
-      HIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for more info.
+      HIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.
     tags:
       - User
     requestBody:
@@ -40,7 +40,7 @@
     description: |
       Update an existing Hifi user.
 
-      HIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for more info.
+      HIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.
     tags:
       - User
     parameters:
