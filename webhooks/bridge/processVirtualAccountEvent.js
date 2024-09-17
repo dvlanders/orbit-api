@@ -28,7 +28,7 @@ const processVirtualAccountEvent = async (event) => {
 
   try {
 
-    if(type === "funds_scheduled") return; // funds_scheduled events have no "deposit_id", so nothing to do here
+    if(type === "funds_scheduled" || type === "microdeposit") return; // funds_scheduled events have no "deposit_id", so nothing to do here
     const referenceId = description
       ?.split(" ")
       ?.slice(-5)
