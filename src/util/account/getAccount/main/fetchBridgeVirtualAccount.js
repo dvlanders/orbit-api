@@ -15,6 +15,7 @@ const fetchBridgeVirtualAccount = async(userId, sourceCurrency, destinationCurre
             .eq("source_currency", sourceCurrency)
             .eq("destination_payment_rail", chainToVirtualAccountPaymentRail[destinationChain])
             .eq("destination_currency", destinationCurrency)
+            .not("virtual_account_id", "is", null)
             .maybeSingle()
         
         if (error) throw error
