@@ -68,7 +68,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 
 		if (!bridgeVirtualAccount) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.RECORD_NOT_FOUND, "No virtual account found", bridgeVirtualAccount);
 
-		// baseVirtualAccount = bridgeVirtualAccount;
+		baseVirtualAccount = bridgeVirtualAccount;
 		if(bridgeVirtualAccount.virtual_account_id) return {virtualAccount:bridgeVirtualAccount , alreadyExisted: true}
 	}
 
