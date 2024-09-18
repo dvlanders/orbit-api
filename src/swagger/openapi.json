@@ -4687,11 +4687,11 @@
           },
           "govIdFront": {
             "type": "string",
-            "description": "URL of image of the front of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the front of the user's government issued ID.\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdBack": {
             "type": "string",
-            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdCountry": {
             "type": "string",
@@ -4699,7 +4699,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         },
         "required": [
@@ -4794,11 +4794,11 @@
           },
           "formationDoc": {
             "type": "string",
-            "description": "URL of image of the formation documentation. \n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the formation documentation. \n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "proofOfOwnership": {
             "type": "string",
-            "description": "URL of image of the ownership documentation.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the ownership documentation.\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "sourceOfFunds": {
             "type": "string",
@@ -4824,7 +4824,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         },
         "required": [
@@ -4910,11 +4910,11 @@
           },
           "govIdFront": {
             "type": "string",
-            "description": "URL of image of the front of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the front of the user's government issued ID.\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdBack": {
             "type": "string",
-            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "govIdCountry": {
             "type": "string",
@@ -4922,7 +4922,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         }
       },
@@ -4997,11 +4997,11 @@
           },
           "formationDoc": {
             "type": "string",
-            "description": "URL of image of the formation documentation. \n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the formation documentation. \n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "proofOfOwnership": {
             "type": "string",
-            "description": "URL of image of the ownership documentation.\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the ownership documentation.\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           },
           "transmitsCustomerFunds": {
             "type": "boolean",
@@ -5023,7 +5023,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum File Size: 10MB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         }
       },
