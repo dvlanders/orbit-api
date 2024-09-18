@@ -10,8 +10,6 @@ const processPaymentIntentEvent = async (event) => {
       if (type === "account_minimum") {
         await enableProdAccess(profileId); // enable prod access after account minimum is paid
         await topupBalance(profileId, credit);
-      } else if (type === "fund") {
-        await topupBalance(profileId, credit);
       }
     }
   } catch (error) {

@@ -1,6 +1,18 @@
-const { update } = require("../../Constants");
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
+
+const addBaseBalanceRecord = async (profileId, billingInfoId) => {
+
+    const { error } = await supabaseCall(() => supabase
+    .from("balance")
+    .insert({
+        profile_id: profileId,
+        billing_information_id: billingInfoId
+    }));
+
+    if(error) throw error;
+
+}
 
 const deductBalance = async (profileId, feeId, amount) => {
 
@@ -47,6 +59,10 @@ const topupBalance = async (profileId, amount) => {
 
     //TODO: These should all be done in a transaction with Supabase RPC
     console.log("topupBalance", profileId, amount)
+    // const { data, error } = await supabase.rpc('balance_topup', { profileId, amount });
+    // if(error) throw error;
+    // return data;
+
     // const { data: currentBalance, error: currentBalanceError } = await supabase
     // .from("balance")
     // .select("balance")
@@ -86,6 +102,7 @@ const topupBalance = async (profileId, amount) => {
 
 
 module.exports = {
+    addBaseBalanceRecord,
     deductBalance,
     topupBalance
 }

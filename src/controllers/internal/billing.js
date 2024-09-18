@@ -1,5 +1,6 @@
 const { isUUID, fieldsValidation, isValidISODateFormat } = require("../../util/common/fieldsValidation");
 const { addBillingInfo, updateProfileBillingInfo } = require("../../util/billing/billingInfoService");
+const { addBaseBalanceRecord } = require("../../util/billing/balance/balanceService");
 const { isValidEmail, isValidAmount } = require("../../util/common/filedValidationCheckFunctions");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
@@ -60,6 +61,7 @@ exports.addBilling = async (req, res) => {
       }
   
       const billingInfo = await addBillingInfo(toInsert);
+      await addBaseBalanceRecord(profileId, billingInfo.id);
   
       if(!billingInfo) return res.status(500).json({error: `There exists a billing info for profile id (${profileId}) already.`});
   

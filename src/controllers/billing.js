@@ -138,13 +138,16 @@ exports.createCheckoutSession = async (req, res) => {
       mode: "payment",
       ui_mode: "embedded",
       redirect_on_completion: "never",
-      payment_intent_data: {
-        metadata: {
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          metadata: {
           type: "fund",
           profileId: profileId,
           credit: amount,
         },
-      },
+        }
+      }
     });
 
     return res.status(200).json({
