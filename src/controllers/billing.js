@@ -120,7 +120,7 @@ exports.createCheckoutSession = async (req, res) => {
         error: `Billing info for profile id (${profileId}) somehow doesn't have Stripe customer id. Please contact support.`,
       });
 
-    const productId = await getProductId("fund");
+    const productId = await getProductId("Fund");
 
     const session = await stripe.checkout.sessions.create({
       customer: billingInfo.stripe_customer_id,
