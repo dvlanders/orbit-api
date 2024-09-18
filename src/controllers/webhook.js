@@ -4,6 +4,7 @@ const supabase = require("../util/supabaseClient");
 const { fieldsValidation } = require("../util/common/fieldsValidation");
 const { bridgeWebhookEventRequiredFields, bridgeWebhookEventAcceptedFields } = require("../util/bridge/webhook/utils");
 const { blindpayWebhookEventRequiredFields, blindpayWebhookEventAcceptedFields } = require("../util/blindpay/webhook/utils");
+const { getStripeWebhookProcessor } = require("../../webhooks/stripe/webhookMapping");
 
 exports.bridgeWebhook = async (req, res) => {
   if (req.method !== "POST")
@@ -111,5 +112,20 @@ exports.blindpayWebhook = async (req, res) => {
   }catch(error){
     await createLog("webhook/blindpayWebhook", null, error.message, error);
     return res.status(500).json({ error: "Internal server error" });    
+  }
+}
+
+exports.stripeWebhook = async(req, res) => {
+  if (req.method !== "POST") return res.status(405).json({ error: 'Method not allowed' });
+  const { event } = req.body;
+  try{
+      console.log(event)
+      const eventProcessor = getStripeWebhookProcessor(event.type.split(".")[0]);
+      await eventProcessor(event);
+      
+      return res.status(200).json({status: "OK"})
+  }catch(error){
+      await createLog("webhook/stripeWebhook", null, `Failed to process Stripe webhook event ${event.id}`, error)
+      return res.status(500).json({error: "Internal server error"})
   }
 }

@@ -15,12 +15,12 @@ const addBillingInfo = async (billingInfo) => {
     return data;
 }
 
-const updateBillingInfo = async (id, billingInfoUpdates) => {
+const updateProfileBillingInfo = async (profileId, billingInfoUpdates) => {
 
     const {data, error} = await supabaseCall(() => supabase
         .from('billing_information')
         .update(billingInfoUpdates)
-        .eq('id', id)
+        .eq('profile_id', profileId)
         .select()
         .single()
     );
@@ -29,7 +29,21 @@ const updateBillingInfo = async (id, billingInfoUpdates) => {
     return data;
 }
 
-const getBillingInfo = async (profileId) => {
+const updateCustomerBillingInfo = async (customerId, billingInfoUpdates) => {
+
+    const {data, error} = await supabaseCall(() => supabase
+        .from('billing_information')
+        .update(billingInfoUpdates)
+        .eq('stripe_customer_id', customerId)
+        .select()
+        .single()
+    );
+
+    if(error)throw error;
+    return data;
+}
+
+const getProfileBillingInfo = async (profileId) => {
 
     const {data, error} = await supabaseCall(() => supabase
         .from('billing_information')
@@ -45,7 +59,8 @@ const getBillingInfo = async (profileId) => {
 
 module.exports = {
     addBillingInfo,
-    updateBillingInfo,
-    getBillingInfo
+    updateProfileBillingInfo,
+    updateCustomerBillingInfo,
+    getProfileBillingInfo
 };
   

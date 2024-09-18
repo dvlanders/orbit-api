@@ -56,7 +56,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 	if(baseVirtualAccountError) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.INTERNAL_ERROR, baseVirtualAccountError.message, baseVirtualAccountError);
 
 	if(!baseVirtualAccount){
-		console.log("baseVirtualAccount not found, which means race condition detected")
+
 		let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
 		.from('bridge_virtual_accounts')
 		.select('*')
@@ -68,8 +68,8 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 
 		if (!bridgeVirtualAccount) throw new createBridgeVirtualAccountError(createBridgeVirtualAccountErrorType.RECORD_NOT_FOUND, "No virtual account found", bridgeVirtualAccount);
 
-		// baseVirtualAccount = bridgeVirtualAccount;
-		return {virtualAccount:bridgeVirtualAccount , alreadyExisted: true}
+		baseVirtualAccount = bridgeVirtualAccount;
+		if(bridgeVirtualAccount.virtual_account_id) return {virtualAccount:bridgeVirtualAccount , alreadyExisted: true}
 	}
 
 	// only return here when the base virtual account also has an associate virtual account id
