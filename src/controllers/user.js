@@ -33,6 +33,8 @@ const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDe
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
+const createDecentralizedIdentifier = require('../util/tbdex/createDecentralizedIdentifier');
+const { create } = require('lodash');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -151,7 +153,8 @@ exports.createHifiUser = async (req, res) => {
 		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
 			createAndFundBastionUser(userId),
 			bridgeFunction(userId),
-			createCheckbookUser(userId)
+			createCheckbookUser(userId),
+			createDecentralizedIdentifier(userId)
 		]);
 
 		// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.
@@ -524,12 +527,12 @@ exports.getAllHifiUser = async (req, res) => {
 	const fields = req.query
 	const { profileId, limit, createdAfter, createdBefore, userType, userId } = fields
 	const requiredFields = []
-	const acceptedFields = { 
-		limit: (value) => isInRange(value, 1, 100), 
-		createdAfter: (value) => isValidDate(value, "ISO"), 
-		createdBefore: (value) => isValidDate(value, "ISO"), 
-		userType: (value) => inStringEnum(value, ["individual", "business"]), 
-		userId: "string" 
+	const acceptedFields = {
+		limit: (value) => isInRange(value, 1, 100),
+		createdAfter: (value) => isValidDate(value, "ISO"),
+		createdBefore: (value) => isValidDate(value, "ISO"),
+		userType: (value) => inStringEnum(value, ["individual", "business"]),
+		userId: "string"
 	}
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
