@@ -11,14 +11,14 @@ const { supabaseCall } = require("../util/supabaseWithRetry");
 const { v4 } = require('uuid');
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const getBillingPeriod = require("../util/billing/getBillingPeriod");
+const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 
 exports.getWalletBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
 	const { userId, chain, currency, walletType } = req.query
 	try {
-		let { bastionUserId: bastionUserId } = await getBastionWallet(userId, chain, walletType)
-
+		let { bastionUserId } = await getBastionWallet(userId, chain, walletType)
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 		if (!response.ok) {
