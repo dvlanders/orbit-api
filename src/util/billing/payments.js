@@ -21,7 +21,7 @@ const autopay = async (profileId) => {
       }
     });
 
-    const productId = await getProductId("fund");
+    const productId = await getProductId("Fund");
 
     const invoiceItem = await stripe.invoiceItems.create({
       customer: billingInfo.stripe_customer_id,
