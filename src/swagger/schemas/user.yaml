@@ -43,9 +43,9 @@ IndividualUserCreate:
       description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link POST /tos-link.
     ipAddress:
       type: string
-      description: | 
+      description: |
         IP address of the user. 
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     govIdFront:
@@ -53,7 +53,7 @@ IndividualUserCreate:
       description: |
         URL of image of the front of the user's government issued ID.
 
-        *Maximum File Size: 10MB
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdBack:
@@ -61,26 +61,26 @@ IndividualUserCreate:
       description: |
         Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.
 
-        *Maximum File Size: 10MB
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdCountry:
       type: string
       description: |
         Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     proofOfResidency:
       type: string
-      description: | 
+      description: |
         URL of the file of the proof of residency.
         Required for users based in the EU or withdrawing into EU bank accounts.
         Required for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
-        *Maximum File Size: 10MB
-        
+        *Maximum file size 10MB and minimum file size 10KB
+
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
   required:
     - userType
@@ -140,13 +140,13 @@ BusinessUserCreate:
       type: string
       description: |
         Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     ipAddress:
       type: string
       description: |
         IP address of the user.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     signedAgreementId:
@@ -156,16 +156,16 @@ BusinessUserCreate:
       type: string
       description: |
         URL of image of the formation documentation. 
-        
-        *Maximum File Size: 10MB
+
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     proofOfOwnership:
       type: string
       description: |
         URL of image of the ownership documentation.
-        
-        *Maximum File Size: 10MB
+
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     sourceOfFunds:
@@ -193,7 +193,7 @@ BusinessUserCreate:
 
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
-        *Maximum File Size: 10MB
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
   required:
@@ -259,9 +259,9 @@ IndividualUserUpdate:
       description: ID of the signed agreement, fetched through the HIFI's Hosted Terms of Service Link.
     ipAddress:
       type: string
-      description: | 
+      description: |
         IP address of the user. 
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     govIdFront:
@@ -269,7 +269,7 @@ IndividualUserUpdate:
       description: |
         URL of image of the front of the user's government issued ID.
 
-        *Maximum File Size: 10MB
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdBack:
@@ -277,26 +277,26 @@ IndividualUserUpdate:
       description: |
         Not required for passports. Required for all other ID types. URL of image of the back of the user's government issued ID.
 
-        *Maximum File Size: 10MB
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     govIdCountry:
       type: string
       description: |
         Alpha-3 country code of the provided government id as defined in the ISO 3166-1 spec. Note that the government ID may be different from the 'country' above.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     proofOfResidency:
       type: string
-      description: | 
+      description: |
         URL of the file of the proof of residency.
         Required for users based in the EU or withdrawing into EU bank accounts.
         Required for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
-        *Maximum File Size: 10MB
-        
+        *Maximum file size 10MB and minimum file size 10KB
+
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
 BusinessUserUpdate:
   type: object
@@ -339,13 +339,13 @@ BusinessUserUpdate:
       type: string
       description: |
         Three-letter alpha-3 country code as defined in the ISO 3166-1 spec.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
     ipAddress:
       type: string
       description: |
         IP address of the user.
-        
+
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
       format: ipv4
     signedAgreementId:
@@ -355,16 +355,16 @@ BusinessUserUpdate:
       type: string
       description: |
         URL of image of the formation documentation. 
-        
-        *Maximum File Size: 10MB
+
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     proofOfOwnership:
       type: string
       description: |
         URL of image of the ownership documentation.
-        
-        *Maximum File Size: 10MB
+
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
     transmitsCustomerFunds:
@@ -389,7 +389,7 @@ BusinessUserUpdate:
 
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
-        *Maximum File Size: 10MB
+        *Maximum file size 10MB and minimum file size 10KB
 
         *Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif
 UltimateBeneficialOwner:
