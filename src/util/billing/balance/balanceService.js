@@ -7,7 +7,7 @@ const addBaseBalanceRecord = async (profileId, billingInfoId) => {
     .from("balance")
     .insert({
         profile_id: profileId,
-        billing_information_id: billingInfoId
+        billing_info_id: billingInfoId
     }));
 
     if(error) throw error;
@@ -55,11 +55,11 @@ const deductBalance = async (profileId, feeId, amount) => {
     
 }
 
-const topupBalance = async (profileId, amount) => {
+const topupBalance = async (profileId, amount, invoiceId = null, paymentIntentId = null) => {
 
     //TODO: These should all be done in a transaction with Supabase RPC
     console.log("topupBalance", profileId, amount)
-    // const { data, error } = await supabase.rpc('balance_topup', { profileId, amount });
+    // const { data, error } = await supabase.rpc('balance_topup', { profileId, amount, invoiceId, paymentIntentId });
     // if(error) throw error;
     // return data;
 
