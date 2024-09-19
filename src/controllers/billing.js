@@ -150,7 +150,6 @@ exports.createCheckoutSession = async (req, res) => {
           metadata: {
           type: "fund",
           profileId: profileId,
-          credit: amount,
         },
         }
       }

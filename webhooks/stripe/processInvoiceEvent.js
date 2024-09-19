@@ -9,10 +9,10 @@ const processInvoiceEvent = async (event) => {
 
     if (event.type === "invoice.paid") {
       const metadata = event.data?.object?.metadata;
-      const { type, profileId } = metadata;
+      const { type, profileId, credit } = metadata;
       if (type === "fund") {
-        const credit = Math.floor(event.data?.object?.lines?.data[0].amount_excluding_tax / 100)
-        await topupBalance(profileId, credit, event.data?.object?.id);
+        const creditToAdd = credit || Math.floor(event.data?.object?.lines?.data[0].amount_excluding_tax / 100)
+        await topupBalance(profileId, creditToAdd, event.data?.object?.id);
       }
     }
   } catch (error) {
