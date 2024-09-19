@@ -5838,11 +5838,11 @@
         "properties": {
           "balance": {
             "type": "string",
-            "description": "The raw balance of the wallet in the smallest unit of the token."
+            "description": "The raw balance of the wallet expressed in the smallest denomination of the token. This format is ideal for backend calculations, automation processes, or when precise, unrounded figures are necessary for smart contract interactions. For example, use this when calculating transaction fees or performing token transfer operations that require exact values."
           },
           "displayBalance": {
             "type": "string",
-            "description": "The user-friendly balance of the wallet formatted to two decimal places."
+            "description": "The wallet balance formatted as a decimal string for display purposes, adjusted according to the token's decimal places to facilitate human readability. This format is best used in user interfaces where balances are displayed to end-users, such as in wallet apps or dashboards, where readability and familiarity are crucial. For instance, displaying an account balance on a user's home screen or summary page."
           },
           "tokenInfo": {
             "type": "object",
