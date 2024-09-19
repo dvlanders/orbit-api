@@ -1,6 +1,19 @@
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
 
+const getBalance = async (profileId) => {
+
+    const { data, error } = await supabaseCall(() => supabase
+        .from("balance")
+        .select("balance")
+        .eq("profile_id", profileId)
+        .maybeSingle());
+
+    if(error) throw error;
+    return data;
+
+}
+
 const addBaseBalanceRecord = async (profileId, billingInfoId) => {
 
     const { error } = await supabaseCall(() => supabase
@@ -16,93 +29,43 @@ const addBaseBalanceRecord = async (profileId, billingInfoId) => {
 
 const deductBalance = async (profileId, feeId, amount) => {
 
-    //TODO: These should all be done in a transaction with Supabase RPC
-    // const { data: currentBalance, error: currentBalanceError } = await supabase
-    // .from("balance")
-    // .select("balance")
-    // .eq("profile_id", profileId);
-
-    // if(currentBalanceError) throw currentBalanceError;
-
-    // const { data: balanceChange, error: balanceChangeError } = await supabase
-    //     .from("balance_change_log")
-    //     .insert({
-    //         profile_id: profileId,
-    //         balance_id: currentBalance.id,
-    //         fee_id: feeId,
-    //         amount: amount,
-    //         balance_before: currentBalance,
-    //         balance_after: currentBalance - amount,
-    //         type: "DEDUCTION"
-    //     })
-    //     .eq("profile_id", profileId);
-
-    // if(balanceChangeError) throw balanceChangeError;
-
-    // const { data: newBalance, error: newBalanceError } = await supabase
-    //     .from("balance")
-    //     .update({
-    //         profile_id: profileId,
-    //         balance: balanceChange.balance_after,
-    //         updated_at: new Date().toISOString()
-    //     })
-    //     .eq("profile_id", profileId);
-
-    // if(newBalanceError) throw newBalanceError;
-
-
-    // return newBalance;
+    console.log("deductBalance", profileId, amount)
+    const { error } = await supabase.rpc('balance_deduct', { profile_id_arg: profileId, amount_arg: amount, fee_id_arg: feeId });
+    if(error){
+        console.log(error)
+        throw error;
+    }
     
 }
 
 const topupBalance = async (profileId, amount, invoiceId = null, paymentIntentId = null) => {
 
-    //TODO: These should all be done in a transaction with Supabase RPC
     console.log("topupBalance", profileId, amount)
-    // const { data, error } = await supabase.rpc('balance_topup', { profileId, amount, invoiceId, paymentIntentId });
-    // if(error) throw error;
-    // return data;
+    const { error } = await supabase.rpc('balance_topup', { profile_id_arg: profileId, amount_arg: amount, invoice_id_arg: invoiceId, payment_intent_id_arg: paymentIntentId });
+    if(error){
+        console.log(error)
+        throw error;
+    }
 
-    // const { data: currentBalance, error: currentBalanceError } = await supabase
-    // .from("balance")
-    // .select("balance")
-    // .eq("profile_id", profileId);
+}
 
-    // if(currentBalanceError) throw currentBalanceError;
+const isBalanceChangeApplied = async (feeId) => {
 
-    // const { data: balanceChange, error: balanceChangeError } = await supabase
-    //     .from("balance_change_log")
-    //     .insert({
-    //         profile_id: profileId,
-    //         balance_id: currentBalance.id,
-    //         amount: amount,
-    //         balance_before: currentBalance,
-    //         balance_after: currentBalance + amount,
-    //         type: "TOPUP"
-    //     })
-    //     .eq("profile_id", profileId);
+    const { data, error } = await supabaseCall(() => supabase
+        .from("balance_change_log")
+        .select("id")
+        .eq("fee_id", feeId)
+        .maybeSingle());
 
-    // if(balanceChangeError) throw balanceChangeError;
-
-    // const { data: newBalance, error: newBalanceError } = await supabase
-    //     .from("balance")
-    //     .update({
-    //         profile_id: profileId,
-    //         balance: balanceChange.balance_after,
-    //         updated_at: new Date().toISOString()
-    //     })
-    //     .eq("profile_id", profileId);
-
-    // if(newBalanceError) throw newBalanceError;
-
-
-    // return newBalance;
-
+    if(error) throw error;
+    return !!data;
 }
 
 
 module.exports = {
     addBaseBalanceRecord,
     deductBalance,
-    topupBalance
+    topupBalance,
+    isBalanceChangeApplied,
+    getBalance
 }
