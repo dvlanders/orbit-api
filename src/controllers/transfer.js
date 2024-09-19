@@ -39,7 +39,8 @@ const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
 const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
-const { account } = require(".");
+const { insertTransactionFeeRecord } = require("../util/billing/fee/feeTransactionService");
+const { transferType } = require("../util/transfer/utils/transfer");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -77,8 +78,9 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
-		const { isAlreadyUsed } = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		const { isAlreadyUsed, newRecord } = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeRecord = await insertTransactionFeeRecord({transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_CRYPTO, status: "CREATED"});
 
 		// fetch sender wallet address information
 		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -230,8 +232,9 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const { isAlreadyUsed } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		const { isAlreadyUsed, newRecord } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeRecord = await insertTransactionFeeRecord({transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_FIAT, status: "CREATED"});
 
 		// FIX ME SHOULD put it in the field validation 
 		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
@@ -418,8 +421,9 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request id valid
-		const { isAlreadyUsed } = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
+		const { isAlreadyUsed, newRecord } = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		await insertTransactionFeeRecord({transaction_id: newRecord.id, transaction_type: transferType.FIAT_TO_CRYPTO, status: "CREATED"});
 
 		// check fee config
 		if (feeType || feeValue) {

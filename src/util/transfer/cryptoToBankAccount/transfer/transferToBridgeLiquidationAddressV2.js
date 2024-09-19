@@ -25,7 +25,7 @@ const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
-const { initial } = require("lodash");
+const { hasEnoughBalanceForTransactionFee, syncTransactionFeeRecordStatus, chargeTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 
@@ -213,6 +213,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	}
 	const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
+	await syncTransactionFeeRecordStatus(updatedRecord.id, transferType.CRYPTO_TO_FIAT);
 	return result
 
 }
@@ -334,6 +335,9 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+		if(toUpdate.transaction_status === "COMPLETED"){
+			await chargeTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT);
+		}
 
 		// send out webhook message if in sandbox
 		if (process.env.NODE_ENV == "development") {
@@ -352,13 +356,15 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
 
+
+	await syncTransactionFeeRecordStatus(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT);
+
 	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return result
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
-	console.log(wireMessage)
 
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 
@@ -376,6 +382,17 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 
 	// fetch or insert request record
 	const initialTransferRecord = await initTransferData(config)
+
+	if(!await hasEnoughBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
+        const toUpdate = {
+            status: "FAILED",
+            failed_reason: "Insufficient balance for transaction fee"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }
+
 	// create Job
 	const jobConfig = {
 		recordId: initialTransferRecord.id

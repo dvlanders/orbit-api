@@ -8,6 +8,8 @@ const { executePayout } = require("../../../src/util/blindpay/endpoint/executePa
 const { ExecutePayoutError } = require("../../../src/util/blindpay/errors")
 const notifyCryptoToFiatTransfer = require("../../../webhooks/transfer/notifyCryptoToFiatTransfer")
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
+const { syncTransactionFeeRecordStatus, chargeTransactionFee } = require("../../../src/util/billing/fee/transactionFeeBilling")
+const { transferType } = require("../../../src/util/transfer/utils/transfer")
 
 exports.executeBlindpayPayout = async (config) => {
 	try {
@@ -36,8 +38,10 @@ exports.executeBlindpayPayout = async (config) => {
 			await updateRequestRecord(config.recordId, toUpdate);
 
 			if(process.env.NODE_ENV == "development") {
+				await chargeTransactionFee(record.id, transferType.CRYPTO_TO_FIAT);
 				await simulateSandboxCryptoToFiatTransactionStatus(record)
 			}
+			await syncTransactionFeeRecordStatus(record.id, transferType.CRYPTO_TO_FIAT);
 			await notifyCryptoToFiatTransfer(record);
 		}
       throw new Error("Blindpay payout execution failed");
@@ -50,6 +54,7 @@ exports.executeBlindpayPayout = async (config) => {
       	transaction_status: blindpayPayoutStatusMap[blindpayExecutePayoutBody.status] || "UNKNOWN"
 	}
     await updateRequestRecord(config.recordId, toUpdate);
+	await syncTransactionFeeRecordStatus(config.recordId, transferType.CRYPTO_TO_FIAT);
 	await notifyCryptoToFiatTransfer(record);
 
 	} catch (error) {

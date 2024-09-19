@@ -61,6 +61,7 @@ exports.addBilling = async (req, res) => {
       }
   
       const billingInfo = await addBillingInfo(toInsert);
+      await addBaseBalanceRecord(profileId, billingInfo.id);
   
       if(!billingInfo) return res.status(500).json({error: `There exists a billing info for profile id (${profileId}) already.`});
   

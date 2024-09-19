@@ -7,6 +7,7 @@ const autopay = async (profileId) => {
 
     const billingInfo = await getProfileBillingInfo(profileId);
     if(!billingInfo || !billingInfo.stripe_customer_id || !billingInfo.stripe_default_payment_method_id) throw new Error("Billing info not found for autopay");
+    if(!billingInfo.autopay) throw new Error("Autopay not enabled for this profile");
 
     const autopayCentAmount = billingInfo.autopay_amount * 100;
     
@@ -27,7 +28,7 @@ const autopay = async (profileId) => {
       customer: billingInfo.stripe_customer_id,
       price_data: {
         currency: "usd",
-        product: productId,
+        product: productId.product_id,
         unit_amount: autopayCentAmount
       },
       invoice: invoice.id

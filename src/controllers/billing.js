@@ -100,7 +100,6 @@ exports.setUpAutoPay = async (req, res) => {
 exports.createCheckoutSession = async (req, res) => {
   const { profileId } = req.query;
   const { amount } = req.body;
-  console.log(req.body)
   try {
     const requiredFields = ["amount"];
     const acceptedFields = { amount: (value) => isValidAmount(value) };
@@ -140,19 +139,21 @@ exports.createCheckoutSession = async (req, res) => {
       mode: "payment",
       ui_mode: "embedded",
       redirect_on_completion: "never",
-      payment_intent_data: {
-        metadata: {
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          metadata: {
           type: "fund",
           profileId: profileId,
           credit: amount,
         },
-      },
+        }
+      }
     });
 
     return res.status(200).json({
       message: `You have created a checkout session for profile id (${profileId})`,
       clientSecret: session.client_secret,
-      session
     });
   } catch (error) {
     await createLog("createCheckoutSession", null, error.message, error, profileId);

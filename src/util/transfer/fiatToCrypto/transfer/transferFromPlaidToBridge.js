@@ -14,6 +14,7 @@ const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { v4 } = require("uuid");
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("./fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../utils/simulateSandboxFiatToCryptoTransaction");
+const { chargeTransactionFee, hasEnoughBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -50,6 +51,16 @@ const transferFromPlaidToBridge = async(configs) => {
             throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, initialRecordError.message)
         } 
 
+        // if the user does not have enough balance for the transaction fee, then fail the transaction
+        if(!await hasEnoughBalanceForTransactionFee(initialRecord.id, transferType.FIAT_TO_CRYPTO)){
+            const toUpdate = {
+                status: "FAILED",
+                failed_reason: "Insufficient balance for transaction fee"
+            }
+            await updateRequestRecord(initialRecord.id, toUpdate)
+            return await fetchCheckbookBridgeFiatToCryptoTransferRecord(initialRecord.id, profileId)
+        }
+
         // create fee record
         let feeRecord
         if (feeType && parseFloat(feeValue) > 0){
@@ -62,9 +73,8 @@ const transferFromPlaidToBridge = async(configs) => {
                     status: "FAILED",
                     failed_reason: `Fee feature not available for ${destinationCurrency} on ${chain}`
                 }
-                updatedRecord = await updateRequestRecord(initialRecord.id, toUpdate)
-                const result = await fetchCheckbookBridgeFiatToCryptoTransferRecord(updatedRecord.id, profileId)
-                return result
+                await updateRequestRecord(initialRecord.id, toUpdate)
+                return await fetchCheckbookBridgeFiatToCryptoTransferRecord(initialRecord.id, profileId)
             }
             const info = {
                 chargedUserId: destinationUserId,
@@ -104,13 +114,7 @@ const transferFromPlaidToBridge = async(configs) => {
         const response = await fetch(createDigitalPaymentUrl, options);
         const responseBody = await response.json()
         if (!response.ok){
-            const {data, error} = await supabase
-                .from("onramp_transactions")
-                .update({
-                    checkbook_response: responseBody,
-                    status: "SUBMISSION_FAILED"
-                })
-                .eq("id", initialRecord.id)
+            await updateRequestRecord(initialRecord.id, { checkbook_response: responseBody, status: "SUBMISSION_FAILED"})
             await createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, responseBody.message, responseBody)
 
             const { message, type } = getMappedError(responseBody.error)
@@ -128,18 +132,11 @@ const transferFromPlaidToBridge = async(configs) => {
             toUpdate.checkbook_status = "PAID"
         }
 
-        // update record
-        const {data: updatedRecord, error: updatedRecordError} = await supabaseCall(() => supabase
-            .from("onramp_transactions")
-            .update(toUpdate)
-            .eq("id", initialRecord.id)
-            .select()
-            .single())
-        
-        if (updatedRecordError) {
-            await createLog("transfer/utils/transferFromPlaidToBridge", sourceUserId, updatedRecordError.message, updatedRecordError)
-            throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, updatedRecordError.message)
-        } 
+        const updatedRecord = await updateRequestRecord(initialRecord.id, toUpdate);
+
+        if(updatedRecord.status === "CONFIRMED"){
+            await chargeTransactionFee(updatedRecord.id, transferType.FIAT_TO_CRYPTO);
+        }
 
         if (isInstant){
             // perform instant crypto transfer

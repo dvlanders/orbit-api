@@ -7,8 +7,31 @@ const _getFeeRate = (provider, currency, feeConfig) => {
     }
 }
 
+const getFee = (transaction, feeConfig) => {
 
-exports.feeMap = (transactions, feeConfig) => {
+    const feeRateFiat = _getFeeRate(transaction.fiat_provider, transaction.currency, feeConfig)
+    const feeRateCrypto = _getFeeRate(transaction.crypto_provider, transaction.currency, feeConfig)
+  
+    let fee = 0
+    // fiat
+    if (feeRateFiat.type == "PERCENT"){
+        fee += parseFloat(feeRateFiat.value) * transaction.amount
+    }else if (feeRateFiat.type == "FIX"){
+        fee += parseFloat(feeRateFiat.value)
+    }
+    // crypto
+    if (feeRateCrypto.type == "PERCENT"){
+        fee += parseFloat(feeRateCrypto.value) * transaction.amount
+    }else if (feeRateCrypto.type == "FIX"){
+        fee += parseFloat(feeRateCrypto.value)
+    }
+
+    return fee;
+
+}
+
+
+const feeMap = (transactions, feeConfig) => {
     let totalFee = 0
     const feeInformation = {}
 
@@ -33,4 +56,9 @@ exports.feeMap = (transactions, feeConfig) => {
     })
 
     return totalFee
+}
+
+module.exports = {
+    feeMap,
+    getFee
 }

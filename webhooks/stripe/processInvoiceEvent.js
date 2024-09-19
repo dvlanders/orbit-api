@@ -11,7 +11,7 @@ const processInvoiceEvent = async (event) => {
       const metadata = event.data?.object?.metadata;
       const { type, profileId, credit } = metadata;
       if (type === "fund") {
-        await topupBalance(profileId, credit);
+        await topupBalance(profileId, credit, event.data?.object?.id);
       }
     }
   } catch (error) {

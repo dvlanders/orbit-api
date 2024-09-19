@@ -524,12 +524,12 @@ exports.getAllHifiUser = async (req, res) => {
 	const fields = req.query
 	const { profileId, limit, createdAfter, createdBefore, userType, userId } = fields
 	const requiredFields = []
-	const acceptedFields = { 
-		limit: (value) => isInRange(value, 1, 100), 
-		createdAfter: (value) => isValidDate(value, "ISO"), 
-		createdBefore: (value) => isValidDate(value, "ISO"), 
-		userType: (value) => inStringEnum(value, ["individual", "business"]), 
-		userId: "string" 
+	const acceptedFields = {
+		limit: (value) => isInRange(value, 1, 100),
+		createdAfter: (value) => isValidDate(value, "ISO"),
+		createdBefore: (value) => isValidDate(value, "ISO"),
+		userType: (value) => inStringEnum(value, ["individual", "business"]),
+		userId: "string"
 	}
 	try {
 		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields)
@@ -1272,8 +1272,9 @@ exports.getUserWalletBalance = async (req, res) => {
 		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase()
 		if (!currencyContract) return res.status(400).json({ error: "Currency is not supported for the chain" })
 
-		let bastionUserId = userId
-		getBastionWallet
+
+		const { bastionUserId: bastionUserId } = await getBastionWallet(userId, chain, "INDIVIDUAL")
+
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 

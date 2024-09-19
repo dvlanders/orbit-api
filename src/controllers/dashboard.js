@@ -9,19 +9,14 @@ const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const getBillingPeriod = require("../util/billing/getBillingPeriod");
 const { convertKeysToCamelCase } = require("../util/utils/object");
 const getOrganizationInformation = require("../util/dashboard/organization");
+const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 
 exports.getWalletBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
 	const { userId, chain, currency, walletType } = req.query
 	try {
-		let bastionUserId = userId
-		if (walletType == "FEE_COLLECTION") {
-			bastionUserId = `${bastionUserId}-FEE_COLLECTION`
-		} else if (walletType == "PREFUNDED") {
-			bastionUserId = `${bastionUserId}-PREFUNDED`
-		}
-
+		let { bastionUserId } = await getBastionWallet(userId, chain, walletType)
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 		if (!response.ok) {
@@ -649,39 +644,39 @@ exports.sendInvitation = async (req, res) => {
 			.single()
 		if (invitationRecordError) throw invitationRecordError
 
-        // generate magic link
-        const { data, error } = await supabase.auth.admin.generateLink({
-            type: 'magiclink',
-            email: emailAddress,
-            options:{
-                redirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
-            }
-        })
-        if (error) throw error
-        const link = data.properties.action_link
+		// generate magic link
+		const { data, error } = await supabase.auth.admin.generateLink({
+			type: 'magiclink',
+			email: emailAddress,
+			options: {
+				redirectTo: `${process.env.DASHBOARD_URL}/auth/invitation?sessionToken=${invitationRecord.session_token}`
+			}
+		})
+		if (error) throw error
+		const link = data.properties.action_link
 
-        // send Invitation email
-        const sender = profile.full_name || profile.email
-        const form = new FormData();
-        form.append('from', `HIFI Developer Dashboard <noreply@${process.env.MAILGUN_DOMAIN}>`);
-        form.append('to', emailAddress);
-        form.append('template', 'organization invitation');
-        form.append('v:redirect_to', link);
-        form.append('v:from_email', `${sender}`);
+		// send Invitation email
+		const sender = profile.full_name || profile.email
+		const form = new FormData();
+		form.append('from', `HIFI Developer Dashboard <noreply@${process.env.MAILGUN_DOMAIN}>`);
+		form.append('to', emailAddress);
+		form.append('template', 'organization invitation');
+		form.append('v:redirect_to', link);
+		form.append('v:from_email', `${sender}`);
 
-        const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
-        const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
-            method: 'POST',
-            headers: {
-                'Authorization': authHeader
-            },
-            body: form
-        });
-        const responseBody = await response.json()
-        if (!response.ok) {
-            await createLog("ashboard/sendInvitation", null, "Failed to send invitaion emailvia mailgun", responseBody, originProfileId)
-            return res.status(500).json({ error: "Internal server error" })
-        }
+		const authHeader = 'Basic ' + Buffer.from(`api:${process.env.MAILGUN_API_KEY}`).toString('base64');
+		const response = await fetch(`https://api.mailgun.net/v3/${process.env.MAILGUN_DOMAIN}/messages`, {
+			method: 'POST',
+			headers: {
+				'Authorization': authHeader
+			},
+			body: form
+		});
+		const responseBody = await response.json()
+		if (!response.ok) {
+			await createLog("ashboard/sendInvitation", null, "Failed to send invitaion emailvia mailgun", responseBody, originProfileId)
+			return res.status(500).json({ error: "Internal server error" })
+		}
 
 		return res.status(200).json({ message: "Invitation sent" })
 	} catch (error) {
