@@ -49,11 +49,8 @@ const accountMinimumPay = async (profileId) => {
     amount: billingInfo.monthly_minimum * 100,
     currency: 'usd',
     customer: billingInfo.stripe_customer_id,
-    automatic_payment_methods: {
-      enabled: true,
-      allow_redirects: "never"
-    },
     payment_method: billingInfo.stripe_default_payment_method_id,
+    payment_method_types: ["card", "us_bank_account"],
     metadata: {
       type: "account_minimum",
       profileId: profileId,

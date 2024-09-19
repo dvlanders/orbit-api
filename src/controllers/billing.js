@@ -171,14 +171,19 @@ exports.getCreditBalance = async (req, res) => {
 	try{
 		const {data: balance, error: balanceError} = await supabase
         .from("balance")
-        .select("updated_at, balance, monthly_minimum: billing_info_id(monthly_minimum)")
+        .select("updated_at, balance, billingInfo: billing_info_id(monthly_minimum, autopay, autopay_amount, autopay_threshold)")
         .eq("profile_id", profileId)
         .single()
     
 		if (balanceError) throw balanceError
 		const _balance = {
 			...balance,
-			monthly_minimum: balance.monthly_minimum.monthly_minimum
+			monthly_minimum: balance.billingInfo.monthly_minimum,
+            autopaySettings:{
+                autopayActivated: balance.billingInfo.autopay,
+                autopayAmount: balance.billingInfo.autopay_amount,
+                autoThreshold: balance.billingInfo.autopay_threshold
+            }
 		}
      	
 		return res.status(200).json({creditBalance: convertKeysToCamelCase(_balance)})
