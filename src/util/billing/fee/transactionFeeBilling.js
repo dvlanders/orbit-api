@@ -60,6 +60,7 @@ const getTransactionFee = async (transactionRecord, transactionType, billingInfo
 const chargeTransactionFee = async (transactionId, transactionType) => {
 
     try{
+        if(process.env.NODE_ENV === "development") return;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
         // don't charge transaction fees for transactions that are not completed
@@ -76,11 +77,6 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
             status: "IN_PROGRESS"
         }
 
-        // don't charge the customer transaction fees in sandbox
-        //TODO: remove this comment below
-        // if(process.env.NODE_ENV === "development"){
-        //     toUpdate.amount = 0;
-        // }
         const feeRecord = await updateTransactionFeeRecord(transactionId, toUpdate);
 
         // prevent double charging
@@ -100,6 +96,7 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
 const hasEnoughBalanceForTransactionFee = async (transactionId, transactionType) => {
 
     try{
+        if(process.env.NODE_ENV === "development") return true;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
         if(!billingInfo) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
@@ -121,7 +118,7 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
     try{
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
-        const voidStatuses = ["REFUNDED", "FAILED", "CANCELED"];
+        const voidStatuses = ["REFUNDED", "FAILED", "CANCELED", "NOT_INITIATED"];
         const statusContainsVoidStatus = (status) => {
             return voidStatuses.some(voidStatus => status.includes(voidStatus));
         };
@@ -129,7 +126,7 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
         const transactionFailed = (transactionRecord.status && statusContainsVoidStatus(transactionRecord.status)) 
             || (transactionRecord.transaction_status && statusContainsVoidStatus(transactionRecord.transaction_status));
 
-        if (transactionFailed) {
+        if (transactionFailed || process.env.NODE_ENV === "development") {
             await updateTransactionFeeRecord(transactionId, { status: "VOIDED" });
         }
 

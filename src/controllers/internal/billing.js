@@ -1,6 +1,7 @@
 const { isUUID, fieldsValidation, isValidISODateFormat } = require("../../util/common/fieldsValidation");
 const { addBillingInfo, updateProfileBillingInfo } = require("../../util/billing/billingInfoService");
 const { isValidEmail, isValidAmount } = require("../../util/common/filedValidationCheckFunctions");
+const { addBaseBalanceRecord } = require("../../util/billing/balance/balanceService");
 const supabase = require("../../util/supabaseClient");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 

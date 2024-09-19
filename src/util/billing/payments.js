@@ -1,6 +1,22 @@
 const { getProfileBillingInfo } = require('./billingInfoService');
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 const { getProductId } = require('../stripe/stripeService');
+const supabase = require('../supabaseClient');
+const { supabaseCall } = require('../supabaseWithRetry');
+
+const checkOngoingAutopay = async (profileId) => {
+
+  const {data, error} = await supabaseCall(() => supabase
+    .from('autopay_events')
+    .select()
+    .eq('profile_id', profileId)
+    .eq('status', 'IN_PROGRESS')
+    .maybeSingle());
+
+  if(error) throw error;
+  return data;
+
+}
 
 const insertAutopayEvent = async (profileId, billingInfoId ) => {
 
@@ -38,11 +54,15 @@ const updateAutopayInvoiceEvent = async (invoiceId, toUpdate) => {
 
 // charge the autopay amount with the customer's default payment method
 const autopay = async (profileId, amount = 0) => {
-
+  console.log("autopay", profileId, amount);
     const billingInfo = await getProfileBillingInfo(profileId);
     if(!billingInfo || !billingInfo.stripe_customer_id || !billingInfo.stripe_default_payment_method_id) throw new Error("Billing info not found for autopay");
     if(!billingInfo.autopay) throw new Error("Autopay not enabled for this profile");
-
+    const ongoingAutopay = await checkOngoingAutopay(profileId);
+    if(ongoingAutopay) {
+      console.log("Ongoing autopay found for profile", profileId)
+      return;
+    }
     const autopayEvent = await insertAutopayEvent(profileId, billingInfo.id);
 
     const autopayDollarAmount = amount > 0 ? amount : billingInfo.autopay_amount;
