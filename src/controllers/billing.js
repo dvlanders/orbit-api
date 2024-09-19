@@ -128,12 +128,17 @@ exports.createCheckoutSession = async (req, res) => {
       payment_method_types: ["card", "us_bank_account"],
       line_items: [
         {
+          adjustable_quantity:{
+            enabled: true,
+            minimum: 50,
+            maximum: 999999
+          },
           price_data: {
             currency: "usd",
             product: productId.product_id,
-            unit_amount: amount * 100,
+            unit_amount: 100,
           },
-          quantity: 1,
+          quantity: 50
         },
       ],
       mode: "payment",
