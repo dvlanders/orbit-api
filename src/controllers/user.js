@@ -1273,6 +1273,7 @@ exports.getUserWalletBalance = async (req, res) => {
 		if (!currencyContract) return res.status(400).json({ error: "Currency is not supported for the chain" })
 
 		let bastionUserId = userId
+		getBastionWallet
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 

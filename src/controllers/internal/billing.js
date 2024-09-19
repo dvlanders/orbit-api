@@ -1,6 +1,7 @@
 const { isUUID, fieldsValidation, isValidISODateFormat } = require("../../util/common/fieldsValidation");
 const { addBillingInfo, updateProfileBillingInfo } = require("../../util/billing/billingInfoService");
 const { isValidEmail, isValidAmount } = require("../../util/common/filedValidationCheckFunctions");
+const supabase = require("../../util/supabaseClient");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 exports.addBilling = async (req, res) => {
@@ -74,7 +75,19 @@ exports.addBilling = async (req, res) => {
       const customer = await stripe.customers.create(customerInfo);
   
       const updatedBillingInfo = await updateProfileBillingInfo(profileId, { stripe_customer_id: customer.id });
-  
+      
+      // update profile, flip billing enabled to true
+      const {data: profile, error: profileError} = await supabase
+        .from("profiles")
+        .update({
+          billing_enabled: true
+        })
+        .eq("id", profileId)
+        .single()
+      
+      if (profileError) throw profileError
+
+
       return res.status(200).json({
         message: `You have successfully added bill for profile id (${profileId})`, ...updatedBillingInfo,
       });

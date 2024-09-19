@@ -3,6 +3,8 @@ const { fieldsValidation } = require("../util/common/fieldsValidation");
 const { updateProfileBillingInfo, getProfileBillingInfo } = require("../util/billing/billingInfoService");
 const { isValidAmount, isInRange } = require("../util/common/filedValidationCheckFunctions");
 const { getProductId } = require("../util/stripe/stripeService");
+const supabase = require("../util/supabaseClient");
+const { convertKeysToCamelCase } = require("../util/utils/object");
 const stripe = require("stripe")(process.env.STRIPE_SK_KEY);
 
 exports.createSetupIntent = async (req, res) => {
@@ -98,7 +100,7 @@ exports.setUpAutoPay = async (req, res) => {
 exports.createCheckoutSession = async (req, res) => {
   const { profileId } = req.query;
   const { amount } = req.body;
-
+  console.log(req.body)
   try {
     const requiredFields = ["amount"];
     const acceptedFields = { amount: (value) => isValidAmount(value) };
@@ -150,9 +152,34 @@ exports.createCheckoutSession = async (req, res) => {
     return res.status(200).json({
       message: `You have created a checkout session for profile id (${profileId})`,
       clientSecret: session.client_secret,
+      session
     });
   } catch (error) {
     await createLog("createCheckoutSession", null, error.message, error, profileId);
     return res.status(500).json({ error: "Unexpected error happened" });
   }
 };
+
+exports.getCreditBalance = async (req, res) => {
+	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
+	const { profileId } = req.query
+	try{
+		const {data: balance, error: balanceError} = await supabase
+        .from("balance")
+        .select("updated_at, balance, monthly_minimum: billing_info_id(monthly_minimum)")
+        .eq("profile_id", profileId)
+        .single()
+    
+		if (balanceError) throw balanceError
+		const _balance = {
+			...balance,
+			monthly_minimum: balance.monthly_minimum.monthly_minimum
+		}
+     	
+		return res.status(200).json({creditBalance: convertKeysToCamelCase(_balance)})
+
+	}catch (error){
+		await createLog("dashboard/utils/getCreditBalance", null, error.message, error, profileId)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
