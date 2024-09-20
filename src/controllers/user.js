@@ -783,7 +783,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			await createLog("user/updateHifiUserAsync", userId, `Failed to update information for user Id: ${userId}`, error)
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
