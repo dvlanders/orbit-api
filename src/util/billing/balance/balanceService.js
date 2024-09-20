@@ -64,11 +64,24 @@ const isBalanceChangeApplied = async (feeId) => {
     return !!data;
 }
 
+const getTotalBalanceTopups = async (profileId, fromDate, toDate) => {
+
+    const { data, error } = await supabase.rpc('get_balance_topup_total', { profile_id_arg: profileId, from_arg: fromDate, to_arg: toDate});
+    if(error){
+        console.log(error)
+        throw error;
+    }
+
+    return data;
+
+}
+
 
 module.exports = {
     addBaseBalanceRecord,
     deductBalance,
     topupBalance,
     isBalanceChangeApplied,
-    getBalance
+    getBalance,
+    getTotalBalanceTopups
 }

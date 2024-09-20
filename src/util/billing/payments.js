@@ -1,6 +1,23 @@
 const { getProfileBillingInfo } = require('./billingInfoService');
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 const { getProductId } = require('../stripe/stripeService');
+const supabase = require('../supabaseClient');
+const { supabaseCall } = require('../supabaseWithRetry');
+const createLog = require('../logger/supabaseLogger');
+
+const checkOngoingAutopay = async (profileId) => {
+
+  const {data, error} = await supabaseCall(() => supabase
+    .from('autopay_events')
+    .select()
+    .eq('profile_id', profileId)
+    .eq('status', 'IN_PROGRESS')
+    .maybeSingle());
+
+  if(error) throw error;
+  return data;
+
+}
 
 const insertAutopayEvent = async (profileId, billingInfoId ) => {
 
@@ -38,67 +55,82 @@ const updateAutopayInvoiceEvent = async (invoiceId, toUpdate) => {
 
 // charge the autopay amount with the customer's default payment method
 const autopay = async (profileId, amount = 0) => {
-
+  console.log("autopay", profileId, amount);
     const billingInfo = await getProfileBillingInfo(profileId);
     if(!billingInfo || !billingInfo.stripe_customer_id || !billingInfo.stripe_default_payment_method_id) throw new Error("Billing info not found for autopay");
     if(!billingInfo.autopay) throw new Error("Autopay not enabled for this profile");
-
+    const ongoingAutopay = await checkOngoingAutopay(profileId);
+    if(ongoingAutopay) {
+      console.log("Ongoing autopay found for profile", profileId)
+      return;
+    }
     const autopayEvent = await insertAutopayEvent(profileId, billingInfo.id);
 
-    const autopayDollarAmount = amount > 0 ? amount : billingInfo.autopay_amount;
-    const autopayCentAmount = autopayDollarAmount * 100;
-    
-    const invoice = await stripe.invoices.create({
-      customer: billingInfo.stripe_customer_id,
-      collection_method: 'charge_automatically',
-      default_payment_method: billingInfo.stripe_default_payment_method_id,
-      metadata: {
-        type: "fund",
-        profileId: profileId,
-        credit: autopayDollarAmount
-      }
-    });
+    try{
+      const autopayDollarAmount = amount > 0 ? amount : billingInfo.autopay_amount;
+      const autopayCentAmount = autopayDollarAmount * 100;
 
-    const productId = await getProductId("Fund");
+      const invoice = await stripe.invoices.create({
+        customer: billingInfo.stripe_customer_id,
+        collection_method: 'charge_automatically',
+        default_payment_method: billingInfo.stripe_default_payment_method_id,
+        metadata: {
+          type: "fund",
+          profileId: profileId,
+          credit: autopayDollarAmount
+        }
+      });
 
-    const invoiceItem = await stripe.invoiceItems.create({
-      customer: billingInfo.stripe_customer_id,
-      price_data: {
-        currency: "usd",
-        product: productId.product_id,
-        unit_amount: autopayCentAmount
-      },
-      invoice: invoice.id
-    });
+      const productId = await getProductId("Fund");
 
-    const invoicePay = await stripe.invoices.pay(invoice.id);
-    console.log(invoicePay);
+      const invoiceItem = await stripe.invoiceItems.create({
+        customer: billingInfo.stripe_customer_id,
+        price_data: {
+          currency: "usd",
+          product: productId.product_id,
+          unit_amount: autopayCentAmount
+        },
+        invoice: invoice.id
+      });
 
-    await updateAutopayEvent(autopayEvent.id, {stripe_invoice_id: invoicePay.id});
+      const invoicePay = await stripe.invoices.pay(invoice.id);
+      console.log(invoicePay);
+      await updateAutopayEvent(autopayEvent.id, {stripe_invoice_id: invoicePay.id});
+  
+    }catch(error){
+      console.log(error);
+      await updateAutopayEvent(autopayEvent.id, {status: "FAILED"});
+      return await createLog("autopay", null, `Failed to charge autopay for profile: ${profileId}`, error);
+    }
 
 }
 
 // charge the account minimum with the customer's default payment method
 const accountMinimumPay = async (profileId) => {
 
-  const billingInfo = await getProfileBillingInfo(profileId);
-  if(!billingInfo || !billingInfo.stripe_customer_id || !billingInfo.stripe_default_payment_method_id) throw new Error("Billing info not found for accountMinimumPay");
-  
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: billingInfo.monthly_minimum * 100,
-    currency: 'usd',
-    customer: billingInfo.stripe_customer_id,
-    payment_method: billingInfo.stripe_default_payment_method_id,
-    payment_method_types: ["card", "us_bank_account"],
-    metadata: {
-      type: "account_minimum",
-      profileId: profileId,
-      credit: billingInfo.monthly_minimum
-    },
-    confirm: true
-  });
+  try{
+    const billingInfo = await getProfileBillingInfo(profileId);
+    if(!billingInfo || !billingInfo.stripe_customer_id || !billingInfo.stripe_default_payment_method_id) throw new Error("Billing info not found for accountMinimumPay");
+    
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: billingInfo.monthly_minimum * 100,
+      currency: 'usd',
+      customer: billingInfo.stripe_customer_id,
+      payment_method: billingInfo.stripe_default_payment_method_id,
+      payment_method_types: ["card", "us_bank_account"],
+      metadata: {
+        type: "account_minimum",
+        profileId: profileId,
+        credit: billingInfo.monthly_minimum
+      },
+      confirm: true
+    });
 
-  console.log(paymentIntent);
+    console.log(paymentIntent);
+  }catch(error){
+    console.log(error);
+    return await createLog("accountMinimumPay", null, `Failed to charge account minimum for profile: ${profileId}`, error);
+  }
 
 }
 

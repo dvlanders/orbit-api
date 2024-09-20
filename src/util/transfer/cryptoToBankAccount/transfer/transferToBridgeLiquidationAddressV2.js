@@ -385,7 +385,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 
 	if(!await hasEnoughBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
         const toUpdate = {
-            status: "FAILED",
+            transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
         }
         await updateRequestRecord(initialTransferRecord.id, toUpdate)
