@@ -660,7 +660,7 @@ exports.createHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/createHifiUserAsync", null, `Failed to Information Upload For CreateUser for profile Id ${profileId}`, error, profileId)
+			await createLog("user/createHifiUserAsync", null, `Failed to upload information for CreateUser for profile Id ${profileId}`, error, profileId)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
