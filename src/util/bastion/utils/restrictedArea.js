@@ -1,14 +1,14 @@
 const sanctionedCountries = [
-	"CUB",  // Cuba
-	"IRN",  // Iran
-	"SDN",  // Sudan
-	"PRK",  // DPRK (North Korea)
-	"VEN",  // Venezuela
-	"RUS",  // Russia
-	"UKR",  // Ukraine
-	"BLR",  // Belarus
-	"MMR",  // Myanmar (Burma)
-	"SYR"   // Syria
+	"CU",  // Cuba
+	"IR",  // Iran
+	"SD",  // Sudan
+	"KP",  // DPRK (North Korea)
+	"VE",  // Venezuela
+	"RU",  // Russia
+	"UA",  // Ukraine
+	"BY",  // Belarus
+	"MM",  // Myanmar (Burma)
+	"SY"   // Syria
 ]
 
 const allowedUsState = [

@@ -1,3 +1,4 @@
+const { isArray } = require("lodash");
 const { sanctionedCountries, allowedUsState } = require("../bastion/utils/restrictedArea");
 const { fieldsValidation } = require("../common/fieldsValidation");
 const { isValidDate, isValidEmail, isValidState, isValidCountryCode, isValidUrl, isValidIPv4, inStringEnum } = require("../common/filedValidationCheckFunctions");
@@ -572,25 +573,30 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 }
 
 const ipCheck = async (ip) => {
-	const locationRes = await fetch(`https://ipapi.co/${ip}/json/?key=${process.env.IP_API_SECRET}`);
-	const locaionData = await locationRes.json();
+    // request options
+    const options = {  
+        method: 'GET',  
+        headers: {  
+            'Authorization': 'Basic ' + Buffer.from(`${process.env.MAXMIND_ACCOUNT_ID}:${process.env.MAXMIND_LICENSE_KEY}`).toString('base64')  
+        }  
+    };
+
+	const locationRes = await fetch(`https://geolite.info/geoip/v2.1/city/${ip}`, options);
+	const locationData = await locationRes.json();
 	if (locationRes.ok) {
-		if (locaionData.version != "IPv4") {
+		if (!locationData.traits || !isValidIPv4(locationData.traits.ip_address)) {
 			return false
 		}
-		if (locaionData.reserved) {
+		if (sanctionedCountries.includes(locationData.country.iso_code)) {
 			return false
 		}
-		if (sanctionedCountries.includes(locaionData.country_code_iso3)) {
-			return false
-		}
-		if (locaionData.country_code_iso3 == "USA" && !allowedUsState.includes(locaionData.region_code)) {
-			console.log("not supported")
-			return false
-		}
+		if (locationData.country.iso_code == "US" && (!locationData.subdivisions || !isArray(locationData.subdivisions) || !allowedUsState.includes(locationData.subdivisions[0]['iso_code']))) {
+            console.log("not supported")
+            return false
+        }
 	} else {
-		console.error(locaionData)
-		await createLog("user/util/ipCheck", null, "failed to get ip information", locaionData)
+		console.error(locationData)
+		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData)
 		throw new Error("failed to get ip information")
 	}
 
