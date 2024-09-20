@@ -24,7 +24,7 @@ exports.createSetupIntent = async (req, res) => {
 
     const setupIntent = await stripe.setupIntents.create({
       customer: billingInfo.stripe_customer_id,
-      payment_method_types: ["card", "us_bank_account"],
+      payment_method_types: ["card"],
       payment_method_options: {
         us_bank_account: {
           verification_method: "automatic",
