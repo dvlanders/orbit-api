@@ -125,7 +125,7 @@ exports.getRawUserObject = async(userId, profileId) => {
 			onRamp: {
 				status: bridgeResult.usRamp.status,
 				actionNeeded: {
-					actions: bridgeResult.customerStatus.actions,
+					actions: bridgeResult.usRamp.actions,
 					fieldsToResubmit: bridgeResult.customerStatus.fields
 				},
 				message: bridgeResult.message,

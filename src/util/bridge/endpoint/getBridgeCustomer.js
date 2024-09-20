@@ -1,11 +1,23 @@
 const supabase = require("../../supabaseClient");
 const {supabaseCall} = require("../../supabaseWithRetry")
 const { v4 } = require("uuid");
-const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields, bridgeFieldsToRequestFields } = require("../utils");
+const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields, bridgeFieldsToRequestFields, pendingResult } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { CustomerStatus } = require("../../user/common");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
+
+const retryBridgeCustomerCreationCheck = async(job, config, userId, profileId) => {
+
+    const {data, error} = await supabase
+        .from("jobs_queue")
+        .select("*")
+        .eq("job", job)
+        .eq("user_id", userId)
+    
+    if (!data || data.length <= 0) return true
+    return false
+}
 
 
 const getBridgeCustomerErrorType = {
@@ -54,6 +66,14 @@ const getBridgeCustomer = async(userId) => {
         )
         if (bridgeCustomerError) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, bridgeCustomerError.message, bridgeCustomerError)
         if (!bridgeCustomer) throw new getBridgeCustomerError(getBridgeCustomerErrorType.RECORD_NOT_FOUND, "User not found")
+    
+        // check if bridge application is resubmitting, return pending result if yes
+        const config = {
+            userId, 
+            bridgeId: bridgeCustomer.bridge_id
+        }
+        if (! (await retryBridgeCustomerCreationCheck("retryBridgeCustomerCreation", config, userId, null))) return pendingResult()
+
         if (bridgeCustomer.status == "invalid_fields"){
             let invalidFields = []
             if (bridgeCustomer.bridge_response){
@@ -111,8 +131,8 @@ const getBridgeCustomer = async(userId) => {
         const responseBody = await response.json()
         if (response.status == 500) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, "Bridge internal server error", responseBody)
         if (!response.ok) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
-        // extract rejections
         
+        // extract rejections
         const reasons = responseBody.rejection_reasons.map((reason) => {
             return reason.developer_reason
         })
@@ -200,13 +220,13 @@ const getBridgeCustomer = async(userId) => {
                 },
                 usRamp: {
                     status: CustomerStatus.PENDING,
-                    actions: baseActions,
-                    fields: baseFields
+                    actions: [],
+                    fields: []
                 },
                 euRamp: {
                     status: CustomerStatus.PENDING,
-                    actions: sepaActions,
-                    fields: sepaFields
+                    actions: [],
+                    fields: []
                 },
                 message: "kyc aplication still under review"
             }

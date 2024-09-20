@@ -1,10 +1,13 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToRequestFields, getEndorsementStatus, extractActionsAndFields } = require("../utils");
+const { bridgeFieldsToRequestFields, getEndorsementStatus, extractActionsAndFields, pendingResult } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
+const { safeParseBody } = require("../../utils/response");
+const createJob = require("../../../../asyncJobs/createJob");
+
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -62,8 +65,6 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			.eq('user_id', userId)
 			.maybeSingle()
 		)
-
-
 
 
 		if (userKycError) {
@@ -211,7 +212,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		}
 		// call bridge endpoint
 		const response = await fetch(url, options);
-		const responseBody = await response.json();
+		const responseBody = await safeParseBody(response)
 
 
 		if (response.ok) {
@@ -262,7 +263,6 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			}
 
 		} else if (response.status == 400) {
-			// EXPERIMENTAL
 			const { error: bridge_customers_error } = await supabase
 				.from('bridge_customers')
 				.update({
@@ -281,7 +281,16 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		} else if (response.status == 401) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
 		} else {
-			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, "Unknown error", responseBody)
+			await createLog("user/util/createIndividualBridgeCustomer", userId, responseBody.message, responseBody)
+			// unknown error try to resubmit the application
+			const config = {
+				userId,
+				bridgeId,
+				userType: "individual"
+			}
+			// create asynbc job
+			await createJob("retryBridgeCustomerCreation", config, userId, null)
+			return pendingResult()
 		}
 	} catch (error) {
 		//  log
