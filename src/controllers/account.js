@@ -1346,3 +1346,65 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
+
+exports.createMomoMpesaAccount = async (req, res) => {
+	const { userId, profileId } = req.query;
+	const {
+		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
+	} = req.body;
+
+
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+	const requiredFields = [
+		'accountNumber',
+		'accountHolderName'
+	];
+
+	const acceptedFields = {
+		'accountNumber': "string",
+		'accountHolderName': "string"
+	};
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	}
+
+	try {
+
+		// add the momo_mpesa_accounts record
+		const { data: momoMpesaAccountData, error: momoMpesaAccountError } = await supabase.from('momo_mpesa_accounts').insert({
+			account_number: fields.accountNumber,
+			account_holder_name: fields.accountHolderName,
+			user_id: userId
+		})
+			.select();
+
+		if (momoMpesaAccountError) {
+			createLog("account/createMomoMpesaAccount", userId, momoMpesaAccountError.message, momoMpesaAccountError);
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+		const accountProviderRecord = await insertAccountProviders(momoMpesaAccountData[0].id, "kes", "offramp", "momo_mpesa", "TBDEX", userId);
+
+		return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+
+	} catch (error) {
+		createLog("account/createMomoMpesaAccount", userId, error.message, error);
+		console.error('Error in createMomoMpesaAccount', error);
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
+	}
+};

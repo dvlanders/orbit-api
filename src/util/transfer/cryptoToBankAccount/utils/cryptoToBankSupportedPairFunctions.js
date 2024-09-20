@@ -92,6 +92,15 @@ const CryptoToBankSupportedPairFunctions = {
 				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
 			},
 		}
+	},
+	momo_mpesa: {
+		usdc: {
+			kes: {
+				transferFunc: createReapCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
+		}
 	}
 }
 
