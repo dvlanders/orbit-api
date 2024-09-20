@@ -567,7 +567,7 @@ exports.generateToSLink = async (req, res) => {
 		// fallback to HIFI template
 		if (!templateId) templateId = "2fb2da24-472a-4e5b-b160-038d9dc82a40"
 		// check is template exist
-		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
+		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId does not exist" })
 		let encodedUrl
 		if (redirectUrl) {
 			encodedUrl = `&redirectUrl=${encodeURIComponent(redirectUrl)}`
