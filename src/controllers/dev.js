@@ -191,7 +191,7 @@ exports.triggerOnRampFeeCharge = async(req, res) => {
 
 exports.testCreateBill = async(req, res) => {
     try{
-        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
+        const profileId = "e37f17be-1369-4853-8026-65e9903bd430"
         const {data: billingInformation, error: billingInformationError} = await supabase
             .from("billing_information")
             .select("*")
