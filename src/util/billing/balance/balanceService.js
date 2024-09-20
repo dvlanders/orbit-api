@@ -1,5 +1,6 @@
 const supabase = require("../../supabaseClient")
-const { supabaseCall } = require("../../supabaseWithRetry")
+const { supabaseCall } = require("../../supabaseWithRetry");
+const { convertKeysToCamelCase } = require("../../utils/object");
 
 const getBalance = async (profileId) => {
 
@@ -76,6 +77,25 @@ const getTotalBalanceTopups = async (profileId, fromDate, toDate) => {
 
 }
 
+const getBalanceTopupsHistory = async (profileId, fromDate, toDate, limit) => {
+
+    const { data, error } = await supabase
+        .from("balance_topups")
+        .select("id, created_at, amount, transaction_hash")
+        .eq("profile_id", profileId)
+        .gt("created_at", fromDate)
+        .lt("created_at", toDate)
+        .order("created_at", {ascending: false})
+        .limit(limit)
+
+    if(error){
+        console.log(error)
+        throw error;
+    }
+
+    return convertKeysToCamelCase(data);
+}
+
 
 module.exports = {
     addBaseBalanceRecord,
@@ -83,5 +103,6 @@ module.exports = {
     topupBalance,
     isBalanceChangeApplied,
     getBalance,
-    getTotalBalanceTopups
+    getTotalBalanceTopups,
+    getBalanceTopupsHistory
 }

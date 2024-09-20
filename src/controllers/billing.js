@@ -5,6 +5,7 @@ const { isValidAmount, isInRange } = require("../util/common/filedValidationChec
 const { getProductId } = require("../util/stripe/stripeService");
 const supabase = require("../util/supabaseClient");
 const { convertKeysToCamelCase } = require("../util/utils/object");
+const { getBalanceTopupsHistory } = require("../util/billing/balance/balanceService");
 const stripe = require("stripe")(process.env.STRIPE_SK_KEY);
 
 exports.createSetupIntent = async (req, res) => {
@@ -192,4 +193,26 @@ exports.getCreditBalance = async (req, res) => {
 		await createLog("dashboard/utils/getCreditBalance", null, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
+}
+
+exports.getCreditBalanceTopupsHistory = async(req, res) => {
+  if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
+	const { profileId, limit, fromDate, toDate } = req.query
+
+  try{
+    let _fromDate = fromDate
+    let _toDate = toDate
+    if (!_fromDate || !_toDate) {
+      _fromDate = new Date("1900-01-01").toISOString()
+      _toDate = new Date("2200-01-01").toISOString()
+    }
+
+    const records = await getBalanceTopupsHistory(profileId, _fromDate, _toDate, limit)
+    return res.status(200).json({count: records.length || 0, records})
+
+
+  }catch (error){
+    await createLog("dashboard/utils/getCreditBalanceTopupsHistory", null, error.message, error, profileId)
+    return res.status(500).json({error: "Unexpected error happened"})
+  }
 }
