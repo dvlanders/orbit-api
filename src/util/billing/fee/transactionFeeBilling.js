@@ -1,10 +1,11 @@
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { getFee } = require("../feeRateMap")
-const { deductBalance, isBalanceChangeApplied, getBalance } = require("../balance/balanceService")
+const { deductBalance, getBalance } = require("../balance/balanceService")
 const { updateTransactionFeeRecord } = require("./feeTransactionService")
 const { getProfileBillingInfo } = require("../billingInfoService")
 const { transferType } = require("../../transfer/utils/transfer")
+const { FeeTransactionStatus } = require("./utils")
 const createLog = require("../../logger/supabaseLogger")
 
 const getTransactionRecord = async (transactionId, transactionType) => {
@@ -60,7 +61,8 @@ const getTransactionFee = async (transactionRecord, transactionType, billingInfo
 const chargeTransactionFee = async (transactionId, transactionType) => {
 
     try{
-        if(process.env.NODE_ENV === "development") return;
+        // TODO: Uncomment below line prior to merging
+        // if(process.env.NODE_ENV === "development") return;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
         // don't charge transaction fees for transactions that are not completed
@@ -74,20 +76,17 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
             user_id: transactionRecord.user_id,
             currency: transactionRecord.currency,
             amount: billableDepositFee,
-            status: "IN_PROGRESS"
+            status: FeeTransactionStatus.IN_PROGRESS
         }
 
         const feeRecord = await updateTransactionFeeRecord(transactionId, toUpdate);
 
-        // prevent double charging
-        if(!await isBalanceChangeApplied(feeRecord.id)){
-            await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
-        }
+        await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
         
-        await updateTransactionFeeRecord(transactionId, {status: "COMPLETED"});
+        await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.COMPLETED});
 
     }catch(error){
-        await updateTransactionFeeRecord(transactionId, {status: "FAILED"});
+        await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.FAILED});
         await createLog("chargeTransactionFee", null, `Failed to charge transaction fee for transaction: ${transactionId} with type: ${transactionType}`, error);
     }
 }
@@ -96,7 +95,8 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
 const hasEnoughBalanceForTransactionFee = async (transactionId, transactionType) => {
 
     try{
-        if(process.env.NODE_ENV === "development") return true;
+        // TODO: Uncomment below line prior to merging
+        // if(process.env.NODE_ENV === "development") return true;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
         if(!billingInfo) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
@@ -127,7 +127,7 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
             || (transactionRecord.transaction_status && statusContainsVoidStatus(transactionRecord.transaction_status));
 
         if (transactionFailed || process.env.NODE_ENV === "development") {
-            await updateTransactionFeeRecord(transactionId, { status: "VOIDED" });
+            await updateTransactionFeeRecord(transactionId, { status: FeeTransactionStatus.VOIDED });
         }
 
     }catch(error){

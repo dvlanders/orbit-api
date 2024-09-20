@@ -14,7 +14,7 @@ const updateStatus = async (balanceInfo) => {
         if(billingInfo.autopay && balanceAutopayMin && balance < balanceAutopayMin){
             const refillAcountToReachThreshold = Math.ceil((balanceAutopayMin - balance) / billingInfo.autopay_amount);
             console.log(refillAcountToReachThreshold)
-            await autopay(balanceInfo.profile_id, refillAcountToReachThreshold * billingInfo.autopay_amount);
+            await autopay(balanceInfo.profile_id, balanceInfo.id, refillAcountToReachThreshold * billingInfo.autopay_amount);
         }
 	} catch (error) {
 		await createLog('pollAutopayRefill/updateStatus', null, `Failed to check for autopay for profile:${balanceInfo.profile_id} `, error);
@@ -24,7 +24,8 @@ const updateStatus = async (balanceInfo) => {
 async function pollAutopayRefill() {
 	try {
         console.log('Polling for autopay refill');
-        if(process.env.NODE_ENV === "development") return;
+		// TODO: Uncomment below line prior to merging
+        // if(process.env.NODE_ENV === "development") return;
 		const { data: balanceInfos, error: balanceInfosError } = await supabaseCall(() => supabase
 			.from('balance')
             .select('*, billing_information!inner(autopay, monthly_minimum, autopay_threshold, autopay_amount)')

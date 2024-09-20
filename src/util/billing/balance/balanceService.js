@@ -6,7 +6,7 @@ const getBalance = async (profileId) => {
 
     const { data, error } = await supabaseCall(() => supabase
         .from("balance")
-        .select("balance")
+        .select()
         .eq("profile_id", profileId)
         .maybeSingle());
 
@@ -41,28 +41,16 @@ const deductBalance = async (profileId, feeId, amount) => {
     
 }
 
-const topupBalance = async (profileId, amount, invoiceId = null, paymentIntentId = null) => {
+const topupBalance = async (profileId, amount, topupId) => {
 
-    console.log("topupBalance", profileId, amount)
-    const { data, error } = await supabase.rpc('balance_topup', { profile_id_arg: profileId, amount_arg: amount, invoice_id_arg: invoiceId, payment_intent_id_arg: paymentIntentId });
+    console.log("topupBalance", profileId, amount, topupId)
+    const { data, error } = await supabase.rpc('balance_topup', { profile_id_arg: profileId, amount_arg: amount, topup_id_arg: topupId });
     if(error){
         console.log(error)
         throw error;
     }
 
     return data;
-}
-
-const isBalanceChangeApplied = async (feeId) => {
-
-    const { data, error } = await supabaseCall(() => supabase
-        .from("balance_change_log")
-        .select("id")
-        .eq("fee_id", feeId)
-        .maybeSingle());
-
-    if(error) throw error;
-    return !!data;
 }
 
 const getTotalBalanceTopups = async (profileId, fromDate, toDate) => {
@@ -77,14 +65,44 @@ const getTotalBalanceTopups = async (profileId, fromDate, toDate) => {
 
 }
 
+const insertBalanceTopupRecord = async (record) => {
+
+    const { data, error } = await supabaseCall(() => supabase
+        .from("balance_topups")
+        .insert(record)
+        .select()
+        .single());
+
+    if(error){
+        throw error;
+    }
+
+    return data;
+
+}
+
+const updateBalanceTopupRecord = async (id, toUpdate) => {
+
+    const { error } = await supabaseCall(() => supabase
+        .from("balance_topups")
+        .update({updated_at: new Date(), ...toUpdate})
+        .eq("id", id));
+
+    if(error){
+        throw error;
+    }
+    
+}
+
 const getBalanceTopupsHistory = async (profileId, fromDate, toDate, limit) => {
 
     const { data, error } = await supabase
         .from("balance_topups")
-        .select("id, created_at, amount, transaction_hash")
+        .select("id, created_at, updated_at, amount, status, type, hifi_credit_id, stripe_invoice_pdf")
         .eq("profile_id", profileId)
         .gt("created_at", fromDate)
         .lt("created_at", toDate)
+        .or("status.eq.SUCCEEDED,status.eq.PENDING,status.eq.FAILED")
         .order("created_at", {ascending: false})
         .limit(limit)
 
@@ -101,8 +119,9 @@ module.exports = {
     addBaseBalanceRecord,
     deductBalance,
     topupBalance,
-    isBalanceChangeApplied,
     getBalance,
     getTotalBalanceTopups,
-    getBalanceTopupsHistory
+    getBalanceTopupsHistory,
+    insertBalanceTopupRecord,
+    updateBalanceTopupRecord
 }

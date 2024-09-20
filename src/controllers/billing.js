@@ -6,6 +6,8 @@ const { getProductId } = require("../util/stripe/stripeService");
 const supabase = require("../util/supabaseClient");
 const { convertKeysToCamelCase } = require("../util/utils/object");
 const { getBalanceTopupsHistory } = require("../util/billing/balance/balanceService");
+const { insertBalanceTopupRecord, getBalance } = require("../util/billing/balance/balanceService");
+const { BalanceTopupType, generateHIFICreditId, BalanceTopupStatus } = require("../util/billing/balance/utils");
 const stripe = require("stripe")(process.env.STRIPE_SK_KEY);
 
 exports.createSetupIntent = async (req, res) => {
@@ -100,18 +102,7 @@ exports.setUpAutoPay = async (req, res) => {
 
 exports.createCheckoutSession = async (req, res) => {
   const { profileId } = req.query;
-  const { amount } = req.body;
   try {
-    const requiredFields = ["amount"];
-    const acceptedFields = { amount: (value) => isValidAmount(value) };
-    const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields);
-    if (missingFields.length > 0 || invalidFields.length > 0)
-      return res.status(400).json({
-        error: `fields provided are either missing or invalid`,
-        missingFields: missingFields,
-        invalidFields: invalidFields,
-      });
-
     const billingInfo = await getProfileBillingInfo(profileId);
     if (!billingInfo)
       return res.status(400).json({
@@ -121,6 +112,19 @@ exports.createCheckoutSession = async (req, res) => {
       return res.status(500).json({
         error: `Billing info for profile id (${profileId}) somehow doesn't have Stripe customer id. Please contact support.`,
       });
+
+    const balanceRecord = await getBalance(profileId);
+    if (!balanceRecord) return res.status(400).json({ error: `Balance record for profile id (${profileId}) not found. You need to add balance record first before checking out.`});
+    
+    const toInsert = {
+      profile_id: profileId,
+      balance_id: balanceRecord.id,
+      status: BalanceTopupStatus.PENDING,
+      type: BalanceTopupType.CHECKOUT,
+      hifi_credit_id: generateHIFICreditId()
+    }
+
+    const topupRecord = await insertBalanceTopupRecord(toInsert);
 
     const productId = await getProductId("Fund");
 
@@ -149,15 +153,22 @@ exports.createCheckoutSession = async (req, res) => {
         enabled: true,
         invoice_data: {
           metadata: {
-          type: "fund",
-          profileId: profileId,
-        },
+            type: BalanceTopupType.CHECKOUT,
+            profileId: profileId,
+            topupRecordId: topupRecord.id,
+          },
         }
-      }
+      },
+      metadata: {
+        type: BalanceTopupType.CHECKOUT,
+        profileId: profileId,
+        topupRecordId: topupRecord.id,
+      },
     });
 
     return res.status(200).json({
       message: `You have created a checkout session for profile id (${profileId})`,
+      sessionId: session.id,
       clientSecret: session.client_secret,
     });
   } catch (error) {
@@ -165,6 +176,33 @@ exports.createCheckoutSession = async (req, res) => {
     return res.status(500).json({ error: "Unexpected error happened" });
   }
 };
+
+exports.expireCheckoutSession = async (req, res) => {
+  const { profileId } = req.query;
+  const { sessionId } = req.body;
+
+  try {
+    const requiredFields = ["sessionId"];
+    const acceptedFields = { sessionId: "string" };
+    const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields);
+    if (missingFields.length > 0 || invalidFields.length > 0)
+      return res.status(400).json({
+        error: `fields provided are either missing or invalid`,
+        missingFields: missingFields,
+        invalidFields: invalidFields,
+      });
+
+    const session = await stripe.checkout.sessions.expire(sessionId);
+
+    return res.status(200).json({
+      message: `You have successfully expired checkout session: ${session.id}`,
+    });
+  } catch (error) {
+    await createLog("expireCheckoutSession", null, error.message, error, profileId);
+    return res.status(500).json({ error: "Unexpected error happened" });
+  }
+
+}
 
 exports.getCreditBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
