@@ -115,7 +115,7 @@ exports.testwebhook = async(req, res) => {
 exports.testSendMessage = async(req, res) => {
     try{
 
-        const profileId = "e00d8e99-6d88-4f9c-98b3-c144bdec009c"
+        const profileId = "e37f17be-1369-4853-8026-65e9903bd430"
         const message = {message: "hello"}
         await sendMessage(profileId, message)
         return res.status(200).json({message: "success"})
