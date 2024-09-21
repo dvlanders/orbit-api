@@ -9,7 +9,8 @@ const BalanceTopupStatus = {
     PENDING : "PENDING",
     SUCCEEDED : "SUCCEEDED",
     FAILED : "FAILED",
-    CANCELLED : "CANCELLED"
+    CANCELLED : "CANCELLED",
+    CREATED: "CREATED"
 }
 
 const generateHIFICreditId = () => {

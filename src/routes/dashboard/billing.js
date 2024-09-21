@@ -4,6 +4,7 @@ const { authorizeDashboard, logRequestResponse, requiredProdDashboard, requiredA
 module.exports = (router) => {
     // TODO: add middlewares: authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse,
     router.post("/dashboard/billing/setup-intent", authorizeDashboard, requiredAdmin, logRequestResponse, billing.createSetupIntent);
+    // router.post("/dashboard/billing/setup-intent/verify-micro-deposits", authorizeDashboard, requiredAdmin, logRequestResponse, billing.verifyMicroDeposits);
     router.post("/dashboard/billing/autopay", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.setUpAutoPay);
     router.post("/dashboard/billing/checkout-session", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.createCheckoutSession);
     router.post("/dashboard/billing/checkout-session/expire", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.expireCheckoutSession);

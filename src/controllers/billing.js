@@ -46,6 +46,37 @@ exports.createSetupIntent = async (req, res) => {
   }
 };
 
+// exports.verifyMicroDeposits = async (req, res) => {
+//   if (req.method !== "POST") {
+//     return res.status(405).json({ error: "Method not allowed" });
+//   }
+
+//   const { profileId } = req.query;
+//   const { amount1, amount2 } = req.body;
+
+//   try {
+//     const billingInfo = await getProfileBillingInfo(profileId);
+//     if (!billingInfo) return res.status(400).json({ error: `Billing info for profile id (${profileId}) not found. You need to add billing info first before adding a payment.`});
+//     if (!billingInfo.stripe_customer_id) return res.status(500).json({ error: `Billing info for profile id (${profileId}) somehow doesn't have Stripe customer id. Please contact support.`});
+
+//     const setupIntent = await stripe.setupIntents.verifyMicrodeposits(
+//       billingInfo.setupIntentId,
+//       {
+//         amounts: [amount1, amount2],
+//       }
+//     );
+
+//     return res.status(200).json({
+//       message: `You have created a setup intent for profile id (${profileId})`,
+//       setupIntentId: setupIntent.id,
+//       status: setupIntent.status,
+//     });
+//   } catch (error) {
+//     await createLog("createSetupIntent", null, error.message, error, profileId);
+//     return res.status(500).json({ error: "Unexpected error happened" });
+//   }
+// };
+
 exports.setUpAutoPay = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -119,7 +150,7 @@ exports.createCheckoutSession = async (req, res) => {
     const toInsert = {
       profile_id: profileId,
       balance_id: balanceRecord.id,
-      status: BalanceTopupStatus.PENDING,
+      status: BalanceTopupStatus.CREATED,
       type: BalanceTopupType.CHECKOUT,
       hifi_credit_id: generateHIFICreditId()
     }

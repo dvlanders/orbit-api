@@ -5,6 +5,7 @@ const { BalanceTopupType, BalanceTopupStatus } = require("../../src/util/billing
 const processCheckoutEvent = async (event) => {
   try {
     const metadata = event.data?.object?.metadata;
+    const amountSubtotal = event.data?.object?.amount_subtotal;
     const { type, profileId, topupRecordId } = metadata;
 
     if(event.type === "checkout.session.async_payment_failed"){
@@ -14,6 +15,10 @@ const processCheckoutEvent = async (event) => {
     }else if(event.type === "checkout.session.expired"){
         if (type === BalanceTopupType.CHECKOUT) {
             await updateBalanceTopupRecord(topupRecordId, {status: BalanceTopupStatus.CANCELLED});
+        }
+    }else if(event.type === "checkout.session.completed"){
+        if (type === BalanceTopupType.CHECKOUT) {
+            await updateBalanceTopupRecord(topupRecordId, {status: BalanceTopupStatus.PENDING, amount: amountSubtotal});
         }
     }
 

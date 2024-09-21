@@ -22,7 +22,7 @@ const autopay = async (profileId, balanceId, amount = 0) => {
       profile_id: profileId,
       balance_id: balanceId,
       amount: amount,
-      status: BalanceTopupStatus.PENDING,
+      status: BalanceTopupStatus.CREATED,
       type: BalanceTopupType.AUTOPAY,
       hifi_credit_id: generateHIFICreditId()
     }
@@ -59,7 +59,7 @@ const autopay = async (profileId, balanceId, amount = 0) => {
 
       const invoicePay = await stripe.invoices.pay(invoice.id);
       console.log(invoicePay);
-      await updateBalanceTopupRecord(topupRecord.id, {stripe_invoice_id: invoicePay.id});
+      await updateBalanceTopupRecord(topupRecord.id, {stripe_invoice_id: invoicePay.id, status: BalanceTopupStatus.PENDING});
   
     }catch(error){
       console.log(error);
@@ -82,7 +82,7 @@ const accountMinimumPay = async (profileId) => {
       profile_id: profileId,
       balance_id: balanceRecord.id,
       amount: billingInfo.monthly_minimum,
-      status: BalanceTopupStatus.PENDING,
+      status: BalanceTopupStatus.CREATED,
       type: BalanceTopupType.ACCOUNT_MINIMUM,
       hifi_credit_id: generateHIFICreditId()
     }
@@ -115,7 +115,7 @@ const accountMinimumPay = async (profileId) => {
       });
 
       const invoicePay = await stripe.invoices.pay(invoice.id);
-      await updateBalanceTopupRecord(topupRecord.id, {stripe_invoice_id: invoicePay.id});
+      await updateBalanceTopupRecord(topupRecord.id, {stripe_invoice_id: invoicePay.id, status: BalanceTopupStatus.PENDING});
   }catch(error){
     console.log(error);
     await updateBalanceTopupRecord(topupRecord.id, {status: BalanceTopupStatus.FAILED});
