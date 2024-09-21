@@ -49,6 +49,8 @@ const updateStatus = async (onrampTransaction) => {
 			// "description": "INDIVIDUAL Checkbook Inc [75D7C01F 5F93 4490 8B9] CHECK 5006 WILLIAM YANG 312410A2 9C1B 4337 AFEB 71DAD9DA3428"
 			// try to find the latest record
 			for (const event of events) {
+				if(event.type === "funds_scheduled" || event.type === "microdeposit") continue
+
 				const description = event.source.description
 				const referenceId = description?.split(" ")?.slice(-5)?.join('-')?.toLowerCase()
 				const depositId = event.deposit_id;
