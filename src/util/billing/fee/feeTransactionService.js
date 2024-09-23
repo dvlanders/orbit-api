@@ -41,8 +41,21 @@ const getTransactionFeeRecord = async (transactionId) => {
 
 }
 
+const getOptimisticAvailableBalance = async (profileId) => {
+
+    const { data, error } = await supabase.rpc('get_optimistic_available_balance', { profile_id_arg: profileId });
+    if(error){
+        console.log(error)
+        throw error;
+    }
+
+    return data;
+
+}
+
 module.exports = {
     insertTransactionFeeRecord,
     updateTransactionFeeRecord,
-    getTransactionFeeRecord
+    getTransactionFeeRecord,
+    getOptimisticAvailableBalance
 }

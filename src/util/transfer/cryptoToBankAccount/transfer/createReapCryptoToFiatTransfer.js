@@ -32,6 +32,7 @@ const acceptPaymentQuote = require("../../../reap/main/acceptPaymentQuote");
 const getReapPayment = require("../../../reap/main/getPayment");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
+const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 
 const initTransferData = async (config) => {
 	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description } = config
@@ -203,6 +204,16 @@ const createReapCryptoToFiatTransfer = async (config) => {
     if (feeType || feeValue) return CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee is not available for this rail") 
 	//insert request record
 	const {record:initialTransferRecord, feeRecord} = await initTransferData(config)
+
+	if(!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Insufficient balance for transaction fee"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate);
+        const result = fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
+		return { isExternalAccountExist: true, transferResult: result };
+    }
 
     // create quote and update record
     const paymentConfig = {

@@ -3,8 +3,6 @@ const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
-const { chargeTransactionFee, syncTransactionFeeRecordStatus } = require('../../src/util/billing/fee/transactionFeeBilling');
-const { transferType } = require("../../src/util/transfer/utils/transfer");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -59,12 +57,6 @@ const updateStatusWithBridgeTransferId = async (transaction) => {
 			console.error('Failed to update transaction status', updateError);
 			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to update transaction status', updateError);
 			return
-		}
-
-		if(updateData.transaction_status === "COMPLETED"){
-			await chargeTransactionFee(transaction.id, transferType.CRYPTO_TO_FIAT);
-		}else{
-			await syncTransactionFeeRecordStatus(transaction.id, transferType.CRYPTO_TO_FIAT);
 		}
 
 		// send webhook message
@@ -141,11 +133,6 @@ const updateStatus = async (transaction) => {
 			return
 		}
 
-		if(updateData.transaction_status === "COMPLETED"){
-			await chargeTransactionFee(transaction.id, transferType.CRYPTO_TO_FIAT);
-		}else{
-			await syncTransactionFeeRecordStatus(transaction.id, transferType.CRYPTO_TO_FIAT);
-		}
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
 

@@ -7,8 +7,6 @@ const createLog = require('../../src/util/logger/supabaseLogger');
 const { simulateSandboxCryptoToFiatTransactionStatus } = require('../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction');
 const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
 const createJob = require('../../asyncJobs/createJob');
-const { syncTransactionFeeRecordStatus } = require('../../src/util/billing/fee/transactionFeeBilling');
-const { transferType } = require("../../src/util/transfer/utils/transfer");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 const hifiOfframpTransactionStatusMap = {
@@ -151,8 +149,6 @@ const updateStatus = async (transaction) => {
 					await createJob("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id, null)
 				}
 			}
-
-			await syncTransactionFeeRecordStatus(updateData.id, transferType.CRYPTO_TO_FIAT);
 
 			// send webhook message
 			await notifyCryptoToFiatTransfer(updateData)

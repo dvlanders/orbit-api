@@ -6,8 +6,6 @@ const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCrypto
 const { blindpayPayoutStatusMap } = require('../../src/util/blindpay/endpoint/utils');
 const { getPayout } = require('../../src/util/blindpay/endpoint/getPayout');
 const { updateRequestRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord');
-const { chargeTransactionFee, syncTransactionFeeRecordStatus } = require('../../src/util/billing/fee/transactionFeeBilling');
-const { transferType } = require("../../src/util/transfer/utils/transfer");
 
 const updateStatusWithBlindpayTransferId = async (transaction) => {
 	// console.log("polling blindpay payout status for transaction", transaction)
@@ -30,11 +28,6 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 		}
 		const updateData = await updateRequestRecord(transaction.id, toUpdate);
 
-		if(hifiOfframpTransactionStatus === "COMPLETED"){
-			await chargeTransactionFee(transaction.id, transferType.CRYPTO_TO_FIAT);
-		}else{
-			await syncTransactionFeeRecordStatus(transaction.id, transferType.CRYPTO_TO_FIAT);
-		}
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
 

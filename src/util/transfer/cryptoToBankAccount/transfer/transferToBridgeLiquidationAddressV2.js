@@ -25,7 +25,7 @@ const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
-const { hasEnoughBalanceForTransactionFee, syncTransactionFeeRecordStatus, chargeTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
+const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 
@@ -213,7 +213,6 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	}
 	const updatedRecord = await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
-	await syncTransactionFeeRecordStatus(updatedRecord.id, transferType.CRYPTO_TO_FIAT);
 	return result
 
 }
@@ -335,9 +334,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-		if(toUpdate.transaction_status === "COMPLETED"){
-			await chargeTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT);
-		}
 
 		// send out webhook message if in sandbox
 		if (process.env.NODE_ENV == "development") {
@@ -355,9 +351,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		}
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 	}
-
-
-	await syncTransactionFeeRecordStatus(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT);
 
 	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return result
@@ -383,7 +376,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	// fetch or insert request record
 	const initialTransferRecord = await initTransferData(config)
 
-	if(!await hasEnoughBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
+	if(!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
         const toUpdate = {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"

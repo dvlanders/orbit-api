@@ -14,7 +14,7 @@ const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { v4 } = require("uuid");
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("./fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../utils/simulateSandboxFiatToCryptoTransaction");
-const { chargeTransactionFee, hasEnoughBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
+const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -52,7 +52,7 @@ const transferFromPlaidToBridge = async(configs) => {
         } 
 
         // if the user does not have enough balance for the transaction fee, then fail the transaction
-        if(!await hasEnoughBalanceForTransactionFee(initialRecord.id, transferType.FIAT_TO_CRYPTO)){
+        if(!await checkBalanceForTransactionFee(initialRecord.id, transferType.FIAT_TO_CRYPTO)){
             const toUpdate = {
                 status: "FAILED",
                 failed_reason: "Insufficient balance for transaction fee"
@@ -133,10 +133,6 @@ const transferFromPlaidToBridge = async(configs) => {
         }
 
         const updatedRecord = await updateRequestRecord(initialRecord.id, toUpdate);
-
-        if(updatedRecord.status === "CONFIRMED"){
-            await chargeTransactionFee(updatedRecord.id, transferType.FIAT_TO_CRYPTO);
-        }
 
         if (isInstant){
             // perform instant crypto transfer

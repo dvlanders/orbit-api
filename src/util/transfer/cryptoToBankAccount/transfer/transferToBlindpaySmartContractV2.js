@@ -23,7 +23,7 @@ const { getMappedError } = require("../../../bastion/utils/errorMappings");
 const { getBlindpayChain, getBlindpayToken } = require("../../../blindpay/blockchain");
 const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 const fetchBlindpayCryptoToFiatTransferRecord = require("./fetchBlindpayCryptoToFiatTransferRecord");
-const { hasEnoughBalanceForTransactionFee, syncTransactionFeeRecordStatus } = require("../../../billing/fee/transactionFeeBilling");
+const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 
 const createPaymentQuote = async (config) => {
     const {recordId, blindpayAccountId, chain, amount, sourceUserId, contractAddress, bastionRequestId} = config;
@@ -215,7 +215,6 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
     // TODO: This is for Bridge, we need to fix it for Blindpay in the future when we want to allow Fee transfer
     const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
-    await syncTransactionFeeRecordStatus(updatedRecord.id, transferType.CRYPTO_TO_FIAT);
     return { isExternalAccountExist: true, transferResult: result }
 }
 
@@ -234,7 +233,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
         chain: initialTransferRecord.chain
     }
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
-    await syncTransactionFeeRecordStatus(updatedRecord.id, transferType.CRYPTO_TO_FIAT);
     const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
     return { isExternalAccountExist: true, transferResult: result }
 }
@@ -249,7 +247,7 @@ const createTransferToBlindpaySmartContract = async (config) => {
     config.destinationUserId = destinationUserId
     const initialTransferRecord = await initTransferData(config);
 
-    if(!await hasEnoughBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
+    if(!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
         const toUpdate = {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
@@ -293,7 +291,6 @@ const createTransferToBlindpaySmartContract = async (config) => {
         conversion_rate: conversionRate
     }
     await updateRequestRecord(initialTransferRecord.id, toUpdate)
-    await syncTransactionFeeRecordStatus(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT);
 	const result = await fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return { isExternalAccountExist: true, transferResult: result }
 }

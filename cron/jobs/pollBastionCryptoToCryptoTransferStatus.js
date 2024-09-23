@@ -3,8 +3,6 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
-const { chargeTransactionFee } = require('../../src/util/billing/fee/transactionFeeBilling');
-const { transferType } = require("../../src/util/transfer/utils/transfer");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
 
 
@@ -67,10 +65,6 @@ const updateStatus = async (transaction) => {
 				await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.sender_user_id, 'Failed to update fee status', updateError);
 				return
 			}
-		}
-
-		if(updateData.status === "CONFIRMED"){
-			await chargeTransactionFee(transaction.id, transferType.CRYPTO_TO_CRYPTO);
 		}
 
 		await notifyCryptoToCryptoTransfer(updateData)

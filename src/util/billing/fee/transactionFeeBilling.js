@@ -2,11 +2,12 @@ const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { getFee } = require("../feeRateMap")
 const { deductBalance, getBalance } = require("../balance/balanceService")
-const { updateTransactionFeeRecord } = require("./feeTransactionService")
+const { updateTransactionFeeRecord, getOptimisticAvailableBalance } = require("./feeTransactionService")
 const { getProfileBillingInfo } = require("../billingInfoService")
 const { transferType } = require("../../transfer/utils/transfer")
 const { FeeTransactionStatus } = require("./utils")
 const createLog = require("../../logger/supabaseLogger")
+const { sendSlackTransferBalanceAlert } = require("../../logger/slackLogger")
 
 const getTransactionRecord = async (transactionId, transactionType) => {
 
@@ -96,7 +97,7 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
 }
 
 
-const hasEnoughBalanceForTransactionFee = async (transactionId, transactionType) => {
+const checkBalanceForTransactionFee = async (transactionId, transactionType) => {
 
     try{
         // TODO: Uncomment below line prior to merging
@@ -106,12 +107,27 @@ const hasEnoughBalanceForTransactionFee = async (transactionId, transactionType)
         if(!billingInfo) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
 
-        const balanceRecord = await getBalance(billingInfo.profile_id);
-        if(!balanceRecord) return true; // if the customer doesn't have a balance record, it automatically means they have enough balance
+        const balanceInfo = await getOptimisticAvailableBalance(billingInfo.profile_id);
+        const availableBalance = balanceInfo.available_balance;
+        const inProgressFeeTotal = balanceInfo.in_progress_fee_total;
+
+        const hasEnoughBalance = billableDepositFee <= availableBalance;
+
+        const toUpdate = {
+            user_id: transactionRecord.user_id,
+            currency: transactionRecord.currency,
+            amount: billableDepositFee,
+            status: FeeTransactionStatus.IN_PROGRESS
+        }
+        const feeRecord = await updateTransactionFeeRecord(transactionId, toUpdate);
         
-        return billableDepositFee <= balanceRecord.balance;
+        if(hasEnoughBalance && billableDepositFee > (availableBalance - inProgressFeeTotal)){
+            await sendSlackTransferBalanceAlert(billingInfo.profile_id, feeRecord.id, availableBalance, inProgressFeeTotal);
+        }
+
+        return hasEnoughBalance;
     }catch(error){
-        await createLog("hasEnoughBalanceForTransactionFee", null, `Failed to check if user has enough balance for transaction fee for transaction: ${transactionId} with type: ${transactionType}`, error);
+        await createLog("checkBalanceForTransactionFee", null, `Failed to check if user has enough balance for transaction fee for transaction: ${transactionId} with type: ${transactionType}`, error);
         throw error;
     }
 
@@ -143,6 +159,6 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
 
 module.exports = {
     chargeTransactionFee,
-    hasEnoughBalanceForTransactionFee,
+    checkBalanceForTransactionFee,
     syncTransactionFeeRecordStatus
 }
