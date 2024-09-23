@@ -138,7 +138,7 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
     try{
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
-        const voidStatuses = ["REFUNDED", "FAILED", "CANCELED", "NOT_INITIATED"];
+        const voidStatuses = ["REFUNDED", "FAILED", "CANCELLED", "NOT_INITIATED"];
         const statusContainsVoidStatus = (status) => {
             return voidStatuses.some(voidStatus => status.includes(voidStatus));
         };

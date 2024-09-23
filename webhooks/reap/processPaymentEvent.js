@@ -28,7 +28,7 @@ const processPaymentEvent = async(event) => {
         }else if (event.status == "payout_completed"){
             toUpdate.transaction_status = "COMPLETED"
         }else if (event.status == "canceled"){
-            toUpdate.transaction_status = "CANCELED"
+            toUpdate.transaction_status = "CANCELLED"
         }else if (event.status == "failed"){
             toUpdate.transaction_status = "FAILED_UNKNOWN"
             toUpdate.failed_reason = "Please reach out to HIFI for more information"
