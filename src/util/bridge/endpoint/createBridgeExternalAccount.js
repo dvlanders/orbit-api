@@ -31,7 +31,7 @@ exports.createBridgeExternalAccount = async (
 	userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 	beneficiaryFirstName, beneficiaryLastName, beneficiaryBusinessName,
 	beneficiaryStreetLine1, beneficiaryStreetLine2, beneficiaryCity, beneficiaryStateCode, beneficiaryPostalCode, beneficiaryCountryCode,
-	ibanAccountNumber, businessIdentifierCode, bankCountryCode, accountNumber, routingNumber
+	ibanAccountNumber, businessIdentifierCode, bankCountryCode, accountNumber, routingNumber, paymentRail
 ) => {
 
 	try {
@@ -95,20 +95,27 @@ exports.createBridgeExternalAccount = async (
 			bodyObject.business_name = beneficiaryBusinessName;
 		}
 
+        const address = {  
+            street_line_1: beneficiaryStreetLine1,  
+            street_line_2: beneficiaryStreetLine2,  
+            city: beneficiaryCity,  
+            state: beneficiaryStateCode,  
+            postal_code: beneficiaryPostalCode,  
+            country: beneficiaryCountryCode  
+        };  
+
 		if (accountNumber && routingNumber) {
 			bodyObject.account = {
 				account_number: accountNumber,
 				routing_number: routingNumber
 			};
-			bodyObject.address = {
-				street_line_1: beneficiaryStreetLine1,
-				street_line_2: beneficiaryStreetLine2,
-				city: beneficiaryCity,
-				state: beneficiaryStateCode,
-				postal_code: beneficiaryPostalCode,
-				country: beneficiaryCountryCode
-			};
+			bodyObject.address = address;
 		}
+
+        if (paymentRail && ["wire", "swift"].includes(paymentRail)) {
+            if (!bodyObject.address)
+                bodyObject.address = address;
+        }
 
 
 		const bridgeResponse = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/external_accounts`, {

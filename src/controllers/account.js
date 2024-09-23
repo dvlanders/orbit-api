@@ -1176,12 +1176,15 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
 			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
 		if (!externalAccountExist) {
+            // specify payment rail
+            const paymentRail = accountType === 'us' ? 'wire' : 'swift';
+
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
 				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
-				accountNumber, routingNumber
+				accountNumber, routingNumber, paymentRail
 			);
 
 			if (bridgeAccountResult.status !== 200) {
