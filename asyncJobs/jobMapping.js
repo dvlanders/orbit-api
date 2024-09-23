@@ -18,6 +18,7 @@ const { cryptoToFiatTransferSandboxScheduleCheck } = require("./sandbox/cryptoTo
 const { cryptoToFiatTransferSandboxAsync } = require("./sandbox/cryptoToFiatTransfer/cryptoToFiatTransfer");
 const { cryptoToCryptoTransferSandboxScheduleCheck } = require("./sandbox/cryptoToCryptoTransfer/scheduleCheck");
 const { cryptoToCryptoTransferSandboxAsync } = require("./sandbox/cryptoToCryptoTransfer/cryptoToCryptoTransfer");
+const { retryBridgeCustomerCreation, retryBridgeCustomerCreationCheck } = require("./user/retryBridgeCustomerCreation");
 
 
 exports.jobMapping = {
@@ -76,6 +77,10 @@ exports.jobMapping = {
 	cryptoToCryptoTransferSandbox: {
 		scheduleCheck: cryptoToCryptoTransferSandboxScheduleCheck,
 		execute: cryptoToCryptoTransferSandboxAsync
+	},
+	retryBridgeCustomerCreation: {
+		scheduleCheck: retryBridgeCustomerCreationCheck,
+		execute: retryBridgeCustomerCreation
 	}
 }
 

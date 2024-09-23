@@ -9,7 +9,12 @@ CryptoToFiatTransferBody:
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToFiatTransfer'
+        oneOf:
+          - $ref: '#/components/schemas/ACHCryptoToFiatTransfer'
+          - $ref: '#/components/schemas/SEPACryptoToFiatTransfer'
+          - $ref: '#/components/schemas/WIRECryptoToFiatTransfer'
+          - $ref: '#/components/schemas/PIXCryptoToFiatTransfer'
+          - $ref: '#/components/schemas/SWIFTCryptoToFiatTransfer'
 FiatToCryptoTransferBody:
   required: true
   content:
