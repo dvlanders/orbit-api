@@ -7,7 +7,7 @@ module.exports = (router) => {
     // router.post("/dashboard/billing/setup-intent/verify-micro-deposits", authorizeDashboard, requiredAdmin, logRequestResponse, billing.verifyMicroDeposits);
     router.post("/dashboard/billing/autopay", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.setUpAutoPay);
     router.post("/dashboard/billing/checkout-session", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.createCheckoutSession);
-    router.post("/dashboard/billing/checkout-session/expire", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.expireCheckoutSession);
+    router.put("/dashboard/billing/checkout-session/expire", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.expireCheckoutSession);
     router.get("/dashboard/billing/credit-balance", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.getCreditBalance)
     router.get("/dashboard/billing/credit-balance/history", authorizeDashboard, requiredProdDashboard, requiredAdmin ,logRequestResponse, billing.getCreditBalanceTopupsHistory)
 
