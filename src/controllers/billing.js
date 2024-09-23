@@ -16,8 +16,20 @@ exports.createSetupIntent = async (req, res) => {
   }
 
   const { profileId } = req.query;
+  const { chargeOnCreation } = req.body;
 
   try {
+    const requiredFields = [];
+    const acceptedFields = {
+      chargeOnCreation: "boolean",
+    };
+    const { missingFields, invalidFields } = fieldsValidation(req.body, requiredFields, acceptedFields);
+    if (missingFields.length > 0 || invalidFields.length > 0)
+      return res.status(400).json({ 
+        error: `fields provided are either missing or invalid`,
+        missingFields: missingFields,
+        invalidFields: invalidFields,
+      });
     const billingInfo = await getProfileBillingInfo(profileId);
     if (!billingInfo) return res.status(400).json({ error: `Billing info for profile id (${profileId}) not found. You need to add billing info first before adding a payment.`});
     if (!billingInfo.stripe_customer_id) return res.status(500).json({ error: `Billing info for profile id (${profileId}) somehow doesn't have Stripe customer id. Please contact support.`});
@@ -31,7 +43,7 @@ exports.createSetupIntent = async (req, res) => {
         },
       },
       metadata: {
-        type: "onboard",
+        type: chargeOnCreation ? "onboard" : "addPayment",
         profileId: profileId,
       },
     });
