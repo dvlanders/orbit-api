@@ -199,9 +199,8 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 const createReapCryptoToFiatTransfer = async (config) => {
 
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount } = config
-	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
-    if (feeType || feeValue) return CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee is not available for this rail") 
-	//insert request record
+	
+    //insert request record
 	const {record:initialTransferRecord, feeRecord} = await initTransferData(config)
 
     // create quote and update record
