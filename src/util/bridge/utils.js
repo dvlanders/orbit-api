@@ -1,8 +1,31 @@
 const createLog = require("../logger/supabaseLogger");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
+const { CustomerStatus } = require("../user/common");
 
 const NODE_ENV = process.env.NODE_ENV
+
+const pendingResult = (message) => {
+	return {
+		status: 200,
+		customerStatus: {
+			status: CustomerStatus.PENDING,
+			actions: [],
+			fields: []
+		},
+		usRamp: {
+			status: CustomerStatus.PENDING,
+			actions: [],
+			fields: []
+		},
+		euRamp: {
+			status: CustomerStatus.PENDING,
+			actions: [],
+			fields: []
+		},
+		message: message || "kyc aplication still under review"
+	}
+}
 
 const bridgeFieldsToRequestFields = {
 	first_name: "legalFirstName",
@@ -248,5 +271,6 @@ module.exports = {
 	virtualAccountPaymentRailToChain,
 	extractActionsAndFields,
 	chainToVirtualAccountPaymentRail,
-	getBridgeUserId
+	getBridgeUserId,
+	pendingResult
 }
