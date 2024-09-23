@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const { safeParseBody } = require("../src/util/utils/response");
 
 
-const sendMessage = async(profileId, requestBody, eventId=v4(), numberOfRetries=1, firstRetry=new Date()) => {
+const sendMessage = async(profileId, requestBody, eventId=v4(), numberOfRetries=1, firstRetry=new Date(), insertToQueueIfFail=true) => {
     // prevent message send  in local development
     if (process.env.WEBHOOK_DISABLE && process.env.WEBHOOK_DISABLE === "TRUE") return
     
@@ -36,18 +36,20 @@ const sendMessage = async(profileId, requestBody, eventId=v4(), numberOfRetries=
         passphrase: passphrase,
       });
     
+    // send message
+    let response, responseBody, toSend, success
     try {
-        const toSend = {
+        toSend = {
+            ...requestBody,
             eventId,
             timestamp: new Date().toISOString(),
-            ...requestBody
         }
         // try sending the webhook message
         const token = jwt.sign(requestBody, privateKey, {
             algorithm: 'RS256',
             expiresIn: '1h'
           });
-        const response = await fetch(webhookUrl.webhook_url, {
+        response = await fetch(webhookUrl.webhook_url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -56,23 +58,29 @@ const sendMessage = async(profileId, requestBody, eventId=v4(), numberOfRetries=
             body: JSON.stringify(toSend)
         })
 
-        const responseBody = await safeParseBody(response)
-
-        // insert history
-        await insertToHistory(profileId, toSend, eventId, response, responseBody)
+        responseBody = await safeParseBody(response)
 
         if (!response.ok){
             // queue the message
             // insert record in queue
-            await insertWebhookMessageToQueue(profileId, requestBody, eventId, numberOfRetries, firstRetry)
+            if (insertToQueueIfFail) await insertWebhookMessageToQueue(profileId, requestBody, eventId, numberOfRetries, firstRetry)
+            success = false
+        }else{
+            success = true
         }
         
     }catch (error){
         await createLog("webhook/sendMessage", null, error.message, error, profileId)
         // queue the message
         // insert record in queue
-        await insertWebhookMessageToQueue(profileId, requestBody, eventId, numberOfRetries, firstRetry)
+        if (insertToQueueIfFail) await insertWebhookMessageToQueue(profileId, requestBody, eventId, numberOfRetries, firstRetry)
+        success = false
+    }finally{
+        // insert history
+        await insertToHistory(profileId, toSend, eventId, response || {}, responseBody || {})
     }
+
+    return success
 
 }
 

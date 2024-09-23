@@ -10,7 +10,7 @@ const deleteWebhookMessage = async(id) => {
         .from('webhook_queue')
         .delete()
         .eq("id", id)
-        .single()
+        .select("*")
     
         if (error) throw error
     }catch (error){
@@ -29,6 +29,7 @@ const pollWebhookRetry = async() => {
         processing: true
     })
     .lt('next_retry', now.toISOString())
+    .gt('first_retry', new Date(now.getTime() - dayAfterCreated * 24 * 60 * 60 * 1000).toISOString())
     .eq("processing", false)
     .select("*")
     .order('next_retry', {ascending: true})
@@ -39,13 +40,13 @@ const pollWebhookRetry = async() => {
     }
 
     await Promise.all(webhookQueue.map(async(message) => {
-        if (new Date(message.first_retry) <= new Date(now.getTime() - dayAfterCreated * 24 * 60 * 60 * 1000)) {
-            // exceed retyr limit
+        try{
+            await sendMessage(message.profile_id, message.request_body, message.event_id, message.number_of_retries, message.first_retry)
             await deleteWebhookMessage(message.id)
+        }catch(error){
+            await createLog("pollWebhookRetry", null, error.message, error)
             return
         }
-        await sendMessage(message.profile_id, message.request_body, message.event_id, message.number_of_retries, message.first_retry)
-        await deleteWebhookMessage(message.id)
     }))
         
 }
