@@ -1,3 +1,4 @@
+const { v4 } = require("uuid")
 const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
 const { reSendMessage, sendMessage } = require("../../webhooks/sendWebhookMessage")
@@ -41,7 +42,8 @@ const pollWebhookRetry = async() => {
 
     await Promise.all(webhookQueue.map(async(message) => {
         try{
-            await sendMessage(message.profile_id, message.request_body, message.event_id, message.number_of_retries, message.first_retry)
+            const eventId = message.event_id || message.request_body.eventId || v4()
+            await sendMessage(message.profile_id, message.request_body, eventId, message.number_of_retries, message.first_retry)
             await deleteWebhookMessage(message.id)
         }catch(error){
             await createLog("pollWebhookRetry", null, error.message, error)
