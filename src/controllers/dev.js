@@ -93,6 +93,7 @@ exports.testwebhook = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     try {
+        // return res.status(500).json({message: "test failed"})
         console.log("received")
         const token = req.headers['authorization'].split(' ')[1];
         const public_key = process.env.INTERNAL_WEBHOOK_PUBLICKEY
@@ -114,10 +115,52 @@ exports.testwebhook = async(req, res) => {
 
 exports.testSendMessage = async(req, res) => {
     try{
-
-        const profileId = "e00d8e99-6d88-4f9c-98b3-c144bdec009c"
-        const message = {message: "hello"}
-        await sendMessage(profileId, message)
+        const now = new Date()
+        const profileId = "e37f17be-1369-4853-8026-65e9903bd430"
+        const message = {
+            "data": {
+              "transferType": "FIAT_TO_CRYPTO",
+              "transferDetails": {
+                "id": "d2bab9bf-4d77-42dc-9802-0e21613155da",
+                "fee": null,
+                "chain": "POLYGON_MAINNET",
+                "amount": 1,
+                "status": "FIAT_CONFIRMED",
+                "createdAt": "2024-09-08T20:28:13.382987+00:00",
+                "requestId": "0fb5e0c2-aa64-4606-9ae0-ffa15714543b",
+                "updatedAt": "2024-09-13T12:45:01.081+00:00",
+                "sourceUser": {
+                  "businessName": null,
+                  "legalLastName": "YANG",
+                  "legalFirstName": "William",
+                  "complianceEmail": "william@hifibridge.com"
+                },
+                "sourceUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+                "sourceAccount": {
+                  "id": "0de2ae79-737d-4266-8c7d-ec82df476d3a",
+                  "bankName": "Bank of America",
+                  "accountNumber": "7874",
+                  "routingNumber": "021000322"
+                },
+                "sourceCurrency": "usd",
+                "destinationUser": {
+                  "businessName": null,
+                  "legalLastName": "YANG",
+                  "legalFirstName": "William",
+                  "complianceEmail": "william@hifibridge.com"
+                },
+                "sourceAccountId": "0de2ae79-737d-4266-8c7d-ec82df476d3a",
+                "transactionHash": null,
+                "destinationUserId": "75d7c01f-5f93-4490-8b93-a62fd8020358",
+                "destinationCurrency": "usdc"
+              }
+            },
+            "eventId": "3d1f5348-2339-45f4-b339-4947e45e6f72",
+            "eventType": "TRANSFER.FIAT_TO_CRYPTO",
+            "timestamp": "2024-09-13T12:45:01.901Z",
+            "eventAction": "UPDATE"
+          }
+        await sendMessage(profileId, message, "3d1f5348-2339-45f4-b339-4947e45e6f72")
         return res.status(200).json({message: "success"})
     }catch (error){
         console.error(error)
