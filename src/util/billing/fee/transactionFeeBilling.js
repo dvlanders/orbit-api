@@ -69,8 +69,10 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
         if(transactionRecord.status != "COMPLETED" && transactionRecord.status != "CONFIRMED") return;
 
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
-        if(!billingInfo) return; // if the customer doesn't have a billing info, just pass
+        if(!billingInfo) throw new Error("Billing info not found");
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
+        const balanceRecord = await getBalance(billingInfo.profile_id);
+        if(!balanceRecord) throw new Error("Balance record not found");
 
         const toUpdate = {
             user_id: transactionRecord.user_id,
@@ -81,7 +83,9 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
 
         const feeRecord = await updateTransactionFeeRecord(transactionId, toUpdate);
 
-        await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
+        if(feeRecord.amount > 0){
+            await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
+        }
         
         await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.COMPLETED});
 
