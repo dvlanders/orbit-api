@@ -80,14 +80,6 @@ exports.createBridgeExternalAccount = async (
 			account_owner_type: accountOwnerType,
 		};
 
-		if (ibanAccountNumber && businessIdentifierCode && bankCountryCode) {
-			bodyObject.iban = {
-				account_number: ibanAccountNumber,
-				bic: businessIdentifierCode,
-				country: bankCountryCode
-			};
-		}
-
 		if (accountOwnerType === 'individual') {
 			bodyObject.first_name = beneficiaryFirstName;
 			bodyObject.last_name = beneficiaryLastName;
@@ -112,11 +104,16 @@ exports.createBridgeExternalAccount = async (
 			bodyObject.address = address;
 		}
 
-        if (paymentRail && ["wire", "swift"].includes(paymentRail)) {
+        // if iban accoun type
+        if (ibanAccountNumber && businessIdentifierCode && bankCountryCode) {
+			bodyObject.iban = {
+				account_number: ibanAccountNumber,
+				bic: businessIdentifierCode,
+				country: bankCountryCode
+			};
             if (!bodyObject.address)
                 bodyObject.address = address;
-        }
-
+		}
 
 		const bridgeResponse = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/external_accounts`, {
 			method: 'POST',
