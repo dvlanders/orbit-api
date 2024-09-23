@@ -19,7 +19,7 @@ const validateReapTransferParams = async (config) => {
 
     if (amount < 1) {
         validationRes.invalidFieldsAndMessages.push({
-            invalidFields: [amount],
+            invalidFields: ["amount"],
             errorMessage: "Transfer amount must be greater than or equal to 1.",
         });
         validationRes.valid = false;
@@ -42,7 +42,7 @@ const validateBlindPayTransferParams = async (config) => {
 
     if (amount < 10 || amount > 1000) {
         validationRes.invalidFieldsAndMessages.push({
-            invalidFields: [amount],
+            invalidFields: ["amount"],
             errorMessage:
                 "Transfer amount must be between 10 and 1000.",
         });
