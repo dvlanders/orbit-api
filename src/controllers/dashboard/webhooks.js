@@ -111,7 +111,7 @@ exports.resendWebhookMessage = async(req, res) => {
         if (type == "QUEUE") {
             result = await resendFromQueue(recordId, profileId)
         }
-        if (type == "HISTORY") {
+        else if (type == "HISTORY") {
             result = await resendFromHistory(recordId, profileId)
         }
 
