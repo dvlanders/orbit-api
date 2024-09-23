@@ -52,7 +52,7 @@ async function uploadFileFromUrl(fileUrl, bucketName, filePath, acceptedFileType
 
 	// Check the file size for file < 10 kb
 	if (fileBlob.size < MIN_FILE_SIZE_BYTES) {
-		throw new fileUploadError(fileUploadErrorType.FILE_TOO_LARGE, `File size ${fileBlob.size / 1024}KB is less than the minimum allowed size of ${MIN_FILE_SIZE_BYTES / 1024}KB.`);
+		throw new fileUploadError(fileUploadErrorType.FILE_TOO_SMALL, `File size ${fileBlob.size / 1024}KB is less than the minimum allowed size of ${MIN_FILE_SIZE_BYTES / 1024}KB.`);
 	}
 
 	try {

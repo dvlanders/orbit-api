@@ -341,7 +341,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 
 	} catch (error) {
 		await createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
-		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE || fileUploadErrorType.FAILED_TO_FETCH)) {
+		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.FILE_TOO_SMALL || error.type == fileUploadErrorType.INVALID_FILE_TYPE || fileUploadErrorType.FAILED_TO_FETCH)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
 		// internal server error
@@ -465,7 +465,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		} catch (error) {
 			console.error(error)
 			await createLog("user/util/informationUploadForCreateUser", userId, error.message, error)
-			if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
+			if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.FILE_TOO_SMALL || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 				throw new InformationUploadError(error.type, 400, "", { error: error.message })
 			}
 
@@ -549,7 +549,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 
 	} catch (error) {
 		await createLog("user/util/informationUploadForUpdateUser", userId, error.message, error)
-		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
+		if (error.type && (error.type == fileUploadErrorType.FILE_TOO_LARGE || error.type == fileUploadErrorType.FILE_TOO_SMALL || error.type == fileUploadErrorType.INVALID_FILE_TYPE)) {
 			throw new InformationUploadError(error.type, 400, "", { error: error.message })
 		}
 		// internal server error
@@ -573,13 +573,13 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 }
 
 const ipCheck = async (ip) => {
-    // request options
-    const options = {  
-        method: 'GET',  
-        headers: {  
-            'Authorization': 'Basic ' + Buffer.from(`${process.env.MAXMIND_ACCOUNT_ID}:${process.env.MAXMIND_LICENSE_KEY}`).toString('base64')  
-        }  
-    };
+	// request options
+	const options = {
+		method: 'GET',
+		headers: {
+			'Authorization': 'Basic ' + Buffer.from(`${process.env.MAXMIND_ACCOUNT_ID}:${process.env.MAXMIND_LICENSE_KEY}`).toString('base64')
+		}
+	};
 
 	const locationRes = await fetch(`https://geolite.info/geoip/v2.1/city/${ip}`, options);
 	const locationData = await locationRes.json();
@@ -591,9 +591,9 @@ const ipCheck = async (ip) => {
 			return false
 		}
 		if (locationData.country.iso_code == "US" && (!locationData.subdivisions || !isArray(locationData.subdivisions) || !allowedUsState.includes(locationData.subdivisions[0]['iso_code']))) {
-            console.log("not supported")
-            return false
-        }
+			console.log("not supported")
+			return false
+		}
 	} else {
 		console.error(locationData)
 		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData)
