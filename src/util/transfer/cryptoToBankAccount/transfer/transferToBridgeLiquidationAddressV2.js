@@ -33,7 +33,7 @@ const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference } = config
 
 
 
@@ -63,7 +63,7 @@ const initTransferData = async (config) => {
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
 			bastion_user_id: sourceBastionUserId,
-			same_day_ach: paymentRail == "sameDayAch",
+			same_day_ach: !!sameDayAch,
 			ach_reference: achReference,
 			sepa_reference: sepaReference,
 			wire_message: wireMessage,

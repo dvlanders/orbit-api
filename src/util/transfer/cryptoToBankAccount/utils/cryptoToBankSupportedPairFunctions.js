@@ -46,24 +46,6 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
-	sameDayAch: {
-		usdc: {
-			usd: {
-				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer,
-                validationFunc: validateBridgeTransferParams
-			},
-		},
-		usdt: {
-			usd: {
-				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer,
-                validationFunc: validateBridgeTransferParams
-			},
-		}
-	},
 	sepa: {
 		usdc: {
 			eur: {
