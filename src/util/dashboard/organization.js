@@ -49,9 +49,10 @@ const getCreditBalance = async(profileId) => {
         .from("balance")
         .select("updated_at, balance, monthly_minimum: billing_info_id(monthly_minimum)")
         .eq("profile_id", profileId)
-        .single()
+        .maybeSingle()
     
     if (balanceError) throw balanceError
+    if (!balance) return null
     const _balance = {
         ...balance,
         monthly_minimum: balance.monthly_minimum.monthly_minimum
