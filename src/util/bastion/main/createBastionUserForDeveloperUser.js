@@ -30,9 +30,12 @@ class BastionError extends Error {
  */
 async function createBastionDeveloperWallet(userId, type) {
 	const bastionUserId = `${userId}-${type}`
-	// need to create two set of wallet
 	const response = await createUser(bastionUserId)
 	const data = await response.json();
+
+	if (response.status == 409) {
+		throw new BastionError(data.message, data.details, response.status);
+	}
 
 	if (response.status !== 201) {
 		throw new BastionError(data.message, data.details, response.status);
@@ -93,5 +96,23 @@ async function createBastionDeveloperUser(userId) {
 	}
 }
 
+async function createBastionDeveloperUserWithType(userId, type) {
+	try {
+		// create wallet
+		await Promise.all([
+			createBastionDeveloperWallet(userId, type),
+		])
 
-module.exports = { createBastionDeveloperUser, createBastionDeveloperWallet };
+		// submit kyc
+		await Promise.all([
+			submitBastionKycForDeveloper(userId, type),
+		])
+
+	} catch (error) {
+		await createLog("bastion/createBastionDeveloperUser", userId, error.message)
+		throw error
+	}
+}
+
+
+module.exports = { createBastionDeveloperUser, createBastionDeveloperWallet, createBastionDeveloperUserWithType };
