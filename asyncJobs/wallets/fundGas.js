@@ -24,7 +24,7 @@ const fundGas = async(config) => {
     try{
         const chain = config.chain
         const result = await fundUserGasFee(config.userId, config.amount, chain, config.walletType || "INDIVIDUAL")
-        if (!result) throw new Error("Failed to fund Matic")
+        if (!result) throw new Error("Failed to fund GAS")
     }catch (error){
         await createLog("asyncJob/fundGas", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, undefined, undefined, true)

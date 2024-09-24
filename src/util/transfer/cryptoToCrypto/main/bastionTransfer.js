@@ -34,7 +34,7 @@ const insertRecord = async(fields) => {
     if (!paymentProcessorContractAddress) {
         // no paymentProcessorContract available
         const toUpdate = {
-            status: "FAILED",
+            status: "NOT_INITIATED",
             failed_reason: `Fee feature not available for ${fields.currency} on ${fields.chain}`
         }
         const record = await updateRequestRecord(requestRecord.id, toUpdate)
@@ -124,7 +124,7 @@ const transferWithoutFee = async(record, profileId) => {
          // update to database
         const toUpdate = {
             bastion_response: responseBody,
-            status: "FAILED",
+            status: "NOT_INITIATED",
             failed_reason: message
         }
         await updateRequestRecord(record.id, toUpdate)

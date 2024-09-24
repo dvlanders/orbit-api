@@ -1,3 +1,6 @@
+const { resendFromQueue, resendFromHistory } = require("../../../webhooks/manualResendWebhookMessage")
+const { fieldsValidation, isUUID } = require("../../util/common/fieldsValidation")
+const { inStringEnum } = require("../../util/common/filedValidationCheckFunctions")
 const createLog = require("../../util/logger/supabaseLogger")
 const supabaseSandbox = require("../../util/sandboxSupabaseClient")
 const supabase = require("../../util/supabaseClient")
@@ -84,5 +87,40 @@ exports.getAllWebhookHistory = async(req, res) => {
     }catch (error){
         await createLog("dahsboard/getAllWebhookHistory", null, error.message, error, profileId)
         return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.resendWebhookMessage = async(req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+    const {profileId} = req.query
+    const {recordId, type} = req.body
+
+    try{
+        const requiredFields = ["recordId", "type"]
+        const acceptedFields = {
+            recordId: (value) => isUUID(value),
+            type: (value) => inStringEnum(value, ["QUEUE", "HISTORY"])
+        }
+        const {missingFields, invalidFields} = fieldsValidation(req.body, requiredFields, acceptedFields)
+        if (missingFields.length > 0 || invalidFields.length > 0) {
+			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
+		}
+
+        let result
+        if (type == "QUEUE") {
+            result = await resendFromQueue(recordId, profileId)
+        }
+        else if (type == "HISTORY") {
+            result = await resendFromHistory(recordId, profileId)
+        }
+
+        if (result && result.error) return res.status(result.error.status).json({message: result.error.message})
+        
+        return res.status(200).json({message: "Resend success"})
+
+    }catch (error){
+        await createLog("dashboard/resendWebhookMessage", null, error.message, error, profileId)
+        return res.status(500).json({message: "Unexpected error happened"})
     }
 }

@@ -7,16 +7,17 @@ const { v4 } = require('uuid');
 const insertWebhookMessageToQueue = require("./insertToQueue");
 const insertToHistory = require("./insertToHistory");
 const crypto = require('crypto');
+const { safeParseBody } = require("../src/util/utils/response");
 
 
-const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=new Date()) => {
+const sendMessage = async(profileId, requestBody, eventId=v4(), numberOfRetries=1, firstRetry=new Date(), insertToQueueIfFail=true) => {
     // prevent message send  in local development
     if (process.env.WEBHOOK_DISABLE && process.env.WEBHOOK_DISABLE === "TRUE") return
     
     //get client webhook url and secret
     let { data: webhookUrl, error: webhookUrlError } = await supabaseCall(() => supabase
         .from('webhook_urls')
-        .select('webhook_url, webhook_signing_secret')
+        .select('webhook_url, webhook_signing_secret, enabled')
         .eq("profile_id", profileId)
         .maybeSingle())
     
@@ -24,7 +25,7 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         await createLog("webhook/sendMessage", null, webhookUrlError.message, webhookUrlError, profileId)
         return
     }
-    if (!webhookUrl) return
+    if (!webhookUrl || !webhookUrl.enabled) return
     const encryptedPrivateKey = webhookUrl.webhook_signing_secret.replace(/\\n/g, '\n')
     const passphrase = process.env.WEBHOOK_ENCRYPTION_SECRET
     if (!passphrase) throw new Error("No passphrase found")
@@ -34,20 +35,21 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
         format: 'pem',
         passphrase: passphrase,
       });
-
+    
+    // send message
+    let response, responseBody, toSend, success
     try {
-        const eventId = v4()
-        const toSend = {
+        toSend = {
+            ...requestBody,
             eventId,
             timestamp: new Date().toISOString(),
-            ...requestBody
         }
         // try sending the webhook message
         const token = jwt.sign(requestBody, privateKey, {
             algorithm: 'RS256',
             expiresIn: '1h'
           });
-        const response = await fetch(webhookUrl.webhook_url, {
+        response = await fetch(webhookUrl.webhook_url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -55,23 +57,30 @@ const sendMessage = async(profileId, requestBody, numberOfRetries=1, firstRetry=
             },
             body: JSON.stringify(toSend)
         })
-        const responseBody = await response.json()
 
-        // insert history
-        await insertToHistory(profileId, toSend, eventId, response, responseBody)
+        responseBody = await safeParseBody(response)
 
         if (!response.ok){
             // queue the message
             // insert record in queue
-            await insertWebhookMessageToQueue(profileId, requestBody, numberOfRetries, firstRetry)
+            if (insertToQueueIfFail) await insertWebhookMessageToQueue(profileId, requestBody, eventId, numberOfRetries, firstRetry)
+            success = false
+        }else{
+            success = true
         }
         
     }catch (error){
         await createLog("webhook/sendMessage", null, error.message, error, profileId)
         // queue the message
         // insert record in queue
-        await insertWebhookMessageToQueue(profileId, requestBody, numberOfRetries, firstRetry)
+        if (insertToQueueIfFail) await insertWebhookMessageToQueue(profileId, requestBody, eventId, numberOfRetries, firstRetry)
+        success = false
+    }finally{
+        // insert history
+        await insertToHistory(profileId, toSend, eventId, response || {}, responseBody || {})
     }
+
+    return success
 
 }
 

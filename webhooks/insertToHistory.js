@@ -7,7 +7,7 @@ const insertToHistory = async(profileId, requestBody, eventId, response, respons
     const { data: webhookHistory, error: webhookHistoryError } = await supabaseCall(() => supabase
     .from('webhook_history')
     .insert({
-        id: eventId,
+        event_id: eventId,
         request_body: requestBody,
         profile_id: profileId,
         client_response: responseBody,
@@ -16,7 +16,7 @@ const insertToHistory = async(profileId, requestBody, eventId, response, respons
     .select()
     )
     if (webhookHistoryError) {
-        await createLog("webhook/sendMessage", null, webhookHistoryError.message, webhookHistoryError, profileId)
+        await createLog("webhook/insertToHistory", null, webhookHistoryError.message, webhookHistoryError, profileId)
         return
     }
 }

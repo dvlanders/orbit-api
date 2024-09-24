@@ -570,7 +570,7 @@ exports.generateToSLink = async (req, res) => {
 		// fallback to HIFI template
 		if (!templateId) templateId = "2fb2da24-472a-4e5b-b160-038d9dc82a40"
 		// check is template exist
-		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
+		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId does not exist" })
 		let encodedUrl
 		if (redirectUrl) {
 			encodedUrl = `&redirectUrl=${encodeURIComponent(redirectUrl)}`
@@ -663,7 +663,7 @@ exports.createHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/createHifiUserAsync", null, `Failed to Information Upload For CreateUser for profile Id ${profileId}`, error, profileId)
+			await createLog("user/createHifiUserAsync", null, `Failed to upload information for CreateUser for profile Id ${profileId}`, error, profileId)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -786,7 +786,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			await createLog("user/updateHifiUserAsync", userId, `Failed to update information for user Id: ${userId}`, error)
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
@@ -1275,7 +1275,9 @@ exports.getUserWalletBalance = async (req, res) => {
 		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase()
 		if (!currencyContract) return res.status(400).json({ error: "Currency is not supported for the chain" })
 
-		let bastionUserId = userId
+
+		const { bastionUserId: bastionUserId } = await getBastionWallet(userId, chain, "INDIVIDUAL")
+
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 
