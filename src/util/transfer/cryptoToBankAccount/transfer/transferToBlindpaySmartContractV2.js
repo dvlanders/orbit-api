@@ -239,8 +239,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 const createTransferToBlindpaySmartContract = async (config) => {
     const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType } = config
-    if (amount < 10) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 10.")
-    if (feeType || feeValue > 0) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Fee collection feature is not yet available for this route")
+    
     const { isExternalAccountExist, blindpayAccountId, destinationUserId } = await blindpayRailCheck(destinationAccountId)
     if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 	config.blindpayAccountId = blindpayAccountId

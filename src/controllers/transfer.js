@@ -258,14 +258,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		let paymentRail = accountInfo.payment_rail
 		const destinationUserId = accountInfo.user_id
 
-		// if accountInfo.paymentRail is "ach" and the "sameDayAch" is true, then set the paymentRail to "sameDayAch"
-		// refactor the below to return a 400 error if sameDayAch is true, but payment_rail is not "ach"
-		if (accountInfo.payment_rail == "ach" && sameDayAch) {
-			paymentRail = "sameDayAch"
-		} else if (sameDayAch && !accountInfo.payment_rail == "ach") {
-			return res.status(400).json({ error: `sameDayAch is only available for ACH transfers, but the destinationAccountId passed was not for an ACH account.` })
-		}
-
 		// get user wallet
 		// fetch sender wallet address information
 		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -286,11 +278,13 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-		const { transferFunc } = funcs
-		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc, validationFunc } = funcs
+		if (!transferFunc || !validationFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
-
-		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
+        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch });
+        if (!validationRes.valid) return res.status(400).json({ error: `fields provided are invalid`, invalidFieldsAndMessages: validationRes.invalidFieldsAndMessages })
+        
+        const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 
 		const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
