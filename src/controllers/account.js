@@ -320,9 +320,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		});
 
 		recordId = externalAccountRecordId;
-
 		if (!externalAccountExist) {
-
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'iban', currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
@@ -365,6 +363,8 @@ exports.createEuroOfframpDestination = async (req, res) => {
 					iban: ibanAccountNumber,
 					business_identifier_code: businessIdentifierCode,
 					bank_country: ibanCountryCode,
+					bridge_response: bridgeAccountResult.rawResponse,
+					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 
 				})
 
@@ -381,6 +381,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 				id: accountProviderRecord.id
 			});
 		} else {
+
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
 				.select('id, payment_rail')
