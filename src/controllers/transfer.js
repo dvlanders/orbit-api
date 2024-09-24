@@ -970,3 +970,64 @@ exports.getTransfers = async (req, res) => {
 	}
 
 }
+
+
+exports.createPfiDid = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { userId } = req.body;
+	console.log('createPfiDid');
+	const pfiDidId = "hifiSandboxPfi"
+
+	const { DidDht } = await import('@web5/dids');
+	const pfiDid = await DidDht.create({
+		options: {
+			publish: true,
+			services: [{
+				id: pfiDidId,
+				type: 'PFI',
+				serviceEndpoint: 'https://pfi-sandbox.hifibridge.com/'
+			}]
+		},
+	})
+	console.log('didDht:', pfiDid);
+
+	const portableDid = await pfiDid.export()
+
+	// save the record to supabase
+	const { data, error } = await supabaseCall(() => supabase
+		.from('tbd_decentralized_identifiers')
+		.insert({
+			user_id: userId,
+			did: pfiDid.uri,
+			portable_did: portableDid,
+			did_dht: pfiDid,
+		}
+		)
+		.single())
+
+	if (error) {
+		console.error('Error creating DID:', error);
+		return res.status(500).json({ error: "An unexpected error occurred" });
+	}
+
+
+	console.log('portableDid:', portableDid);
+
+	const did = pfiDid.uri;
+	const didDocument = JSON.stringify(pfiDid.document);
+	console.log('DID:', did);
+	console.log('DID Document:', didDocument);
+
+
+	return res.status(200).json({
+		did: did,
+		didDocument: didDocument
+
+	});
+
+
+
+}
