@@ -2,6 +2,7 @@ const { isUUID, fieldsValidation, isValidISODateFormat } = require("../../util/c
 const { addBillingInfo, updateProfileBillingInfo } = require("../../util/billing/billingInfoService");
 const { isValidEmail, isValidAmount } = require("../../util/common/filedValidationCheckFunctions");
 const { addBaseBalanceRecord } = require("../../util/billing/balance/balanceService");
+const { BillingModelType } = require("../../util/billing/utils");
 const supabase = require("../../util/supabaseClient");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
@@ -67,6 +68,7 @@ exports.addBilling = async (req, res) => {
 
 		await addBaseBalanceRecord(profileId, billingInfo.id);
 
+		await updateProfileBillingInfo(profileId, { billing_model: BillingModelType.BALANCE});
 
 		const customerInfo = {
 			name,

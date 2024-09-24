@@ -6,7 +6,7 @@ const { chargeTransactionFee, syncTransactionFeeRecordStatus } = require('../../
 const updateStatus = async (transaction) => {
 
 	try {
-		console.log('Updating fee transaction status for id:', transaction.id);
+		// console.log('Updating fee transaction status for id:', transaction.id);
 		await syncTransactionFeeRecordStatus(transaction.transaction_id, transaction.transaction_type);
         await chargeTransactionFee(transaction.transaction_id, transaction.transaction_type);
 	} catch (error) {

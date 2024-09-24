@@ -6,7 +6,6 @@ const { autopay } = require("../../src/util/billing/payments");
 const updateStatus = async (balanceInfo) => {
 
 	try {
-        console.log('Checking for autopay for profile:', balanceInfo.profile_id);
         const balance = balanceInfo.balance;
         const billingInfo = balanceInfo.billing_information;
         const balanceAutopayMin = billingInfo.monthly_minimum * billingInfo.autopay_threshold;
@@ -23,9 +22,7 @@ const updateStatus = async (balanceInfo) => {
 
 async function pollAutopayRefill() {
 	try {
-        console.log('Polling for autopay refill');
-		// TODO: Uncomment below line prior to merging
-        // if(process.env.NODE_ENV === "development") return;
+        if(process.env.NODE_ENV === "development") return;
 		const { data: balanceInfos, error: balanceInfosError } = await supabaseCall(() => supabase
 			.from('balance')
             .select('*, billing_information!inner(autopay, monthly_minimum, autopay_threshold, autopay_amount)')

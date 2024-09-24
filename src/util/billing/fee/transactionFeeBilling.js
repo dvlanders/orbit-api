@@ -3,6 +3,7 @@ const { supabaseCall } = require("../../supabaseWithRetry")
 const { getFee } = require("../feeRateMap")
 const { deductBalance, getBalance } = require("../balance/balanceService")
 const { updateTransactionFeeRecord, getOptimisticAvailableBalance } = require("./feeTransactionService")
+const { BillingModelType } = require("../utils")
 const { getProfileBillingInfo } = require("../billingInfoService")
 const { transferType } = require("../../transfer/utils/transfer")
 const { FeeTransactionStatus } = require("./utils")
@@ -63,14 +64,14 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
 
     try{
         // TODO: Uncomment below line prior to merging
-        // if(process.env.NODE_ENV === "development") return;
+        if(process.env.NODE_ENV === "development") return;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
         // don't charge transaction fees for transactions that are not completed
         if(transactionRecord.status != "COMPLETED" && transactionRecord.status != "CONFIRMED") return;
 
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
-        if(!billingInfo) throw new Error("Billing info not found");
+        if(!billingInfo || billingInfo.billing_model !== BillingModelType.BALANCE) throw new Error("Billing info not found");
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
         const balanceRecord = await getBalance(billingInfo.profile_id);
         if(!balanceRecord) throw new Error("Balance record not found");
@@ -101,10 +102,10 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
 
     try{
         // TODO: Uncomment below line prior to merging
-        // if(process.env.NODE_ENV === "development") return true;
+        if(process.env.NODE_ENV === "development") return true;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
-        if(!billingInfo) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
+        if(!billingInfo || billingInfo.billing_model !== BillingModelType.BALANCE) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
 
         const balanceInfo = await getOptimisticAvailableBalance(billingInfo.profile_id);
