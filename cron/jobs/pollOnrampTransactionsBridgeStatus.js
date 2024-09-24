@@ -5,6 +5,8 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const { chargeFeeOnFundReceivedBastion } = require("../../src/util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
+const { chargeTransactionFee } = require("../../src/util/billing/fee/transactionFeeBilling");
+const { transferType } = require("../../src/util/transfer/utils/transfer");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -77,6 +79,11 @@ const updateStatus = async (onrampTransaction) => {
 					if (onrampTransaction.developer_fee_id) {
 						await chargeFeeOnFundReceivedBastion(onrampTransaction.id)
     				}
+
+					if(update.fiat_provider === "MANUAL_DEPOSIT" && update.status === "CONFIRMED"){
+						await chargeTransactionFee(onrampTransaction.id, transferType.FIAT_TO_CRYPTO);
+					}
+
 					await notifyFiatToCryptoTransfer(update)
 					break
 
