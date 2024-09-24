@@ -255,9 +255,10 @@ exports.getCreditBalance = async (req, res) => {
         .from("balance")
         .select("updated_at, balance, billingInfo: billing_info_id(monthly_minimum, autopay, autopay_amount, autopay_threshold)")
         .eq("profile_id", profileId)
-        .single()
+        .maybeSingle()
     
 		if (balanceError) throw balanceError
+    if (!balance) return res.status(200).json({creditBalance: null})
 		const _balance = {
 			...balance,
 			monthly_minimum: balance.billingInfo.monthly_minimum,
