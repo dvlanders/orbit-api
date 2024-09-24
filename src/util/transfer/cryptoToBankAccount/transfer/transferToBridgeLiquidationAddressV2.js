@@ -25,7 +25,7 @@ const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
-const { initial } = require("lodash");
+const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 
@@ -33,7 +33,7 @@ const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference } = config
 
 
 
@@ -63,7 +63,7 @@ const initTransferData = async (config) => {
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
 			bastion_user_id: sourceBastionUserId,
-			same_day_ach: paymentRail == "sameDayAch",
+			same_day_ach: !!sameDayAch,
 			ach_reference: achReference,
 			sepa_reference: sepaReference,
 			wire_message: wireMessage,
@@ -358,9 +358,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
-	console.log(wireMessage)
-
-	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
 
 	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
 	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
@@ -376,6 +373,17 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 
 	// fetch or insert request record
 	const initialTransferRecord = await initTransferData(config)
+
+	if(!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Insufficient balance for transaction fee"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }
+
 	// create Job
 	const jobConfig = {
 		recordId: initialTransferRecord.id

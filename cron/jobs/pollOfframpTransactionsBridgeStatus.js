@@ -133,7 +133,6 @@ const updateStatus = async (transaction) => {
 			return
 		}
 
-		console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
 

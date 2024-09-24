@@ -291,6 +291,77 @@ const newCustomerAccountBlockBuilder = async (fullName, email) => {
   ];
 }
 
+const newTransferBalanceAlertBlockBuilder = async (profileId, feeRecordId, balance, inProgressFeeAmount) => {
+
+  return [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `🚨 Transfer Fee Exceeds (Available Balance - In Progress Fee)`,
+        emoji: true,
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: "👤 *Profile ID*",
+        },
+        {
+          type: "mrkdwn",
+          text: "*Fee Transaction ID*",
+        },
+        {
+          type: "mrkdwn",
+          text: profileId || "N/A",
+        },
+        {
+          type: "mrkdwn",
+          text: feeRecordId || "N/A",
+        },
+      ],
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Available Balance",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: `${balance}`,
+        emoji: true,
+      },
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "In Progress Fee Transactions Total",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: `${inProgressFeeAmount}`,
+        emoji: true,
+      },
+    },
+  ];
+  
+}
+
 const sendSlackReqResMessage = async (request, response) => {
   try {
     const caller = {
@@ -355,8 +426,26 @@ const sendSlackNewCustomerMessage = async (
   }
 };
 
+const sendSlackTransferBalanceAlert = async (profileId, feeRecordId, balance, inProgressFeeAmount) => {
+
+  try {
+    await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: process.env.SLACK_CHANNEL_TRANSFER_BALANCE_ALERT,
+      text: "Transfer Balance Fee Alert",
+      blocks: await newTransferBalanceAlertBlockBuilder(
+        profileId, feeRecordId, balance, inProgressFeeAmount
+      ),
+    });
+  } catch (error) {
+    // console.error(error);
+  }
+
+}
+
 module.exports = {
   sendSlackReqResMessage,
   sendSlackLogMessage,
-  sendSlackNewCustomerMessage
+  sendSlackNewCustomerMessage,
+  sendSlackTransferBalanceAlert
 };

@@ -1,5 +1,6 @@
 const createLog = require("../logger/supabaseLogger")
 const supabase = require("../supabaseClient")
+const { getTotalBalanceTopups } = require("./balance/balanceService")
 const { feeMap } = require("./feeRateMap")
 
 
@@ -51,6 +52,9 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             .lt("last_activity_time", endDate)
         if (activeVirtualAccountError) throw activeVirtualAccountError
 
+        // get total topups
+        const totalTopUps = await getTotalBalanceTopups(profileId, startDate, endDate)
+
         const billingInfo = {
             cryptoPayout:{
                 value: cryptoToCrypto * billingRate.crypto_payout_fee_percent,
@@ -67,6 +71,7 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             monthlyMinimum: billingRate.monthly_minimum,
             integrationFee: billingRate.integration_fee,
             platformFee: billingRate.platform_fee,
+            totalTopUps,
             updatedAt: billingRate.updated_at,
             billingPeriodStart: startDate,
             billingPeriodEnd: endDate
