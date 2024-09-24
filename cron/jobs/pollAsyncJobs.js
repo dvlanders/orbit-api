@@ -40,12 +40,10 @@ const pollAsyncJobs = async() => {
             let jobError
             try{
                 const jobFunc = jobMapping[job.job].execute
-                await jobFunc({...job.config, userId: job.user_id, profileId: job.profile_id})
+                await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
                 await deleteJob(job.id)
                 success = true
             }catch(error){
-                // delete the job before create a new one
-                await deleteJob(job.id)
                 if ((error instanceof JobError && error.logging) || !(error instanceof JobError)){
                     await createLog("pollAsyncJobs", job.user_id, error.message)
                 }
@@ -74,6 +72,8 @@ const pollAsyncJobs = async() => {
                         rawResponse: error,
                     }
                 }
+                // delete the job after create a new one
+                await deleteJob(job.id)
                 success = false
             }finally{
                 await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success, jobError)

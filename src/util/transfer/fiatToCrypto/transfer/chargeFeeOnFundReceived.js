@@ -7,6 +7,7 @@ const createLog = require("../../../logger/supabaseLogger")
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion")
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
 const supabase = require("../../../supabaseClient")
+const { getUserProfileId } = require("../../../user/getUser")
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits")
 const { chargeFeeBastion } = require("./chargeFeeBastion")
 
@@ -58,7 +59,8 @@ exports.chargeFeeOnFundReceivedBastion = async(transferRecordId) => {
             await chargeFeeBastion(onrampRecord, feeRecord, paymentProcessorContractAddress, info)
         }
         // FIXME consider other wallet types
-        await bastionGasCheck(onrampRecord.destination_user_id, chain)
+        const userProfileId = await getUserProfileId(onrampRecord.destination_user_id)
+        await bastionGasCheck(onrampRecord.destination_user_id, chain, "INDIVIDUAL", userProfileId)
 
     }catch(error){
         console.error(error)

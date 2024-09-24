@@ -18,7 +18,7 @@ const gasThreshold = {
     ETHEREUM_MAINNET: BigInt(2 * Math.pow(10, 15))
 }
 
-const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL") => {
+const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId) => {
     try{
         if(chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET){
             console.log(`Don't check gas for TESTNET ${chain}`);
@@ -49,9 +49,12 @@ const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL") => {
         const gasLeft = responseBody.baseAssetBalance.quantity
         // fund 0.1 eth when gas is less than 0.01
         if (BigInt(gasLeft) <= gasThreshold[chain]){
-            const canSchedule = await fundGasScheduleCheck("fundGas", {userId, chain, amount: gasAmount[chain], walletType}, userId)
+            const jobConfig = {
+                userId, chain, amount: gasAmount[chain], walletType, profileId
+            }
+            const canSchedule = await fundGasScheduleCheck("fundGas", jobConfig, userId, profileId)
             if (canSchedule){
-                await createJob("fundGas", {userId, chain, amount: gasAmount[chain], walletType}, userId)
+                await createJob("fundGas", jobConfig, userId, profileId)
             }
             return {needFund: true, fundSubmitted: true, error: false}
         }

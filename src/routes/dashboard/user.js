@@ -11,7 +11,7 @@ module.exports = (router) => {
 
 	router.get("/dashboard/user", authorizeDashboard, requiredProdDashboard, logRequestResponse, user.getHifiUser);
 	router.get("/dashboard/user/developer", authorizeDashboard, requiredProdDashboard, logRequestResponse, user.getDeveloperUserStatus);
-	router.post("/dashboard/user/developer/gas-station-wallet", authorizeDashboard, requiredProdDashboard, logRequestResponse, user.createDeveloperUserGasStationWallet)
+	router.post("/dashboard/user/developer/gas-station-wallet", user.createDeveloperUserGasStationWallet)
 
 	router.put("/dashboard/user", authorizeDashboard, requiredProdDashboard, logRequestResponse, user.updateHifiUser);
 	router.put("/dashboard/user/async", authorizeDashboard, requiredProdDashboard, logRequestResponse, user.updateHifiUserAsync);

@@ -892,8 +892,6 @@ exports.getUserKycInformation = async (req, res) => {
 			ultimate_beneficial_owners: user.ultimate_beneficial_owners
 		}
 
-		console.log(result)
-
 		return res.status(200).json(result)
 
 
@@ -1116,6 +1114,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// get user wallet information, only polygon for now
 		const { walletAddress: feeCollectionWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
 		const { walletAddress: prefundedWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
+		const { walletAddress: gasStationWalletAddress } = await getBastionWallet(userId, Chain.ETHEREUM_MAINNET, "GAS_STATION")
 
 		const userInformation = {
 			legalFirstName: kycInformation.legal_first_name,
@@ -1128,7 +1127,10 @@ exports.getDeveloperUserStatus = async (req, res) => {
 				},
 				PREFUNDED: {
 					POLYGON_MAINNET: prefundedWalletAddress
-				}
+				},
+				GAS_STATION: gasStationWalletAddress ? {
+					ETHEREUM_MAINNET: gasStationWalletAddress
+				} : null
 			}
 		}
 

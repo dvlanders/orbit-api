@@ -73,7 +73,7 @@ const submitKycDataBusiness = async (userId, type) => {
 	return response;
 };
 
-const submitKycDataIndividual = async (userId, type) => {
+const submitKycDataIndividual = async (userId, type, bastionUserId) => {
 
 	// Get user kyc data regardless of type bc we need the ip_address at minimum
 	const { data: userKycData, error: userKycError } = await supabaseCall(() => supabase
@@ -96,7 +96,7 @@ const submitKycDataIndividual = async (userId, type) => {
 
 
 	// Perform the KYC submission
-	const url = `${BASTION_URL}/v1/users/${`${userId}-${type}`}/kyc`;
+	const url = `${BASTION_URL}/v1/users/${bastionUserId}/kyc`;
 	const options = {
 		method: 'POST',
 		headers: {
@@ -120,9 +120,10 @@ function formatDate(dateString) {
 }
 
 
-const submitBastionKycForDeveloper = async (userId, type) => {
+const submitBastionKycForDeveloper = async (userId, type, bastionUserId=undefined) => {
 	try {
-		const response = await submitKycDataIndividual(userId, type)
+		const _bastionUserId = bastionUserId || `${userId}-${type}`
+		const response = await submitKycDataIndividual(userId, type, _bastionUserId)
 		const responseBody = await response.json();
 
 		if (response.ok) {
@@ -131,7 +132,7 @@ const submitBastionKycForDeveloper = async (userId, type) => {
 				.upsert(
 					{
 						user_id: userId,
-						bastion_user_id: `${userId}-${type}`,
+						bastion_user_id: _bastionUserId,
 						kyc_response: responseBody,
 						kyc_passed: responseBody.kycPassed,
 						jurisdiction_check_passed: responseBody.jurisdictionCheckPassed,
