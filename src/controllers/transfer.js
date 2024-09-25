@@ -15,9 +15,13 @@ const { v4 } = require('uuid');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
 const FiatToCryptoSupportedPairFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
+const FiatToFiatSupportedPairFunctionsCheck = require("../util/transfer/fiatToFiat/utils/fiatToFiatSupportedPairFunctions");
+const { checkIsFiatToFiatRequestIdAlreadyUsed, fetchFiatToFiatProvidersInformationById } = require("../util/transfer/fiatToFiat/utils/fiatToFiatTransactionService");
+const { CreateFiatToFiatTransferError, CreateFiatToFiatTransferErrorType } = require("../util/transfer/fiatToFiat/utils/utils");
+const FiatToFiatSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToFiat/utils/fiatToFiatSupportedPairFetchFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed, fetchCryptoToFiatRequestInfortmaionById, fetchCryptoToFiatProvidersInformationById } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
-const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoProvidersInformationById, checkIsFiatToFiatRequestIdAlreadyUsed } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
+const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoProvidersInformationById } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
 const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
@@ -755,123 +759,32 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 
 
 		// check is request id valid
-		const { isAlreadyUsed } = await checkIsFiatToFiatRequestIdAlreadyUsed(requestId, sourceUserId, accountNumber, routingNumber, recipientName, type, sourceAccountId, amount, currency, memo)
+		const { isAlreadyUsed } = await checkIsFiatToFiatRequestIdAlreadyUsed(requestId);
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
-		// get the plaid connected bank account from supabase
 
-		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId)
+		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId);
+		if (!accountInfo || !accountInfo.account_id || accountInfo.provider !== "CHECKBOOK") return res.status(400).json({ error: `No account found for sourceAccountId: ${sourceAccountId}` });
 
+		const sourceCurrency = accountInfo.currency;
+		const destinationCurrency = accountInfo.currency;
 
+		const transferFunc = FiatToFiatSupportedPairFunctionsCheck(sourceCurrency, destinationCurrency);
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` });
 
-		// get the checkbook account representing checkbook account from supabase
-		const { data: checkbookAccount, error: checkbookAccountError } = await supabaseCall(() => supabase
+		let transferResult = await transferFunc({requestId, accountNumber, routingNumber, recipientName, type, sourceUserId, sourceAccountId: accountInfo.account_id, amount, currency, memo, profileId});
+		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
-			.from('checkbook_accounts')
-			.select('*')
-			.eq('id', accountInfo.account_id)
-			.maybeSingle()
-		);
-
-		if (checkbookAccountError) throw checkbookAccountError;
-		if (!checkbookAccount) throw new Error('Checkbook account not found');
-
-
-		// get the checkbook user for the account from supabase
-		const { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
-			.from('checkbook_users')
-			.select('*')
-			.eq('checkbook_user_id', checkbookAccount.checkbook_user_id)
-			.maybeSingle()
-		);
-
-		if (checkbookUserError) throw checkbookUserError;
-		if (!checkbookUser) throw new Error('Checkbook user not found');
-
-		// execute checkbook payment
-		const createDigitalPaymentUrl = `${process.env.CHECKBOOK_URL}/check/direct`;
-		const body = {
-			"recipient": `${checkbookUser.user_id}@hifibridge.com`,
-			"account_type": type,
-			"routing_number": routingNumber,
-			"account_number": accountNumber,
-			"name": recipientName,
-			"amount": amount,
-			"account": checkbookAccount.checkbook_id,
-			"description": memo,
-		}
-
-		const options = {
-			method: 'POST',
-			headers: {
-				'Accept': 'application/json',
-				'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(body)
-		};
-
-		const response = await fetch(createDigitalPaymentUrl, options);
-		const responseBody = await response.json()
-
-		if (!response.ok) {
-			const { data, error } = await supabase
-				.from("fiat_to_fiat_transactions")
-				.update({
-					checkbook_response: responseBody,
-					status: "SUBMISSION_FAILED"
-				})
-				.eq("id", requestId)
-			await createLog("transfer/ach/pull", sourceUserId, responseBody.message, responseBody)
-			throw new Error(responseBody.message)
-		}
-		const toUpdate = {
-			checkbook_response: responseBody,
-			status: "FIAT_SUBMITTED",
-			checkbook_payment_id: responseBody.id,
-			checkbook_status: responseBody.status
-		}
-
-		if (process.env.NODE_ENV === "development") {
-			toUpdate.status = "CONFIRMED"
-			toUpdate.checkbook_status = "PAID"
-		}
-
-		// update record
-		const { data: updatedRecord, error: updatedRecordError } = await supabaseCall(() => supabase
-			.from("fiat_to_fiat_transactions")
-			.update(toUpdate)
-			.eq("request_id", requestId)
-			.select()
-			.single())
-
-		if (updatedRecordError) {
-			await createLog("transfer/ach/pull", sourceUserId, updatedRecordError.message, updatedRecordError)
-			throw new Error(updatedRecordError.message)
-		}
-
-		let responseObject = {
-			id: updatedRecord.id,
-			requestId: updatedRecord.request_id,
-			createdAt: updatedRecord.created_at,
-			recipientName: updatedRecord.recipient_name,
-			status: updatedRecord.status,
-			amount: updatedRecord.amount,
-			currency: updatedRecord.currency,
-			sourceAccountId: updatedRecord.source_account_id,
-		}
-
-		return res.status(200).json(responseObject);
+		return res.status(200).json(transferResult);
 
 	} catch (error) {
-		console.log(error)
-		if (error instanceof CreateFiatToCryptoTransferError) {
-			if (error.type == CreateFiatToCryptoTransferErrorType.CLIENT_ERROR) {
+		if (error instanceof CreateFiatToFiatTransferError) {
+			if (error.type == CreateFiatToFiatTransferErrorType.CLIENT_ERROR) {
 				return res.status(400).json({ error: error.message })
 			} else {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		await createLog("transfer/ach/pull", sourceUserId, error.message, error, null, res)
+		await createLog("transfer/fiat-to-fiat", sourceUserId, error.message, error, null, res);
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -909,6 +822,13 @@ exports.getTransfers = async(req, res) => {
 				case TransferType["crypto-to-crypto"]:
 					transactionRecord = await fetchCryptoToCryptoTransferRecord(id, profileId);
 					break;
+				case TransferType["fiat-to-fiat"]:
+					({fiatProvider, fiatReceiver} = await fetchFiatToFiatProvidersInformationById(id));
+					if (!fiatProvider || !fiatReceiver) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
+					fetchFunc = await FiatToFiatSupportedPairFetchFunctionsCheck(fiatProvider, fiatReceiver);
+					transactionRecord = await fetchFunc(id, profileId);
+					transactionRecord = await transferObjectReconstructor(transactionRecord);
+					break;				
 				default:
 					return res.status(400).json({error: `Invalid transfer type: ${transferType}`});
 			}
