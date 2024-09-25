@@ -784,7 +784,7 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		await createLog("transfer/fiat-to-fiat", sourceUserId, error.message, error, null, res);
+		await createLog("transfer/ach/pull", sourceUserId, error.message, error, null, res);
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
