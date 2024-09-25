@@ -1172,13 +1172,13 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 
 
 	try {
+        // specify payment rail
+        const paymentRail = accountType === 'us' ? 'wire' : 'swift';
+
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = accountType === 'us'
 			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
 			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
 		if (!externalAccountExist) {
-            // specify payment rail
-            const paymentRail = accountType === 'us' ? 'wire' : 'swift';
-
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
@@ -1226,32 +1226,32 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
-				message: "Wire payment rail added successfully",
+				message: `${paymentRail} payment rail added successfully`,
 				id: accountProviderRecord.id
 			});
 		} else {
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
 				.select('id, payment_rail')
-				.eq('account_id', externalAccountRecordId);
+				.eq('account_id', externalAccountRecordId)
+                .eq('payment_rail', paymentRail)
+                .maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let wireRecord = providerAccountRecordData.find(record => record.payment_rail === 'wire');
-
-			if (wireRecord) {
+			if (providerAccountRecordData) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: wireRecord.id
+					id: providerAccountRecordData.id
 				});
 			}
 
-			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", paymentRail, "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
