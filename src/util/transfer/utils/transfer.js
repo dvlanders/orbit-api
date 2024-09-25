@@ -27,7 +27,7 @@ const transferObjectReconstructor = async (transferInfo, externalAccountId = nul
         }
 
     }else if(transferInfo.transferType === transferType.FIAT_TO_CRYPTO){
-        console.log(transferInfo)
+
         const internalAccountId = transferInfo?.transferDetails?.sourceAccountId;
         if(!internalAccountId){
             return transferInfo;

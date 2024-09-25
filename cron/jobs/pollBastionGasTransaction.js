@@ -60,6 +60,10 @@ async function pollBastionGasTransaction() {
             .or("status.eq.SUBMITTED,status.eq.ACCEPTED,status.eq.PENDING")
             .select("*")
             .order('updated_at', {ascending: true})
+
+		if (error) throw error
+		if (!data) return
+		
         await Promise.all(data.map(async(transation) => {
             await updateStatus(transation)
         }))
