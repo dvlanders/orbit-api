@@ -1184,7 +1184,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
 				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
-				accountNumber, routingNumber, paymentRail
+				accountNumber, routingNumber
 			);
 
 			if (bridgeAccountResult.status !== 200) {

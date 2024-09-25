@@ -31,7 +31,7 @@ exports.createBridgeExternalAccount = async (
 	userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 	beneficiaryFirstName, beneficiaryLastName, beneficiaryBusinessName,
 	beneficiaryStreetLine1, beneficiaryStreetLine2, beneficiaryCity, beneficiaryStateCode, beneficiaryPostalCode, beneficiaryCountryCode,
-	ibanAccountNumber, businessIdentifierCode, bankCountryCode, accountNumber, routingNumber, paymentRail
+	ibanAccountNumber, businessIdentifierCode, bankCountryCode, accountNumber, routingNumber
 ) => {
 
 	try {
