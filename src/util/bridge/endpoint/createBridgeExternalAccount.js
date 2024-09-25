@@ -80,6 +80,14 @@ exports.createBridgeExternalAccount = async (
 			account_owner_type: accountOwnerType,
 		};
 
+		if (ibanAccountNumber && businessIdentifierCode && bankCountryCode) {
+			bodyObject.iban = {
+				account_number: ibanAccountNumber,
+				bic: businessIdentifierCode,
+				country: bankCountryCode
+			};
+		}
+
 		if (accountOwnerType === 'individual') {
 			bodyObject.first_name = beneficiaryFirstName;
 			bodyObject.last_name = beneficiaryLastName;
@@ -87,33 +95,21 @@ exports.createBridgeExternalAccount = async (
 			bodyObject.business_name = beneficiaryBusinessName;
 		}
 
-        const address = {  
-            street_line_1: beneficiaryStreetLine1,  
-            street_line_2: beneficiaryStreetLine2,  
-            city: beneficiaryCity,  
-            state: beneficiaryStateCode,  
-            postal_code: beneficiaryPostalCode,  
-            country: beneficiaryCountryCode  
-        };  
-
 		if (accountNumber && routingNumber) {
 			bodyObject.account = {
 				account_number: accountNumber,
 				routing_number: routingNumber
 			};
-			bodyObject.address = address;
+			bodyObject.address = {
+				street_line_1: beneficiaryStreetLine1,
+				street_line_2: beneficiaryStreetLine2,
+				city: beneficiaryCity,
+				state: beneficiaryStateCode,
+				postal_code: beneficiaryPostalCode,
+				country: beneficiaryCountryCode
+			};
 		}
 
-        // if iban accoun type
-        if (ibanAccountNumber && businessIdentifierCode && bankCountryCode) {
-			bodyObject.iban = {
-				account_number: ibanAccountNumber,
-				bic: businessIdentifierCode,
-				country: bankCountryCode
-			};
-            if (!bodyObject.address)
-                bodyObject.address = address;
-		}
 
 		const bridgeResponse = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/external_accounts`, {
 			method: 'POST',
