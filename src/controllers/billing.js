@@ -279,17 +279,11 @@ exports.getCreditBalance = async (req, res) => {
 
 exports.getCreditBalanceTopupsHistory = async(req, res) => {
   if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
-	const { profileId, limit, fromDate, toDate } = req.query
+	const { profileId, limit, createdAfter, createdBefore } = req.query
 
   try{
-    let _fromDate = fromDate
-    let _toDate = toDate
-    if (!_fromDate || !_toDate) {
-      _fromDate = new Date("1900-01-01").toISOString()
-      _toDate = new Date("2200-01-01").toISOString()
-    }
 
-    const records = await getBalanceTopupsHistory(profileId, _fromDate, _toDate, limit)
+    const records = await getBalanceTopupsHistory(profileId, createdAfter, createdBefore, limit)
     return res.status(200).json({count: records.length || 0, records})
 
 
