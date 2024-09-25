@@ -1,6 +1,7 @@
 const { v4 } = require("uuid");
 const { submitUserAction } = require("../../bastion/endpoints/submitUserAction");
 const { USDHIFIContractAddressMap } = require("./utils");
+const { toUnitsString } = require("../../transfer/cryptoToCrypto/utils/toUnits");
 
 
 
@@ -8,7 +9,7 @@ const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
 const burnUSDHIFI = async (walletAddress, amount, chain, requestId) => {
     const contractAddress = USDHIFIContractAddressMap[chain];
-    const unitsAmount = amount * Math.pow(10, 6)
+    const unitsAmount = toUnitsString(amount, 6)
     
     //  function call to Bastion
     const bodyObject = {

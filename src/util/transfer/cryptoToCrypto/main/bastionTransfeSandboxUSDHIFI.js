@@ -134,14 +134,15 @@ const transferWithoutFee = async(record, profileId) => {
     const responseBody = await response.json()
 
     if (!response.ok) {
+        // before fixing the smart contract default as Not enough error
         await createLog("transfer/bastionTransferSandboxUSDHIFI/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
-        const {message, type} = getMappedError(responseBody.message)
+        // const {message, type} = getMappedError(responseBody.message)
 
          // update to database
         const toUpdate = {
             bastion_response: responseBody,
             status: "FAILED",
-            failed_reason: message
+            failed_reason: "Transfer amount exceeds balance."
         }
         await updateRequestRecord(record.id, toUpdate)
     }else{

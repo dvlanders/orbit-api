@@ -255,7 +255,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		}
 
 	} catch (error) {
-		createLog("account/createUsdOfframpDestination", userId, error.message, error);
+		createLog("account/createUsdOfframpDestination", userId, error.message, error, null, res);
 		console.error('Error in createUsdOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
@@ -413,7 +413,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		}
 
 	} catch (error) {
-		createLog("account/createEuroOfframpDestination", userId, error.message, error);
+		createLog("account/createEuroOfframpDestination", userId, error.message, error, null, res);
 		console.error('Error in createEuroOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
@@ -447,7 +447,7 @@ exports.getAccount = async (req, res) => {
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
-		await createLog("account/getAccount", userId, error.message, error)
+		await createLog("account/getAccount", userId, error.message, error, null, res)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
@@ -487,7 +487,7 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(200).json(accountsInfo);
 	} catch (error) {
 		console.error(error)
-		await createLog("account/getAllAccounts", userId, error.message, error)
+		await createLog("account/getAllAccounts", userId, error.message, error, null, res)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
@@ -547,7 +547,7 @@ exports.activateOnRampRail = async (req, res) => {
 		return res.status(200).json({ message: `Virtual account for ${rail} created successfully`, account: result.virtualAccountInfo })
 
 	} catch (error) {
-		await createLog("account/activateOnRampRail", userId, error.message, error)
+		await createLog("account/activateOnRampRail", userId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -791,7 +791,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 
 		if (response.status === 400 || response.status === 401) {
 			const responseData = await response.json();
-			await createLog("account/createCircleWireBankAccount", userId, responseData.message, responseData)
+			await createLog("account/createCircleWireBankAccount", userId, responseData.message, responseData, null, res)
 			return res.status(400).json({
 				error: responseData.message
 			});
@@ -851,7 +851,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createCircleWireBankAccount", userId, error.message, error)
+		await createLog("account/createCircleWireBankAccount", userId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -886,7 +886,7 @@ exports.getVirtualAccount = async (req, res) => {
 		return res.status(200).json(virtualAccount)
 
 	} catch (error) {
-		await createLog("account/getVirtualAccount", userId, error.message, error)
+		await createLog("account/getVirtualAccount", userId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -914,7 +914,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		if (error instanceof BankAccountInfoUploadError) {
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId)
+		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -943,7 +943,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 			.eq('id', bankAccountRecord.id)
 
 		if (bankAccountUpdateError) {
-			await createLog("account/createBlindpayBankAccount", fields.user_id, bankAccountUpdateError.message, bankAccountUpdateError)
+			await createLog("account/createBlindpayBankAccount", fields.user_id, bankAccountUpdateError.message, bankAccountUpdateError, null, res)
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
@@ -958,7 +958,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error)
+		await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error, null, res)
 		if (error instanceof CreateBankAccountError) {
 			return res.status(error.status).json(error.rawResponse)
 		}
@@ -986,7 +986,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 		if (error instanceof ReceiverInfoUploadError) {
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId)
+		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -1004,7 +1004,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 			}).eq('id', receiverRecord.id);
 
 		if (receiverUpdateError) {
-			await createLog("account/createBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError);
+			await createLog("account/createBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError, null, res);
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -1018,7 +1018,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error);
+		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
@@ -1120,7 +1120,7 @@ exports.createAPACOfframpDestination = async (req, res) => {
 		return res.status(200).json(accountInfo)
 
 	} catch (error) {
-		await createLog("account/createHKOfframpDestination", userId, error.message, error)
+		await createLog("account/createHKOfframpDestination", userId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -1259,7 +1259,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		}
 
 	} catch (error) {
-		createLog("account/createInternationalWireOfframpDestination", userId, error.message, error);
+		createLog("account/createInternationalWireOfframpDestination", userId, error.message, error, null, res);
 		console.error('Error in createInternationalWireOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
@@ -1286,7 +1286,7 @@ exports.getBlindpayReceiver = async (req, res) => {
 		if (fields.receiver_id && receiverInfo.count === 1) return res.status(200).json(receiverInfo.data[0]);
 		return res.status(200).json(receiverInfo);
 	} catch (error) {
-		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error);
+		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
 		if (error instanceof ReceiverInfoGetError) {
 			return res.status(error.status).json(error.rawResponse)
 		}
@@ -1315,7 +1315,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		if (error instanceof ReceiverInfoUploadError) {
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId)
+		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -1331,7 +1331,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 			}).eq('id', receiverRecord.id);
 
 		if (receiverUpdateError) {
-			await createLog("account/updateBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError);
+			await createLog("account/updateBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError, null, res);
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -1343,7 +1343,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/updateBlindpayReceiver", fields.userId, error.message, error);
+		await createLog("account/updateBlindpayReceiver", fields.userId, error.message, error, null, res);
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
