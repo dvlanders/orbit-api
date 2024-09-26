@@ -1128,11 +1128,11 @@ exports.createAPACOfframpDestination = async (req, res) => {
 
 }
 
-exports.createInternationalWireOfframpDestination = async (req, res) => {
+exports.createWireUsOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	const {
-		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+		accountType, currency, bankName, accountOwnerName, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode,
 		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
 	} = req.body;
 
@@ -1150,10 +1150,10 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	];
 
 	const acceptedFields = {
-		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
-		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'firstName': "string",
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': (value) => inStringEnum(value, ["us", "iban"])
+		'accountType': "string"
 	};
 
 	// Execute fields validation
@@ -1173,15 +1173,13 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 
 
 	try {
-		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = accountType === 'us'
-			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
-			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
+		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({ userId, accountNumber, routingNumber });
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
-				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
+				null, businessIdentifierCode, null,
 				accountNumber, routingNumber
 			);
 
@@ -1203,14 +1201,12 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				account_owner_name: accountOwnerName,
 				account_owner_type: accountOwnerType,
 				account_type: accountType,
-				iban: ibanAccountNumber,
 				account_number: accountNumber,
 				routing_number: routingNumber,
 				beneficiary_first_name: firstName,
 				beneficiary_last_name: lastName,
 				beneficiary_business_name: businessName,
 				business_identifier_code: businessIdentifierCode,
-				bank_country: ibanCountryCode,
 				bridge_response: bridgeAccountResult.rawResponse,
 				bridge_external_account_id: bridgeAccountResult.rawResponse.id
 			});
@@ -1230,22 +1226,22 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		} else {
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
-				.eq('account_id', externalAccountRecordId);
+				.select('id')
+				.eq('account_id', externalAccountRecordId)
+                .eq('payment_rail', 'wire')
+                .maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let wireRecord = providerAccountRecordData.find(record => record.payment_rail === 'wire');
-
-			if (wireRecord) {
+			if (providerAccountRecordData) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: wireRecord.id
+					id: providerAccountRecordData.id
 				});
 			}
 
@@ -1361,9 +1357,10 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 		} else {
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
+				.select('id')
 				.eq('account_id', externalAccountRecordId)
-                .eq('payment_rail', 'swift');
+                .eq('payment_rail', 'swift')
+                .maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
