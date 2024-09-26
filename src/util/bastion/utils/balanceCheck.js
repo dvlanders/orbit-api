@@ -1,6 +1,7 @@
 const createLog = require("../../logger/supabaseLogger")
 const { getUserBalance } = require("../endpoints/getUserBalance")
 const { currencyContractAddress } = require("../../common/blockchain")
+const { toUnitsString } = require("../../transfer/cryptoToCrypto/utils/toUnits")
 
 const checkBalanceForTransactionAmount = async (bastionUserId, amount, chain, currency) => {
     try{
@@ -19,8 +20,10 @@ const checkBalanceForTransactionAmount = async (bastionUserId, amount, chain, cu
         const tokenInfo = responseBody.tokenBalances[currencyContract];
         if (!tokenInfo) return false; // if no tokenInfo on the wallet address, means not enough balance
 
-        const balance = (Number(tokenInfo.quantity) / Math.pow(10, tokenInfo.decimals)).toFixed(2);
-        return balance >= amount;
+        const balance = Number(tokenInfo.quantity);
+        const unitAmount = Number(toUnitsString(amount, tokenInfo.decimals));
+        
+        return balance >= unitAmount;
 
     }catch (error){
         await createLog("checkBalanceForTransactionAmount", null, error.message);
