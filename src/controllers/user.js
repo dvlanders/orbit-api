@@ -1333,7 +1333,7 @@ exports.createDeveloperUserGasStationWallet = async(req, res) => {
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account" })
 		// check if wallet is already created
 		// assume ETHEREUM_TESTNET will always be created
-		const chain = "ETHEREUM_TESTNET"
+		const chain = "ETHEREUM_MAINNET"
 		const {walletAddress: walletAddressCheck} = await getBastionWallet(userId, chain, "GAS_STATION")
 		if (walletAddressCheck) return res.status(400).json({"message": "wallet is already created", userId, type: "GAS_STATION", walletAddress: walletAddressCheck})
 
