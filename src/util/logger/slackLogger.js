@@ -364,6 +364,9 @@ const newTransferBalanceAlertBlockBuilder = async (profileId, feeRecordId, balan
 
 const sendSlackReqResMessage = async (request, response) => {
   try {
+    if (process.env.NODE_ENV === "development" && !request.query.profileEmail)
+        return;
+
     const caller = {
       profileEmail: request.query.profileEmail,
       profileId: request.query.profileId,
