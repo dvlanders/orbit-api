@@ -20,8 +20,8 @@ const checkBalanceForTransactionAmount = async (bastionUserId, amount, chain, cu
         const tokenInfo = responseBody.tokenBalances[currencyContract];
         if (!tokenInfo) return false; // if no tokenInfo on the wallet address, means not enough balance
 
-        const balance = Number(tokenInfo.quantity);
-        const unitAmount = Number(toUnitsString(amount, tokenInfo.decimals));
+        const balance = BigInt(tokenInfo.quantity);
+        const unitAmount = BigInt(toUnitsString(amount, tokenInfo.decimals));
         
         return balance >= unitAmount;
 
