@@ -22,6 +22,7 @@ const { submitUserAction } = require("../../../bastion/endpoints/submitUserActio
 const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
 const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling")
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
 
 
 const insertRecord = async(fields) => {
@@ -76,6 +77,15 @@ const createBastionCryptoTransfer = async(fields) => {
         const toUpdate = {
             status: "FAILED",
             failed_reason: "Insufficient balance for transaction fee"
+        }
+        record = await updateRequestRecord(record.id, toUpdate)
+        return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
+    }
+
+    if(!await checkBalanceForTransactionAmount(senderBastionUserId, amount, chain, currency)){
+        const toUpdate = {
+            status: "FAILED",
+            failed_reason: "Transfer amount exceeds wallet balance"
         }
         record = await updateRequestRecord(record.id, toUpdate)
         return await fetchCryptoToCryptoTransferRecord(record.id, profileId)

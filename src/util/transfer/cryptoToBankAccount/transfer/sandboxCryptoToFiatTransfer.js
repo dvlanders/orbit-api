@@ -34,6 +34,7 @@ const { USDHIFIContractAddressMap } = require("../../../smartContract/sandboxUSD
 const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSupportedPairFetchFunctions");
 const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
 const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
@@ -286,7 +287,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 
 const createSandboxCryptoToFiatTransfer = async (config) => {
-	const { destinationAccountId, amount, profileId, sourceUserId } = config
+	const { destinationAccountId, amount, profileId, sourceUserId, sourceBastionUserId, chain, sourceCurrency } = config
 
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
     
@@ -298,6 +299,18 @@ const createSandboxCryptoToFiatTransfer = async (config) => {
 
 	// fetch or insert request record
 	const initialTransferRecord = await initTransferData(config)
+
+    if(!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const func = FetchCryptoToBankSupportedPairCheck(initialTransferRecord.crypto_provider, initialTransferRecord.fiat_provider)
+		const result = await func(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }	
+
 	// create Job
 	const jobConfig = {
 		recordId: initialTransferRecord.id
