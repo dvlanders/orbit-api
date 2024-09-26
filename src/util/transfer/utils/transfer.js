@@ -4,7 +4,8 @@ const transferType = {
     CRYPTO_TO_CRYPTO: "CRYPTO_TO_CRYPTO",
     CRYPTO_TO_FIAT: "CRYPTO_TO_FIAT",
     FIAT_TO_CRYPTO: "FIAT_TO_CRYPTO",
-    BASE_ASSET: "BASE_ASSET"
+    BASE_ASSET: "BASE_ASSET",
+    FIAT_TO_FIAT: "FIAT_TO_FIAT"
 }
 
 const transferObjectReconstructor = async (transferInfo, externalAccountId = null) => {
@@ -41,6 +42,22 @@ const transferObjectReconstructor = async (transferInfo, externalAccountId = nul
         if(transferInfo?.transferDetails?.sourceAccount?.id){
             transferInfo.transferDetails.sourceAccount.id = externalAccountId;
         }
+
+    }else if(transferInfo.transferType === transferType.FIAT_TO_FIAT){
+
+        const internalAccountId = transferInfo?.transferDetails?.sourceAccountId;
+        if(!internalAccountId){
+            return transferInfo;
+        }
+
+        const currency = transferInfo.transferDetails.currency;
+        externalAccountId = externalAccountId ? externalAccountId : await getAccountProviderIDWithInternalID(internalAccountId, currency);
+        transferInfo.transferDetails.sourceAccountId = externalAccountId;
+        
+        if(transferInfo?.transferDetails?.sourceAccount?.id){
+            transferInfo.transferDetails.sourceAccount.id = externalAccountId;
+        }
+
     }
     return transferInfo;
 }

@@ -1,7 +1,8 @@
 const TransferType = {
 	'crypto-to-fiat': 'crypto-to-fiat',
 	'fiat-to-crypto': 'fiat-to-crypto',
-	'crypto-to-crypto': 'crypto-to-crypto'
+	'crypto-to-crypto': 'crypto-to-crypto',
+    'fiat-to-fiat': 'fiat-to-fiat',
 }
 
 
