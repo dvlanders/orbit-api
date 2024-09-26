@@ -1216,12 +1216,12 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
 			}
 
-			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", paymentRail, "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
-				message: `${paymentRail} payment rail added successfully`,
+				message: `Wire payment rail added successfully`,
 				id: accountProviderRecord.id
 			});
 		} else {
@@ -1246,7 +1246,7 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 				});
 			}
 
-			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", paymentRail, "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
