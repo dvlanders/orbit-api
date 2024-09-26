@@ -1285,7 +1285,7 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
 		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
 		"streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': (value) => inStringEnum(value, ["us", "iban"])
+		'accountType': "string"
 	};
 
 	// Execute fields validation
