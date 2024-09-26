@@ -44,10 +44,18 @@ const currencyContractAddress = {
 	}
 }
 
+const baseAssetMap = {
+	ETHEREUM_MAINNET: "ETH",
+	POLYGON_MAINNET: "MATIC",
+	ETHEREUM_TESTNET: "ETH",
+	POLYGON_AMOY: "MATIC",
+}
+
 
 module.exports = {
 	Chain,
 	hifiSupportedChain,
 	currencyDecimal,
-	currencyContractAddress
+	currencyContractAddress,
+	baseAssetMap
 }
