@@ -11,7 +11,7 @@ const fundGasScheduleCheck = async(job, config, userId, profileId) => {
         .select("*")
         .eq("job", job)
         .eq("user_id", userId)
-    
+
     if (!data || data.length <= 0) return true
     for (const record of data){
         if (areObjectsEqual(record.config, config)) return false
@@ -21,10 +21,11 @@ const fundGasScheduleCheck = async(job, config, userId, profileId) => {
 }
 
 const fundGas = async(config) => {
+    
     try{
         const chain = config.chain
-        const result = await fundUserGasFee(config.userId, config.amount, chain, config.walletType || "INDIVIDUAL")
-        if (!result) throw new Error("Failed to fund GAS")
+        const {shouldReschedule, success} = await fundUserGasFee(config.userId, config.amount, chain, config.walletType || "INDIVIDUAL", config.profileId)
+        if (!success) throw new Error("Failed to fund GAS")
     }catch (error){
         await createLog("asyncJob/fundGas", config.userId, error.message, error)
         throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, undefined, undefined, true)

@@ -23,11 +23,20 @@ exports.getWalletBalance = async (req, res) => {
 			createLog("dashboard/getWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody)
 			return res.status(500).json({ error: 'Internal server error' });
 		}
-		const currencyContract = currencyContractAddress[chain][currency].toLowerCase()
-		const tokenInfo = responseBody.tokenBalances[currencyContract]
-		if (!tokenInfo) return res.status(200).json({ balance: "0", tokenInfo: null })
-
-		return res.status(200).json({ balance: tokenInfo.quantity, tokenInfo })
+		if (currency == "gas"){
+			// base asset
+			return res.status(200).json({ 
+				balance: responseBody.baseAssetBalance.quantity, 
+				tokenInfo: {
+					decimals: 18
+				}	 
+			})
+		}else{
+			const currencyContract = currencyContractAddress[chain][currency].toLowerCase()
+			const tokenInfo = responseBody.tokenBalances[currencyContract]
+			if (!tokenInfo) return res.status(200).json({ balance: "0", tokenInfo: null })
+			return res.status(200).json({ balance: tokenInfo.quantity, tokenInfo })
+		}
 
 	} catch (error) {
 		console.error(error)
