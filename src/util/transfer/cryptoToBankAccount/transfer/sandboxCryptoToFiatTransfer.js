@@ -250,21 +250,22 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const bastionRequestId = initialTransferRecord.bastion_request_id
 	// transfer
     await updateRequestRecord(initialTransferRecord.id, {bastion_user_id: gasStation})
-		// call mint function
+		// call burn function
     const bastionResponse = await burnUSDHIFI(sourceWalletAddress, amount, chain, bastionRequestId)	
 	const bastionResponseBody = await bastionResponse.json()
 
 	// map status
 	if (!bastionResponse.ok) {
+		// dafault to not enough balance
 		// fail to transfer
 		await createLog("transfer/util/createSandboxCryptoToFiatTransfer/transferWithoutFee", sourceUserId, bastionResponseBody.message, bastionResponseBody)
-		const { message, type } = getMappedError(bastionResponseBody.message)
+		// const { message, type } = getMappedError(bastionResponseBody.message)
 
 		const toUpdate = {
 			bastion_response: bastionResponseBody,
 			bastion_transaction_status: "FAILED",
 			transaction_status: "NOT_INITIATED",
-			failed_reason: message
+			failed_reason: "Transfer amount exceeds balance."
 		}
 
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)

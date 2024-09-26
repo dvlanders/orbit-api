@@ -26,7 +26,7 @@ const processCustomerEvent = async (event) => {
 
   if (updateError) {
     console.error('Failed to update bridge customer status', updateError);
-    await createLog('processCustomerEvent', bridgeCustomer.user_id, 'Failed to update bridge customer status', updateError);
+    await createLog('processCustomerEvent', null, 'Failed to update bridge customer status', updateError);
     return
   }
   if (!bridgeCustomer.is_developer) {

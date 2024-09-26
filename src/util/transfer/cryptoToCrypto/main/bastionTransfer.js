@@ -21,6 +21,7 @@ const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap")
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
 const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
 const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
+const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling")
 
 
 const insertRecord = async(fields) => {
@@ -34,7 +35,7 @@ const insertRecord = async(fields) => {
     if (!paymentProcessorContractAddress) {
         // no paymentProcessorContract available
         const toUpdate = {
-            status: "FAILED",
+            status: "NOT_INITIATED",
             failed_reason: `Fee feature not available for ${fields.currency} on ${fields.chain}`
         }
         const record = await updateRequestRecord(requestRecord.id, toUpdate)
@@ -52,7 +53,7 @@ const insertRecord = async(fields) => {
     const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, "BASTION", requestRecord.bastion_request_id)
     // update into crypto to crypto table
     const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
-    return {validTransfer: true, record: requestRecord}
+    return {validTransfer: true, record}
 }
 
 const createBastionCryptoTransfer = async(fields) => {
@@ -66,9 +67,19 @@ const createBastionCryptoTransfer = async(fields) => {
     fields.contractAddress = contractAddress
     fields.provider = "BASTION"
     // insert record
-    const {validTransfer, record} = await insertRecord(fields)
+    let {validTransfer, record} = await insertRecord(fields)
     const receipt = await fetchCryptoToCryptoTransferRecord(record.id, profileId)
     if (!validTransfer) return receipt
+
+    // if the user does not have enough balance for the transaction fee, then fail the transaction
+    if(!await checkBalanceForTransactionFee(record.id, transferType.CRYPTO_TO_CRYPTO)){
+        const toUpdate = {
+            status: "FAILED",
+            failed_reason: "Insufficient balance for transaction fee"
+        }
+        record = await updateRequestRecord(record.id, toUpdate)
+        return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
+    }
 
     // insert async job
     const jobConfig = {
@@ -95,6 +106,7 @@ const transferWithFee = async(record, profileId) => {
 
     // perfrom transfer with fee
     await CryptoToCryptoWithFeeBastion(record, feeRecord, record.payment_processor_contract_address, profileId)
+
     // send notification
     await notifyCryptoToCryptoTransfer(record)
     
@@ -124,7 +136,7 @@ const transferWithoutFee = async(record, profileId) => {
          // update to database
         const toUpdate = {
             bastion_response: responseBody,
-            status: "FAILED",
+            status: "NOT_INITIATED",
             failed_reason: message
         }
         await updateRequestRecord(record.id, toUpdate)

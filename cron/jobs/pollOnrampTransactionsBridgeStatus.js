@@ -5,6 +5,8 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const { chargeFeeOnFundReceivedBastion } = require("../../src/util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
+const { chargeTransactionFee } = require("../../src/util/billing/fee/transactionFeeBilling");
+const { transferType } = require("../../src/util/transfer/utils/transfer");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -49,6 +51,8 @@ const updateStatus = async (onrampTransaction) => {
 			// "description": "INDIVIDUAL Checkbook Inc [75D7C01F 5F93 4490 8B9] CHECK 5006 WILLIAM YANG 312410A2 9C1B 4337 AFEB 71DAD9DA3428"
 			// try to find the latest record
 			for (const event of events) {
+				if(event.type === "funds_scheduled" || event.type === "microdeposit") continue
+
 				const description = event.source.description
 				const referenceId = description?.split(" ")?.slice(-5)?.join('-')?.toLowerCase()
 				const depositId = event.deposit_id;
@@ -75,6 +79,11 @@ const updateStatus = async (onrampTransaction) => {
 					if (onrampTransaction.developer_fee_id) {
 						await chargeFeeOnFundReceivedBastion(onrampTransaction.id)
     				}
+
+					if(update.fiat_provider === "MANUAL_DEPOSIT" && update.status === "CONFIRMED"){
+						await chargeTransactionFee(onrampTransaction.id, transferType.FIAT_TO_CRYPTO);
+					}
+
 					await notifyFiatToCryptoTransfer(update)
 					break
 

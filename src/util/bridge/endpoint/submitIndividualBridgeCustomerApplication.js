@@ -1,10 +1,12 @@
 const supabase = require("../../supabaseClient");
 const { v4 } = require("uuid");
 const fileToBase64 = require("../../fileToBase64");
-const { bridgeFieldsToRequestFields, getEndorsementStatus, extractActionsAndFields } = require("../utils");
+const { bridgeFieldsToRequestFields, getEndorsementStatus, extractActionsAndFields, pendingResult } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
+const { safeParseBody } = require("../../utils/response");
+const createJob = require("../../../../asyncJobs/createJob");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -53,6 +55,8 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 		if (!user) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.RECORD_NOT_FOUND, "User record not found");
 		}
+
+
 
 		// fetch user kyc data
 		const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase
@@ -158,7 +162,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 
 		// call bridge endpoint
 		const response = await fetch(url, options);
-		const responseBody = await response.json();
+		const responseBody = await safeParseBody(response)
 		if (response.ok) {
 			// extract rejections
 			const reasons = responseBody.rejection_reasons.map((reason) => {
@@ -186,28 +190,9 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)
 			}
 
-			return {
-				status: 200,
-				customerStatus: {
-					status: CustomerStatus.PENDING,
-					actions: requiredActions,
-					fields: fieldsToResubmit
-				},
-				usRamp: {
-					status: CustomerStatus.PENDING,
-					actions: baseActions,
-					fields: baseFields
-				},
-				euRamp: {
-					status: CustomerStatus.PENDING,
-					actions: sepaActions,
-					fields: sepaFields
-				},
-				message: "kyc aplication still under review"
-			}
+			return pendingResult()
 
 		} else if (response.status == 400) {
-			// EXPERIMENTAL
 			const { error: bridge_customers_error } = await supabase
 				.from('bridge_customers')
 				.update({
@@ -227,12 +212,20 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 		} else if (response.status == 401) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
 		} else {
-			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, "Unknown error", responseBody)
+			await createLog("user/util/createIndividualBridgeCustomer", userId, responseBody.message, responseBody)
+			// unknown error try to resubmit the application
+			const config = {
+				userId,
+				bridgeId,
+				userType: "individual"
+			}
+			// create asynbc job
+			await createJob("retryBridgeCustomerCreation", config, userId, null)
+			return pendingResult()
 		}
 	} catch (error) {
 		//  log
 		await createLog("user/util/createIndividualBridgeCustomer", userId, error.message, error.rawResponse)
-		console.error(`Error occurred while creating individual bridge user `, error.toString());
 		// process error
 		if (error.type == createBridgeCustomerErrorType.INTERNAL_ERROR) {
 			return {

@@ -14,7 +14,7 @@ const hifiOfframpTransactionStatusMap = {
 	'returned': 'FAILED_FIAT_RETURNED',
 	'refunded': 'FAILED_FIAT_REFUNDED',
 	'error': 'FAILED_UNKNOWN',
-	'canceled': "CANCELED"
+	'canceled': "CANCELLED"
 }
 
 const updateStatusWithBridgeTransferId = async (transaction) => {
@@ -133,7 +133,6 @@ const updateStatus = async (transaction) => {
 			return
 		}
 
-		console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
 

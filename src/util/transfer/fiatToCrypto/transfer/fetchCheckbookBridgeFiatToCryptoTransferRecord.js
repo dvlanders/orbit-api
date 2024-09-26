@@ -46,7 +46,8 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
                 status: record.developer_fees.charged_status,
                 transactionHash: record.developer_fees.transaction_hash,
                 failedReason: record.developer_fees.failed_reason
-            } : null
+            } : null,
+            failedReason: record.failed_reason,
         }
     }
 

@@ -10,9 +10,13 @@ const AcceptedFileTypes = [
 ];
 const MAX_FILE_SIZE_MB = 8;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MIN_FILE_SIZE_BYTES = 10 * 1024;
+
+
 
 const fileUploadErrorType = {
 	FILE_TOO_LARGE: "FILE_TOO_LARGE",
+	FILE_TOO_SMALL: "FILE_TOO_SMALL",
 	INVALID_FILE_TYPE: "INVALID_FILE_TYPE",
 	INTERNAL_ERROR: "INTERNAL_ERROR",
 	FAILED_TO_FETCH: "FAILED_TO_FETCH"
@@ -41,10 +45,16 @@ async function uploadFileFromUrl(fileUrl, bucketName, filePath, acceptedFileType
 		throw new fileUploadError(fileUploadErrorType.INVALID_FILE_TYPE, `File type ${fileBlob.type} is not accepted. Accepted types are: ${acceptedFileTypes.join(', ')}.`);
 	}
 
-	// Check the file size
+	// Check the file size for file > 10 mb
 	if (fileBlob.size > MAX_FILE_SIZE_BYTES) {
 		throw new fileUploadError(fileUploadErrorType.FILE_TOO_LARGE, `File size ${fileBlob.size / (1024 * 1024)}MB exceeds the maximum allowed size of ${MAX_FILE_SIZE_MB}MB.`);
 	}
+
+	// Check the file size for file < 10 kb
+	if (fileBlob.size < MIN_FILE_SIZE_BYTES) {
+		throw new fileUploadError(fileUploadErrorType.FILE_TOO_SMALL, `File size ${fileBlob.size / 1024}KB is less than the minimum allowed size of ${MIN_FILE_SIZE_BYTES / 1024}KB.`);
+	}
+
 	try {
 		// Upload the Blob to Supabase Storage
 		const { data, error } = await supabase.storage

@@ -4,6 +4,13 @@ const { supabaseCall } = require("../supabaseWithRetry");
 const { CustomerStatus } = require("./common");
 const { getRawUserObject } = require("./getRawUserObject");
 
+const BridgeKycStatusMap = {
+    active: CustomerStatus.ACTIVE,
+    not_started: CustomerStatus.PENDING,
+    under_review: CustomerStatus.PENDING,
+    rejected: CustomerStatus.INACTIVE
+}
+
 const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAfter=new Date("1900-01-01").toISOString(), createdBefore=new Date("2200-01-01").toISOString()) => {
     let users
     if (userId){
@@ -63,7 +70,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
 
     const result = await Promise.all(users.map(async(user) => {
         const name = user.user_kyc ? (user.user_type == "business" ? user.user_kyc.business_name : user.user_kyc.legal_first_name + " " + user.user_kyc.legal_last_name) : null
-        const bridgeKycStatus = user.bridge_customers? (user.bridge_customers.status == "active" ? CustomerStatus.ACTIVE : user.bridge_customers.status == "not_started"? CustomerStatus.PENDING : CustomerStatus.INACTIVE) : CustomerStatus.INACTIVE
+        const bridgeKycStatus = user.bridge_customers? BridgeKycStatusMap[user.bridge_customers.status] || CustomerStatus.INACTIVE : CustomerStatus.INACTIVE
         const walletstatus = user.bastion_users && user.bastion_users.length > 0 ? (user.bastion_users[0].kyc_passed && user.bastion_users[0].jurisdiction_check_passed ? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE) : CustomerStatus.INACTIVE
         const EVMwalletAddress = user.bastion_wallets && user.bastion_wallets.length > 0 ? user.bastion_wallets.find((wallet) => wallet.chain == "POLYGON_MAINNET") : null
         const userInfo = {

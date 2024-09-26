@@ -67,7 +67,6 @@ const updateStatus = async (transaction) => {
 			}
 		}
 
-
 		await notifyCryptoToCryptoTransfer(updateData)
 
 

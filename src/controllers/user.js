@@ -33,8 +33,7 @@ const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDe
 const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
-const createDecentralizedIdentifier = require('../util/tbdex/createDecentralizedIdentifier');
-const { create } = require('lodash');
+const { createBastionDeveloperUserWithType } = require('../util/bastion/main/createBastionUserForDeveloperUser');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -69,7 +68,7 @@ exports.createHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}, error: ${error.message}`, error, profileId)
+			await createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}, error: ${error.message}`, error, profileId, res)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -257,7 +256,7 @@ exports.createHifiUser = async (req, res) => {
 
 		return res.status(status).json(createHifiUserResponse);
 	} catch (error) {
-		await createLog("user/create", userId, error.message, error, profileId)
+		await createLog("user/create", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -291,7 +290,7 @@ exports.getHifiUser = async (req, res) => {
 		return res.status(status).json(getHifiUserResponse);
 	} catch (error) {
 		console.error(error)
-		await createLog("user/get", userId, error.message, error)
+		await createLog("user/get", userId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -327,7 +326,7 @@ exports.updateHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/get", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			await createLog("user/get", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error, null, res)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 		// STEP 2: Update the 3rd party providers with the new information
@@ -515,7 +514,7 @@ exports.updateHifiUser = async (req, res) => {
 		return res.status(status).json(updateHifiUserResponse);
 	} catch (error) {
 		console.log(error)
-		await createLog("user/update", userId, error.message, error)
+		await createLog("user/update", userId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -542,7 +541,7 @@ exports.getAllHifiUser = async (req, res) => {
 		return res.status(200).json({ count: users.length, users })
 	} catch (error) {
 		console.error(error)
-		await createLog("user/getAllHifiUser", userId, error.message, error, profileId)
+		await createLog("user/getAllHifiUser", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -570,7 +569,7 @@ exports.generateToSLink = async (req, res) => {
 		// fallback to HIFI template
 		if (!templateId) templateId = "2fb2da24-472a-4e5b-b160-038d9dc82a40"
 		// check is template exist
-		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId is not exist" })
+		if (!(await checkToSTemplate(templateId))) return res.status(400).json({ error: "templateId does not exist" })
 		let encodedUrl
 		if (redirectUrl) {
 			encodedUrl = `&redirectUrl=${encodeURIComponent(redirectUrl)}`
@@ -600,7 +599,7 @@ exports.generateToSLink = async (req, res) => {
 
 		return res.status(200).json({ url: tosLink, signedAgreementId: idempotencyKey })
 	} catch (error) {
-		await createLog("user/generateToSLink", null, error.message, error, profileId)
+		await createLog("user/generateToSLink", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -630,7 +629,7 @@ exports.acceptToSLink = async (req, res) => {
 
 
 	} catch (error) {
-		await createLog("user/acceptToSLink", null, error.message, error, profileId)
+		await createLog("user/acceptToSLink", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -663,7 +662,7 @@ exports.createHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/createHifiUserAsync", null, `Failed to Information Upload For CreateUser for profile Id ${profileId}`, error, profileId)
+			await createLog("user/createHifiUserAsync", null, `Failed to upload information for CreateUser for profile Id ${profileId}`, error, profileId, res)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -744,7 +743,7 @@ exports.createHifiUserAsync = async (req, res) => {
 		return res.status(200).json(createHifiUserResponse)
 
 	} catch (error) {
-		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId)
+		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
@@ -786,7 +785,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/updateHifiUserAsync", userId, `Failed to Information Upload For Update User user Id: ${userId}`, error)
+			await createLog("user/updateHifiUserAsync", userId, `Failed to update information for user Id: ${userId}`, error, null, res)
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
@@ -865,7 +864,7 @@ exports.updateHifiUserAsync = async (req, res) => {
 
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
-		await createLog("user/updateHifiUserAsync", userId, error.message, error, profileId)
+		await createLog("user/updateHifiUserAsync", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -894,13 +893,11 @@ exports.getUserKycInformation = async (req, res) => {
 			ultimate_beneficial_owners: user.ultimate_beneficial_owners
 		}
 
-		console.log(result)
-
 		return res.status(200).json(result)
 
 
 	} catch (error) {
-		await createLog("user/getUserKycInformation", userId, error.message, error, profileId)
+		await createLog("user/getUserKycInformation", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: `Unexpected error happened` })
 	}
 }
@@ -931,7 +928,7 @@ exports.createDeveloperUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/create", null, error.message, error, profileId)
+			await createLog("user/create", null, error.message, error, profileId, res)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
@@ -1035,7 +1032,7 @@ exports.createDeveloperUser = async (req, res) => {
 		return res.status(200).json(createHifiUserResponse)
 
 	} catch (error) {
-		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId)
+		await createLog("user/createHifiUserAsync", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 }
@@ -1118,6 +1115,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// get user wallet information, only polygon for now
 		const { walletAddress: feeCollectionWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
 		const { walletAddress: prefundedWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
+		const { walletAddress: gasStationWalletAddress } = await getBastionWallet(userId, Chain.ETHEREUM_MAINNET, "GAS_STATION")
 
 		const userInformation = {
 			legalFirstName: kycInformation.legal_first_name,
@@ -1130,7 +1128,10 @@ exports.getDeveloperUserStatus = async (req, res) => {
 				},
 				PREFUNDED: {
 					POLYGON_MAINNET: prefundedWalletAddress
-				}
+				},
+				GAS_STATION: gasStationWalletAddress ? {
+					ETHEREUM_MAINNET: gasStationWalletAddress
+				} : null
 			}
 		}
 
@@ -1138,7 +1139,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 
 
 	} catch (error) {
-		createLog("user/getDeveloperUser", userId, error.message)
+		createLog("user/getDeveloperUser", userId, error.message, null, res)
 		return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
 	}
 }
@@ -1173,7 +1174,7 @@ exports.updateDeveloperUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/updateDeveloperUser", userId, `Failed to Information Upload For Update developer User user Id: ${userId}`, error)
+			await createLog("user/updateDeveloperUser", userId, `Failed to Information Upload For Update developer User user Id: ${userId}`, error, null, res)
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
@@ -1252,7 +1253,7 @@ exports.updateDeveloperUser = async (req, res) => {
 
 		return res.status(200).json(updateHifiUserResponse);
 	} catch (error) {
-		await createLog("user/updateDeveloperUser", userId, error.message, error, profileId)
+		await createLog("user/updateDeveloperUser", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 	}
 };
@@ -1275,12 +1276,14 @@ exports.getUserWalletBalance = async (req, res) => {
 		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase()
 		if (!currencyContract) return res.status(400).json({ error: "Currency is not supported for the chain" })
 
-		let bastionUserId = userId
+
+		const { bastionUserId: bastionUserId } = await getBastionWallet(userId, chain, "INDIVIDUAL")
+
 		const response = await getUserBalance(bastionUserId, chain)
 		const responseBody = await response.json()
 
 		if (!response.ok) {
-			createLog("user/getUserWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody)
+			createLog("user/getUserWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody, null, res)
 			return res.status(500).json({ error: 'Internal server error' });
 		}
 
@@ -1301,8 +1304,50 @@ exports.getUserWalletBalance = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		await createLog("user/getUserWalletBalance", userId, error.message, error)
+		await createLog("user/getUserWalletBalance", userId, error.message, error, null, res)
 		return res.status(500).json({ error: 'Internal server error' });
 	}
 
+}
+
+exports.createDeveloperUserGasStationWallet = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { userId, profileId } = req.query
+
+	try {
+		// check userId 
+		if (!isUUID(userId)) return res.status(400).json({ error: `Invalid userId (not uuid)` });
+		let { data: user, error: userError } = await supabaseCall(() => supabase
+			.from('users')
+			.select('*')
+			.eq("id", userId)
+			.eq("profile_id", profileId)
+			.maybeSingle()
+		)
+
+		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		if (!user) return res.status(200).json({ error: `Invalid userId (user not found)` })
+		// check is developer user
+		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account" })
+		// check if wallet is already created
+		// assume ETHEREUM_TESTNET will always be created
+		const chain = "ETHEREUM_MAINNET"
+		const { walletAddress: walletAddressCheck } = await getBastionWallet(userId, chain, "GAS_STATION")
+		if (walletAddressCheck) return res.status(400).json({ "message": "wallet is already created", userId, type: "GAS_STATION", walletAddress: walletAddressCheck })
+
+		// create new Bastion User
+		await createBastionDeveloperUserWithType(userId, "GAS_STATION")
+		// return wallet information
+		const { walletAddress } = await getBastionWallet(userId, chain, "GAS_STATION")
+		if (!walletAddress) throw new Error("createBastionDeveloperUserWithType success but can not get wallet information")
+
+		return res.status(200).json({ userId, type: "GAS_STATION", walletAddress })
+
+	} catch (error) {
+		await createLog("user/createDeveloperUserGasStationWallet", userId, error.message, error, profileId)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
 }

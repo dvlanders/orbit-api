@@ -151,6 +151,10 @@ exports.logRequestResponse = (req, res, next) => {
 			response: parsedBody
 		};
 
+		if(res.errorMessage){
+			logData.error = res.errorMessage;
+		}
+
 		logToLoki(logData);
 
 		const reqObject = {

@@ -27,6 +27,7 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 			updated_at: new Date().toISOString()			
 		}
 		const updateData = await updateRequestRecord(transaction.id, toUpdate);
+
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
 

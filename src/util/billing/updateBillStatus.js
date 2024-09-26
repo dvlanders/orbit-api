@@ -9,7 +9,7 @@ exports.updateBillStatus = async(event) => {
         // fetch history
         const {data: billingHistory, error: billingHistoryError} = await supabase
         .from("billing_history")
-        .select("stripe_response")
+        .select("stripe_response, status")
         .eq("id", hifiInternalBillingId)
         .maybeSingle()
         
@@ -17,7 +17,7 @@ exports.updateBillStatus = async(event) => {
         if (!billingHistory) return
         // update 
         let toUpdate
-        if (event.type == "invoice.sent"){
+        if (event.type == "invoice.sent" && billingHistory.status != "PAID"){
             toUpdate = {
                 status: "UNPAID",
                 stripe_response: {
