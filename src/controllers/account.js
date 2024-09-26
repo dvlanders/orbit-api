@@ -1256,8 +1256,8 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 		}
 
 	} catch (error) {
-		createLog("account/createInternationalWireOfframpDestination", userId, error.message, error, null, res);
-		console.error('Error in createInternationalWireOfframpDestination', error);
+		createLog("account/createWireUsOfframpDestination", userId, error.message, error, null, res);
+		console.error('Error in createWireUsOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };
