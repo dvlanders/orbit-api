@@ -10,11 +10,13 @@ module.exports = (app, express) => {
 	const dashboardUtils = require("./dashboard/utils")
 	const dashboardAccount = require("./dashboard/account")
 	const dashboardBilling = require("./dashboard/billing")
+	const dashboardDeveloper = require("./dashboard/developer")
 	const externalWebhooks = require("./webhook")
 	const webhooks = require("./dashboard/webhooks")
 	const localUser = require("./localAdmin.js/user")
 	const internalUser = require("./internal/user")
 	const internalBilling = require("./internal/billing")
+
 
 	user(router);
 	dev(router);
@@ -31,6 +33,7 @@ module.exports = (app, express) => {
 	localUser(router)
 	internalUser(router)
 	internalBilling(router)
+	dashboardDeveloper(router)
 
 	app.use("/", router);
 };

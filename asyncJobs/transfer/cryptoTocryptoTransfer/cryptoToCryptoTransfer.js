@@ -21,7 +21,7 @@ const cryptoToCryptoTransferAsync = async(config) => {
         if (error) throw error
 
         // gas check
-        const { needFund, fundSubmitted } = await bastionGasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type)
+        const { needFund, fundSubmitted } = await bastionGasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
         if (needFund){
             throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
         }
