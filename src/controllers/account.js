@@ -1311,7 +1311,8 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
-				ibanAccountNumber, businessIdentifierCode, ibanCountryCode
+				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
+                null, null  // accountNumber and routingNumber not used for IBAN
 			);
 
 			if (bridgeAccountResult.status !== 200) {
