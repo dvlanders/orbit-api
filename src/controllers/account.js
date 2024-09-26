@@ -313,7 +313,8 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkEuOffRampAccount({
 			userId,
 			ibanAccountNumber,
-			businessIdentifierCode
+			businessIdentifierCode,
+            currency: "eur"
 		}).catch(error => {
 			console.error("Error checking EU off-ramp account", error);
 			throw new Error("Error checking EU off-ramp account: " + error.message);
