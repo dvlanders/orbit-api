@@ -10,12 +10,12 @@ const BASTION_URL = process.env.BASTION_URL;
 
 const gasAmount = {
     POLYGON_MAINNET: "0.1",
-    ETHEREUM_MAINNET: "0.005"
+    ETHEREUM_MAINNET: "0.006"
 }
 
 const gasThreshold = {
     POLYGON_MAINNET: BigInt(5 * Math.pow(10, 16)),
-    ETHEREUM_MAINNET: BigInt(2 * Math.pow(10, 15))
+    ETHEREUM_MAINNET: BigInt(4 * Math.pow(10, 15))
 }
 
 const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId) => {

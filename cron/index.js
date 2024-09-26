@@ -20,6 +20,7 @@ const pollOfframpTransactionsBlindpayStatus = require('./jobs/pollOfframpTransac
 const pollDeleteBridgeOfframpTransfer = require('./jobs/pollDeleteBridgeOfframpTransfer');
 const pollFeeTransactionRetry = require('./jobs/pollFeeTransactionRetry');
 const pollAutopayRefill = require('./jobs/pollAutopayRefill');
+const pollBastionBaseAssetTransferStatus = require('./jobs/pollBastionBaseAssetTransferStatus');
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollDeleteBridgeOfframpTransfer); // every 60 seconds
@@ -30,6 +31,7 @@ cron.schedule('*/20 * * * * *', pollBastionCryptoToCryptoTransferStatus); // eve
 cron.schedule('*/20 * * * * *', pollContractAction); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBastionGasTransaction); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollWebhookRetry);
+cron.schedule('*/10 * * * * *', pollBastionBaseAssetTransferStatus);
 cron.schedule('0 0 * * *', pollCleanWebhookQueue); // every 24 hrs
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsBridgeStatus)
 cron.schedule('*/10 * * * * *', pollAsyncJobs)

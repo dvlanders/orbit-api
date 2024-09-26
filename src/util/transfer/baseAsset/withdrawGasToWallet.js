@@ -13,6 +13,7 @@ const fetchBaseAssetTransactionRecord = require("./fetchBaseAssetTransactionReco
 const { updateRequestRecord } = require("./updateRequestRecord")
 const { baseAssetWithdrawAsyncScheduleCheck } = require("../../../../asyncJobs/transfer/baseAssetWithdraw/scheduleCheck")
 const createJob = require("../../../../asyncJobs/createJob")
+const { toUnitsString } = require("../cryptoToCrypto/utils/toUnits")
 
 const insertRecord = async(fields) => {
     const { senderUserId, amount, requestId, recipientAddress, chain, currency, senderAddress, senderBastionUserId } = fields
@@ -22,7 +23,8 @@ const insertRecord = async(fields) => {
     .update(
         { 
             sender_user_id: senderUserId,
-            amount_in_wei: amount,
+            amount_in_wei: toUnitsString(amount, 18),
+            amount: amount,
             recipient_wallet_address: recipientAddress,
             sender_wallet_address: senderAddress,
             chain: chain,
@@ -63,14 +65,14 @@ const createBaseAssetTransfer = async(fields) => {
 }
 
 const transfer = async(record, profileId) => {
-    const unitsAmount = record.amount_in_wei
+    const amount = record.amount
     const requestId = record.bastion_request_id
     const bastionUserId = record.sender_bastion_user_id
     const chain = record.chain
     const recipientAddress = record.recipient_wallet_address
     const currency = record.currency
 
-    const response = await transferBaseAsset(requestId, bastionUserId, chain, currency, unitsAmount, recipientAddress)
+    const response = await transferBaseAsset(requestId, bastionUserId, chain, currency, amount, recipientAddress)
     const responseBody = await safeParseBody(response)
 
     if (!response.ok) {
@@ -89,6 +91,7 @@ const transfer = async(record, profileId) => {
         const toUpdate = {
             bastion_response: responseBody,
             status: responseBody.status,
+            bastion_status: responseBody.status,
             transaction_hash: responseBody.transactionHash,
             failed_reason: responseBody.failureDetails,
         }

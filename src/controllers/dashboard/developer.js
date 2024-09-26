@@ -18,7 +18,7 @@ exports.withdrawFromGasWallet = async(req, res) => {
         const acceptedFields = {
             amount: "string",
             recipientAddress: "string",
-            chain: (value) => inStringEnum(value, [Chain.ETHEREUM_MAINNET]),
+            chain: (value) => inStringEnum(value, [Chain.ETHEREUM_MAINNET, Chain.ETHEREUM_TESTNET]),
             senderUserId: (value) => isUUID(value),
             requestId: (value) => isUUID(value),
         }

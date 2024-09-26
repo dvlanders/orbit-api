@@ -47,7 +47,6 @@ const pollAsyncJobs = async() => {
                 if ((error instanceof JobError && error.logging) || !(error instanceof JobError)){
                     await createLog("pollAsyncJobs", job.user_id, error.message)
                 }
-                await createLog("pollAsyncJobs", job.user_id, error.message)
                 // record error and create new job if needed
                 if (error instanceof JobError){
                     if (error.needToReschedule) {
