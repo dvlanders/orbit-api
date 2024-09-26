@@ -103,7 +103,7 @@ const createBastionSandboxCryptoTransfer = async(fields) => {
 
     if(!await checkBalanceForTransactionAmount(senderBastionUserId, amount, chain, currency)){
         const toUpdate = {
-            status: "FAILED",
+            status: "NOT_INITIATED",
             failed_reason: "Transfer amount exceeds wallet balance"
         }
         await updateRequestRecord(record.id, toUpdate)
