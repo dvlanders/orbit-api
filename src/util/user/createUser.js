@@ -594,7 +594,7 @@ const ipCheck = async (ip) => {
 		if (sanctionedCountries.includes(locationData.country.iso_code)) {
 			return {ipAllowed: false, message: "country information could not be retrieved for the provided IP address."}
 		}
-		if (locationData.country.iso_code == "US"){
+		if (locationData.country.iso_code == "US") {
             if (!locationData.subdivisions || !isArray(locationData.subdivisions))
                 return {ipAllowed: false, message: "state/province information could not be retrieved for the provided IP address."}
             else if (!allowedUsState.includes(locationData.subdivisions[0]['iso_code']))
