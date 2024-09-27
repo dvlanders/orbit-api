@@ -390,22 +390,22 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
-				.eq('account_id', recordId);
+				.select('id')
+				.eq('account_id', recordId)
+				.eq('payment_rail', 'sepa')
+				.maybeSingle()
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let sepaRecord = providerAccountRecordData.find(record => record.payment_rail === 'sepa');
-
-			if (sepaRecord) {
+			if (providerAccountRecordData) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: sepaRecord.id
+					id: providerAccountRecordData.id
 				});
 			}
 
