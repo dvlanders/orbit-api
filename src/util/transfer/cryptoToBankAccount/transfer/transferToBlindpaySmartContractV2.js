@@ -24,6 +24,7 @@ const { getBlindpayChain, getBlindpayToken } = require("../../../blindpay/blockc
 const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 const fetchBlindpayCryptoToFiatTransferRecord = require("./fetchBlindpayCryptoToFiatTransferRecord");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 
 const createPaymentQuote = async (config) => {
     const {recordId, blindpayAccountId, chain, amount, sourceUserId, contractAddress, bastionRequestId} = config;
@@ -250,6 +251,16 @@ const createTransferToBlindpaySmartContract = async (config) => {
         const toUpdate = {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const result = fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }
+
+    if(!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
         }
         await updateRequestRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
