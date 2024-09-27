@@ -5,7 +5,8 @@ const {
   completeWebhookMessage,
   insertWebhookMessageHistory,
   deleteWebhookMessage,
-  incrementWebhookMessageRetryCount
+  incrementWebhookMessageRetryCount,
+  updateWebhookMessage
 } = require("../../webhooks/reap/webhookMessagesService");
 
 const RETRY_INTERVAL = 60; // 60 secs
@@ -54,8 +55,9 @@ const pollReapWebhookEvents = async () => {
           await insertWebhookMessageHistory(eventHistory);
           // only delete webhook message if it is successfully inserted into job history and was processed successfully
           if(eventHistory.success){
-            await deleteWebhookMessage(event.id);
+            return await deleteWebhookMessage(event.id);
           }
+          await updateWebhookMessage(event.id, { process_status: "PENDING" });
         }
       })
     );

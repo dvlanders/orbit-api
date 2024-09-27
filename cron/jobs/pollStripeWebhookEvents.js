@@ -5,7 +5,8 @@ const {
   completeWebhookMessage,
   insertWebhookMessageHistory,
   deleteWebhookMessage,
-  incrementWebhookMessageRetryCount
+  incrementWebhookMessageRetryCount,
+  updateWebhookMessage
 } = require("../../webhooks/stripe/webhookMessagesService");
 
 const RETRY_INTERVAL = 60; // 60 secs
@@ -55,8 +56,9 @@ const pollStripeWebhookEvents = async () => {
           await insertWebhookMessageHistory(eventHistory);
           // only delete webhook message if it is successfully inserted into job history and was processed successfully
           if(eventHistory.success){
-            await deleteWebhookMessage(id);
+            return await deleteWebhookMessage(id);
           }
+          await updateWebhookMessage(id, { process_status: "PENDING" });
         }
       })
     );

@@ -10,6 +10,7 @@ const fetchAndUpdatePendingWebhookMessages = async (
     .from("reap_webhook_messages")
     .update({
       next_retry_at: new Date(now.getTime() + retry_interval * 1000).toISOString(),
+      process_status: "PROCESSING"
     })
     .eq("process_status", "PENDING")
     .lte("next_retry_at", now.toISOString())
@@ -73,10 +74,24 @@ const incrementWebhookMessageRetryCount = async (record) => {
   }
 }
 
+const updateWebhookMessage = async (id, toUpdate) => {
+  const { error } = await supabaseCall(() =>
+    supabase
+      .from("reap_webhook_messages")
+      .update(toUpdate)
+      .eq("id", id)
+  );
+
+  if (error) {
+    throw error;
+  }
+};
+
 module.exports = {
   fetchAndUpdatePendingWebhookMessages,
   insertWebhookMessageHistory,
   deleteWebhookMessage,
   completeWebhookMessage,
-  incrementWebhookMessageRetryCount
+  incrementWebhookMessageRetryCount,
+  updateWebhookMessage
 };
