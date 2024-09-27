@@ -6,7 +6,7 @@ const checkEuOffRampAccount = async(accountInfo) => {
     const {data: externalAccount, error: externalAccountError} = await supabaseCall(() => supabase
         .from("bridge_external_accounts")
         .select("*")
-        .match({iban: accountInfo.ibanAccountNumber, business_identifier_code: accountInfo.businessIdentifierCode, user_id: accountInfo.userId})
+        .match({iban: accountInfo.ibanAccountNumber, business_identifier_code: accountInfo.businessIdentifierCode, user_id: accountInfo.userId, currency: accountInfo.currency})
         .maybeSingle()
         )
     if (externalAccountError) throw externalAccountError

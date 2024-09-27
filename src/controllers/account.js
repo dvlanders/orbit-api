@@ -116,20 +116,19 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 
-	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
+	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, firstName, lastName, businessName, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
 
 
 
 	// Define required fields based on account owner type
-	let requiredFields = ["userId", "currency", "bankName", "accountOwnerName", "accountOwnerType", "accountNumber", "routingNumber"];
-	// if (accountOwnerType === "individual") {
-	// 	requiredFields.push("firstName", "lastName");
-	// } else if (accountOwnerType === "business") {
-	// 	requiredFields.push("businessName");C
-	// } else {
-	// 	return res.status(400).json({ error: "Invalid accountOwnerType" });
-	// }
-	requiredFields.push("streetLine1", "city", "state", "postalCode", "country");
+	let requiredFields = ["userId", "currency", "bankName", "accountOwnerName", "accountOwnerType", "accountNumber", "routingNumber", "streetLine1", "city", "state", "postalCode", "country"];
+	if (accountOwnerType === "individual") {
+		requiredFields.push("firstName", "lastName");
+	} else if (accountOwnerType === "business") {
+		requiredFields.push("businessName");
+	} else {
+		return res.status(400).json({ error: "Invalid accountOwnerType" });
+	}
 
 	// Define accepted fields and their types
 	const bridgeRequestStructureTyping = {
@@ -140,6 +139,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		accountNumber: 'string',
 		routingNumber: 'string',
 		accountOwnerType: 'string',
+        firstName: 'string',
+        lastName: 'string',
+        businessName: 'string',
 		streetLine1: 'string',
 		streetLine2: 'string',
 		city: 'string',
@@ -171,7 +173,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
-				null, null, null,
+				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
 				null, null, null, // iban fields not used for USD
 				accountNumber, routingNumber
@@ -207,6 +209,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 					beneficiary_country: country,
 					account_number: accountNumber,
 					routing_number: routingNumber,
+                    beneficiary_first_name: firstName,
+                    beneficiary_last_name: lastName,
+                    beneficiary_business_name: businessName,
 					bridge_response: bridgeAccountResult.rawResponse,
 					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 				})
@@ -313,7 +318,8 @@ exports.createEuroOfframpDestination = async (req, res) => {
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkEuOffRampAccount({
 			userId,
 			ibanAccountNumber,
-			businessIdentifierCode
+			businessIdentifierCode,
+            currency: "eur"
 		}).catch(error => {
 			console.error("Error checking EU off-ramp account", error);
 			throw new Error("Error checking EU off-ramp account: " + error.message);
@@ -1128,11 +1134,11 @@ exports.createAPACOfframpDestination = async (req, res) => {
 
 }
 
-exports.createInternationalWireOfframpDestination = async (req, res) => {
+exports.createWireUsOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	const {
-		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+		accountType, currency, bankName, accountOwnerName, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode,
 		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
 	} = req.body;
 
@@ -1150,10 +1156,10 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	];
 
 	const acceptedFields = {
-		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
-		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'firstName': "string",
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': (value) => inStringEnum(value, ["us", "iban"])
+		'accountType': "string"
 	};
 
 	// Execute fields validation
@@ -1173,18 +1179,13 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 
 
 	try {
-        // specify payment rail
-        const paymentRail = accountType === 'us' ? 'wire' : 'swift';
-
-		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = accountType === 'us'
-			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
-			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
+		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({ userId, accountNumber, routingNumber });
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
-				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
+				null, businessIdentifierCode, null,
 				accountNumber, routingNumber
 			);
 
@@ -1206,14 +1207,12 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				account_owner_name: accountOwnerName,
 				account_owner_type: accountOwnerType,
 				account_type: accountType,
-				iban: ibanAccountNumber,
 				account_number: accountNumber,
 				routing_number: routingNumber,
 				beneficiary_first_name: firstName,
 				beneficiary_last_name: lastName,
 				beneficiary_business_name: businessName,
 				business_identifier_code: businessIdentifierCode,
-				bank_country: ibanCountryCode,
 				bridge_response: bridgeAccountResult.rawResponse,
 				bridge_external_account_id: bridgeAccountResult.rawResponse.id
 			});
@@ -1222,20 +1221,20 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
 			}
 
-			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", paymentRail, "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
-				message: `${paymentRail} payment rail added successfully`,
+				message: `Wire payment rail added successfully`,
 				id: accountProviderRecord.id
 			});
 		} else {
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
+				.select('id')
 				.eq('account_id', externalAccountRecordId)
-                .eq('payment_rail', paymentRail)
+                .eq('payment_rail', 'wire')
                 .maybeSingle();
 
 			if (providerAccountRecordError) {
@@ -1252,7 +1251,7 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				});
 			}
 
-			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", paymentRail, "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "wire", "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
@@ -1262,8 +1261,140 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		}
 
 	} catch (error) {
-		createLog("account/createInternationalWireOfframpDestination", userId, error.message, error, null, res);
-		console.error('Error in createInternationalWireOfframpDestination', error);
+		createLog("account/createWireUsOfframpDestination", userId, error.message, error, null, res);
+		console.error('Error in createWireUsOfframpDestination', error);
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
+	}
+};
+
+exports.createSwiftOfframpDestination = async (req, res) => {
+	const { userId, profileId } = req.query;
+	const {
+		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode, streetLine1, streetLine2, city, state, postalCode, country
+	} = req.body;
+
+
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+	// verify required fields
+
+	const requiredFields = [
+		'accountType', 'currency', 'bankName', 'accountOwnerName', 'ibanAccountNumber', 'accountOwnerType', 'businessIdentifierCode'
+	];
+
+	const acceptedFields = {
+		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		"streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
+		'accountType': "string"
+	};
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	}
+
+	// if the accountOwnerType is business, make sure that the businessName is provided. if individual, then make sure that the firstName and lastName are provided
+	if (accountOwnerType === 'business' && !businessName) {
+		return res.status(400).json({ error: 'The businessName field is required when the accountOwnerType is business' });
+	}
+
+	if (accountOwnerType === 'individual' && (!firstName || !lastName)) {
+		return res.status(400).json({ error: 'The firstName and lastName fields are required when the accountOwnerType is individual' });
+	}
+
+
+	try {
+        const { externalAccountExist, externalAccountRecordId } = await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode, currency: "usd" });
+		if (!externalAccountExist) {
+			const bridgeAccountResult = await createBridgeExternalAccount(
+				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
+				firstName, lastName, businessName,
+				streetLine1, streetLine2, city, state, postalCode, country,
+				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
+                null, null  // accountNumber and routingNumber not used for IBAN
+			);
+
+			if (bridgeAccountResult.status !== 200) {
+				return res.status(bridgeAccountResult.status).json({
+					error: bridgeAccountResult.type,
+					message: bridgeAccountResult.message,
+					source: bridgeAccountResult.source
+				});
+			}
+
+
+			const newBridgeExternalAccountRecordId = v4();
+			const insertResult = await supabase.from('bridge_external_accounts').insert({
+				id: newBridgeExternalAccountRecordId,
+				user_id: userId,
+				currency: currency,
+				bank_name: bankName,
+				account_owner_name: accountOwnerName,
+				account_owner_type: accountOwnerType,
+				account_type: accountType,
+				iban: ibanAccountNumber,
+				beneficiary_first_name: firstName,
+				beneficiary_last_name: lastName,
+				beneficiary_business_name: businessName,
+				business_identifier_code: businessIdentifierCode,
+				bank_country: ibanCountryCode,
+				bridge_response: bridgeAccountResult.rawResponse,
+				bridge_external_account_id: bridgeAccountResult.rawResponse.id
+			});
+
+			if (insertResult.error) {
+				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
+			}
+
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "swift", "BRIDGE", userId);
+
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Swift payment rail added successfully",
+				id: accountProviderRecord.id
+			});
+		} else {
+			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
+				.from('account_providers')
+				.select('id')
+				.eq('account_id', externalAccountRecordId)
+                .eq('payment_rail', 'swift')
+                .maybeSingle();
+
+			if (providerAccountRecordError) {
+				console.log(providerAccountRecordError);
+				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
+			}
+
+			if (providerAccountRecordData) {
+				return res.status(200).json({
+					status: "ACTIVE",
+					invalidFields: [],
+					message: "Account already exists",
+					id: providerAccountRecordData.id
+				});
+			}
+
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "swift", "BRIDGE", userId);
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account created successfully",
+				id: accountProviderRecord.id
+			});
+		}
+
+	} catch (error) {
+		createLog("account/createSwiftOfframpDestination", userId, error.message, error);
+		console.error('Error in createSwiftOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };

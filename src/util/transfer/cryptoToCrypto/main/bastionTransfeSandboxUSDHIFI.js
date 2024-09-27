@@ -23,6 +23,7 @@ const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
 const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
 const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/transfer")
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
@@ -86,7 +87,7 @@ const insertRecord = async(fields) => {
 }
 
 const createBastionSandboxCryptoTransfer = async(fields) => {
-    const { senderUserId, amount, chain, currency, profileId } = fields
+    const { senderUserId, amount, chain, currency, profileId, senderBastionUserId } = fields
     if (!isValidAmount(amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[currency]
@@ -99,6 +100,15 @@ const createBastionSandboxCryptoTransfer = async(fields) => {
     const {validTransfer, record} = await insertRecord(fields)
     const receipt = await fetchCryptoToCryptoTransferRecord(record.id, profileId)
     if (!validTransfer) return receipt
+
+    if(!await checkBalanceForTransactionAmount(senderBastionUserId, amount, chain, currency)){
+        const toUpdate = {
+            status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
+        }
+        await updateRequestRecord(record.id, toUpdate)
+        return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
+    }
 
     // insert async job
     const jobConfig = {
