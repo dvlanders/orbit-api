@@ -240,7 +240,15 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		acceptedFields = individualAcceptedFields;
 	}
 
+    // check stateProvinceRegion is supported by HIFI
+    if (!fields.stateProvinceRegion)
+        throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: 'stateProvinceRegion is a required field.' });
+    if (!isValidState(fields.stateProvinceRegion))
+        throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `${fields.stateProvinceRegion} is not a supported state for user creation. See here for a list of supported regions: https://docs.hifibridge.com/docs/supported-networks-chains-tokens` });
+
 	// check ip address
+    if (!fields.ipAddress)
+        throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: 'ipAdress is a required field.' });
 	const {isIpAllowed, message} = await ipCheck(fields.ipAddress);
 	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}` });
 
