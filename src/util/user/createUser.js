@@ -241,8 +241,8 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	}
 
 	// check ip address
-	const isIpAllowed = await ipCheck(fields.ipAddress);
-	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid ipAddress, please make sure ipAdress provided is a public IPv4 address outside unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)" });
+	const {isIpAllowed, message} = await ipCheck(fields.ipAddress);
+	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}` });
 
 	// check signedAgreementId only for prod
 	if (process.env.NODE_ENV == "production") {
@@ -489,8 +489,8 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 
 	// check ip address
 	if (fields.ipAddress) {
-		const isIpAllowed = await ipCheck(fields.ipAddress)
-		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid ipAddress, please make sure ipAdress provided is a public IPv4 address outside unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)" })
+		const {isIpAllowed, message} = await ipCheck(fields.ipAddress)
+		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}` })
 	}
 
 	let acceptedFields;
@@ -573,6 +573,10 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 }
 
 const ipCheck = async (ip) => {
+    // check if ip is valid IPv4.
+    if (!isValidIPv4(ip))
+        return {ipAllowed: false, message: "please make sure IP address provided is a public IPv4."}
+
 	// request options
 	const options = {
 		method: 'GET',
@@ -584,23 +588,25 @@ const ipCheck = async (ip) => {
 	const locationRes = await fetch(`https://geolite.info/geoip/v2.1/city/${ip}`, options);
 	const locationData = await locationRes.json();
 	if (locationRes.ok) {
-		if (!locationData.traits || !isValidIPv4(locationData.traits.ip_address)) {
-			return false
+		if (!locationData.traits) {
+			return {ipAllowed: false, message: "unable to determine the geographic location from the provided IP address. "}
 		}
 		if (sanctionedCountries.includes(locationData.country.iso_code)) {
-			return false
+			return {ipAllowed: false, message: "country information could not be retrieved for the provided IP address."}
 		}
-		if (locationData.country.iso_code == "US" && (!locationData.subdivisions || !isArray(locationData.subdivisions) || !allowedUsState.includes(locationData.subdivisions[0]['iso_code']))) {
-			console.log("not supported")
-			return false
-		}
+		if (locationData.country.iso_code == "US") {
+            if (!locationData.subdivisions || !isArray(locationData.subdivisions))
+                return {ipAllowed: false, message: "state/province information could not be retrieved for the provided IP address."}
+            else if (!allowedUsState.includes(locationData.subdivisions[0]['iso_code']))
+                return {ipAllowed: false, message: "please make sure provided IP address is not from unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)"}
+        }
 	} else {
 		console.error(locationData)
 		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData)
 		throw new Error("failed to get ip information")
 	}
 
-	return true
+	return {isIpAllowed: true, message: ""}
 };
 
 
