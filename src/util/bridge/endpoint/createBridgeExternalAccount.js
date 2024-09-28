@@ -122,7 +122,6 @@ exports.createBridgeExternalAccount = async (
 		});
 
 		const bridgeData = await bridgeResponse.json();
-		console.log('bridgeData', bridgeResponse.status, bridgeData);
 
 		// happy path
 		if (bridgeResponse.ok) {
