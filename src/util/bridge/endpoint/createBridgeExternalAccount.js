@@ -122,7 +122,7 @@ exports.createBridgeExternalAccount = async (
 		});
 
 		const bridgeData = await bridgeResponse.json();
-
+		console.log('bridgeData', bridgeResponse.status, bridgeData);
 
 		// happy path
 		if (bridgeResponse.ok) {
@@ -142,6 +142,19 @@ exports.createBridgeExternalAccount = async (
 				rawResponse: bridgeData
 			};
 		} else if (bridgeResponse.status == 400){
+
+			// intentionally filter out the error message for sandbox
+			// simulate a fake sepa account for sandbox
+			if (process.env.NODE_ENV === 'development' && bridgeData.source && bridgeData.source.key.account_type == "Please contact Bridge to enable SEPA/Euro services") {
+				return {
+					status: 200,
+					rawResponse: {
+						message: "This is a similate response since Bridge doesn't support SEPA external account creation in SANDBOX environment",
+						id: `${v4()}-SANDBOX-ONLY`
+					}
+				};
+			}
+
 			return {
 				status: 400,
 				type: createBridgeExternalAccountErrorType.INVALID_FIELD,
@@ -149,6 +162,7 @@ exports.createBridgeExternalAccount = async (
 				source: bridgeData.source,
 				rawResponse: bridgeData
 			};
+			
 		}
 		else {
 			return {
