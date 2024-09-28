@@ -1,30 +1,32 @@
-const { ethers, AlchemyProvider, BaseContract } = require("ethers");
-const abi = require("../paymentProcessor/abi.json");
-const { ChainId, Chain } = require("../../common/blockchain");
-const { ContractAbi } = require("../contractAbi");
-
-const result = require("dotenv").config({ path: `.env.production` });
-const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
+const { initContractInstance } = require("./contract");
+const { Chain } = require("../../common/blockchain");
+const { initAlchemyProvider } = require("./provider");
 
 
-const getTransactionsOfContract = async (chain, contractAddress, filter) => {
-    try {
-        const chainId = ChainId[chain];
-        const abi = ContractAbi[contractAddress.toLowerCase()]
-        const provider = new AlchemyProvider(chainId, ALCHEMY_API_KEY);
-        const contract = new BaseContract(contractAddress, abi, provider);
-        const records = await contract.queryFilter(filter);
-        console.log(records.length);
-    } catch (error) {
-        console.log(error);
-    }
+
+const getTransactionsOfContractByFilter = async (chain, contractAddress, filter) => {
+    const contract = initContractInstance(chain, contractAddress);
+    const records = await contract.queryFilter(filter);
+    return records;
 }
 
 const getTransactionsOfContractByEventName = async (chain, contractAddress, eventName) => {
-    return await getTransactionsOfContract(chain, contractAddress, eventName);
+    return await getTransactionsOfContractByFilter(chain, contractAddress, eventName);
 }
 
-module.exports = { getTransactionsOfContractByEventName, getTransactionsOfContract };
+const getTransactionByHash = async (chain, transactionHash) => {
+    const provider = initAlchemyProvider(chain);
+    const transaction = await provider.getTransaction(transactionHash);
+    return transaction;
+}
+
+const getTransactionReceiptByHash = async (chain, transactionHash) => {
+    const provider = initAlchemyProvider(chain);
+    const transaction = await provider.getTransactionReceipt(transactionHash);
+    return transaction;
+}
+
+module.exports = { getTransactionsOfContractByEventName, getTransactionsOfContractByFilter, getTransactionByHash, getTransactionReceiptByHash };
 
 const main = async () => {
     await getTransactionsOfContractByEventName(Chain.POLYGON_MAINNET, "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "Transfer");
