@@ -108,6 +108,7 @@ const burnUsdc = async(amount, sourceChain, destinationChain, userId, bastionUse
              bastion_status: responseBody.status,
              bastion_response: responseBody,
              updated_at: new Date().toISOString(),
+             transaction_hash: responseBody.transactionHash
          })
          .eq('id', record.id)
          .select()
