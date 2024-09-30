@@ -1,5 +1,5 @@
 const createLog = require("../../src/util/logger/supabaseLogger");
-const { getWebhookProcessor } = require("../../webhooks/reap/webhookMapping");
+const { getStripeWebhookProcessor } = require("../../webhooks/stripe/webhookMapping");
 const {
   fetchAndUpdatePendingWebhookMessages,
   completeWebhookMessage,
@@ -7,12 +7,12 @@ const {
   deleteWebhookMessage,
   incrementWebhookMessageRetryCount,
   updateWebhookMessage
-} = require("../../webhooks/reap/webhookMessagesService");
+} = require("../../webhooks/stripe/webhookMessagesService");
 
 const RETRY_INTERVAL = 60; // 60 secs
 const MAX_RETRIES = 100;
 
-const pollReapWebhookEvents = async () => {
+const pollStripeWebhookEvents = async () => {
   try {
     const events = await fetchAndUpdatePendingWebhookMessages(
       RETRY_INTERVAL
@@ -20,50 +20,51 @@ const pollReapWebhookEvents = async () => {
 
     await Promise.all(
       events.map(async (event) => {
+        const {id, event_id, event_type, event_data, full_event, retry_count} = event;
         let caughtError = null;
         try {
           await incrementWebhookMessageRetryCount(event);
-          const event_object = event.event_object;
-          const eventProcessor = getWebhookProcessor(event.event_type);
-          await eventProcessor(event_object);
-          await completeWebhookMessage(event.id);
+          const eventProcessor = getStripeWebhookProcessor(event_type?.split(".")[0]);
+          await eventProcessor(full_event);
+          await completeWebhookMessage(id);
         } catch (error) {
           caughtError = error;
           await createLog(
-            "pollReapWebhookEvents",
+            "pollStripeWebhookEvents",
             null,
-            `Failed to process event id ${event.id}`,
+            `Failed to process event id ${id}`,
             error
           );
-          if (event.retry_count >= MAX_RETRIES) {
+          if (retry_count >= MAX_RETRIES) {
             await createLog(
-              "pollReapWebhookEvents",
+              "pollStripeWebhookEvents",
               null,
-              `Webhook event ${event.id} has been retried ${event.retry_count} times`,
+              `Webhook event ${id} has been retried ${retry_count} times`,
               error
             );
           }
         } finally {
-          const eventHistory = {
-            event_category: event.event_category,
-            event_type: event.event_type,
-            full_event: event.full_event,
+          const eventHistory = 
+          {
+            event_id: event_id,
+            event_type: event_type,
             success: !caughtError,
+            full_event: full_event,
             error: caughtError ? { message: caughtError.message } : null,
-          };
+          }
 
           await insertWebhookMessageHistory(eventHistory);
           // only delete webhook message if it is successfully inserted into job history and was processed successfully
           if(eventHistory.success){
-            return await deleteWebhookMessage(event.id);
+            return await deleteWebhookMessage(id);
           }
-          await updateWebhookMessage(event.id, { process_status: "PENDING" });
+          await updateWebhookMessage(id, { process_status: "PENDING" });
         }
       })
     );
   } catch (error) {
-    await createLog("pollReapWebhookEvents", null, error.message, error);
+    await createLog("pollStripeWebhookEvents", null, error.message, error);
   }
 };
 
-module.exports = pollReapWebhookEvents;
+module.exports = pollStripeWebhookEvents;
