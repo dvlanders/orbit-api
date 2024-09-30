@@ -28,30 +28,48 @@ EurOfframpSepaAccountResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccountObject'
-BrlOfframpReceiverCreateResponse:
+SAOfframpReceiverCreateResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverCreateObject'
-BrlOfframpReceiverUpdateResponse:
+        $ref: '#/components/schemas/SAOfframpReceiverCreateObject'
+SAOfframpReceiverUpdateResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverUpdateObject'
-BrlOfframpReceiverGetResponse:
+        $ref: '#/components/schemas/SAOfframpReceiverUpdateObject'
+SAOfframpReceiverGetResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverGetObject'
+        $ref: '#/components/schemas/SAOfframpReceiverGetObject'
 BrlOfframpPixAccountResponse:
   description: Success
   content:
     application/json:
       schema:
         $ref: '#/components/schemas/BrlOfframpPixAccountObject'
+CopOfframpAchCopBitsoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/CopOfframpAchCopBitsoAccountObject'
+MxnOfframpSpeiBitsoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/MxnOfframpSpeiBitsoAccountObject'
+ArsOfframpTransferBitsoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ArsOfframpTransferBitsoAccountObject'
 GetAccountResponse:
   description: Success
   content:

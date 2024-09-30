@@ -361,9 +361,9 @@ EurOfframpSepaAccount:
     - ibanAccountNumber
     - businessIdentifierCode
     - ibanCountryCode
-BrlReceiverCreateIndividualLightKYCAccount:
+SAReceiverCreateIndividualLightKYCAccount:
   type: object
-  title: "BRL Receiver Individual Light KYC Account"
+  title: "Receiver Individual Light KYC Account"
   properties:
     type:
       type: string
@@ -393,9 +393,9 @@ BrlReceiverCreateIndividualLightKYCAccount:
     - date_of_birth
     - email
     - country
-BrlReceiverCreateIndividualStandardKYCAccount:
+SAReceiverCreateIndividualStandardKYCAccount:
   type: object
-  title: "BRL Receiver Individual Standard KYC Account"
+  title: "Receiver Individual Standard KYC Account"
   properties:
     type:
       type: string
@@ -416,7 +416,7 @@ BrlReceiverCreateIndividualStandardKYCAccount:
       format: email
     country:
       type: string
-      description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
+      description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US". `country` should match `id_doc_country`.
     tax_id:
       type: string
     phone_number:
@@ -435,18 +435,22 @@ BrlReceiverCreateIndividualStandardKYCAccount:
       type: string
     id_doc_country:
       type: string
-      description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
+      description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US". `id_doc_country` should match `country`.
     id_doc_type:
       type: string
-      enum: [passport, id_card]
+      enum: [PASSPORT, ID_CARD, DRIVERS]
     id_doc_front_file:
       type: string
+      description: File size should not exceed 3MB
     id_doc_back_file:
       type: string
+      description: File size should not exceed 3MB
     proof_of_address_doc_type:
       type: string
+      enum: [UTILITY_BILL, BANK_STATEMENT, RENTAL_AGREEMENT, TAX_DOCUMENT, GOVERNMENT_CORRESPONDENCE]
     proof_of_address_doc_file:
       type: string
+      description: File size should not exceed 3MB
   required:
     - type
     - kyc_type
@@ -464,9 +468,9 @@ BrlReceiverCreateIndividualStandardKYCAccount:
     - id_doc_country
     - id_doc_type
     - id_doc_front_file
-BrlReceiverCreateBusinessLightKYBAccount:
+SAReceiverCreateBusinessLightKYBAccount:
   type: object
-  title: "BRL Receiver Business Light KYB Account"
+  title: "Receiver Business Light KYB Account"
   properties:
     type:
       type: string
@@ -496,9 +500,9 @@ BrlReceiverCreateBusinessLightKYBAccount:
     - formation_date
     - email
     - country
-BrlReceiverCreateBusinessStandardKYBAccount:
+SAReceiverCreateBusinessStandardKYBAccount:
   type: object
-  title: "BRL Receiver Business Standard KYB Account"
+  title: "Receiver Business Standard KYB Account"
   properties:
     type:
       type: string
@@ -536,8 +540,10 @@ BrlReceiverCreateBusinessStandardKYBAccount:
       type: string
     incorporation_doc_file:
       type: string
+      description: File size should not exceed 3MB
     proof_of_ownership_doc_file:
       type: string
+      description: File size should not exceed 3MB
     owners:
       type: array
       items:
@@ -558,9 +564,9 @@ BrlReceiverCreateBusinessStandardKYBAccount:
     - incorporation_doc_file
     - proof_of_ownership_doc_file
     - owners
-BrlReceiverUpdateIndividualLightKYCAccount:
+SAReceiverUpdateIndividualLightKYCAccount:
   type: object
-  title: "BRL Receiver Individual Light KYC Account"
+  title: "Receiver Individual Light KYC Account"
   properties:
     first_name:
       type: string
@@ -576,9 +582,9 @@ BrlReceiverUpdateIndividualLightKYCAccount:
     country:
       type: string
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
-BrlReceiverUpdateIndividualStandardKYCAccount:
+SAReceiverUpdateIndividualStandardKYCAccount:
   type: object
-  title: "BRL Receiver Individual Standard KYC Account"
+  title: "Receiver Individual Standard KYC Account"
   properties:
     first_name:
       type: string
@@ -624,9 +630,9 @@ BrlReceiverUpdateIndividualStandardKYCAccount:
       type: string
     proof_of_address_doc_file:
       type: string
-BrlReceiverUpdateBusinessLightKYBAccount:
+SAReceiverUpdateBusinessLightKYBAccount:
   type: object
-  title: "BRL Receiver Business Light KYB Account"
+  title: "Receiver Business Light KYB Account"
   properties:
     legal_name:
       type: string
@@ -642,9 +648,9 @@ BrlReceiverUpdateBusinessLightKYBAccount:
     country:
       type: string
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
-BrlReceiverUpdateBusinessStandardKYBAccount:
+SAReceiverUpdateBusinessStandardKYBAccount:
   type: object
-  title: "BRL Receiver Business Standard KYB Account"
+  title: "Receiver Business Standard KYB Account"
   properties:
     legal_name:
       type: string
@@ -711,15 +717,19 @@ ReceiverBusinessOwner:
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
     id_doc_type:
       type: string
-      enum: [passport, id_card]
+      enum: [PASSPORT, ID_CARD, DRIVERS]
     id_doc_front_file:
       type: string
+      description: File size should not exceed 3MB
     id_doc_back_file:
       type: string
+      description: File size should not exceed 3MB
     proof_of_address_doc_type:
       type: string
+      enum: [UTILITY_BILL, BANK_STATEMENT, RENTAL_AGREEMENT, TAX_DOCUMENT, GOVERNMENT_CORRESPONDENCE]
     proof_of_address_doc_file:
       type: string
+      description: File size should not exceed 3MB
   required:
     - first_name
     - last_name
@@ -748,10 +758,14 @@ BrlOfframpPixAccount:
       type: string
     pix_key:
       type: string
+    currency:
+      type: string
+      enum: [brl]
   required:
     - type
     - name
     - pix_key
+    - currency
 BrlOfframpAchAccount:
   type: object
   title: "BRL Offramp Ach Account"
@@ -771,6 +785,9 @@ BrlOfframpAchAccount:
       type: string
     account_class:
       type: string
+    currency:
+      type: string
+      enum: [brl]
   required:
     - type
     - name
@@ -779,6 +796,7 @@ BrlOfframpAchAccount:
     - account_number
     - account_type
     - account_class
+    - currency
 BrlOfframpWireAccount:
   type: object
   title: "BRL Offramp Wire Account"
@@ -807,6 +825,9 @@ BrlOfframpWireAccount:
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
     postal_code:
       type: string
+    currency:
+      type: string
+      enum: [brl]
   required:
     - type
     - name
@@ -819,6 +840,102 @@ BrlOfframpWireAccount:
     - state_province_region
     - country
     - postal_code
+    - currency
+CopOfframpAchCopBitsoAccount:
+  type: object
+  title: "COP Offramp Wire Account"
+  properties:
+    type:
+      type: string
+      enum: [ach_cop_bitso]
+    name:
+      type: string
+    account_type:
+      type: string
+    ach_cop_beneficiary_first_name:
+      type: string
+    ach_cop_beneficiary_last_name:
+      type: string
+    ach_cop_document_id:
+      type: string
+    ach_cop_document_type:
+      type: string
+      enum: [CC, CE, NIT, PASS, PEP]
+    ach_cop_email:
+      type: string
+    ach_cop_bank_code:
+      type: string
+    ach_cop_bank_account:
+      type: string
+    currency:
+      type: string
+      enum: [cop]
+  required:
+    - type
+    - name
+    - account_type
+    - ach_cop_beneficiary_first_name
+    - ach_cop_beneficiary_last_name
+    - ach_cop_document_id
+    - ach_cop_document_type
+    - ach_cop_email
+    - ach_cop_bank_code
+    - ach_cop_bank_account
+    - currency
+ArsOfframpTransferBitsoAccount:
+  type: object
+  title: "ARS Offramp Wire Account"
+  properties:
+    type:
+      type: string
+      enum: [transfers_bitso]
+    name:
+      type: string
+    transfers_type:
+      type: string
+      enum: [CVU, CBU, ALIAS]
+    transfers_account:
+      type: string
+    beneficiary_name:
+      type: string
+    currency:
+      type: string
+      enum: [ars]
+  required:
+    - type
+    - name
+    - transfers_type
+    - transfers_account
+    - beneficiary_name
+    - currency
+MxnOfframpSpeiBitsoAccount:
+  type: object
+  title: "MXN Offramp Wire Account"
+  properties:
+    type:
+      type: string
+      enum: [spei_bitso]
+    name:
+      type: string
+    spei_protocol:
+      type: string
+      enum: [clabe, debitcard, phonenum]
+    spei_institution_code:
+      type: string
+    spei_clabe:
+      type: string
+    beneficiary_name:
+      type: string
+    currency:
+      type: string
+      enum: [mxn]
+  required:
+    - type
+    - name
+    - spei_protocol
+    - spei_institution_code
+    - beneficiary_name
+    - currency
 UsdOnrampAchAccountObject:
   type: object
   properties:
@@ -944,7 +1061,7 @@ EurOfframpSepaAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
-BrlOfframpReceiverCreateObject:
+SAOfframpReceiverCreateObject:
   type: object
   properties:
     id:
@@ -957,7 +1074,7 @@ BrlOfframpReceiverCreateObject:
     id: "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
     type: "individual"
     kyc_type: "light"
-BrlOfframpReceiverUpdateObject:
+SAOfframpReceiverUpdateObject:
   type: object
   properties:
     success:
@@ -967,7 +1084,7 @@ BrlOfframpReceiverUpdateObject:
   example:
     success: true
     id: "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
-BrlOfframpReceiverGetObject:
+SAOfframpReceiverGetObject:
   type: object
   properties:
     count:
@@ -980,6 +1097,60 @@ BrlOfframpReceiverGetObject:
     count: 0
     data: []
 BrlOfframpPixAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+CopOfframpAchCopBitsoAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+MxnOfframpSpeiBitsoAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+ArsOfframpTransferBitsoAccountObject:
   type: object
   properties:
     status:
