@@ -5,6 +5,8 @@ const { BridgeTransactionStatusMap, virtualAccountPaymentRailToChain } = require
 const { isUUID } = require("../../src/util/common/fieldsValidation");
 const { v4: uuidv4 } = require("uuid");
 const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
+const { createTransactionFeeRecord } = require("../../src/util/billing/fee/transactionFeeBilling");
+const { transferType } = require("../../src/util/transfer/utils/transfer");
 
 const processVirtualAccountEvent = async (event) => {
   const {
@@ -122,12 +124,15 @@ const processVirtualAccountEvent = async (event) => {
           .select("user_id, source_currency, destination_payment_rail, destination_currency")
           .eq("virtual_account_id", virtual_account_id)
           .limit(1)
-          .single()
+          .maybeSingle()
       );
 
     if (virtualAccountError) {
       throw virtualAccountError;
     }
+
+    if(!virtualAccount) return; // this transaction is created in the dev_production database, so we don't need to process it
+
     const userId = virtualAccount.user_id;
 
     const { data: initialRecord, error: initialRecordError } = await supabase
@@ -163,6 +168,9 @@ const processVirtualAccountEvent = async (event) => {
     if (initialRecordError) {
       throw initialRecordError;
     }
+
+    await createTransactionFeeRecord(initialRecord.id, transferType.FIAT_TO_CRYPTO);
+
     await notifyFiatToCryptoTransfer(initialRecord);
   } catch (error) {
     await createLog(
