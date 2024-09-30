@@ -43,7 +43,8 @@ const fetchBridgingTransactions = async (recordId, profileId) => {
             status: data.status,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
-            transactionHash: transactionHash
+            transactionHash: transactionHash,
+            failedReason: data.failed_reason
         }
     }
     

@@ -4,6 +4,7 @@ const createLog = require("../../logger/supabaseLogger")
 const supabase = require("../../supabaseClient")
 const { safeParseBody } = require("../../utils/response")
 const { messageTransmitter } = require("./utils")
+const { getMappedError } = require("../../bastion/utils/errorMappings")
 
 const receiveMessageAndMint = async (userId, bastionUserId, chain, messageBytes, attestationSignature, walletAddress) => {
     // get message transmitter address
@@ -71,8 +72,9 @@ const receiveMessageAndMint = async (userId, bastionUserId, chain, messageBytes,
             .single()
 
             if (updateError) throw new Error("Error updating contract action record: " + updateError.message)
+            const errorMessageForCustomer = getMappedError(responseBody.message)
 
-            return {success: false, record: updatedRecord}
+            return {success: false, record: updatedRecord, errorMessageForCustomer}
         }
     
         // update contract action record

@@ -30,7 +30,7 @@ const approveUsdc = async (userId, profileId, bridgingRecord) => {
         const stageRecords = data.stage_records
             
         const { walletAddress, bastionUserId } = await getBastionWallet(userId, chain, walletType)
-        const { success, record } = await approveToTokenMessenger(unitAmount, chain, userId, bastionUserId, walletAddress)
+        const { success, record, errorMessageForCustomer } = await approveToTokenMessenger(unitAmount, chain, userId, bastionUserId, walletAddress)
 
         // update stage record
         stageRecords.APPROVE_TO_TOKEN_MESSENGER = record.id
@@ -43,7 +43,8 @@ const approveUsdc = async (userId, profileId, bridgingRecord) => {
                     stage_status: "FAILED",
                     status: "FAILED",
                     updated_at: new Date().toISOString(),
-                    stage_records: stageRecords
+                    stage_records: stageRecords,
+                    failed_reason: errorMessageForCustomer
                 })
                 .eq('id', bridgingRecordId)
                 .select()

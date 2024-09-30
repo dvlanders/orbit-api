@@ -37,7 +37,7 @@ const depositUsdcForBurn = async (userId, profileId, bridgingRecord) => {
             
         const { walletAddress: sourceWalletAddress, bastionUserId: sourceBastionUserId } = await getBastionWallet(sourceUserId, sourceChain, sourceWalletType)
         const { walletAddress: destinationWalletAddress } = await getBastionWallet(destinationUserId, destinationChain, destinationWalletType)
-        const { success, record } = await burnUsdc(unitAmount, sourceChain, destinationChain, sourceUserId, sourceBastionUserId, sourceWalletAddress, destinationWalletAddress)
+        const { success, record, errorMessageForCustomer } = await burnUsdc(unitAmount, sourceChain, destinationChain, sourceUserId, sourceBastionUserId, sourceWalletAddress, destinationWalletAddress)
 
         // update stage record
         stageRecords.BURN_USDC_ON_SOURCE_CHAIN = record.id
@@ -50,7 +50,8 @@ const depositUsdcForBurn = async (userId, profileId, bridgingRecord) => {
                     stage_status: "FAILED",
                     status: "FAILED",
                     updated_at: new Date().toISOString(),
-                    stage_records: stageRecords
+                    stage_records: stageRecords,
+                    failed_reason: errorMessageForCustomer
                 })
                 .eq('id', bridgingRecordId)
                 .select()

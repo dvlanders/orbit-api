@@ -1,3 +1,4 @@
+const { getMappedError } = require("../../../src/util/bastion/utils/errorMappings")
 const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
 const createLog = require("../../../src/util/logger/supabaseLogger")
 const { approveToTokenMessenger } = require("../../../src/util/smartContract/cctp/approve")
@@ -60,7 +61,7 @@ const mintUsdc = async (userId, profileId, bridgingRecord) => {
         const { walletAddress: destinationWalletAddress, bastionUserId: destinationBastionUserId } = await getBastionWallet(destinationUserId, destinationChain, destinationWalletType)
 
         // receive message and mint usdc on destination chain
-        const { success, record } = await receiveMessageAndMint(destinationUserId, destinationBastionUserId, destinationChain, messageBytes, attestationSignature, destinationWalletAddress)
+        const { success, record, errorMessageForCustomer } = await receiveMessageAndMint(destinationUserId, destinationBastionUserId, destinationChain, messageBytes, attestationSignature, destinationWalletAddress)
 
         // update stage record
         stageRecords.RECEIVE_MESSAGE_AND_MINT = record.id
@@ -73,7 +74,8 @@ const mintUsdc = async (userId, profileId, bridgingRecord) => {
                     stage_status: "FAILED",
                     status: "FAILED",
                     updated_at: new Date().toISOString(),
-                    stage_records: stageRecords
+                    stage_records: stageRecords,
+                    failed_reason: errorMessageForCustomer
                 })
                 .eq('id', bridgingRecordId)
                 .select()

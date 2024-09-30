@@ -6,6 +6,7 @@ const supabase = require("../../supabaseClient")
 const { safeParseBody } = require("../../utils/response")
 const { initContractInstance } = require("../common/contract")
 const { tokenMessenger, addressToBytes32 } = require("./utils")
+const { getMappedError } = require("../../bastion/utils/errorMappings")
 
 const burnUsdc = async(amount, sourceChain, destinationChain, userId, bastionUserId, sourceWalletAddress, destinationWalletAddress) => {
     // get token messenger info for the given chain
@@ -96,8 +97,9 @@ const burnUsdc = async(amount, sourceChain, destinationChain, userId, bastionUse
          .single()
 
          if (updateError) throw new Error("Error updating contract action record: " + updateError.message)
+         const errorMessageForCustomer = getMappedError(responseBody.message)
 
-         return {success: false, record: updatedRecord}
+         return {success: false, record: updatedRecord, errorMessageForCustomer}
      }
  
      // update contract action record

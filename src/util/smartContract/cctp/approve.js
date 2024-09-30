@@ -6,6 +6,7 @@ const { safeParseBody } = require("../../utils/response");
 const supabase = require("../../supabaseClient");
 const createLog = require("../../logger/supabaseLogger");
 const { v4 } = require("uuid");
+const { getMappedError } = require("../../bastion/utils/errorMappings");
 
 
 const approveToTokenMessenger = async (amount, chain, userId, bastionUserId, walletAddress) => {
@@ -74,8 +75,10 @@ const approveToTokenMessenger = async (amount, chain, userId, bastionUserId, wal
         .single()
 
         if (updateError) throw new Error("Error updating contract action record: " + updateError.message)
+        const errorMessageForCustomer = getMappedError(responseBody.message)
+        
 
-        return {success: false, record: updatedRecord}
+        return {success: false, record: updatedRecord, errorMessageForCustomer}
     }
 
     // update contract action record
