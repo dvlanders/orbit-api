@@ -314,7 +314,6 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 
 	try {
-		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkEuOffRampAccount({
 			userId,
 			ibanAccountNumber,
@@ -325,7 +324,6 @@ exports.createEuroOfframpDestination = async (req, res) => {
 			throw new Error("Error checking EU off-ramp account: " + error.message);
 		});
 
-		recordId = externalAccountRecordId;
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'iban', currency, bankName, accountOwnerName, accountOwnerType,
@@ -390,26 +388,26 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
-				.eq('account_id', recordId);
+				.select('id')
+				.eq('account_id', externalAccountRecordId)
+				.eq('payment_rail', 'sepa')
+				.maybeSingle()
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let sepaRecord = providerAccountRecordData.find(record => record.payment_rail === 'sepa');
-
-			if (sepaRecord) {
+			if (providerAccountRecordData) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: sepaRecord.id
+					id: providerAccountRecordData.id
 				});
 			}
 
-			const accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "sepa", "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "sepa", "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],

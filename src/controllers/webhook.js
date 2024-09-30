@@ -4,7 +4,7 @@ const supabase = require("../util/supabaseClient");
 const { fieldsValidation } = require("../util/common/fieldsValidation");
 const { bridgeWebhookEventRequiredFields, bridgeWebhookEventAcceptedFields } = require("../util/bridge/webhook/utils");
 const { blindpayWebhookEventRequiredFields, blindpayWebhookEventAcceptedFields } = require("../util/blindpay/webhook/utils");
-const { getStripeWebhookProcessor } = require("../../webhooks/stripe/webhookMapping");
+const { stripeWebhookEventRequiredFields, stripeWebhookEventAcceptedFields } = require("../util/stripe/webhook/utils");
 
 exports.bridgeWebhook = async (req, res) => {
   if (req.method !== "POST")
@@ -118,14 +118,34 @@ exports.blindpayWebhook = async (req, res) => {
 exports.stripeWebhook = async(req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: 'Method not allowed' });
   const { event } = req.body;
+  const { id, api_version, data, type, created } = event;
+
   try{
-      console.log(event)
-      const eventProcessor = getStripeWebhookProcessor(event.type.split(".")[0]);
-      await eventProcessor(event);
-      
-      return res.status(200).json({status: "OK"})
+    const { missingFields, invalidFields } = fieldsValidation(event, stripeWebhookEventRequiredFields, stripeWebhookEventAcceptedFields);
+    if (missingFields.length > 0 || invalidFields.length > 0) {
+      await createLog("webhook/stripeWebhook", null, "Stripe webhook might have changed their event structure", { missingFields, invalidFields });
+    }
+    const eventCreatedAt = new Date(created * 1000).toISOString();
+    const { error } = await supabaseCall(() =>
+      supabase.from("stripe_webhook_messages").upsert(
+        {
+          event_id: id,
+          event_type: type,
+          event_api_version: api_version,
+          event_created_at: eventCreatedAt,
+          event_data: data,
+          process_status: "PENDING",
+          full_event: event,
+        },
+        { onConflict: "event_id" }
+      )
+    );
+
+    if (error) throw error;
+
+    return res.status(200).json({ status: "OK" });
   }catch(error){
-      await createLog("webhook/stripeWebhook", null, `Failed to process Stripe webhook event ${event.id}`, error)
-      return res.status(500).json({error: "Internal server error"})
+    await createLog("webhook/stripeWebhook", null, error.message, error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
