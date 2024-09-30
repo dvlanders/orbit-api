@@ -158,7 +158,7 @@ const bridgeUsdc = async (config) => {
             if (!success) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to mint usdc", null, null, shouldReschedule, true)
             
             // create job to either fetch attestation or confirm final status
-            const nextRetryTime = new Date(new Date().getTime() + 10000).toISOString() // check status after 10 seconds
+            const nextRetryTime = new Date(new Date().getTime() + 60000).toISOString() // check status after 60 seconds
             await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
             return
         }
