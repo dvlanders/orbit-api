@@ -27,11 +27,3 @@ const getTransactionReceiptByHash = async (chain, transactionHash) => {
 }
 
 module.exports = { getTransactionsOfContractByEventName, getTransactionsOfContractByFilter, getTransactionByHash, getTransactionReceiptByHash };
-
-const main = async () => {
-    await getTransactionsOfContractByEventName(Chain.POLYGON_MAINNET, "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "Transfer");
-}
-
-main().catch((error) => {
-    console.log(error);
-});
