@@ -608,11 +608,20 @@ const ipCheck = async (ip) => {
             else if (!allowedUsState.includes(locationData.subdivisions[0]['iso_code']))
                 return {ipAllowed: false, message: "please make sure provided IP address is not from unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)"}
         }
+	} else if (locationRes.status === 401) {
+		console.error(locationData)
+		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData.error)
+        
+        if (locationData.code === "IP_ADDRESS_RESERVED")
+            return {ipAllowed: false, message: "the provided IP address is a reserved (private, multicast, etc)."}
+
+        return {ipAllowed: false, message: "the provided IP address is invalid."}
+		
 	} else {
 		console.error(locationData)
-		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData)
-		throw new Error("failed to get ip information")
-	}
+		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData.error)
+        return {ipAllowed: false, message: "the provided IP address is invalid."}
+    }
 
 	return {isIpAllowed: true, message: ""}
 };
