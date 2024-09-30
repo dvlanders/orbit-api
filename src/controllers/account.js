@@ -451,7 +451,7 @@ exports.getAccount = async (req, res) => {
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
-		await createLog("account/getAccount", userId, error.message, error, null, res)
+		await createLog("account/getAccount", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
@@ -470,9 +470,9 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
 	const acceptedFields = {
-		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]),
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei_bitso", "transfers_bitso", "ach_cop_bitso"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
@@ -933,8 +933,8 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	}
 
 	try {
-		const response = await createBankAccount(bankAccountRecord)
-		const account = await insertAccountProviders(bankAccountRecord.id, "brl", "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id)
+		const response = await createBankAccount(bankAccountRecord);
+		const account = await insertAccountProviders(bankAccountRecord.id, bankAccountRecord.currency, "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id);
 		// insert the record to the blindpay_accounts table
 		const { error: bankAccountUpdateError } = await supabase
 			.from('blindpay_bank_accounts')

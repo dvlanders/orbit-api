@@ -101,8 +101,6 @@ const uploadBankAccountInfo = async (fields) => {
     }
   });
 
-  // console.log("bank account data: \n", bankAccountData);
-
   // check if the bank account already exists
   const { bankAccountExist, bankAccountRecord: existingBankAccountRecord } = await checkBrlOfframpBankAccount(bankAccountData);
   if(bankAccountExist) {
