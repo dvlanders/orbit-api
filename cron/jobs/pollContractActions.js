@@ -62,7 +62,7 @@ async function pollContractAction() {
 
 
 		if (contractActionsError) {
-			await createLog('pollContractAction', null, contractActionsError.error, cryptoTransactionDataError);
+			await createLog('pollContractAction', null, contractActionsError.error, contractActionsError);
 			return;
 		}
 

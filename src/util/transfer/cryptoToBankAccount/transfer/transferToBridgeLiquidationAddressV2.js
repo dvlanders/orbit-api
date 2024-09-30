@@ -28,6 +28,7 @@ const { safeStringToFloat } = require("../../../utils/number");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -357,7 +358,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference, sourceBastionUserId } = config
 
 	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
 	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
@@ -378,6 +379,16 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
         const toUpdate = {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }
+
+	if(!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
         }
         await updateRequestRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)

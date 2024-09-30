@@ -10,7 +10,8 @@ module.exports = (router) => {
 	router.get("/account", authorize, logRequestResponse, account.getAccount);
 	router.get("/account/all", authorize, logRequestResponse, account.getAllAccounts);
 	router.post("/account/wire/offramp", authorize, logRequestResponse, account.createCircleWireBankAccount);
-	router.post("/account/wire/international/offramp", authorize, logRequestResponse, account.createInternationalWireOfframpDestination);
+	router.post("/account/wire/us/offramp", authorize, logRequestResponse, account.createWireUsOfframpDestination);
+    router.post("/account/swift/offramp", authorize, logRequestResponse, account.createSwiftOfframpDestination)
 	router.get("/account/onRampRail/virtualAccount", authorize, logRequestResponse, account.getVirtualAccount)
 	router.post("/account/brl/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
 	router.post("/account/brl/receiver", authorize, logRequestResponse, account.createBlindpayReceiver);
