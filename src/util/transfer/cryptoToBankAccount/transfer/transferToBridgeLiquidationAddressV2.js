@@ -269,6 +269,24 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		destination.ach_reference = initialTransferRecord.ach_reference
 	}
 
+	// this is for sandbox simulation
+	if (process.env.NODE_ENV == "development") {
+		const toUpdate = {
+			updated_at: new Date().toISOString(),
+			destination_currency_amount: amount,
+			to_wallet_address: "0x0000000000000000000000000000000000000000",
+			transaction_status: "COMPLETED",
+			failed_reason: "This is a simulated success response for sandbox environment only."
+		}
+
+		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+		await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+		const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return result
+	}
+
+
+
 	const clientReceivedAmount = amount.toFixed(2)
 	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
 	const bridgeResponseBody = await bridgeResponse.json()
@@ -328,18 +346,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 			failed_reason: message
 		}
 
-		// in sandbox, just return completed the transfer
-		if (process.env.NODE_ENV == "development") {
-			toUpdate.transaction_status = "COMPLETED"
-			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
-		}
-
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-		// send out webhook message if in sandbox
-		if (process.env.NODE_ENV == "development") {
-			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-		}
 
 	} else {
 

@@ -1,47 +1,6 @@
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
-
-const filledInfo = (type, bankAccountInfo) => {
-  if (!type) return bankAccountInfo;
-  const filteredBankAccountInfo = {
-    accountId: bankAccountInfo.global_account_id,
-    createdAt: bankAccountInfo.created_at,
-    type: bankAccountInfo.type,
-    name: bankAccountInfo.name,
-    currency: bankAccountInfo.currency,
-    receiverId: bankAccountInfo.receiver_id,
-    userId: bankAccountInfo.user_id,
-  };
-
-  if (type == "pix") {
-    filteredBankAccountInfo.pix_key = bankAccountInfo.pix_key;
-  } else if (type == "ach") {
-    const extraBody = {
-      beneficiary_name: bankAccountInfo.beneficiary_name,
-      routing_number: bankAccountInfo.routing_number,
-      account_number: bankAccountInfo.account_number,
-      account_type: bankAccountInfo.account_type,
-      account_class: bankAccountInfo.account_class,
-    };
-    Object.assign(filteredBankAccountInfo, extraBody);
-  } else if (type == "wire") {
-    const extraBody = {
-      beneficiary_name: bankAccountInfo.beneficiary_name,
-      routing_number: bankAccountInfo.routing_number,
-      account_number: bankAccountInfo.account_number,
-      address_line_1: bankAccountInfo.address_line_1,
-      address_line_2: bankAccountInfo.address_line_2,
-      city: bankAccountInfo.city,
-      state_province_region: bankAccountInfo.state_province_region,
-      country: bankAccountInfo.country,
-      postal_code: bankAccountInfo.postal_code,
-    };
-    Object.assign(filteredBankAccountInfo, extraBody);
-  } else {
-    throw new Error("Invalid bank account type to filter");
-  }
-  return filteredBankAccountInfo;
-};
+const { filterBankAccountInfo } = require("../../../blindpay/getBankAccountInfo");
 
 const fetchBlindpayAccount = async (currency, profileId, accountId) => {
   const { data: bankInfo, error } = await supabaseCall(() =>
@@ -57,7 +16,7 @@ const fetchBlindpayAccount = async (currency, profileId, accountId) => {
 
   if (accountId && !bankInfo) return null;
   if (bankInfo) {
-    return filledInfo(bankInfo.type, bankInfo);
+    return filterBankAccountInfo(bankInfo.type, bankInfo);
   }
   return null;
 };

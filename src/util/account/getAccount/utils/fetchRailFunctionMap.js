@@ -36,6 +36,21 @@ const railFunctionsMap = {
 		BRL: {
 			PIX: {
 				BLINDPAY: async (accountId) => await fetchBlindpayAccount("brl", null, accountId)
+			},
+		},
+		MXN: {
+			SPEI_BITSO: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount("mxn", null, accountId)
+			},
+		},
+		COP: {
+			ACH_COP_BITSO: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount("cop", null, accountId)
+			},
+		},
+		ARS: {
+			TRANSFERS_BITSO: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount("ars", null, accountId)
 			}
 		},
 		HKD: {

@@ -13,7 +13,10 @@ const cryptoTOFiatConversionRateProviderMap = {
     usdc: {
         usd: getBridgeConversionRate,
         eur: getBridgeConversionRate,
-        brl: getBlindpayConversionRate
+        brl: getBlindpayConversionRate,
+        mxn: getBlindpayConversionRate,
+        cop: getBlindpayConversionRate,
+        ars: getBlindpayConversionRate,
     }
 }
 
