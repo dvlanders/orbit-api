@@ -199,7 +199,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference } = fields
+	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, paymentRail, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference } = fields
 
 	try {
 		// field validation
@@ -216,7 +216,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"amount": (value) => isValidAmount(value), 
 			"chain": (value) => isHIFISupportedChain(value), 
 			"sourceCurrency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]), 
-			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]),
+			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
 			"paymentRail": "string", 
 			"description": "string", 
 			"purposeOfPayment": "string", 
@@ -259,7 +259,8 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!accountInfo || !accountInfo.account_id) return res.status(400).json({ error: `destinationAccountId not exist` });
 		if (accountInfo.rail_type != "offramp") return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
 		if (accountInfo.currency != destinationCurrency) return res.status(400).json({ error: `destinationCurrency not allowed for destinationAccountId` });
-		let paymentRail = accountInfo.payment_rail
+		if (paymentRail && accountInfo.payment_rail != paymentRail) return res.status(400).json({ error: `paymentRail not allowed for destinationAccountId` });
+		if (!paymentRail) paymentRail = accountInfo.payment_rail;
 		const destinationUserId = accountInfo.user_id
 
 		// get user wallet

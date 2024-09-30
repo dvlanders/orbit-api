@@ -66,6 +66,36 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
+	spei_bitso: {
+		usdc: {
+			mxn: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+                validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	transfers_bitso: {
+		usdc: {
+			ars: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+                validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	ach_cop_bitso: {
+		usdc: {
+			cop: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+                validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
 	fps: {
 		usdc: {
 			hkd: {
