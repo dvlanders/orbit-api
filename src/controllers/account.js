@@ -24,7 +24,8 @@ const { create } = require('lodash');
 const { uploadReceiverKYCInfo } = require('../util/blindpay/uploadReceiverInfo');
 const { updateReceiverKYCInfo } = require('../util/blindpay/updateReceiverInfo');
 const { uploadBankAccountInfo } = require('../util/blindpay/uploadBankAccountInfo');
-const { ReceiverInfoUploadError, BankAccountInfoUploadError, CreateBankAccountError, ReceiverInfoGetError } = require('../util/blindpay/errors');
+const { ReceiverInfoUploadError, BankAccountInfoUploadError, CreateBankAccountError, ReceiverInfoGetError, CreateReceiverError,
+	CreateBankAccountErrorType, ReceiverInfoUploadErrorType, BankAccountInfoUploadErrorType, ReceiverInfoGetErrorType, CreateReceiverErrorType } = require('../util/blindpay/errors');
 const { createReceiver } = require('../util/blindpay/endpoint/createReceiver');
 const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
 const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
@@ -926,10 +927,11 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	try {
 		({ bankAccountExist, bankAccountRecord } = await uploadBankAccountInfo(fields))
 	} catch (error) {
+		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res);
 		if (error instanceof BankAccountInfoUploadError) {
+			if(error.type === BankAccountInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -973,8 +975,9 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error, null, res)
+		await createLog("account/createBlindpayBankAccount", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateBankAccountError) {
+			if(error.type === CreateBankAccountErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the BR bank account. Please try again later." })
@@ -998,10 +1001,11 @@ exports.createBlindpayReceiver = async (req, res) => {
 	try {
 		receiverRecord = await uploadReceiverKYCInfo(fields)
 	} catch (error) {
+		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
+			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -1033,7 +1037,11 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
+		await createLog("account/createBlindpayReceiver", fields.user_id, error.message, error, null, res);
+		if (error instanceof CreateReceiverError) {
+			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			return res.status(error.status).json(error.rawResponse)
+		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
@@ -1431,6 +1439,7 @@ exports.getBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
 		if (error instanceof ReceiverInfoGetError) {
+			if(error.type === ReceiverInfoGetErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1455,10 +1464,11 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	try {
 		receiverRecord = await updateReceiverKYCInfo(fields)
 	} catch (error) {
+		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
+			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -1473,10 +1483,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 				kyc_status: "verifying"
 			}).eq('id', receiverRecord.id);
 
-		if (receiverUpdateError) {
-			await createLog("account/updateBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError, null, res);
-			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		}
+		if (receiverUpdateError) throw receiverUpdateError;
 
 		const responseObject = {
 			success: response.success ? response.success : false,
@@ -1486,7 +1493,11 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/updateBlindpayReceiver", fields.userId, error.message, error, null, res);
+		await createLog("account/updateBlindpayReceiver", fields.user_id, error.message, error, null, res);
+		if (error instanceof CreateReceiverError) {
+			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			return res.status(error.status).json(error.rawResponse)
+		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
