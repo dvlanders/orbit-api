@@ -22,7 +22,7 @@ const updateBastionStatus = async (contractAction) => {
 		const data = await response.json();
         let toUpdate
 		if (!response.ok) {
-			await createLog('pollCryptoToCryptoTransferStatus/updateStatus', contractAction.user_id, data.message, data);
+			await createLog('pollContractAction/updateStatus', contractAction.user_id, data.message, data);
             toUpdate = {
                 bastion_response: data,
                 updated_at: new Date().toISOString()
