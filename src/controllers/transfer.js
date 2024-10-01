@@ -263,6 +263,9 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!paymentRail) paymentRail = accountInfo.payment_rail;
 		const destinationUserId = accountInfo.user_id
 
+		// block if destination user is not equal to source user
+		if (destinationUserId != sourceUserId) return res.status(400).json({ error: `destinationUserId is not equal to sourceUserId` });
+
 		// get user wallet
 		// fetch sender wallet address information
 		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
