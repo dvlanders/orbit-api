@@ -33,7 +33,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     }else if(transactionType === transferType.CRYPTO_TO_CRYPTO){
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabaseCall(() => supabase
             .from("crypto_to_crypto")
-            .select("amount, user_id: sender_user_id, profile: sender_user_id(profile_id), status")
+            .select("amount, user_id: sender_user_id, profile: sender_user_id(profile_id), status, fee_currency:currency")
             .eq("id", transactionId)
             .single());
 
