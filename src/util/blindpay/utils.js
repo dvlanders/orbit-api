@@ -79,10 +79,10 @@ const standardKYC = {
     state_province_region: "string",
     postal_code: "string",
     id_doc_country: "string",
-    id_doc_type: "string",
+    id_doc_type: (value) => inStringEnum(value, ["PASSPORT", "ID_CARD", "DRIVERS"]),
     id_doc_front_file: "string",
     id_doc_back_file: "string",
-    proof_of_address_doc_type: "string",
+    proof_of_address_doc_type: (value) => inStringEnum(value, ["UTILITY_BILL", "BANK_STATEMENT", "RENTAL_AGREEMENT", "TAX_DOCUMENT", "GOVERNMENT_CORRESPONDENCE"]),
     proof_of_address_doc_file: "string",
   },
 };
@@ -146,10 +146,10 @@ const ownerAcceptedFields = {
   state_province_region: "string",
   postal_code: "string",
   id_doc_country: "string",
-  id_doc_type: "string",
+  id_doc_type: (value) => inStringEnum(value, ["PASSPORT", "ID_CARD", "DRIVERS"]),
   id_doc_front_file: "string",
   id_doc_back_file: "string",
-  proof_of_address_doc_type: "string",
+  proof_of_address_doc_type: (value) => inStringEnum(value, ["UTILITY_BILL", "BANK_STATEMENT", "RENTAL_AGREEMENT", "TAX_DOCUMENT", "GOVERNMENT_CORRESPONDENCE"]),
   proof_of_address_doc_file: "string",
 };
 

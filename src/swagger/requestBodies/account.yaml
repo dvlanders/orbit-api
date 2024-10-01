@@ -39,27 +39,27 @@ EurOfframpSepaAccountBody:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccount'
-BrlOfframpReceiverCreateBody:
+SAOfframpReceiverCreateBody:
   required: true
   content:
     application/json:
       schema:
         oneOf:
-          - $ref: '#/components/schemas/BrlReceiverCreateIndividualLightKYCAccount'
-          - $ref: '#/components/schemas/BrlReceiverCreateIndividualStandardKYCAccount'
-          - $ref: '#/components/schemas/BrlReceiverCreateBusinessLightKYBAccount'
-          - $ref: '#/components/schemas/BrlReceiverCreateBusinessStandardKYBAccount'
-BrlOfframpReceiverUpdateBody:
+          - $ref: '#/components/schemas/SAReceiverCreateIndividualLightKYCAccount'
+          - $ref: '#/components/schemas/SAReceiverCreateIndividualStandardKYCAccount'
+          - $ref: '#/components/schemas/SAReceiverCreateBusinessLightKYBAccount'
+          - $ref: '#/components/schemas/SAReceiverCreateBusinessStandardKYBAccount'
+SAOfframpReceiverUpdateBody:
   required: true
   content:
     application/json:
       schema:
         oneOf:
-          - $ref: '#/components/schemas/BrlReceiverUpdateIndividualLightKYCAccount'
-          - $ref: '#/components/schemas/BrlReceiverUpdateIndividualStandardKYCAccount'
-          - $ref: '#/components/schemas/BrlReceiverUpdateBusinessLightKYBAccount'
-          - $ref: '#/components/schemas/BrlReceiverUpdateBusinessStandardKYBAccount'
-BrlOfframpAccountBody:
+          - $ref: '#/components/schemas/SAReceiverUpdateIndividualLightKYCAccount'
+          - $ref: '#/components/schemas/SAReceiverUpdateIndividualStandardKYCAccount'
+          - $ref: '#/components/schemas/SAReceiverUpdateBusinessLightKYBAccount'
+          - $ref: '#/components/schemas/SAReceiverUpdateBusinessStandardKYBAccount'
+SAOfframpAccountBody:
   required: true
   content:
     application/json:
@@ -68,3 +68,6 @@ BrlOfframpAccountBody:
           - $ref: '#/components/schemas/BrlOfframpPixAccount'
           - $ref: '#/components/schemas/BrlOfframpAchAccount'
           - $ref: '#/components/schemas/BrlOfframpWireAccount'
+          - $ref: '#/components/schemas/CopOfframpAchCopBitsoAccount'
+          - $ref: '#/components/schemas/MxnOfframpSpeiBitsoAccount'
+          - $ref: '#/components/schemas/ArsOfframpTransferBitsoAccount'
