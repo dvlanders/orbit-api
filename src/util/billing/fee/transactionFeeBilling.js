@@ -15,7 +15,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     if(transactionType === transferType.FIAT_TO_CRYPTO){
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
-            .select("fiat_provider, crypto_provider, currency:source_currency, amount, user_id, profile: user_id(profile_id), status")
+            .select("fiat_provider, crypto_provider, currency:source_currency, fee_currency:destination_currency, amount, user_id, profile: user_id(profile_id), status")
             .eq("id", transactionId)
             .single());
 
@@ -24,7 +24,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     }else if(transactionType === transferType.CRYPTO_TO_FIAT){
         const {data: cryptoToFiat, error: cryptoToFiatError} = await supabaseCall(() => supabase
             .from("offramp_transactions")
-            .select("fiat_provider, crypto_provider, currency:destination_currency, amount, user_id, profile: user_id(profile_id), status: transaction_status")
+            .select("fiat_provider, crypto_provider, currency:destination_currency, fee_currency:source_currency, amount, user_id, profile: user_id(profile_id), status: transaction_status")
             .eq("id", transactionId)
             .single());
 
@@ -77,7 +77,7 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
 
         const toUpdate = {
             user_id: transactionRecord.user_id,
-            currency: transactionRecord.currency,
+            currency: transactionRecord.fee_currency,
             amount: billableDepositFee,
             status: FeeTransactionStatus.IN_PROGRESS
         }
@@ -107,7 +107,7 @@ const createTransactionFeeRecord = async (transactionId, transactionType) => {
         transaction_id: transactionId,
         transaction_type: transactionType,
         user_id: transactionRecord.user_id,
-        currency: transactionRecord.currency,
+        currency: transactionRecord.fee_currency,
         amount: billableDepositFee,
         status: FeeTransactionStatus.IN_PROGRESS
     }
@@ -133,7 +133,7 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
 
         const toUpdate = {
             user_id: transactionRecord.user_id,
-            currency: transactionRecord.currency,
+            currency: transactionRecord.fee_currency,
             amount: billableDepositFee,
             status: FeeTransactionStatus.IN_PROGRESS
         }
