@@ -107,6 +107,12 @@
     description: |
       Create a Receiver for South America Offramp. This should be called prior to 
       adding any South America offramp bank account since each South America offramp bank account is tied to a receiver.
+
+      | Limit Type               | Individual Light KYC | Business Light KYB | Individual Standard KYC | Business Standard KYB |
+      |--------------------------|----------------------|--------------------|-------------------------|-----------------------|
+      | Per Transaction Limit    | $1,000               | $3,000             | $10,000                 | $30,000               |
+      | Daily Limit              | $3,000               | $6,000             | $50,000                 | $100,000              |
+      | Monthly Limit            | $10,000              | $15,000            | $100,000                | $250,000              |
     tags:
       - Account
     parameters:
