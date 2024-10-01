@@ -1,31 +1,54 @@
-const _getFeeRate = (provider, currency, feeConfig) => {
+
+const defaultFeeForUnknownTag = {
+    type: "FIX",
+    value: 0
+}
+
+const _getTagFeeRate = (tag, feeConfig) => {
     try{
-        const feeRate = feeConfig[provider][currency]
-        return feeRate || feeConfig[provider]["DEFAULT"] || feeConfig["DEFAULT"]
+        if (!feeConfig) return defaultFeeForUnknownTag
+        const feeRate = feeConfig[tag]
+        return feeRate || defaultFeeForUnknownTag
     }catch (error){
-        return feeConfig["DEFAULT"]
+        console.error(`Error getting fee rate for tag ${tag}: ${error}`)
+        return defaultFeeForUnknownTag
     }
 }
 
-const getFee = (transaction, feeConfig) => {
+const getFee = (transaction, feeConfig, success=true) => {
 
-    const feeRateFiat = _getFeeRate(transaction.fiat_provider, transaction.currency, feeConfig)
-    const feeRateCrypto = _getFeeRate(transaction.crypto_provider, transaction.currency, feeConfig)
-  
-    let fee = 0
-    // fiat
-    if (feeRateFiat.type == "PERCENT"){
-        fee += parseFloat(feeRateFiat.value) * transaction.amount
-    }else if (feeRateFiat.type == "FIX"){
-        fee += parseFloat(feeRateFiat.value)
-    }
-    // crypto
-    if (feeRateCrypto.type == "PERCENT"){
-        fee += parseFloat(feeRateCrypto.value) * transaction.amount
-    }else if (feeRateCrypto.type == "FIX"){
-        fee += parseFloat(feeRateCrypto.value)
-    }
+    // get provider
+    const fiatProvider = transaction.fiat_provider || "DEFAULT"
+    const cryptoProvider = transaction.crypto_provider || "DEFAULT"
 
+    // get currency
+    const currency = transaction.currency || "DEFAULT"
+
+    // get tags
+    const tags = (success ? transaction.billing_tags_success : transaction.billing_tags_failed) || []
+
+    let fee =0
+    tags.map((tag) => {
+        const fiatFeeConfigForCurrency = feeConfig[fiatProvider][currency]
+        const cryptoFeeConfigForCurrency = feeConfig[cryptoProvider][currency]
+
+        const fiatFeeRate = _getTagFeeRate(tag, fiatFeeConfigForCurrency)
+        const cryptoFeeRate = _getTagFeeRate(tag, cryptoFeeConfigForCurrency)
+
+
+        if (fiatFeeRate.type == "PERCENT"){
+            fee += parseFloat(fiatFeeRate.value) * transaction.amount
+        }else if (fiatFeeRate.type == "FIX"){
+            fee += parseFloat(fiatFeeRate.value)
+        }
+        // crypto
+        if (cryptoFeeRate.type == "PERCENT"){
+            fee += parseFloat(cryptoFeeRate.value) * transaction.amount
+        }else if (cryptoFeeRate.type == "FIX"){
+            fee += parseFloat(cryptoFeeRate.value)
+        }
+
+    })
     return fee;
 
 }
@@ -36,22 +59,7 @@ const feeMap = (transactions, feeConfig) => {
     const feeInformation = {}
 
     transactions.map((trx) => {
-        const feeRateFiat = _getFeeRate(trx.fiat_provider, trx.currency, feeConfig)
-        const feeRateCrypto = _getFeeRate(trx.crypto_provider, trx.currency, feeConfig)
-        // FIX ME consider transform to usd
-        let fee = 0
-        // fiat
-        if (feeRateFiat.type == "PERCENT"){
-            fee += parseFloat(feeRateFiat.value) * trx.total_amount
-        }else if (feeRateFiat.type == "FIX"){
-            fee += parseFloat(feeRateFiat.value) * trx.count
-        }
-        // crypto
-        if (feeRateCrypto.type == "PERCENT"){
-            fee += parseFloat(feeRateCrypto.value) * trx.total_amount
-        }else if (feeRateCrypto.type == "FIX"){
-            fee += parseFloat(feeRateCrypto.value) * trx.count
-        }
+        const fee = getFee(trx, feeConfig)
         totalFee += fee
     })
 

@@ -487,3 +487,47 @@ exports.insertAllFeeRecords = async (req, res) => {
     }
 
 }
+
+exports.insertFeeTag = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .from("offramp_transactions")
+            .select("id, destinationAccount: destination_account_id(payment_rail)")
+            .not("destination_account_id", "is", null)
+
+        await Promise.all( data.map(async(transaction) => {
+            if (!transaction.destinationAccount) {
+                console.log(transaction.id)
+                return
+            }
+            successTags = ["base"]
+            failedTags = []
+
+            if (transaction.destinationAccount.payment_rail == "ach"){
+                successTags.push("ach")
+                failedTags.push("ach_return")
+            }else if (transaction.destinationAccount.payment_rail == "wire"){
+                successTags.push("wire_domestic")
+                failedTags.push("wire_return")
+            }else if (transaction.destinationAccount.payment_rail == "swift"){
+                successTags.push("swift")
+                failedTags.push("wire_return")
+            }
+
+            const {data: feeTags, error: feeTagsError} = await supabase
+                .from("offramp_transactions")
+                .update({
+                    billing_tags_success: successTags,
+                    billing_tags_failed: failedTags
+                })
+                .eq("id", transaction.id)
+            if (feeTagsError) throw feeTagsError
+
+        }))
+        
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}

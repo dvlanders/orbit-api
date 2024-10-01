@@ -34,6 +34,10 @@
       "wire_return": {
         "type": "FIX",
         "value": 50
+      },
+      "swift": {
+        "type": "PERCENT",
+        "value": 0.00075
       }
     },
     "DEFAULT": {
@@ -64,6 +68,10 @@
       "wire_return": {
         "type": "FIX",
         "value": 50
+      },
+      "swift": {
+        "type": "PERCENT",
+        "value": 0.00075
       }
     }
   },
