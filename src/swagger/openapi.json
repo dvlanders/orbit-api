@@ -63,7 +63,10 @@
           "enum": [
             "usd",
             "eur",
-            "brl"
+            "brl",
+            "mxn",
+            "ars",
+            "cop"
           ]
         },
         "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
@@ -91,7 +94,10 @@
             "ach",
             "wire",
             "sepa",
-            "pix"
+            "pix",
+            "spei_bitso",
+            "transfers_bitso",
+            "ach_cop_bitso"
           ]
         },
         "required": false
@@ -250,7 +256,10 @@
           "enum": [
             "usd",
             "eur",
-            "brl"
+            "brl",
+            "mxn",
+            "ars",
+            "cop"
           ]
         },
         "required": true
@@ -272,7 +281,8 @@
           "enum": [
             "crypto-to-crypto",
             "fiat-to-crypto",
-            "crypto-to-fiat"
+            "crypto-to-fiat",
+            "fiat-to-fiat"
           ]
         },
         "description": "Transfer type",
@@ -286,7 +296,8 @@
           "enum": [
             "crypto-to-crypto",
             "fiat-to-crypto",
-            "crypto-to-fiat"
+            "crypto-to-fiat",
+            "fiat-to-fiat"
           ]
         },
         "description": "Transfer type",
@@ -513,6 +524,15 @@
                 },
                 {
                   "$ref": "#/components/schemas/SWIFTCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/SPEI_BITSOCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/TRANSFERS_BITSOCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/ACH_COP_BITSOCryptoToFiatTransfer"
                 }
               ]
             }
@@ -2017,7 +2037,7 @@
       },
       "BrlOfframpPixAccount": {
         "type": "object",
-        "title": "BRL Offramp Pix Account",
+        "title": "BRL Offramp PIX Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2047,7 +2067,7 @@
       },
       "BrlOfframpAchAccount": {
         "type": "object",
-        "title": "BRL Offramp Ach Account",
+        "title": "BRL Offramp ACH Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2071,7 +2091,11 @@
             "type": "string"
           },
           "account_class": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "individual",
+              "business"
+            ]
           },
           "currency": {
             "type": "string",
@@ -2093,7 +2117,7 @@
       },
       "BrlOfframpWireAccount": {
         "type": "object",
-        "title": "BRL Offramp Wire Account",
+        "title": "BRL Offramp WIRE Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2127,7 +2151,14 @@
           },
           "country": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\".",
+            "enum": [
+              "US",
+              "BR",
+              "MX",
+              "CO",
+              "AR"
+            ]
           },
           "postal_code": {
             "type": "string"
@@ -2156,7 +2187,7 @@
       },
       "CopOfframpAchCopBitsoAccount": {
         "type": "object",
-        "title": "COP Offramp Wire Account",
+        "title": "COP Offramp ACH_COP_BITSO Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2168,7 +2199,11 @@
             "type": "string"
           },
           "account_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "checking",
+              "savings"
+            ]
           },
           "ach_cop_beneficiary_first_name": {
             "type": "string"
@@ -2221,7 +2256,7 @@
       },
       "ArsOfframpTransferBitsoAccount": {
         "type": "object",
-        "title": "ARS Offramp Wire Account",
+        "title": "ARS Offramp TRANSFERS_BITSO Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2264,7 +2299,7 @@
       },
       "MxnOfframpSpeiBitsoAccount": {
         "type": "object",
-        "title": "MXN Offramp Wire Account",
+        "title": "MXN Offramp SPEI_BITSO Account",
         "properties": {
           "type": {
             "type": "string",
@@ -3036,7 +3071,7 @@
       },
       "ACHCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to ACH",
+        "title": "Crypto to USD (ACH)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3077,9 +3112,7 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
-              "brl"
+              "usd"
             ]
           },
           "sameDayAch": {
@@ -3118,7 +3151,7 @@
       },
       "SEPACryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to SEPA",
+        "title": "Crypto to EUR (SEPA)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3159,9 +3192,7 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
-              "brl"
+              "eur"
             ]
           },
           "feeType": {
@@ -3196,7 +3227,7 @@
       },
       "WIRECryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to WIRE",
+        "title": "Crypto to Fiat (WIRE)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3239,7 +3270,10 @@
             "enum": [
               "usd",
               "eur",
-              "brl"
+              "brl",
+              "mxn",
+              "ars",
+              "cop"
             ]
           },
           "feeType": {
@@ -3274,7 +3308,7 @@
       },
       "PIXCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to PIX",
+        "title": "Crypto to BRL (PIX)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3315,9 +3349,223 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
               "brl"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "SPEI_BITSOCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to MXN (SPEI BITSO)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "mxn"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "TRANSFERS_BITSOCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to ARS (TRANSFERS BITSO)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ars"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "ACH_COP_BITSOCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to COP (ACH COP BITSO)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "cop"
             ]
           },
           "feeType": {
@@ -3348,7 +3596,7 @@
       },
       "SWIFTCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to SWIFT",
+        "title": "Crypto to Fiat (SWIFT)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3391,7 +3639,10 @@
             "enum": [
               "usd",
               "eur",
-              "brl"
+              "brl",
+              "mxn",
+              "ars",
+              "cop"
             ]
           },
           "swiftReference": {
@@ -6759,7 +7010,7 @@
     "/account/sa/offramp": {
       "post": {
         "summary": "Add a South America Offramp Bank Account",
-        "description": "Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.\n\n**You can add a Brazil (BRL), Argentina (ARS), Colombia (COP), or Mexico (MXN) offramp bank account.**\n",
+        "description": "Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.\n\n**We currently support Brazil (BRL), Argentina (ARS), Colombia (COP), and Mexico (MXN) offramp bank accounts.**\n",
         "tags": [
           "Account"
         ],
@@ -6986,7 +7237,7 @@
     "/transfer/crypto-to-fiat": {
       "post": {
         "summary": "Convert Stablecoin to Fiat",
-        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * BRL offramp transfer\n",
+        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * South America offramp transfers\n",
         "tags": [
           "Transfer"
         ],

@@ -749,7 +749,7 @@ ReceiverBusinessOwner:
     - proof_of_address_doc_file
 BrlOfframpPixAccount:
   type: object
-  title: "BRL Offramp Pix Account"
+  title: "BRL Offramp PIX Account"
   properties:
     type:
       type: string
@@ -768,7 +768,7 @@ BrlOfframpPixAccount:
     - currency
 BrlOfframpAchAccount:
   type: object
-  title: "BRL Offramp Ach Account"
+  title: "BRL Offramp ACH Account"
   properties:
     type:
       type: string
@@ -785,6 +785,7 @@ BrlOfframpAchAccount:
       type: string
     account_class:
       type: string
+      enum: [individual, business]
     currency:
       type: string
       enum: [brl]
@@ -799,7 +800,7 @@ BrlOfframpAchAccount:
     - currency
 BrlOfframpWireAccount:
   type: object
-  title: "BRL Offramp Wire Account"
+  title: "BRL Offramp WIRE Account"
   properties:
     type:
       type: string
@@ -823,6 +824,7 @@ BrlOfframpWireAccount:
     country:
       type: string
       description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
+      enum: [US, BR, MX, CO, AR]
     postal_code:
       type: string
     currency:
@@ -843,7 +845,7 @@ BrlOfframpWireAccount:
     - currency
 CopOfframpAchCopBitsoAccount:
   type: object
-  title: "COP Offramp Wire Account"
+  title: "COP Offramp ACH_COP_BITSO Account"
   properties:
     type:
       type: string
@@ -852,6 +854,7 @@ CopOfframpAchCopBitsoAccount:
       type: string
     account_type:
       type: string
+      enum: [checking, savings]
     ach_cop_beneficiary_first_name:
       type: string
     ach_cop_beneficiary_last_name:
@@ -884,7 +887,7 @@ CopOfframpAchCopBitsoAccount:
     - currency
 ArsOfframpTransferBitsoAccount:
   type: object
-  title: "ARS Offramp Wire Account"
+  title: "ARS Offramp TRANSFERS_BITSO Account"
   properties:
     type:
       type: string
@@ -910,7 +913,7 @@ ArsOfframpTransferBitsoAccount:
     - currency
 MxnOfframpSpeiBitsoAccount:
   type: object
-  title: "MXN Offramp Wire Account"
+  title: "MXN Offramp SPEI_BITSO Account"
   properties:
     type:
       type: string

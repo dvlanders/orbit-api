@@ -164,7 +164,7 @@
     description: |
       Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.
 
-      **You can add a Brazil (BRL), Argentina (ARS), Colombia (COP), or Mexico (MXN) offramp bank account.**
+      **We currently support Brazil (BRL), Argentina (ARS), Colombia (COP), and Mexico (MXN) offramp bank accounts.**
     tags:
       - Account
     parameters:

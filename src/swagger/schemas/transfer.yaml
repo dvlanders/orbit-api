@@ -41,7 +41,7 @@ CryptoToCryptoTransfer:
     - currency
 ACHCryptoToFiatTransfer:
   type: object
-  title: "Crypto to ACH"
+  title: "Crypto to USD (ACH)"
   properties:
     requestId:
       type: string
@@ -68,7 +68,7 @@ ACHCryptoToFiatTransfer:
       description: "note: usdHifi is only available in sandbox to simulate token movement."
     destinationCurrency:
       type: string
-      enum: ["usd", "eur", "brl"]
+      enum: ["usd"]
     sameDayAch:
       type: boolean
       description: Routes offramp for same day ACH transfer for a $1 additional fee
@@ -95,7 +95,7 @@ ACHCryptoToFiatTransfer:
     - paymentRail
 SEPACryptoToFiatTransfer:
   type: object
-  title: "Crypto to SEPA"
+  title: "Crypto to EUR (SEPA)"
   properties:
     requestId:
       type: string
@@ -122,7 +122,7 @@ SEPACryptoToFiatTransfer:
       description: "note: usdHifi is only available in sandbox to simulate token movement."
     destinationCurrency:
       type: string
-      enum: ["usd", "eur", "brl"]
+      enum: ["eur"]
     feeType:
       type: string
       enum: ["PERCENT", "FIX"]
@@ -146,7 +146,7 @@ SEPACryptoToFiatTransfer:
     - paymentRail
 WIRECryptoToFiatTransfer:
   type: object
-  title: "Crypto to WIRE"
+  title: "Crypto to Fiat (WIRE)"
   properties:
     requestId:
       type: string
@@ -173,7 +173,7 @@ WIRECryptoToFiatTransfer:
       description: "note: usdHifi is only available in sandbox to simulate token movement."
     destinationCurrency:
       type: string
-      enum: ["usd", "eur", "brl"]
+      enum: ["usd", "eur", "brl", "mxn", "ars", "cop"]
     feeType:
       type: string
       enum: ["PERCENT", "FIX"]
@@ -197,7 +197,7 @@ WIRECryptoToFiatTransfer:
     - paymentRail
 PIXCryptoToFiatTransfer:
   type: object
-  title: "Crypto to PIX"
+  title: "Crypto to BRL (PIX)"
   properties:
     requestId:
       type: string
@@ -224,7 +224,151 @@ PIXCryptoToFiatTransfer:
       description: "note: usdHifi is only available in sandbox to simulate token movement."
     destinationCurrency:
       type: string
-      enum: ["usd", "eur", "brl"]
+      enum: ["brl"]
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - destinationAccountId
+    - amount
+    - chain
+    - sourceCurrency
+    - destinationCurrency
+    - paymentRail
+SPEI_BITSOCryptoToFiatTransfer:
+  type: object
+  title: "Crypto to MXN (SPEI BITSO)"
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+    destinationUserId:
+      type: string
+      description: If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender.
+    destinationAccountId:
+      type: string
+      description: Account Id of the destination bank account
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    sourceCurrency:
+      type: string
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
+    destinationCurrency:
+      type: string
+      enum: ["mxn"]
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - destinationAccountId
+    - amount
+    - chain
+    - sourceCurrency
+    - destinationCurrency
+    - paymentRail
+TRANSFERS_BITSOCryptoToFiatTransfer:
+  type: object
+  title: "Crypto to ARS (TRANSFERS BITSO)"
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+    destinationUserId:
+      type: string
+      description: If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender.
+    destinationAccountId:
+      type: string
+      description: Account Id of the destination bank account
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    sourceCurrency:
+      type: string
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
+    destinationCurrency:
+      type: string
+      enum: ["ars"]
+    feeType:
+      type: string
+      enum: ["PERCENT", "FIX"]
+    feeValue:
+      type: number
+      format: float
+      minimum: 0
+      description: "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - destinationAccountId
+    - amount
+    - chain
+    - sourceCurrency
+    - destinationCurrency
+    - paymentRail
+ACH_COP_BITSOCryptoToFiatTransfer:
+  type: object
+  title: "Crypto to COP (ACH COP BITSO)"
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+    destinationUserId:
+      type: string
+      description: If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender.
+    destinationAccountId:
+      type: string
+      description: Account Id of the destination bank account
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    sourceCurrency:
+      type: string
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
+    destinationCurrency:
+      type: string
+      enum: ["cop"]
     feeType:
       type: string
       enum: ["PERCENT", "FIX"]
@@ -245,7 +389,7 @@ PIXCryptoToFiatTransfer:
     - paymentRail
 SWIFTCryptoToFiatTransfer:
   type: object
-  title: "Crypto to SWIFT"
+  title: "Crypto to Fiat (SWIFT)"
   properties:
     requestId:
       type: string
@@ -272,7 +416,7 @@ SWIFTCryptoToFiatTransfer:
       description: "note: usdHifi is only available in sandbox to simulate token movement."
     destinationCurrency:
       type: string
-      enum: ["usd", "eur", "brl"]
+      enum: ["usd", "eur", "brl", "mxn", "ars", "cop"]
     swiftReference:
       type: string
       description: >
