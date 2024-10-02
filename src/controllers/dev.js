@@ -25,6 +25,8 @@ const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");
 const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transfer");
 const { createTransactionFeeRecord } = require("../util/billing/fee/transactionFeeBilling");
+const { getFee } = require("../util/billing/feeRateMap");
+const { transferType } = require("../util/transfer/utils/transfer");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -469,16 +471,17 @@ exports.insertAllFeeRecords = async (req, res) => {
 
 
     try{
-        // const {data: allTransactions, error: allTransactionsError} = await supabase
-        //     .from("crypto_to_crypto")
-        //     .select("*")
-        //     .eq("status", "CONFIRMED");
+        const {data: allTransactions, error: allTransactionsError} = await supabase
+            .from("onramp_transactions")
+            .select("id")
+            .eq("status", "CONFIRMED")
+
         
-        // if (allTransactionsError) throw allTransactionsError
-        // console.log(allTransactions.length)
-        // await Promise.all(allTransactions.map(async(transaction) => {
-        //     await createTransactionFeeRecord(transaction.id, "CRYPTO_TO_CRYPTO")
-        // }))
+        if (allTransactionsError) throw allTransactionsError
+        console.log(allTransactions.length)
+        await Promise.all(allTransactions.map(async(transaction) => {
+            await createTransactionFeeRecord(transaction.id, transferType.FIAT_TO_CRYPTO)
+        }))
 
         return res.status(200).json({message: "success"})
     }catch (error){
@@ -491,31 +494,24 @@ exports.insertAllFeeRecords = async (req, res) => {
 exports.insertFeeTag = async(req, res) => {
     try{
         const {data, error} = await supabase
-            .from("offramp_transactions")
-            .select("id, destinationAccount: destination_account_id(payment_rail)")
-            .not("destination_account_id", "is", null)
+            .from("crypto_to_crypto")
+            .select("id, recipient_user_id")
 
         await Promise.all( data.map(async(transaction) => {
-            if (!transaction.destinationAccount) {
-                console.log(transaction.id)
-                return
-            }
-            successTags = ["base"]
+            successTags = []
             failedTags = []
 
-            if (transaction.destinationAccount.payment_rail == "ach"){
-                successTags.push("ach")
-                failedTags.push("ach_return")
-            }else if (transaction.destinationAccount.payment_rail == "wire"){
-                successTags.push("wire_domestic")
-                failedTags.push("wire_return")
-            }else if (transaction.destinationAccount.payment_rail == "swift"){
-                successTags.push("swift")
-                failedTags.push("wire_return")
+            if (!transaction.recipient_user_id) {   
+                successTags.push("external")
+                failedTags.push("external")
+            }
+            else {
+                successTags.push("internal")
+                failedTags.push("internal")
             }
 
             const {data: feeTags, error: feeTagsError} = await supabase
-                .from("offramp_transactions")
+                .from("crypto_to_crypto")
                 .update({
                     billing_tags_success: successTags,
                     billing_tags_failed: failedTags

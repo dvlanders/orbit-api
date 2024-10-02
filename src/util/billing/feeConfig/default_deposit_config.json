@@ -7,18 +7,18 @@
         }
       },
       "DEFAULT": {
+        "base":{
+              "type": "PERCENT",
+              "value": 0.005
+        }
+      }
+    },
+    "DEFAULT": {
         "DEFAULT":{
             "base":{
                 "type": "PERCENT",
                 "value": 0.005
             }
-        }
-      }
-    },
-    "DEFAULT": {
-      "base":{
-            "type": "PERCENT",
-            "value": 0.005
         }
     },
     "CHECKBOOK": {
@@ -36,6 +36,12 @@
       }
     },
     "MANUAL_DEPOSIT": {
+      "usd": {
+        "base":{
+            "type": "FIX",
+            "value": 0
+        }
+      },
       "DEFAULT": {
         "base":{
             "type": "FIX",

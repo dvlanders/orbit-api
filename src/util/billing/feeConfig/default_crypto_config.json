@@ -1,0 +1,66 @@
+{
+    "BASTION": {
+      "POLYGON_MAINNET": {
+        "internal": {
+          "type": "PERCENT",
+          "value": 0.001
+        },
+        "external": {
+          "type": "PERCENT",
+          "value": 0.001
+        }
+      },
+      "ETHEREUM_MAINNET": {     
+        "internal": {
+          "type": "PERCENT",
+          "value": 0.001
+        },
+        "external": {
+          "type": "PERCENT",
+          "value": 0.001
+        }
+      },
+      "DEFAULT": {     
+        "internal": {
+          "type": "PERCENT",
+          "value": 0.001
+        },
+        "external": {
+          "type": "PERCENT",
+          "value": 0.001
+        }
+      }
+    },
+    "DEFAULT": {
+      "POLYGON_MAINNET": {
+        "internal": {
+          "type": "PERCENT",
+          "value": 0.001
+        },
+        "external": {
+          "type": "PERCENT",
+          "value": 0.001
+        }
+      },
+      "ETHEREUM_MAINNET": {     
+        "internal": {
+          "type": "PERCENT",
+          "value": 0.001
+        },
+        "external": {
+          "type": "PERCENT",
+          "value": 0.001
+        }
+      },
+      "DEFAULT": {     
+        "internal": {
+          "type": "PERCENT",
+          "value": 0.001
+        },
+        "external": {
+          "type": "PERCENT",
+          "value": 0.001
+        }
+      }
+    }
+}
