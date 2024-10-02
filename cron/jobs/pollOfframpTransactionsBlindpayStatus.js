@@ -26,7 +26,7 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 			payout_status: payoutResponseBody.status,
 			payout_response: payoutResponseBody,
 		}
-		await updateBlinpdayTransactionInfo(transaction.blindpay_info_id, toUpdateBlindpay);
+		await updateBlinpdayTransactionInfo(transaction.blindpay_transaction_id, toUpdateBlindpay);
 
 		const toUpdateRequest = {
 			transaction_status: hifiOfframpTransactionStatus,
@@ -51,7 +51,7 @@ async function pollOfframpTransactionsBlindpayStatus() {
 		.eq("fiat_provider", "BLINDPAY")
 		.eq("transaction_status", "IN_PROGRESS_FIAT")
 		.order('updated_at', { ascending: true })
-		.select('id, user_id, transaction_status, transfer_from_wallet_type, blindpay_info_id, blindpay_transaction_info:blindpay_info_id (*)')
+		.select('id, user_id, transaction_status, transfer_from_wallet_type, blindpay_transaction_id, blindpay_transaction_info:blindpay_transaction_id (*)')
 
 	if (offrampTransactionError) {
 		console.error('Failed to fetch transactions for pollOfframpTransactionsBlindpayStatus', offrampTransactionError);

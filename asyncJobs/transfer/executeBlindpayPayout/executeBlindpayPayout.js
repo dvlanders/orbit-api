@@ -14,7 +14,7 @@ exports.executeBlindpayPayout = async (config) => {
 	try {
 		const { data: record, error } = await supabase
 			.from("offramp_transactions")
-			.select("*, blindpay_transaction_info:blindpay_info_id (*)")
+			.select("*, blindpay_transaction_info:blindpay_transaction_id (*)")
 			.eq("id", config.recordId)
 			.single()
 
@@ -27,7 +27,7 @@ exports.executeBlindpayPayout = async (config) => {
 			blindpayExecutePayoutBody = await executePayout(blindpayTransactionInfo.quote_id,record.from_wallet_address);
 		} catch (error) {
 			if (error instanceof ExecutePayoutError) {
-				await updateBlinpdayTransactionInfo(record.blindpay_info_id, {payout_response: error.rawResponse});
+				await updateBlinpdayTransactionInfo(record.blindpay_transaction_id, {payout_response: error.rawResponse});
 				const toUpdate = {
 					transaction_status: "QUOTE_FAILED"
 				}
@@ -52,7 +52,7 @@ exports.executeBlindpayPayout = async (config) => {
 			payout_status: blindpayExecutePayoutBody.status,
 		}
 
-		await updateBlinpdayTransactionInfo(record.blindpay_info_id, toUpdateBlindpay);
+		await updateBlinpdayTransactionInfo(record.blindpay_transaction_id, toUpdateBlindpay);
 		await updateRequestRecord(config.recordId, {transaction_status: blindpayPayoutStatusMap[blindpayExecutePayoutBody.status] || "UNKNOWN"});
 		await notifyCryptoToFiatTransfer(record);
 
