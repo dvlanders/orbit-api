@@ -7,18 +7,19 @@ const blindpayRailCheck = async (globalAccountId) => {
     await supabaseCall(() =>
       supabase
         .from("blindpay_bank_accounts")
-        .select("blindpay_account_id, user_id")
+        .select("id, blindpay_account_id, user_id")
         .eq("global_account_id", globalAccountId)
         .maybeSingle()
     );
   if (blindpayAccountError) throw blindpayAccountError;
   if (!blindpayAccountData || !blindpayAccountData.blindpay_account_id)
-    return { isExternalAccountExist: false, blindpayAccountId: null, destinationUserId: null };
+    return { isExternalAccountExist: false, blindpayAccountId: null, destinationUserId: null, accountId: null };
 
   return {
     isExternalAccountExist: true,
     blindpayAccountId: blindpayAccountData.blindpay_account_id,
     destinationUserId: blindpayAccountData.user_id,
+    accountId: blindpayAccountData.id,
   };
 };
 

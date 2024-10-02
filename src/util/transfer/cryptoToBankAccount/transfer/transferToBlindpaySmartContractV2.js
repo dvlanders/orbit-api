@@ -115,13 +115,14 @@ const acceptPaymentQuote = async (config) => {
 }
 
 const initTransferData = async (config) => {
-    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId, accountInfo, feeTransactionId } = config
+    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId, accountInfo, accountId, feeTransactionId } = config
 
 	const contractAddress = getBlindpayContractAddress(chain, sourceCurrency)
 
 	// get billing tags
 	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
-    const blindpayTransferInfo = await insertBlinpdayTransactionInfo({currency: destinationCurrency, blindpay_account_id: blindpayAccountId, account_id: destinationAccountId});
+    const blindpayTransferInfo = await insertBlinpdayTransactionInfo({currency: destinationCurrency, blindpay_account_id: blindpayAccountId, account_id: accountId});
+
 
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -256,10 +257,11 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 const createTransferToBlindpaySmartContract = async (config) => {
     const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, feeTransactionId } = config
     
-    const { isExternalAccountExist, blindpayAccountId, destinationUserId } = await blindpayRailCheck(destinationAccountId)
+    const { isExternalAccountExist, blindpayAccountId, destinationUserId, accountId } = await blindpayRailCheck(destinationAccountId)
     if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }
 	config.blindpayAccountId = blindpayAccountId
     config.destinationUserId = destinationUserId
+    config.accountId = accountId
     const initialTransferRecord = await initTransferData(config);
 
     if(!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){

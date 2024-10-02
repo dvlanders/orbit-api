@@ -5,7 +5,7 @@ const { supabaseCall } = require("../supabaseWithRetry");
 const insertBlinpdayTransactionInfo = async (transactionInfo) => {
 
     const { data, error } = await supabaseCall(() =>
-        supabase.from("blindpay_transaction_info")
+        supabase.from("blindpay_transactions")
                 .insert(transactionInfo)
                 .select()
                 .single());
@@ -21,7 +21,7 @@ const insertBlinpdayTransactionInfo = async (transactionInfo) => {
 const getBlinpdayTransactionInfo = async (id) => {
 
     const { data, error } = await supabaseCall(() =>
-        supabase.from("blindpay_transaction_info")
+        supabase.from("blindpay_transactions")
                 .select()
                 .eq("id", id)
                 .single());
@@ -37,7 +37,7 @@ const getBlinpdayTransactionInfo = async (id) => {
 const updateBlinpdayTransactionInfo = async (id, transactionInfo) => {
 
     const { data, error } = await supabaseCall(() =>
-        supabase.from("blindpay_transaction_info")
+        supabase.from("blindpay_transactions")
                 .update({updated_at: new Date().toISOString(), ...transactionInfo})
                 .eq("id", id)
                 .select()
