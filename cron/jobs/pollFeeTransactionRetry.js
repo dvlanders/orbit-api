@@ -7,7 +7,7 @@ const updateStatus = async (transaction) => {
 
 	try {
 		// console.log('Updating fee transaction status for id:', transaction.id);
-		await syncTransactionFeeRecordStatus(transaction.transaction_id, transaction.transaction_type);
+		await syncTransactionFeeRecordStatus(transaction.transaction_id, transaction.transaction_type, transaction.id);
         await chargeTransactionFee(transaction.transaction_id, transaction.transaction_type);
 	} catch (error) {
 		await createLog('pollFeeTransactionRetry/updateStatus', null, `Failed to update fee transaction status for id:${transaction.id} `, error);

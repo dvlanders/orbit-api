@@ -114,6 +114,18 @@ const getBalanceTopupsHistory = async (profileId, createdAfter=new Date("1900-01
     return convertKeysToCamelCase(data);
 }
 
+const checkBalanceDeductChangeExists = async (feeId) => {
+
+    const { data, error } = await supabaseCall(() => supabase
+        .from("balance_change_log")
+        .select()
+        .eq("fee_id", feeId)
+        .maybeSingle());
+
+    if(error) throw error;
+    return !!data;
+
+}
 
 module.exports = {
     addBaseBalanceRecord,
@@ -123,5 +135,6 @@ module.exports = {
     getTotalBalanceTopups,
     getBalanceTopupsHistory,
     insertBalanceTopupRecord,
-    updateBalanceTopupRecord
+    updateBalanceTopupRecord,
+    checkBalanceDeductChangeExists
 }
