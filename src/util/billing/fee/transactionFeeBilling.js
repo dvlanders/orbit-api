@@ -1,7 +1,7 @@
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { getFee } = require("../feeRateMap")
-const { deductBalance, getBalance, checkBalanceDeductChangeExists } = require("../balance/balanceService")
+const { deductBalance, getBalance } = require("../balance/balanceService")
 const { updateTransactionFeeRecord, getOptimisticAvailableBalance, insertTransactionFeeRecord } = require("./feeTransactionService")
 const { BillingModelType } = require("../utils")
 const { getProfileBillingInfo } = require("../billingInfoService")
@@ -87,8 +87,6 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
         if(feeRecord.amount > 0){
             await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
         }
-        
-        // await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.COMPLETED});
 
     }catch(error){
         await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.FAILED});
@@ -153,7 +151,7 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
 
 }
 
-const syncTransactionFeeRecordStatus = async (transactionId, transactionType, feeId) => {
+const syncTransactionFeeRecordStatus = async (transactionId, transactionType) => {
 
     try{
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
@@ -168,10 +166,6 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType, fe
 
         if (transactionFailed || process.env.NODE_ENV === "development") {
             await updateTransactionFeeRecord(transactionId, { status: FeeTransactionStatus.VOIDED });
-        }
-
-        if(await checkBalanceDeductChangeExists(feeId)){
-            await updateTransactionFeeRecord(transactionId, { status: FeeTransactionStatus.COMPLETED });
         }
 
     }catch(error){
