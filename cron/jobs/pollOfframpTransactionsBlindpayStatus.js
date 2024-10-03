@@ -12,6 +12,7 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 	// console.log("polling blindpay payout status for transaction", transaction)
 	try {
 		const blindpayTransactionInfo = transaction.blindpay_transaction_info;
+		if(!blindpayTransactionInfo) return;
 		const payoutResponseBody = await getPayout(blindpayTransactionInfo.payout_id)
 		if (blindpayTransactionInfo.payout_status == payoutResponseBody.status) return
 
