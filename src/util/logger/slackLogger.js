@@ -29,35 +29,32 @@ const uploadJSON = async (jsonContent, filename, title, channelId) => {
   return result;
 };
 
+// get jsonBodyText
+const getJsonBodyText = async (jsonObject, filename, title, channelId) => {
+    const jsonContent = safeJsonStringify(jsonObject);
+    let jsonBodyText = `\`\`\`${jsonContent}\`\`\``;
+    if (jsonBodyText.length > 3000) {
+        const result = await web.filesUploadV2({
+            channel_id: channelId,
+            initial_comment: title,
+            content: jsonContent,
+            filename: filename,
+            title: title,
+        });
+        jsonBodyText = `${title} is too large to display. <${result.files[0].files[0].permalink}|${title} Body File>`
+    }
+    return jsonBodyText;
+}
+
 // Build the Slack blocks for the request and response message
 const reqResBlockBuilder = async (caller, request, response) => {
   const channelId = process.env.SLACK_CHANNEL_API;
   const statusEmoji =
     response.statusCode >= 200 && response.statusCode < 300 ? "✅" : "❌";
 
-  const requestBodyJson = safeJsonStringify(request.body);
-  let requestBodyText = `\`\`\`${requestBodyJson}\`\`\``;
-  if (requestBodyText.length > 3000) {
-    const result = await uploadJSON(
-      requestBodyJson,
-      "request_body.json",
-      "Request Body",
-      channelId
-    );
-    requestBodyText = `Request body is too large to display. <${result.files[0].files[0].permalink}|View Request Body File>`;
-  }
+  const requestBodyText = await getJsonBodyText(request.body, "request_body.json", "Request Body", channelId);
 
-  const responseBodyJson = safeJsonStringify(response.body);
-  let responseBodyText = `\`\`\`${responseBodyJson}\`\`\``;
-  if (responseBodyText.length > 3000) {
-    const result = await uploadJSON(
-      responseBodyJson,
-      "response_body.json",
-      "Response Body",
-      channelId
-    );
-    responseBodyText = `Response body is too large to display. <${result.files[0].files[0].permalink}|View Response Body File>`;
-  }
+  const responseBodyText = await getJsonBodyText(response.body, "response_body.json", "Response Body", channelId);
 
   return [
     {
@@ -148,6 +145,106 @@ const reqResBlockBuilder = async (caller, request, response) => {
   ];
 };
 
+// Build the Slack blocks for the Transaction message
+const transactionBlockBuilder = async (profileEmail, profileId, userId, rampType, transactionRecord, message) => {
+    const channelId = process.env.SLACK_CHANNEL_TRANSACTION;
+
+    // const messageBodyText = await getJsonBodyText(messageJson, "message_body.json", "Message Body", channelId);
+
+    const transactionRecordBodyText = await getJsonBodyText(transactionRecord, "transaction_body.json", "Transaction Body", channelId);
+
+    return [
+        {
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: `🚨 ${rampType} Transaction Notification`
+            }
+        },
+        {
+            type: "divider",
+        },
+        {
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Caller",
+                emoji: true,
+                },
+        },
+        {
+            type: "section",
+            fields: [
+                {
+                    type: "mrkdwn",
+                    text: "✉️ *Profile Email*",
+                },
+                {
+                    type: "mrkdwn",
+                    text: "🪪 *Profile ID*",
+                },
+                {
+                    type: "mrkdwn",
+                    text: profileEmail || "N/A",
+                },
+                {
+                    type: "mrkdwn",
+                    text: profileId || "N/A",
+                },
+            ],
+        },
+        {
+            type: "section",
+            fields: [
+                {
+                    type: "mrkdwn",
+                    text: "👤 *User ID*",
+                },
+                {
+                    type: "mrkdwn",
+                    text: "💸 *TransactionRecord ID*",
+                },
+                {
+                    type: "mrkdwn",
+                    text: userId || "N/A"
+                },
+                {
+                    type: "mrkdwn",
+                    text: transactionRecord.id || "N/A",
+                },
+            ]
+        },
+        {
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Message",
+            },
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: message,
+            }
+        },
+        {
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Transaction Record",
+            },
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: transactionRecordBodyText,
+            }
+        }
+    ];
+}
+
 // Build the Slack blocks for the log message
 const logBlockBuilder = async (
   profileEmail,
@@ -158,17 +255,7 @@ const logBlockBuilder = async (
 ) => {
   const channelId = process.env.SLACK_CHANNEL_LOG;
 
-  const responseJson = safeJsonStringify(response);
-  let responseText = `\`\`\`${responseJson}\`\`\``;
-  if (responseText.length > 3000) {
-    const result = await uploadJSON(
-      responseJson,
-      "response_details.json",
-      "Response Details",
-      channelId
-    );
-    responseText = `Response detail is too large to display. <${result.files[0].files[0].permalink}|View Response Details File>`;
-  }
+  const responseText = await getJsonBodyText(response, "response_details.json", "Response Details", channelId);
 
   return [
     {
@@ -386,6 +473,26 @@ const sendSlackReqResMessage = async (request, response) => {
   }
 };
 
+const sendSlackTransactionMessage = async (
+  profileEmail,
+  profileId,
+  userId,
+  rampType,
+  transactionRecord,
+  message
+) => {
+  try {
+    await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: process.env.SLACK_CHANNEL_TRANSACTION,
+      text: "Logger",
+      blocks: await transactionBlockBuilder(profileEmail, profileId, userId, rampType, transactionRecord, message),
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 const sendSlackLogMessage = async (
   profileEmail,
   userEmail,
@@ -449,6 +556,7 @@ const sendSlackTransferBalanceAlert = async (profileId, feeRecordId, balance, in
 module.exports = {
   sendSlackReqResMessage,
   sendSlackLogMessage,
+  sendSlackTransactionMessage,
   sendSlackNewCustomerMessage,
   sendSlackTransferBalanceAlert
 };

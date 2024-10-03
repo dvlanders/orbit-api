@@ -3,6 +3,8 @@ const bastionGasCheck = require("../../../src/util/bastion/utils/gasCheck")
 const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
 const { currencyDecimal } = require("../../../src/util/common/blockchain")
 const createLog = require("../../../src/util/logger/supabaseLogger")
+const notifyTransaction = require("../../../src/util/logger/transactionNotifier")
+const { rampTypes } = require("../../../src/util/transfer/utils/ramptType")
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../src/util/smartContract/approve/approveTokenBastion")
 const { getTokenAllowance } = require("../../../src/util/smartContract/approve/getApproveAmount")
 const supabase = require("../../../src/util/supabaseClient")
@@ -26,7 +28,8 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		// gas check
 		const { needFund, fundSubmitted } = await bastionGasCheck(record.user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
 		if (needFund) {
-			throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
+            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, "Wallet gas is not enough.")
+            throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
 		}
 
 		// check allowance if not enough perform a token approve job and reschedule transfer
