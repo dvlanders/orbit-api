@@ -20,13 +20,13 @@ const pollAsyncJobs = async() => {
         const now = new Date()
         let { data: jobsQueue, error } = await supabase
         .from('jobs_queue')
-        // .update({
-        //     in_process: true
-        // })
-        // .lt('next_retry', now.toISOString())
-        // .gt('retry_deadline', now.toISOString())
-        // .eq("env", JOB_ENV)
-        // .eq("in_process", false)
+        .update({
+            in_process: true
+        })
+        .lt('next_retry', now.toISOString())
+        .gt('retry_deadline', now.toISOString())
+        .eq("env", JOB_ENV)
+        .eq("in_process", false)
         .select("*")
         .order('next_retry', {ascending: true})
     
@@ -41,7 +41,7 @@ const pollAsyncJobs = async() => {
             try{
                 const jobFunc = jobMapping[job.job].execute
                 await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
-                // await deleteJob(job.id)
+                await deleteJob(job.id)
                 success = true
             }catch(error){
                 if ((error instanceof JobError && error.logging) || !(error instanceof JobError)){
@@ -72,7 +72,7 @@ const pollAsyncJobs = async() => {
                     }
                 }
                 // delete the job after create a new one
-                // await deleteJob(job.id)
+                await deleteJob(job.id)
                 success = false
             }finally{
                 await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success, jobError)
