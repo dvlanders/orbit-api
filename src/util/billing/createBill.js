@@ -3,7 +3,8 @@ const { getNextCycleEnd } = require('../helper/dateTimeUtils');
 const createLog = require('../logger/supabaseLogger');
 const supabase = require('../supabaseClient');
 const { calculateCustomerMonthlyBill } = require('./customerBillCalculator');
-const { getTotalBalanceTopups } = require('./balance/balanceService');
+const { getTotalBalanceTopups, insertBalanceTopupRecord, topupBalance } = require('./balance/balanceService');
+const { BalanceTopupStatus, BalanceTopupType, generateHIFICreditId } = require('./balance/utils');
 
 const STRIPE_SK_KEY = process.env.STRIPE_SK_KEY
 const stripe = require('stripe')(STRIPE_SK_KEY);
@@ -38,18 +39,18 @@ exports.createStripeBill = async(billingInformation) => {
         const billableDepositFee = parseFloat(billingInfo.fiatDeposit.value.toFixed(2))
         const totalTopUps = parseFloat(billingInfo.totalTopUps.toFixed(2))
         const monthlyMinimum = parseFloat(billingInfo.monthlyMinimum.toFixed(2))
-        const feeToMinimum = Math.max(monthlyMinimum - totalTopUps, 0)
-
+        const balanceLeft = parseFloat(billingInfo.balance.balanceLeft.toFixed(2))
+        const debt = (balanceLeft < 0 ? Math.abs(balanceLeft) : 0) + billingInfo.totalTransactionFeeFailed
+        const transactionFeeFailedToChargedOrMinimum = Math.max(Math.max(monthlyMinimum - totalTopUps, 0), debt)
+        
         // service fee
         const billableVirtualAccountFee = parseFloat(billingInfo.virtualAccount.value.toFixed(2))
         const integrationFee = parseFloat(billingInfo.integrationFee.toFixed(2))
         const platformFee = parseFloat(billingInfo.platformFee.toFixed(2))
 
 
-        const finalBillableFee = feeToMinimum + integrationFee + platformFee + billableVirtualAccountFee
+        const finalBillableFee = transactionFeeFailedToChargedOrMinimum + integrationFee + platformFee + billableVirtualAccountFee
         const hifiBillingId = generateHifiInvoiceId()
-
-        console.log(billingInfo)
 
         // insert billing history
         const {data: billingHistory, error: billingHistoryError} = await supabase
@@ -69,7 +70,7 @@ exports.createStripeBill = async(billingInformation) => {
                 billable_active_virtual_account_fee: billableVirtualAccountFee,
                 billable_integration_fee: integrationFee,
                 billable_platform_fee: platformFee,
-                fee_to_minimum: feeToMinimum,
+                fee_to_minimum: transactionFeeFailedToChargedOrMinimum,
                 final_billable_fee_amount: finalBillableFee,
                 status: "CREATED",
                 provider: "STRIPE",
@@ -105,7 +106,7 @@ exports.createStripeBill = async(billingInformation) => {
         const products = [
             {productName: "active_virtual_account_fee", fee: billableVirtualAccountFee}, 
             {productName: "integration_fee", fee: integrationFee}, 
-            {productName: "account_minimum", fee: feeToMinimum}, 
+            {productName: "account_minimum", fee: transactionFeeFailedToChargedOrMinimum}, 
             {productName: "platform_fee", fee: platformFee}, 
         ]
 
@@ -171,6 +172,23 @@ exports.createStripeBill = async(billingInformation) => {
             })
             .eq("profile_id", billingInformation.profile_id)
         if (updateBillingInformationError) throw updateBillingInformationError
+
+        // reset balance to zero if user have debet
+        if (billingInfo.balance.balanceLeft < 0) {
+            const toInsert = {
+                profile_id: billingInformation.profileId,
+                balance_id: billingInfo.balance.id,
+                amount: Math.abs(billingInfo.balance.balanceLeft),
+                status: BalanceTopupStatus.SUCCEEDED,
+                type: BalanceTopupType.MONTHLY_RESET,
+                hifi_credit_id: generateHIFICreditId()
+              }
+          
+            const topupRecord = await insertBalanceTopupRecord(toInsert);
+            await topupBalance(billingInformation.profileId, toInsert.amount, topupRecord.id);
+        }
+
+
         return 
 
 

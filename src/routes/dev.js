@@ -29,4 +29,5 @@ module.exports = (router) => {
 	router.get("/dev/testSelectOnEnum", dev.testSelectOnEnum)
 	router.post("/dev/insertAllFeeRecord", dev.insertAllFeeRecords)
 	router.post("/dev/insertAllFeeTag", dev.insertFeeTag)
+	router.get("/dev/testAggregateFunction", dev.testAggregateFunction)
 };

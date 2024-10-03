@@ -114,7 +114,6 @@ const createTransactionFeeRecord = async (transactionId, transactionType) => {
     await insertTransactionFeeRecord(toInsert);
 }
 
-
 const checkBalanceForTransactionFee = async (transactionId, transactionType) => {
 
     try{

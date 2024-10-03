@@ -27,6 +27,7 @@ const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transf
 const { createTransactionFeeRecord } = require("../util/billing/fee/transactionFeeBilling");
 const { getFee } = require("../util/billing/feeRateMap");
 const { transferType } = require("../util/transfer/utils/transfer");
+const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCalculator");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -237,7 +238,7 @@ exports.triggerOnRampFeeCharge = async(req, res) => {
 
 exports.testCreateBill = async(req, res) => {
     try{
-        const profileId = "e37f17be-1369-4853-8026-65e9903bd430"
+        const profileId = "e4c758d7-5475-4505-ba15-e129db0a441f"
         const {data: billingInformation, error: billingInformationError} = await supabase
             .from("billing_information")
             .select("*")
@@ -245,8 +246,10 @@ exports.testCreateBill = async(req, res) => {
             .single()
         
         await createStripeBill(billingInformation)
+
         return res.status(200).json({message: "success"})
     }catch (error){
+        console.error(error)
         return res.status(500).json({error: "Internal server error"})
 
     }
@@ -522,6 +525,24 @@ exports.insertFeeTag = async(req, res) => {
         }))
         
         return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testAggregateFunction = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .rpc("get_fee_transactions_sum", {
+                profile_id: "e4c758d7-5475-4505-ba15-e129db0a441f",
+                start_date: "2024-09-01",
+                end_date: "2024-10-31",
+                transaction_type: transferType.CRYPTO_TO_CRYPTO,
+                status: "VOIDED"
+            })
+
+        return res.status(200).json({data, error})
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "Internal server error"})
