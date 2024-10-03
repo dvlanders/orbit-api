@@ -800,7 +800,7 @@ exports.getTransfers = async (req, res) => {
 	try {
 		if (id) {
 			const requiredFields = ["id", "transferType"];
-			const acceptedFields = { id: (value) => isUUID(value), transferType: (type) => isValidTransferType(type), profileId: "string" };	
+			const acceptedFields = { id: (value) => isUUID(value), transferType: (type) => isValidTransferType(type), profileId: "string" };
 
 			const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields);
 			if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
@@ -830,7 +830,7 @@ exports.getTransfers = async (req, res) => {
 					fetchFunc = await FiatToFiatSupportedPairFetchFunctionsCheck(fiatProvider, fiatReceiver);
 					transactionRecord = await fetchFunc(id, profileId);
 					transactionRecord = await transferObjectReconstructor(transactionRecord);
-					break;				
+					break;
 				default:
 					return res.status(400).json({ error: `Invalid transfer type: ${transferType}` });
 			}
@@ -854,7 +854,7 @@ exports.getTransfers = async (req, res) => {
 			// check if required fileds provided
 			if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
 			if (createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore)) return res.status(400).json({ error: "Invalid date range" });
-			
+
 			// if no transfer type provided, fetch all transfer records
 			if (!transferType) {
 				const c2fRecords = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
@@ -883,7 +883,7 @@ exports.getTransfers = async (req, res) => {
 
 		}
 
-	} catch (error){
+	} catch (error) {
 		await createLog("transfer/getTransfers", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
