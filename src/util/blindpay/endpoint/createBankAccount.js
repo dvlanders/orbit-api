@@ -5,22 +5,20 @@ const {
   CreateBankAccountError,
 } = require("../errors");
 const { BlindpayBankAccountType } = require("../utils");
-const { updateAccountInfoById, getFullBankAccountInfoById } = require("../bankAccountService");
+const { updateAccountInfoById } = require("../bankAccountService");
 
-const bankAccountRequestBodyBuilder = async (accountInfo) => {
+const bankAccountRequestBodyBuilder = async (fullBankAccountInfo) => {
 
-  const fullBankAccount = await getFullBankAccountInfoById(accountInfo.id, accountInfo.type);
-
-  const bankAccountInfo = fullBankAccount.bank_account_info;
+  const bankAccountInfo = fullBankAccountInfo.bank_account_info;
 
   const bankAccountRequestBody = {
-    type: accountInfo.type,
-    name: accountInfo.name,
+    type: fullBankAccountInfo.type,
+    name: fullBankAccountInfo.name,
   };
 
-  if (accountInfo.type === BlindpayBankAccountType.PIX) {
+  if (fullBankAccountInfo.type === BlindpayBankAccountType.PIX) {
     bankAccountRequestBody.pix_key = bankAccountInfo.pix_key;
-  } else if (accountInfo.type === BlindpayBankAccountType.ACH) {
+  } else if (fullBankAccountInfo.type === BlindpayBankAccountType.ACH) {
     const extraBody = {
       beneficiary_name: bankAccountInfo.beneficiary_name,
       routing_number: bankAccountInfo.routing_number,
@@ -29,7 +27,7 @@ const bankAccountRequestBodyBuilder = async (accountInfo) => {
       account_class: bankAccountInfo.account_class,
     };
     Object.assign(bankAccountRequestBody, extraBody);
-  } else if (accountInfo.type === BlindpayBankAccountType.WIRE) {
+  } else if (fullBankAccountInfo.type === BlindpayBankAccountType.WIRE) {
     const extraBody = {
       beneficiary_name: bankAccountInfo.beneficiary_name,
       routing_number: bankAccountInfo.routing_number,
@@ -42,7 +40,7 @@ const bankAccountRequestBodyBuilder = async (accountInfo) => {
       postal_code: bankAccountInfo.postal_code,
     };
     Object.assign(bankAccountRequestBody, extraBody);
-  } else if (accountInfo.type === BlindpayBankAccountType.SPEI_BITSO) {
+  } else if (fullBankAccountInfo.type === BlindpayBankAccountType.SPEI_BITSO) {
     const extraBody = {
       spei_protocol: bankAccountInfo.spei_protocol,
       spei_institution_code: bankAccountInfo.spei_institution_code,
@@ -51,7 +49,7 @@ const bankAccountRequestBodyBuilder = async (accountInfo) => {
     };
     Object.assign(bankAccountRequestBody, extraBody);
 
-  } else if (accountInfo.type === BlindpayBankAccountType.TRANSFERS_BITSO) {
+  } else if (fullBankAccountInfo.type === BlindpayBankAccountType.TRANSFERS_BITSO) {
     const extraBody = {
       transfers_type: bankAccountInfo.transfers_type,
       transfers_account: bankAccountInfo.transfers_account,
@@ -59,7 +57,7 @@ const bankAccountRequestBodyBuilder = async (accountInfo) => {
     };
     Object.assign(bankAccountRequestBody, extraBody);
 
-  }else if (accountInfo.type === BlindpayBankAccountType.ACH_COP_BITSO) {
+  }else if (fullBankAccountInfo.type === BlindpayBankAccountType.ACH_COP_BITSO) {
     const extraBody = {
       account_type: bankAccountInfo.account_type,
       ach_cop_beneficiary_first_name: bankAccountInfo.ach_cop_beneficiary_first_name,
@@ -77,15 +75,15 @@ const bankAccountRequestBodyBuilder = async (accountInfo) => {
   return bankAccountRequestBody;
 };
 
-const createBankAccount = async (accountInfo) => {
-  const receiverId = accountInfo.blindpay_receiver_id;
+const createBankAccount = async (fullBankAccountInfo) => {
+  const receiverId = fullBankAccountInfo.blindpay_receiver_id;
   const headers = {
     Accept: "application/json",
     Authorization: `Bearer ${process.env.BLINDPAY_API_KEY}`,
     "Content-Type": "application/json",
   };
 
-  const requestBody = await bankAccountRequestBodyBuilder(accountInfo);
+  const requestBody = await bankAccountRequestBodyBuilder(fullBankAccountInfo);
 
   const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers/${receiverId}/bank-accounts`;
 
@@ -108,7 +106,7 @@ const createBankAccount = async (accountInfo) => {
 
   // console.log(responseBody);
   if (!response.ok) {
-    await updateAccountInfoById(accountInfo.id, { blindpay_response: responseBody });
+    await updateAccountInfoById(fullBankAccountInfo.id, { blindpay_response: responseBody });
 
     if (responseBody.message === "kyc_type_not_supported") {
       throw new CreateBankAccountError(

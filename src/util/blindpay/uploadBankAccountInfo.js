@@ -51,7 +51,7 @@ const uploadBankAccountInfo = async (fields) => {
     await supabaseCall(() =>
       supabase
         .from("blindpay_receivers_kyc")
-        .select("blindpay_receiver_id, kyc_status")
+        .select("blindpay_receiver_id, kyc_status, kyc_type")
         .eq("id", fields.receiver_id)
         .eq("user_id", fields.user_id)
         .maybeSingle()
@@ -91,6 +91,17 @@ const uploadBankAccountInfo = async (fields) => {
     );
   }
 
+  if (receiverRecord && receiverRecord.kyc_type !== "standard" && (fields.type === "ach" || fields.type === "wire")) {
+    throw new BankAccountInfoUploadError(
+      BankAccountInfoUploadErrorType.KYC_TYPE_NOT_SUPPORTED,
+      400,
+      "",
+      {
+        error: `Your KYC type [${receiverRecord.kyc_type}] does not supported bank account type [${fields.type}]`,
+      }
+    );
+  }
+
   const bankAccountData = {
     user_id: fields.user_id,
     receiver_id: fields.receiver_id,
@@ -104,9 +115,7 @@ const uploadBankAccountInfo = async (fields) => {
 
   // check if the bank account already exists
   const { bankAccountExist, bankAccountRecord: existingBankAccountRecord } = await checkBrlOfframpBankAccount(bankAccountData);
-  if(bankAccountExist) {
-    return { bankAccountExist, bankAccountRecord: existingBankAccountRecord };
-  }
+  if(bankAccountExist) return { bankAccountExist, bankAccountRecord: existingBankAccountRecord };
 
   const bankAccountRecord = await insertBankAccount(bankAccountData);
   bankAccountRecord.blindpay_receiver_id = receiverRecord.blindpay_receiver_id;
