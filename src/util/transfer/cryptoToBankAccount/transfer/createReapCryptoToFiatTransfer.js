@@ -33,15 +33,19 @@ const getReapPayment = require("../../../reap/main/getPayment");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description, accountInfo } = config
 
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
 
 	// get Reap wallet Address
 	const userReapWalletAddress = await getUserReapWalletAddress(destinationUserId, chain)
+
+	// get billing tags
+	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
     
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -64,7 +68,9 @@ const initTransferData = async (config) => {
 			bastion_user_id: sourceBastionUserId,
             purpose_of_payment: purposeOfPayment,
             description: description, 
-            destination_currency_amount: receivedAmount
+            destination_currency_amount: receivedAmount,
+			billing_tags_success: billingTags.success,
+			billing_tags_failed: billingTags.failed,
 		})
 		.eq("request_id", requestId)
 		.select()

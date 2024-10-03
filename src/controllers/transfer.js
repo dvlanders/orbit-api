@@ -259,6 +259,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (accountInfo.currency != destinationCurrency) return res.status(400).json({ error: `destinationCurrency not allowed for destinationAccountId` });
 		if (paymentRail && accountInfo.payment_rail != paymentRail) return res.status(400).json({ error: `paymentRail not allowed for destinationAccountId` });
 		if (!paymentRail) paymentRail = accountInfo.payment_rail;
+		fields.accountInfo = accountInfo
 		const destinationUserId = accountInfo.user_id
 
 		// block if destination user is not equal to source user
@@ -287,10 +288,10 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const { transferFunc, validationFunc } = funcs
 		if (!transferFunc || !validationFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
-        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch, wireMessage });
+        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch });
         if (!validationRes.valid) return res.status(400).json({ error: `fields provided are invalid`, invalidFieldsAndMessages: validationRes.invalidFieldsAndMessages })
         
-        const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
+        const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, accountInfo })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 
 		const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
@@ -306,6 +307,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 				return res.status(500).json({ error: "An unexpected error occurred" })
 			}
 		}
+		console.log(error)
 		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error, null, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
@@ -433,14 +435,15 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 
 		// look up the provider to get the actual internal account id
-		const providerResult = await fetchAccountProviders(sourceAccountId, profileId);
-		if (!providerResult || !providerResult.account_id) return res.status(400).json({ error: `No provider found for id: ${sourceAccountId}` });
-		const internalAccountId = providerResult.account_id;
+		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId);
+		if (!accountInfo || !accountInfo.account_id) return res.status(400).json({ error: `No provider found for id: ${sourceAccountId}` });
+		const internalAccountId = accountInfo.account_id;
+		fields.accountInfo = accountInfo
 
 		// simulation in sandbox
 
-		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi") {
-			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi"){
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo})
 			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 			return res.status(200).json(transferResult);
 		}
@@ -449,7 +452,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
-		let transferResult = await transferFunc({ requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
+		let transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo})
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);

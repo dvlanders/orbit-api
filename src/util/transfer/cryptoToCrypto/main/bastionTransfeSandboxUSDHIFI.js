@@ -28,6 +28,15 @@ const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/bal
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
 const insertRecord = async(fields) => {
+    // get billing tags
+    const billingTags = fields.recipientUserId ? {
+        success: ["internal"],
+        failed: [],
+    } : {
+        success: ["external"],
+        failed: [""],
+    }
+
     // insert record
     const { data: requestRecord, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
@@ -47,7 +56,9 @@ const insertRecord = async(fields) => {
             transfer_to_wallet_type: fields.recipientWalletType || "INDIVIDUAL",
             status: "CREATED",
             sender_bastion_user_id: gasStation,
-            recipient_bastion_user_id: fields.recipientBastionUserId
+            recipient_bastion_user_id: fields.recipientBastionUserId,
+            billing_tags_success: billingTags.success,
+            billing_tags_failed: billingTags.failed,
         },
     )
     .eq("request_id", fields.requestId)
