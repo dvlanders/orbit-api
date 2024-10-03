@@ -234,7 +234,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!amount && !receivedAmount) return res.status(401).json({ error: "Either amount and receivedAmount is required" })
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
 		// check if wire message is valid
-        if (!isValidMessage(wireMessage, 4, 35))
+        if (wireMessage && !isValidMessage(wireMessage, 4, 35))
             return res.status(400).json({ error: "wireMessage should not exceed 4 lines, and each line should not exceed 35 characters." })
 
 		const { isAlreadyUsed, newRecord } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
