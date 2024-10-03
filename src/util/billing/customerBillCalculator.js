@@ -2,7 +2,6 @@ const createLog = require("../logger/supabaseLogger")
 const supabase = require("../supabaseClient")
 const { transferType } = require("../transfer/utils/transfer")
 const { getTotalBalanceTopups, getBalance } = require("./balance/balanceService")
-const { feeMap } = require("./feeRateMap")
 
 const getTotalCryptoToCryptofee = async(profileId, startDate, endDate, status) => {
     const {data, error} = await supabase
@@ -57,11 +56,11 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
         if (billingRateError) throw billingRateError
 
         const [cryptoToCryptoSuccess, cryptoToCryptoFailed, cryptoToFiatSuccess, cryptoToFiatFailed, fiatToCryptoSuccess, fiatToCryptoFailed] = await Promise.all([
-            getTotalCryptoToCryptofee(profileId, startDate, endDate, "VOIDED"),
+            getTotalCryptoToCryptofee(profileId, startDate, endDate, "COMPLETED"),
             getTotalCryptoToCryptofee(profileId, startDate, endDate, "FAILED"),
-            getTotalCryptoToFiatfee(profileId, startDate, endDate, "VOIDED"),
+            getTotalCryptoToFiatfee(profileId, startDate, endDate, "COMPLETED"),
             getTotalCryptoToFiatfee(profileId, startDate, endDate, "FAILED"),
-            getTotalFiatToCryptoFee(profileId, startDate, endDate, "VOIDED"),
+            getTotalFiatToCryptoFee(profileId, startDate, endDate, "COMPLETED"),
             getTotalFiatToCryptoFee(profileId, startDate, endDate, "FAILED")
         ])
 

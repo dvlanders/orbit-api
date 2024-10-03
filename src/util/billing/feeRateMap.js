@@ -19,21 +19,24 @@ const getFee = (transaction, feeConfig, success=true) => {
     // get provider
     const fiatProvider = transaction.fiat_provider || "DEFAULT"
     const cryptoProvider = transaction.crypto_provider || "DEFAULT"
+    // get fee config for provider
+    const feeConfigForFiatProvider = feeConfig[fiatProvider] || feeConfig["DEFAULT"]
+    const feeConfigForCryptoProvider = feeConfig[cryptoProvider] || feeConfig["DEFAULT"]
 
     // get currency
     const currency = transaction.currency || "DEFAULT"
+    // get fee config for currency
+    const fiatFeeConfigForCurrency = feeConfigForFiatProvider[currency] || feeConfigForFiatProvider["DEFAULT"]
+    const cryptoFeeConfigForCurrency = feeConfigForCryptoProvider[currency] || feeConfigForCryptoProvider["DEFAULT"]
 
     // get tags
     const tags = (success ? transaction.billing_tags_success : transaction.billing_tags_failed) || []
 
     let fee = 0
     tags.map((tag) => {
-        const fiatFeeConfigForCurrency = feeConfig[fiatProvider][currency]
-        const cryptoFeeConfigForCurrency = feeConfig[cryptoProvider][currency]
 
         const fiatFeeRate = _getTagFeeRate(tag, fiatFeeConfigForCurrency)
         const cryptoFeeRate = _getTagFeeRate(tag, cryptoFeeConfigForCurrency)
-
 
         if (fiatFeeRate.type == "PERCENT"){
             fee += parseFloat(fiatFeeRate.value) * transaction.amount
@@ -55,16 +58,19 @@ const getFee = (transaction, feeConfig, success=true) => {
 const getFeeCrypto = (transaction, feeConfig, success=true) => {
     // get provider
     const provider = transaction.provider || "DEFAULT"
+    // get fee config for provider
+    const feeConfigForProvider = feeConfig[provider] || feeConfig["DEFAULT"]
 
     // get currency
     const chain = transaction.chain || "DEFAULT"
+    // get fee config for currency
+    const feeConfigForChain = feeConfigForProvider[chain] || feeConfigForProvider["DEFAULT"]
 
     // get tags
     const tags = (success ? transaction.billing_tags_success : transaction.billing_tags_failed) || []
 
     let fee = 0
     tags.map((tag) => {
-        const feeConfigForChain = feeConfig[provider][chain]
         const feeRate = _getTagFeeRate(tag, feeConfigForChain)
         
         if (feeRate.type == "PERCENT"){
@@ -78,20 +84,7 @@ const getFeeCrypto = (transaction, feeConfig, success=true) => {
 }
 
 
-const feeMap = (transactions, feeConfig) => {
-    let totalFee = 0
-    const feeInformation = {}
-
-    transactions.map((trx) => {
-        const fee = getFee(trx, feeConfig)
-        totalFee += fee
-    })
-
-    return totalFee
-}
-
 module.exports = {
-    feeMap,
     getFee,
     getFeeCrypto
 }

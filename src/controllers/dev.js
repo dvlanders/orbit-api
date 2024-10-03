@@ -475,7 +475,7 @@ exports.insertAllFeeRecords = async (req, res) => {
 
     try{
         const {data: allTransactions, error: allTransactionsError} = await supabase
-            .from("onramp_transactions")
+            .from("crypto_to_crypto")
             .select("id")
             .eq("status", "CONFIRMED")
 
@@ -483,7 +483,7 @@ exports.insertAllFeeRecords = async (req, res) => {
         if (allTransactionsError) throw allTransactionsError
         console.log(allTransactions.length)
         await Promise.all(allTransactions.map(async(transaction) => {
-            await createTransactionFeeRecord(transaction.id, transferType.FIAT_TO_CRYPTO)
+            await createTransactionFeeRecord(transaction.id, transferType.CRYPTO_TO_CRYPTO)
         }))
 
         return res.status(200).json({message: "success"})

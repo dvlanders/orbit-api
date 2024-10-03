@@ -176,16 +176,17 @@ exports.createStripeBill = async(billingInformation) => {
         // reset balance to zero if user have debet
         if (billingInfo.balance.balanceLeft < 0) {
             const toInsert = {
-                profile_id: billingInformation.profileId,
+                stripe_invoice_id: invoiceId,
+                profile_id: billingInformation.profile_id,
                 balance_id: billingInfo.balance.id,
                 amount: Math.abs(billingInfo.balance.balanceLeft),
-                status: BalanceTopupStatus.SUCCEEDED,
+                status: BalanceTopupStatus.CREATED,
                 type: BalanceTopupType.MONTHLY_RESET,
                 hifi_credit_id: generateHIFICreditId()
               }
           
             const topupRecord = await insertBalanceTopupRecord(toInsert);
-            await topupBalance(billingInformation.profileId, toInsert.amount, topupRecord.id);
+            await topupBalance(toInsert.profile_id, toInsert.amount, topupRecord.id, sentInvoice.invoice_pdf);
         }
 
 
