@@ -13,9 +13,9 @@ module.exports = (router) => {
 	router.post("/account/wire/us/offramp", authorize, logRequestResponse, account.createWireUsOfframpDestination);
     router.post("/account/swift/offramp", authorize, logRequestResponse, account.createSwiftOfframpDestination)
 	router.get("/account/onRampRail/virtualAccount", authorize, logRequestResponse, account.getVirtualAccount)
-	router.post("/account/brl/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
-	router.post("/account/brl/receiver", authorize, logRequestResponse, account.createBlindpayReceiver);
+	router.post("/account/south-america/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
+	router.post("/account/south-america/receiver", authorize, logRequestResponse, account.createBlindpayReceiver);
 	router.post("/account/apac/offramp", authorize, logRequestResponse, account.createAPACOfframpDestination);
-	router.get("/account/brl/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
-	router.put("/account/brl/receiver", authorize, logRequestResponse, account.updateBlindpayReceiver);
+	router.get("/account/south-america/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
+	router.put("/account/south-america/receiver", authorize, logRequestResponse, account.updateBlindpayReceiver);
 };

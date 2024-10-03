@@ -24,6 +24,7 @@ const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
 const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");
 const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transfer");
+const { createTransactionFeeRecord } = require("../util/billing/fee/transactionFeeBilling");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -462,4 +463,27 @@ exports.testSelectOnEnum = async(req, res) => {
         console.error(error)
         return res.status(500).json({error: "error"})
     }
+}
+
+exports.insertAllFeeRecords = async (req, res) => {
+
+
+    try{
+        // const {data: allTransactions, error: allTransactionsError} = await supabase
+        //     .from("crypto_to_crypto")
+        //     .select("*")
+        //     .eq("status", "CONFIRMED");
+        
+        // if (allTransactionsError) throw allTransactionsError
+        // console.log(allTransactions.length)
+        // await Promise.all(allTransactions.map(async(transaction) => {
+        //     await createTransactionFeeRecord(transaction.id, "CRYPTO_TO_CRYPTO")
+        // }))
+
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+
 }

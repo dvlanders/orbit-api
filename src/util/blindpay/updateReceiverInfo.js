@@ -12,6 +12,7 @@ const { fieldsValidation } = require("../common/fieldsValidation");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const createLog = require("../logger/supabaseLogger");
+const { filesValidation } = require("./fileValidation");
 
 const updateReceiverUBOInfo = async (userId, receiverId, fields) => {
   if (fields.owners && fields.owners.length > 0) {
@@ -199,8 +200,22 @@ const updateReceiverKYCInfo = async (fields) => {
     );
   }
 
+  const invalidFiles = await filesValidation(fields);
+  if (invalidFiles.length > 0) {
+    throw new ReceiverInfoUploadError(
+      ReceiverInfoUploadErrorType.INVALID_FIELD,
+      400,
+      "",
+      {
+        error: `INVALID_FILES`,
+        invalidFiles: invalidFiles,
+      }
+    );
+  }
+
+
   if (fields.owners && fields.owners.length > 0) {
-    fields.owners.map((owner) => {
+    await Promise.all(fields.owners.map(async (owner) => {
       const { missingFields, invalidFields } = fieldsValidation(
         owner,
         ownerRequiredFields,
@@ -218,7 +233,20 @@ const updateReceiverKYCInfo = async (fields) => {
           }
         );
       }
-    });
+
+      const invalidFiles = await filesValidation(owner);
+      if (invalidFiles.length > 0) {
+        throw new ReceiverInfoUploadError(
+          ReceiverInfoUploadErrorType.INVALID_FIELD,
+          400,
+          "",
+          {
+            error: `INVALID_FILES`,
+            invalid_files: invalidFiles,
+          }
+        );
+      }
+    }));
   }
 
   // Map fields to database columns
