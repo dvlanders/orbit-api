@@ -14,6 +14,7 @@ const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { v4: uuidv4 } = require("uuid");
 const createLog = require("../logger/supabaseLogger");
+const { filesValidation } = require("./fileValidation");
 
 const uploadReceiverUBOInfo = async (userId, receiverId, fields) => {
   if (fields.owners && fields.owners.length > 0) {
@@ -154,9 +155,22 @@ const uploadReceiverKYCInfo = async (fields) => {
     );
   }
 
+  const invalidFiles = await filesValidation(fields);
+  if (invalidFiles.length > 0) {
+    throw new ReceiverInfoUploadError(
+      ReceiverInfoUploadErrorType.INVALID_FIELD,
+      400,
+      "",
+      {
+        error: `INVALID_FILES`,
+        invalidFiles: invalidFiles,
+      }
+    );
+  }
+
   // validate owners fields for standard KYC business type
   if (fields.owners && fields.owners.length > 0) {
-    fields.owner.map((owner) => {
+    await Promise.all(fields.owners.map(async (owner) => {
       const { missingFields, invalidFields } = fieldsValidation(
         owner,
         ownerRequiredFields,
@@ -174,7 +188,20 @@ const uploadReceiverKYCInfo = async (fields) => {
           }
         );
       }
-    });
+  
+      const invalidFiles = await filesValidation(owner);
+      if (invalidFiles.length > 0) {
+        throw new ReceiverInfoUploadError(
+          ReceiverInfoUploadErrorType.INVALID_FIELD,
+          400,
+          "",
+          {
+            error: `INVALID_FILES`,
+            invalid_files: invalidFiles,
+          }
+        );
+      }
+    }));
   }
 
   const receiver_id = uuidv4();

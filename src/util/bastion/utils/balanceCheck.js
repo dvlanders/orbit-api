@@ -5,7 +5,7 @@ const { toUnitsString } = require("../../transfer/cryptoToCrypto/utils/toUnits")
 
 const checkBalanceForTransactionAmount = async (bastionUserId, amount, chain, currency) => {
     try{
-        
+        if(process.env.NODE_ENV === "development") return true;
 		const response = await getUserBalance(bastionUserId, chain);
 		const responseBody = await response.json();
 
