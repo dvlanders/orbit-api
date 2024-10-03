@@ -14,17 +14,14 @@ const processInvoiceEvent = async (event) => {
 
     if (event.type === "invoice.paid") {
       if (type === BalanceTopupType.AUTOPAY) {
-        await topupBalance(profileId, credit, topupRecordId);
-        await updateBalanceTopupRecord(topupRecordId, {status: BalanceTopupStatus.SUCCEEDED, amount: credit, stripe_invoice_pdf: event.data?.object?.invoice_pdf});
+        await topupBalance(profileId, credit, topupRecordId, event.data?.object?.invoice_pdf);
         await releaseAutopayLock(profileId);
       }else if(type === BalanceTopupType.CHECKOUT){
         const creditToAdd = credit || Math.floor(event.data?.object?.lines?.data[0].amount_excluding_tax / 100);
-        await topupBalance(profileId, creditToAdd, topupRecordId);
-        await updateBalanceTopupRecord(topupRecordId, {status: BalanceTopupStatus.SUCCEEDED, amount: creditToAdd, stripe_invoice_pdf: event.data?.object?.invoice_pdf});
+        await topupBalance(profileId, creditToAdd, topupRecordId, event.data?.object?.invoice_pdf);
       }else if(type === BalanceTopupType.ACCOUNT_MINIMUM){
         await enableProdAccess(profileId);
-        await topupBalance(profileId, credit, topupRecordId);
-        await updateBalanceTopupRecord(topupRecordId, {status: BalanceTopupStatus.SUCCEEDED, amount: credit, stripe_invoice_pdf: event.data?.object?.invoice_pdf});
+        await topupBalance(profileId, credit, topupRecordId, event.data?.object?.invoice_pdf);
       }
     }else if(event.type === "invoice.void" || event.type === "invoice.uncollectible" || event.type === "invoice.payment_failed"){
       if (type === BalanceTopupType.AUTOPAY) {

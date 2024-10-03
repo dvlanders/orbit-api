@@ -87,8 +87,6 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
         if(feeRecord.amount > 0){
             await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
         }
-        
-        await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.COMPLETED});
 
     }catch(error){
         await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.FAILED});
