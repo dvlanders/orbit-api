@@ -281,7 +281,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		} else if (response.status == 401) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
 		} else {
-			await createLog("user/util/createIndividualBridgeCustomer", userId, responseBody.message, responseBody)
+			await createLog("user/util/createBusinessBridgeCustomer", userId, responseBody.message, responseBody)
 			// unknown error try to resubmit the application
 			const config = {
 				userId,
