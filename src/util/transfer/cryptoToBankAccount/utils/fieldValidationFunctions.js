@@ -9,12 +9,13 @@ const validateBridgeTransferParams = async (config) => {
     const validationRes = { invalidFieldsAndMessages: [], valid: true };
     
     // check if wire message is valid
-    if (wireMessage && !isValidMessage(wireMessage, 4, 35))
+    if (wireMessage && !isValidMessage(wireMessage, 4, 35)) {
         validationRes.invalidFieldsAndMessages.push({
             invalidFields: ["wireMessage"],
             errorMessage: "wireMessage should not exceed 4 lines, and each line should not exceed 35 characters.",
         });
         validationRes.valid = false;
+    }
 
     if (!validatePaymentRailParams(paymentRail, sameDayAch)) {
         validationRes.invalidFieldsAndMessages.push({
