@@ -35,31 +35,6 @@ const getBankAccountTableInfoFromAccountType = (bankAccountType) => {
   return mapping;
 };
 
-const getBankAccountByBlindpayId = async (
-  blindpayAccountId,
-  bankAccountType
-) => {
-  const { data, error } = await supabaseCall(() =>
-    supabase
-      .from("blindpay_bank_accounts")
-      .select()
-      .eq("blindpay_account_id", blindpayAccountId)
-      .single()
-  );
-
-  if (error) throw error;
-  return data;
-};
-
-const getBankAccountById = async (id, bankAccountType) => {
-  const { data, error } = await supabaseCall(() =>
-    supabase.from("blindpay_bank_accounts").select().eq("id", id).single()
-  );
-
-  if (error) throw error;
-  return data;
-};
-
 const updateAccountInfoById = async (id, toUpdate) => {
   const { error } = await supabaseCall(() =>
     supabase.from("blindpay_accounts")
@@ -124,8 +99,6 @@ const getFullBankAccountInfoById = async (id, type) => {
 }
 
 module.exports = {
-  getBankAccountByBlindpayId,
-  getBankAccountById,
   updateAccountInfoById,
   getBankAccountTableInfoFromAccountType,
   insertBankAccount,

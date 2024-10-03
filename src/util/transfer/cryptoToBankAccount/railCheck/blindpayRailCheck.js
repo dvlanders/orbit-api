@@ -6,7 +6,7 @@ const blindpayRailCheck = async (globalAccountId) => {
   let { data: blindpayAccountData, error: blindpayAccountError } =
     await supabaseCall(() =>
       supabase
-        .from("blindpay_bank_accounts")
+        .from("blindpay_accounts")
         .select("id, blindpay_account_id, user_id")
         .eq("global_account_id", globalAccountId)
         .maybeSingle()

@@ -9,7 +9,7 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
     const blindpayTransferInfo = record.blindpay_transfer_info;
     if (!record) return null;
 
-    const bankAccountInfo = await getBankAccountInfo(blindpayTransferInfo.blindpay_account_id);
+    const bankAccountInfo = await getBankAccountInfo(blindpayTransferInfo.account_id);
     
     const conversionRate = {
         fromCurrency: record.source_currency,
