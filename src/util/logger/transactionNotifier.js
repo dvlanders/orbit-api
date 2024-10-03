@@ -9,7 +9,7 @@ const transactionDbMap = {
     [rampTypes.CRYPTOTOCRYPTO]: ""
 }
 
-async function notifyTransaction(userId, rampType, transactionId, message) {
+async function notifyTransaction(userId, rampType, transactionId, messageJson) {
     const { data: userData, error: userError } = await supabase
         .from("users")
         .select(
@@ -59,7 +59,7 @@ async function notifyTransaction(userId, rampType, transactionId, message) {
 
     // console.log({userData, profileEmail, transactonRecord})
 
-    await sendSlackTransactionMessage(profileEmail.email, userData.profile_id, userId, rampType, transactonRecord, accountInfo, message);
+    await sendSlackTransactionMessage(profileEmail.email, userData.profile_id, userId, rampType, transactonRecord, accountInfo, messageJson);
 }
 
 module.exports = notifyTransaction;

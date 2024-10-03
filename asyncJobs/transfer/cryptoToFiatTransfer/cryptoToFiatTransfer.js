@@ -28,7 +28,7 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		// gas check
 		const { needFund, fundSubmitted } = await bastionGasCheck(record.user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
 		if (needFund) {
-            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, "Wallet gas is not enough.")
+            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, { location: "asyncJobs/transfer/cryptoToFiatTransferAsync", message: "Wallet gas is not enough." })
             throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
 		}
 
@@ -39,7 +39,7 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 			const { walletAddress: sourceWalletAddress } = await getBastionWallet(record.user_id, record.chain)
 			const allowance = await getTokenAllowance(record.chain, record.source_currency, sourceWalletAddress, paymentProcessorContractAddress)
 			if (allowance < BigInt(unitsAmount)) {
-                await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, "Token approve amount is not enough.")
+                await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, { location: "asyncJobs/transfer/cryptoToFiatTransferAsync", message: "Token approve amount is not enough." })
                 await approveMaxTokenToPaymentProcessor(record.user_id, record.chain, record.source_currency)
 				throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)
 			}
@@ -55,17 +55,17 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, record.source_currency, record.destination_currency)
 		if (!funcs) {
-            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, `${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
+            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, { location: "asyncJobs/transfer/cryptoToFiatTransferAsync", message: `${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail` })
             throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
         }
 		const { asyncTransferExecuteFunc } = funcs
 		if (!asyncTransferExecuteFunc) {
-            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, `${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
+            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, { location: "asyncJobs/transfer/cryptoToFiatTransferAsync", message: `${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer` })
             throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
         }
 
 		const transferConfig = { profileId: config.profileId, recordId: record.id }
-
+        
 		await asyncTransferExecuteFunc(transferConfig)
 
 	} catch (error) {

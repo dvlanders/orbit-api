@@ -4,6 +4,8 @@ const bridgeRailCheck = require("../railCheck/bridgeRailCheckV2");
 const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
+const notifyTransaction = require("../../../logger/transactionNotifier");
+const { rampTypes } = require("../../utils/ramptType");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
@@ -187,6 +189,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	const responseBody = await response.json()
 	if (!response.ok) {
 		// failed to create tranfser
+        await notifyTransaction(initialTransferRecord.user_id, rampTypes.OFFRAMP, initialTransferRecord.id, { location: "util/transfer/cryptoBankAccount/transfer/createTransferToBridgeLiquidationAddressV2", message: responseBody.message });
 		await createLog("transfer/createTransferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
 		const toUpdate = {
 			transaction_status: "NOT_INITIATED",
@@ -336,6 +339,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	// map status
 	if (!bastionResponse.ok) {
 		// fail to transfer
+        await notifyTransaction(sourceUserId, rampTypes.OFFRAMP, initialTransferRecord.id, { location: "transfer/util/createTransferToBridgeLiquidationAddress", message: bastionResponseBody.message })
 		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
 		const { message, type } = getMappedError(bastionResponseBody.message)
 
