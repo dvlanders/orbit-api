@@ -29,12 +29,13 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference, accountInfo } = config
 
 
 
@@ -42,6 +43,9 @@ const initTransferData = async (config) => {
 	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+
+	// get billing tags
+	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
 
 	//insert the initial record
 	let { data: record, error: recordError } = await supabase
@@ -69,6 +73,8 @@ const initTransferData = async (config) => {
 			sepa_reference: sepaReference,
 			wire_message: wireMessage,
 			swift_reference: swiftReference,
+			billing_tags_success: billingTags.success,
+			billing_tags_failed: billingTags.failed,
 		})
 		.eq("request_id", requestId)
 		.select()
