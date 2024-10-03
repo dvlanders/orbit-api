@@ -18,7 +18,6 @@ const fetchAttestation = async (chain, transactionHash) => {
     // fetch attestation from Circle
     const response = await fetch(`${circleUrl}/attestations/${messageHash}`);
     const attestationResponse = await safeParseBody(response)
-    console.log("attestationResponse", attestationResponse)
     const confirmed = attestationResponse.status === 'complete'
     const attestationSignature = attestationResponse.attestation
     return { confirmed, attestationSignature, messageBytes }
