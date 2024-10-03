@@ -34,12 +34,13 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 
 		// check allowance if not enough perform a token approve job and reschedule transfer
 		if (record.developer_fee_id) {
-			const unitsAmount = toUnitsString(record.amount, currencyDecimal[record.source_currency])
+            const unitsAmount = toUnitsString(record.amount, currencyDecimal[record.source_currency])
 			const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][record.chain]
 			const { walletAddress: sourceWalletAddress } = await getBastionWallet(record.user_id, record.chain)
 			const allowance = await getTokenAllowance(record.chain, record.source_currency, sourceWalletAddress, paymentProcessorContractAddress)
 			if (allowance < BigInt(unitsAmount)) {
-				await approveMaxTokenToPaymentProcessor(record.user_id, record.chain, record.source_currency)
+                await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, "Token approve amount is not enough.")
+                await approveMaxTokenToPaymentProcessor(record.user_id, record.chain, record.source_currency)
 				throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)
 			}
 		}
@@ -53,7 +54,10 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, record.source_currency, record.destination_currency)
-		if (!funcs) throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
+		if (!funcs) {
+            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, `${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
+            throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
+        }
 		const { asyncTransferExecuteFunc } = funcs
 		if (!asyncTransferExecuteFunc) throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
 

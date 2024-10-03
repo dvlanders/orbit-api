@@ -146,7 +146,7 @@ const reqResBlockBuilder = async (caller, request, response) => {
 };
 
 // Build the Slack blocks for the Transaction message
-const transactionBlockBuilder = async (profileEmail, profileId, userId, rampType, transactionRecord, message) => {
+const transactionBlockBuilder = async (profileEmail, profileId, userId, rampType, transactionRecord, accountInfo, message) => {
     const channelId = process.env.SLACK_CHANNEL_TRANSACTION;
 
     // const messageBodyText = await getJsonBodyText(messageJson, "message_body.json", "Message Body", channelId);
@@ -158,7 +158,7 @@ const transactionBlockBuilder = async (profileEmail, profileId, userId, rampType
             type: "header",
             text: {
                 type: "plain_text",
-                text: `🚨 ${rampType} Transaction Notification`
+                text: `🚨 ${accountInfo.payment_rail.toUpperCase()} ${rampType} Transaction Notification`
             }
         },
         {
@@ -479,6 +479,7 @@ const sendSlackTransactionMessage = async (
   userId,
   rampType,
   transactionRecord,
+  accountInfo,
   message
 ) => {
   try {
@@ -486,7 +487,7 @@ const sendSlackTransactionMessage = async (
       token: process.env.SLACK_BOT_TOKEN,
       channel: process.env.SLACK_CHANNEL_TRANSACTION,
       text: "Logger",
-      blocks: await transactionBlockBuilder(profileEmail, profileId, userId, rampType, transactionRecord, message),
+      blocks: await transactionBlockBuilder(profileEmail, profileId, userId, rampType, transactionRecord, accountInfo, message),
     });
   } catch (error) {
     console.error(error);

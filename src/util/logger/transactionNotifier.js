@@ -1,7 +1,7 @@
 const supabase = require("../supabaseClient");
 const { sendSlackTransactionMessage } = require("./slackLogger");
 const { rampTypes } = require("../transfer/utils/ramptType")
-const { getUserBalance } = require("../bastion/endpoints/getUserBalance")
+const { getUserBalance } = require("../bastion/endpoints/getUserBalance");
 
 const transactionDbMap = {
     [rampTypes.ONRAMP]: "onramp_transactions",
@@ -39,6 +39,16 @@ async function notifyTransaction(userId, rampType, transactionId, message) {
         throw new Error("Failed to fetch transaction data");
     }
 
+    const { data: accountInfo, error: accountInfoError } = await supabase
+        .from("account_providers")
+        .select("*")
+        .eq("id", transactonRecord.destination_account_id)
+        .single()
+
+    if (accountInfoError || !accountInfo) {
+        throw new Error("Failed to fetch accountProvider data");
+    }
+
     // const messageJson = { message }
     // const walletResponse = await getUserBalance(userId, transactonRecord.chain);
     // const walletResponseBody = await walletResponse.json()
@@ -49,7 +59,7 @@ async function notifyTransaction(userId, rampType, transactionId, message) {
 
     // console.log({userData, profileEmail, transactonRecord})
 
-    await sendSlackTransactionMessage(profileEmail.email, userData.profile_id, userId, rampType, transactonRecord, message);
+    await sendSlackTransactionMessage(profileEmail.email, userData.profile_id, userId, rampType, transactonRecord, accountInfo, message);
 }
 
 module.exports = notifyTransaction;
