@@ -57,7 +57,7 @@ const getTransactionFee = async (transactionRecord, transactionType, billingInfo
         totalFee = getFee(transactionRecord, billingInfo.fiat_payout_config);
     }
 
-    return parseFloat(totalFee.toFixed(2));
+    return totalFee
 }
 
 const chargeTransactionFee = async (transactionId, transactionType) => {
@@ -116,12 +116,11 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
 
     try{
         // TODO: Uncomment below line prior to merging
-        if(process.env.NODE_ENV === "development") return true;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
         if(!billingInfo) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
-
+        
         const balanceInfo = await getOptimisticAvailableBalance(billingInfo.profile_id);
         const availableBalance = balanceInfo.available_balance;
         const inProgressFeeTotal = balanceInfo.in_progress_fee_total;
@@ -134,7 +133,9 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
             amount: billableDepositFee,
             status: FeeTransactionStatus.IN_PROGRESS
         }
+        
         const feeRecord = await updateTransactionFeeRecord(transactionId, toUpdate);
+        if(process.env.NODE_ENV === "development") return true;
 
         if(billingInfo.billing_model !== BillingModelType.BALANCE) return true;
         

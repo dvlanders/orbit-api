@@ -51,7 +51,7 @@ const getFee = (transaction, feeConfig, success=true) => {
         }
 
     })
-    return Math.max(fee, 0.01);
+    return fee
 
 }
 
@@ -80,7 +80,7 @@ const getFeeCrypto = (transaction, feeConfig, success=true) => {
         }
 
     })
-    return Math.max(fee, 0.01);
+    return fee
 }
 
 
