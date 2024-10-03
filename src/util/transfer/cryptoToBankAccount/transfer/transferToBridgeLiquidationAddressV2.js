@@ -28,6 +28,7 @@ const { safeStringToFloat } = require("../../../utils/number");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -268,6 +269,24 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		destination.ach_reference = initialTransferRecord.ach_reference
 	}
 
+	// this is for sandbox simulation
+	if (process.env.NODE_ENV == "development") {
+		const toUpdate = {
+			updated_at: new Date().toISOString(),
+			destination_currency_amount: amount,
+			to_wallet_address: "0x0000000000000000000000000000000000000000",
+			transaction_status: "COMPLETED",
+			failed_reason: "This is a simulated success response for sandbox environment only."
+		}
+
+		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+		await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+		const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return result
+	}
+
+
+
 	const clientReceivedAmount = amount.toFixed(2)
 	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
 	const bridgeResponseBody = await bridgeResponse.json()
@@ -327,18 +346,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 			failed_reason: message
 		}
 
-		// in sandbox, just return completed the transfer
-		if (process.env.NODE_ENV == "development") {
-			toUpdate.transaction_status = "COMPLETED"
-			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
-		}
-
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-		// send out webhook message if in sandbox
-		if (process.env.NODE_ENV == "development") {
-			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-		}
 
 	} else {
 
@@ -357,7 +365,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference, sourceBastionUserId } = config
 
 	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
 	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code
@@ -378,6 +386,16 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
         const toUpdate = {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }
+
+	if(!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
         }
         await updateRequestRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)

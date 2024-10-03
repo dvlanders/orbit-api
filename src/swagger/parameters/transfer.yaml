@@ -17,7 +17,7 @@ ToCurrencyParameter:
   in: query
   schema:
     type: string
-    enum: [usd, eur, brl]
+    enum: [usd, eur, brl, mxn, ars, cop]
   required: true
 TransferRecordIDOptionalParameter:
   name: id
@@ -31,7 +31,7 @@ TransferTypeParameter:
   in: query
   schema:
     type: string
-    enum: [crypto-to-crypto, fiat-to-crypto, crypto-to-fiat]
+    enum: [crypto-to-crypto, fiat-to-crypto, crypto-to-fiat, 'fiat-to-fiat']
   description: Transfer type
   required: true
 TransferTypeOptionalParameter:
@@ -39,6 +39,6 @@ TransferTypeOptionalParameter:
   in: query
   schema:
     type: string
-    enum: [crypto-to-crypto, fiat-to-crypto, crypto-to-fiat]
+    enum: [crypto-to-crypto, fiat-to-crypto, crypto-to-fiat, 'fiat-to-fiat']
   description: Transfer type
   required: false

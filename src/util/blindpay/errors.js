@@ -57,6 +57,7 @@ const CreateBankAccountErrorType = {
   RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
   INVALID_FIELD: "INVALID_FIELD",
   INTERNAL_ERROR: "INTERNAL_ERROR",
+  CLIENT_ERROR: "CLIENT_ERROR",
 };
 
 class CreateBankAccountError extends Error {

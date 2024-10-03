@@ -29,7 +29,7 @@ const updateStatusBastion = async (transaction) => {
 
 		if (response.status === 404 || !response.ok) {
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.request_id}`;
-			await createLog('pollCryptoToCryptoTransferStatus/updateStatus', transaction.charged_user_id, errorMessage, data);
+			await createLog('pollDeveloperFeeStatus/updateStatus', transaction.charged_user_id, errorMessage, data);
 			return
 		}
 		if (chargedStatusMap[data.status] == transaction.charged_status) return

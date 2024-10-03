@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const supabase = require('../util/supabaseClient');
-const { fieldsValidation, isValidISODateFormat, isUUID } = require("../util/common/fieldsValidation");
+const { fieldsValidation, isValidISODateFormat, isUUID, isValidRoutingNumber } = require("../util/common/fieldsValidation");
 const createLog = require('../util/logger/supabaseLogger');
 const { createBridgeExternalAccount } = require('../util/bridge/endpoint/createBridgeExternalAccount')
 const { createBridgeLiquidationAddress } = require('../util/bridge/endpoint/createBridgeLiquidationAddress')
@@ -24,11 +24,13 @@ const { create } = require('lodash');
 const { uploadReceiverKYCInfo } = require('../util/blindpay/uploadReceiverInfo');
 const { updateReceiverKYCInfo } = require('../util/blindpay/updateReceiverInfo');
 const { uploadBankAccountInfo } = require('../util/blindpay/uploadBankAccountInfo');
-const { ReceiverInfoUploadError, BankAccountInfoUploadError, CreateBankAccountError, ReceiverInfoGetError } = require('../util/blindpay/errors');
+const { ReceiverInfoUploadError, BankAccountInfoUploadError, CreateBankAccountError, ReceiverInfoGetError, CreateReceiverError,
+	CreateBankAccountErrorType, ReceiverInfoUploadErrorType, BankAccountInfoUploadErrorType, ReceiverInfoGetErrorType, CreateReceiverErrorType } = require('../util/blindpay/errors');
 const { createReceiver } = require('../util/blindpay/endpoint/createReceiver');
 const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
 const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
+const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -116,20 +118,19 @@ exports.createUsdOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	if (!(await verifyUser(userId, profileId))) return res.status(401).json({ error: "userId not found" })
 
-	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
+	const { currency, bankName, accountOwnerName, accountNumber, routingNumber, firstName, lastName, businessName, streetLine1, streetLine2, city, state, postalCode, country, accountOwnerType } = req.body;
 
 
 
 	// Define required fields based on account owner type
-	let requiredFields = ["userId", "currency", "bankName", "accountOwnerName", "accountOwnerType", "accountNumber", "routingNumber"];
-	// if (accountOwnerType === "individual") {
-	// 	requiredFields.push("firstName", "lastName");
-	// } else if (accountOwnerType === "business") {
-	// 	requiredFields.push("businessName");C
-	// } else {
-	// 	return res.status(400).json({ error: "Invalid accountOwnerType" });
-	// }
-	requiredFields.push("streetLine1", "city", "state", "postalCode", "country");
+	let requiredFields = ["userId", "currency", "bankName", "accountOwnerName", "accountOwnerType", "accountNumber", "routingNumber", "streetLine1", "city", "state", "postalCode", "country"];
+	if (accountOwnerType === "individual") {
+		requiredFields.push("firstName", "lastName");
+	} else if (accountOwnerType === "business") {
+		requiredFields.push("businessName");
+	} else {
+		return res.status(400).json({ error: "Invalid accountOwnerType" });
+	}
 
 	// Define accepted fields and their types
 	const bridgeRequestStructureTyping = {
@@ -140,6 +141,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		accountNumber: 'string',
 		routingNumber: 'string',
 		accountOwnerType: 'string',
+        firstName: 'string',
+        lastName: 'string',
+        businessName: 'string',
 		streetLine1: 'string',
 		streetLine2: 'string',
 		city: 'string',
@@ -155,6 +159,16 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
 	try {
+        // Verify ACH
+        if (!isValidRoutingNumber(routingNumber))
+            return res.status(400).json({ error: "Invalid Field, routingNumber must be 9 digits." });
+
+        const { status: verificationStatus, message: verificationMessage } = await verifyAchAccount(accountNumber, routingNumber);
+        if (verificationStatus === 400)
+            return res.status(400).json({ error: verificationMessage });
+        else if (verificationStatus === 500)
+            return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information." });
+
 		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({
 			userId,
@@ -171,7 +185,7 @@ exports.createUsdOfframpDestination = async (req, res) => {
 
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'us', currency, bankName, accountOwnerName, accountOwnerType,
-				null, null, null,
+				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
 				null, null, null, // iban fields not used for USD
 				accountNumber, routingNumber
@@ -207,6 +221,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 					beneficiary_country: country,
 					account_number: accountNumber,
 					routing_number: routingNumber,
+                    beneficiary_first_name: firstName,
+                    beneficiary_last_name: lastName,
+                    beneficiary_business_name: businessName,
 					bridge_response: bridgeAccountResult.rawResponse,
 					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 				})
@@ -309,17 +326,16 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 
 	try {
-		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkEuOffRampAccount({
 			userId,
 			ibanAccountNumber,
-			businessIdentifierCode
+			businessIdentifierCode,
+            currency: "eur"
 		}).catch(error => {
 			console.error("Error checking EU off-ramp account", error);
 			throw new Error("Error checking EU off-ramp account: " + error.message);
 		});
 
-		recordId = externalAccountRecordId;
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, 'iban', currency, bankName, accountOwnerName, accountOwnerType,
@@ -384,26 +400,26 @@ exports.createEuroOfframpDestination = async (req, res) => {
 
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
-				.eq('account_id', recordId);
+				.select('id')
+				.eq('account_id', externalAccountRecordId)
+				.eq('payment_rail', 'sepa')
+				.maybeSingle()
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let sepaRecord = providerAccountRecordData.find(record => record.payment_rail === 'sepa');
-
-			if (sepaRecord) {
+			if (providerAccountRecordData) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: sepaRecord.id
+					id: providerAccountRecordData.id
 				});
 			}
 
-			const accountProviderRecord = await insertAccountProviders(recordId, currency, "offramp", "sepa", "BRIDGE", userId);
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "sepa", "BRIDGE", userId);
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
@@ -447,7 +463,7 @@ exports.getAccount = async (req, res) => {
 		return res.status(200).json(accountInfo);
 	} catch (error) {
 		console.error(error)
-		await createLog("account/getAccount", userId, error.message, error, null, res)
+		await createLog("account/getAccount", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: `Unexpected error happened` });
 	}
 }
@@ -466,9 +482,9 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
 	const acceptedFields = {
-		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]),
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei_bitso", "transfers_bitso", "ach_cop_bitso"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
@@ -911,10 +927,11 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	try {
 		({ bankAccountExist, bankAccountRecord } = await uploadBankAccountInfo(fields))
 	} catch (error) {
+		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res);
 		if (error instanceof BankAccountInfoUploadError) {
+			if(error.type === BankAccountInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -929,8 +946,8 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	}
 
 	try {
-		const response = await createBankAccount(bankAccountRecord)
-		const account = await insertAccountProviders(bankAccountRecord.id, "brl", "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id)
+		const response = await createBankAccount(bankAccountRecord);
+		const account = await insertAccountProviders(bankAccountRecord.id, bankAccountRecord.currency, "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id);
 		// insert the record to the blindpay_accounts table
 		const { error: bankAccountUpdateError } = await supabase
 			.from('blindpay_bank_accounts')
@@ -958,8 +975,9 @@ exports.createBlindpayBankAccount = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createBlindpayBankAccount", fields.userId, error.message, error, null, res)
+		await createLog("account/createBlindpayBankAccount", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateBankAccountError) {
+			if(error.type === CreateBankAccountErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the BR bank account. Please try again later." })
@@ -983,10 +1001,11 @@ exports.createBlindpayReceiver = async (req, res) => {
 	try {
 		receiverRecord = await uploadReceiverKYCInfo(fields)
 	} catch (error) {
+		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
+			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -1018,7 +1037,11 @@ exports.createBlindpayReceiver = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
+		await createLog("account/createBlindpayReceiver", fields.user_id, error.message, error, null, res);
+		if (error instanceof CreateReceiverError) {
+			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			return res.status(error.status).json(error.rawResponse)
+		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }
@@ -1128,11 +1151,11 @@ exports.createAPACOfframpDestination = async (req, res) => {
 
 }
 
-exports.createInternationalWireOfframpDestination = async (req, res) => {
+exports.createWireUsOfframpDestination = async (req, res) => {
 	const { userId, profileId } = req.query;
 	const {
-		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+		accountType, currency, bankName, accountOwnerName, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode,
 		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
 	} = req.body;
 
@@ -1150,10 +1173,10 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 	];
 
 	const acceptedFields = {
-		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
-		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'firstName': "string",
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': (value) => inStringEnum(value, ["us", "iban"])
+		'accountType': "string"
 	};
 
 	// Execute fields validation
@@ -1173,15 +1196,13 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 
 
 	try {
-		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = accountType === 'us'
-			? await checkUsdOffRampAccount({ userId, accountNumber, routingNumber })
-			: await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode });
+		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({ userId, accountNumber, routingNumber });
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
-				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
+				null, businessIdentifierCode, null,
 				accountNumber, routingNumber
 			);
 
@@ -1203,14 +1224,12 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 				account_owner_name: accountOwnerName,
 				account_owner_type: accountOwnerType,
 				account_type: accountType,
-				iban: ibanAccountNumber,
 				account_number: accountNumber,
 				routing_number: routingNumber,
 				beneficiary_first_name: firstName,
 				beneficiary_last_name: lastName,
 				beneficiary_business_name: businessName,
 				business_identifier_code: businessIdentifierCode,
-				bank_country: ibanCountryCode,
 				bridge_response: bridgeAccountResult.rawResponse,
 				bridge_external_account_id: bridgeAccountResult.rawResponse.id
 			});
@@ -1224,28 +1243,28 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 			return res.status(200).json({
 				status: "ACTIVE",
 				invalidFields: [],
-				message: "Wire payment rail added successfully",
+				message: `Wire payment rail added successfully`,
 				id: accountProviderRecord.id
 			});
 		} else {
 			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
 				.from('account_providers')
-				.select('id, payment_rail')
-				.eq('account_id', externalAccountRecordId);
+				.select('id')
+				.eq('account_id', externalAccountRecordId)
+                .eq('payment_rail', 'wire')
+                .maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
 				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
 			}
 
-			let wireRecord = providerAccountRecordData.find(record => record.payment_rail === 'wire');
-
-			if (wireRecord) {
+			if (providerAccountRecordData) {
 				return res.status(200).json({
 					status: "ACTIVE",
 					invalidFields: [],
 					message: "Account already exists",
-					id: wireRecord.id
+					id: providerAccountRecordData.id
 				});
 			}
 
@@ -1259,8 +1278,140 @@ exports.createInternationalWireOfframpDestination = async (req, res) => {
 		}
 
 	} catch (error) {
-		createLog("account/createInternationalWireOfframpDestination", userId, error.message, error, null, res);
-		console.error('Error in createInternationalWireOfframpDestination', error);
+		createLog("account/createWireUsOfframpDestination", userId, error.message, error, null, res);
+		console.error('Error in createWireUsOfframpDestination', error);
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
+	}
+};
+
+exports.createSwiftOfframpDestination = async (req, res) => {
+	const { userId, profileId } = req.query;
+	const {
+		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode, streetLine1, streetLine2, city, state, postalCode, country
+	} = req.body;
+
+
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+	// verify required fields
+
+	const requiredFields = [
+		'accountType', 'currency', 'bankName', 'accountOwnerName', 'ibanAccountNumber', 'accountOwnerType', 'businessIdentifierCode'
+	];
+
+	const acceptedFields = {
+		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'ibanAccountNumber': "string", 'firstName': "string",
+		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string", 'ibanCountryCode': "string",
+		"streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
+		'accountType': "string"
+	};
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	}
+
+	// if the accountOwnerType is business, make sure that the businessName is provided. if individual, then make sure that the firstName and lastName are provided
+	if (accountOwnerType === 'business' && !businessName) {
+		return res.status(400).json({ error: 'The businessName field is required when the accountOwnerType is business' });
+	}
+
+	if (accountOwnerType === 'individual' && (!firstName || !lastName)) {
+		return res.status(400).json({ error: 'The firstName and lastName fields are required when the accountOwnerType is individual' });
+	}
+
+
+	try {
+        const { externalAccountExist, externalAccountRecordId } = await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode, currency: "usd" });
+		if (!externalAccountExist) {
+			const bridgeAccountResult = await createBridgeExternalAccount(
+				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
+				firstName, lastName, businessName,
+				streetLine1, streetLine2, city, state, postalCode, country,
+				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
+                null, null  // accountNumber and routingNumber not used for IBAN
+			);
+
+			if (bridgeAccountResult.status !== 200) {
+				return res.status(bridgeAccountResult.status).json({
+					error: bridgeAccountResult.type,
+					message: bridgeAccountResult.message,
+					source: bridgeAccountResult.source
+				});
+			}
+
+
+			const newBridgeExternalAccountRecordId = v4();
+			const insertResult = await supabase.from('bridge_external_accounts').insert({
+				id: newBridgeExternalAccountRecordId,
+				user_id: userId,
+				currency: currency,
+				bank_name: bankName,
+				account_owner_name: accountOwnerName,
+				account_owner_type: accountOwnerType,
+				account_type: accountType,
+				iban: ibanAccountNumber,
+				beneficiary_first_name: firstName,
+				beneficiary_last_name: lastName,
+				beneficiary_business_name: businessName,
+				business_identifier_code: businessIdentifierCode,
+				bank_country: ibanCountryCode,
+				bridge_response: bridgeAccountResult.rawResponse,
+				bridge_external_account_id: bridgeAccountResult.rawResponse.id
+			});
+
+			if (insertResult.error) {
+				return res.status(500).json({ error: 'Internal Server Error', message: insertResult.error });
+			}
+
+			const accountProviderRecord = await insertAccountProviders(newBridgeExternalAccountRecordId, currency, "offramp", "swift", "BRIDGE", userId);
+
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Swift payment rail added successfully",
+				id: accountProviderRecord.id
+			});
+		} else {
+			const { data: providerAccountRecordData, error: providerAccountRecordError } = await supabase
+				.from('account_providers')
+				.select('id')
+				.eq('account_id', externalAccountRecordId)
+                .eq('payment_rail', 'swift')
+                .maybeSingle();
+
+			if (providerAccountRecordError) {
+				console.log(providerAccountRecordError);
+				throw new Error("Failed to retrieve provider account records: " + providerAccountRecordError.message);
+			}
+
+			if (providerAccountRecordData) {
+				return res.status(200).json({
+					status: "ACTIVE",
+					invalidFields: [],
+					message: "Account already exists",
+					id: providerAccountRecordData.id
+				});
+			}
+
+			const accountProviderRecord = await insertAccountProviders(externalAccountRecordId, currency, "offramp", "swift", "BRIDGE", userId);
+			return res.status(200).json({
+				status: "ACTIVE",
+				invalidFields: [],
+				message: "Account created successfully",
+				id: accountProviderRecord.id
+			});
+		}
+
+	} catch (error) {
+		createLog("account/createSwiftOfframpDestination", userId, error.message, error);
+		console.error('Error in createSwiftOfframpDestination', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };
@@ -1288,6 +1439,7 @@ exports.getBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
 		if (error instanceof ReceiverInfoGetError) {
+			if(error.type === ReceiverInfoGetErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1312,10 +1464,11 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	try {
 		receiverRecord = await updateReceiverKYCInfo(fields)
 	} catch (error) {
+		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
+			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
-		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 	}
 
@@ -1330,10 +1483,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 				kyc_status: "verifying"
 			}).eq('id', receiverRecord.id);
 
-		if (receiverUpdateError) {
-			await createLog("account/updateBlindpayReceiver", fields.user_id, receiverUpdateError.message, receiverUpdateError, null, res);
-			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		}
+		if (receiverUpdateError) throw receiverUpdateError;
 
 		const responseObject = {
 			success: response.success ? response.success : false,
@@ -1343,7 +1493,11 @@ exports.updateBlindpayReceiver = async (req, res) => {
 		return res.status(200).json(responseObject);
 
 	} catch (error) {
-		await createLog("account/updateBlindpayReceiver", fields.userId, error.message, error, null, res);
+		await createLog("account/updateBlindpayReceiver", fields.user_id, error.message, error, null, res);
+		if (error instanceof CreateReceiverError) {
+			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			return res.status(error.status).json(error.rawResponse)
+		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
 }

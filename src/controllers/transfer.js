@@ -87,7 +87,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// check is request_id exist
 		const { isAlreadyUsed, newRecord } = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
-		const feeRecord = await insertTransactionFeeRecord({transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_CRYPTO, status: "CREATED"});
+		const feeRecord = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_CRYPTO, status: "CREATED" });
 
 		// fetch sender wallet address information
 		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
@@ -113,7 +113,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 
-		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && currency == "usdHifi"){
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && currency == "usdHifi") {
 			const receipt = await createBastionSandboxCryptoTransfer(fields)
 			return res.status(200).json(receipt)
 		}
@@ -202,7 +202,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference } = fields
+	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, paymentRail, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference } = fields
 
 	try {
 		// field validation
@@ -215,19 +215,19 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"sourceUserId": (value) => isUUID(value),
 			"destinationUserId": (value) => isUUID(value),
 			"receivedAmount": (value) => isValidAmount(value),
-			"destinationAccountId": (value) => isUUID(value), 
-			"amount": (value) => isValidAmount(value), 
-			"chain": (value) => isHIFISupportedChain(value), 
-			"sourceCurrency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]), 
-			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd"]),
-			"paymentRail": "string", 
-			"description": "string", 
-			"purposeOfPayment": "string", 
-			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]), 
-			"sameDayAch": "boolean", 
-			"achReference": "string", 
-			"sepaReference": "string", 
-			"wireMessage": "string", 
+			"destinationAccountId": (value) => isUUID(value),
+			"amount": (value) => isValidAmount(value),
+			"chain": (value) => isHIFISupportedChain(value),
+			"sourceCurrency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]),
+			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
+			"paymentRail": "string",
+			"description": "string",
+			"purposeOfPayment": "string",
+			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
+			"sameDayAch": "boolean",
+			"achReference": "string",
+			"sepaReference": "string",
+			"wireMessage": "string",
 			"swiftReference": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
@@ -236,12 +236,10 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		}
 		if (!amount && !receivedAmount) return res.status(401).json({ error: "Either amount and receivedAmount is required" })
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
-		// check is request id valid
-		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
 		const { isAlreadyUsed, newRecord } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
-		const feeRecord = await insertTransactionFeeRecord({transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_FIAT, status: "CREATED"});
+		const feeRecord = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_FIAT, status: "CREATED" });
 
 		// FIX ME SHOULD put it in the field validation 
 		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
@@ -262,8 +260,12 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!accountInfo || !accountInfo.account_id) return res.status(400).json({ error: `destinationAccountId not exist` });
 		if (accountInfo.rail_type != "offramp") return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
 		if (accountInfo.currency != destinationCurrency) return res.status(400).json({ error: `destinationCurrency not allowed for destinationAccountId` });
-		let paymentRail = accountInfo.payment_rail
+		if (paymentRail && accountInfo.payment_rail != paymentRail) return res.status(400).json({ error: `paymentRail not allowed for destinationAccountId` });
+		if (!paymentRail) paymentRail = accountInfo.payment_rail;
 		const destinationUserId = accountInfo.user_id
+
+		// block if destination user is not equal to source user
+		if (destinationUserId != sourceUserId) return res.status(400).json({ error: `destinationUserId is not equal to sourceUserId` });
 
 		// get user wallet
 		// fetch sender wallet address information
@@ -288,7 +290,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const { transferFunc, validationFunc } = funcs
 		if (!transferFunc || !validationFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
-        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch });
+        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch, wireMessage });
         if (!validationRes.valid) return res.status(400).json({ error: `fields provided are invalid`, invalidFieldsAndMessages: validationRes.invalidFieldsAndMessages })
         
         const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
@@ -424,7 +426,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		const { isAlreadyUsed, newRecord } = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
-		await insertTransactionFeeRecord({transaction_id: newRecord.id, transaction_type: transferType.FIAT_TO_CRYPTO, status: "CREATED"});
+		await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.FIAT_TO_CRYPTO, status: "CREATED" });
 
 		// check fee config
 		if (feeType || feeValue) {
@@ -440,8 +442,8 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 		// simulation in sandbox
 
-		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi"){
-			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi") {
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
 			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 			return res.status(200).json(transferResult);
 		}
@@ -450,7 +452,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
-		let transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId})
+		let transferResult = await transferFunc({ requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);
@@ -774,7 +776,7 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 		const transferFunc = FiatToFiatSupportedPairFunctionsCheck(sourceCurrency, destinationCurrency);
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` });
 
-		let transferResult = await transferFunc({requestId, accountNumber, routingNumber, recipientName, type, sourceUserId, sourceAccountId: accountInfo.account_id, amount, currency, memo, profileId});
+		let transferResult = await transferFunc({ requestId, accountNumber, routingNumber, recipientName, type, sourceUserId, sourceAccountId: accountInfo.account_id, amount, currency, memo, profileId });
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);
@@ -792,31 +794,31 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 	}
 }
 
-exports.getTransfers = async(req, res) => {
+exports.getTransfers = async (req, res) => {
 	if (req.method !== 'GET') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
 	const { profileId, id, userId, limit, createdAfter, createdBefore, virtualAccountId, transferType } = req.query;
-	try{
-		if(id){
+	try {
+		if (id) {
 			const requiredFields = ["id", "transferType"];
-			const acceptedFields = {id: (value) => isUUID(value), transferType: (type) => isValidTransferType(type), profileId: "string"};	
+			const acceptedFields = { id: (value) => isUUID(value), transferType: (type) => isValidTransferType(type), profileId: "string" };
 
 			const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields);
 			if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
 
 			let fetchFunc, cryptoProvider, fiatProvider, transactionRecord;
-			switch (transferType){
+			switch (transferType) {
 				case TransferType["crypto-to-fiat"]:
-					({cryptoProvider, fiatProvider} = await fetchCryptoToFiatProvidersInformationById(id));
+					({ cryptoProvider, fiatProvider } = await fetchCryptoToFiatProvidersInformationById(id));
 					if (!cryptoProvider || !fiatProvider) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
 					fetchFunc = await FetchCryptoToBankSupportedPairCheck(cryptoProvider, fiatProvider);
 					transactionRecord = await fetchFunc(id, profileId);
 					transactionRecord = await transferObjectReconstructor(transactionRecord, transactionRecord.transferDetails?.destinationAccountId);
 					break;
 				case TransferType["fiat-to-crypto"]:
-					({cryptoProvider, fiatProvider} = await fetchFiatToCryptoProvidersInformationById(id));
+					({ cryptoProvider, fiatProvider } = await fetchFiatToCryptoProvidersInformationById(id));
 					if (!cryptoProvider || !fiatProvider) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
 					fetchFunc = await FiatToCryptoSupportedPairFetchFunctionsCheck(cryptoProvider, fiatProvider);
 					transactionRecord = await fetchFunc(id, profileId);
@@ -826,27 +828,27 @@ exports.getTransfers = async(req, res) => {
 					transactionRecord = await fetchCryptoToCryptoTransferRecord(id, profileId);
 					break;
 				case TransferType["fiat-to-fiat"]:
-					({fiatProvider, fiatReceiver} = await fetchFiatToFiatProvidersInformationById(id));
+					({ fiatProvider, fiatReceiver } = await fetchFiatToFiatProvidersInformationById(id));
 					if (!fiatProvider || !fiatReceiver) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
 					fetchFunc = await FiatToFiatSupportedPairFetchFunctionsCheck(fiatProvider, fiatReceiver);
 					transactionRecord = await fetchFunc(id, profileId);
 					transactionRecord = await transferObjectReconstructor(transactionRecord);
-					break;				
+					break;
 				default:
-					return res.status(400).json({error: `Invalid transfer type: ${transferType}`});
+					return res.status(400).json({ error: `Invalid transfer type: ${transferType}` });
 			}
 
 			if (!transactionRecord) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` })
 			return res.status(200).json(transactionRecord);
 
-		}else{
+		} else {
 			const requiredFields = [];
 			const acceptedFields = {
-				userId: (value) => isUUID(value), 
-				limit: (value) => isInRange(value, 1, 100), 
-				createdAfter: (value) => isValidDate(value), 
-				createdBefore: (value) => isValidDate(value), 
-				profileId: "string", 
+				userId: (value) => isUUID(value),
+				limit: (value) => isInRange(value, 1, 100),
+				createdAfter: (value) => isValidDate(value),
+				createdBefore: (value) => isValidDate(value),
+				profileId: "string",
 				virtualAccountId: (value) => isUUID(value),
 				transferType: (type) => isValidTransferType(type)
 			};
@@ -855,36 +857,36 @@ exports.getTransfers = async(req, res) => {
 			// check if required fileds provided
 			if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
 			if (createdAfter && createdBefore && !isValidDateRange(createdAfter, createdBefore)) return res.status(400).json({ error: "Invalid date range" });
-			
+
 			// if no transfer type provided, fetch all transfer records
-			if(!transferType){
+			if (!transferType) {
 				const c2fRecords = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
-				const f2cRecords = await fetchAllFiatToCryptoTransferRecord(profileId, {userId, virtualAccountId}, limit, createdAfter, createdBefore);
+				const f2cRecords = await fetchAllFiatToCryptoTransferRecord(profileId, { userId, virtualAccountId }, limit, createdAfter, createdBefore);
 				const c2cRecords = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
 				const allRecords = transferRecordsAggregator(limit, c2fRecords, f2cRecords, c2cRecords);
 				return res.status(200).json(allRecords);
 			}
 
 			let records;
-			switch (transferType){
+			switch (transferType) {
 				case TransferType["crypto-to-fiat"]:
 					records = await fetchAllCryptoToFiatTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
 					break;
 				case TransferType["fiat-to-crypto"]:
-					records = await fetchAllFiatToCryptoTransferRecord(profileId, {userId, virtualAccountId}, limit, createdAfter, createdBefore);
+					records = await fetchAllFiatToCryptoTransferRecord(profileId, { userId, virtualAccountId }, limit, createdAfter, createdBefore);
 					break;
 				case TransferType["crypto-to-crypto"]:
 					records = await fetchAllCryptoToCryptoTransferRecord(profileId, userId, limit, createdAfter, createdBefore);
 					break;
 				default:
-					return res.status(400).json({error: `Invalid transfer type: ${transferType}`});
+					return res.status(400).json({ error: `Invalid transfer type: ${transferType}` });
 			}
 
 			return res.status(200).json(records);
 
 		}
 
-	}catch (error){
+	} catch (error) {
 		await createLog("transfer/getTransfers", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}

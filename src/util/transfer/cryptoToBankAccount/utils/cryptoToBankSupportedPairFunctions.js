@@ -8,7 +8,7 @@ const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFi
 
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
-const { validateBlindPayTransferParams, validateReapTransferParams, validateBridgeTransferParams } = require("./feildValidationFunctions");
+const { validateBlindPayTransferParams, validateReapTransferParams, validateBridgeTransferParams } = require("./fieldValidationFunctions");
 
 const CryptoToBankSupportedPairCheck = (paymentRail, sourceCurrency, destinationCurrency) => {
 	try {
@@ -59,6 +59,36 @@ const CryptoToBankSupportedPairFunctions = {
 	pix: {
 		usdc: {
 			brl: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+                validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	spei_bitso: {
+		usdc: {
+			mxn: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+                validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	transfers_bitso: {
+		usdc: {
+			ars: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+                validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	ach_cop_bitso: {
+		usdc: {
+			cop: {
 				transferFunc: createTransferToBlindpaySmartContract,
 				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
 				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,

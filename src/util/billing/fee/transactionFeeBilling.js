@@ -2,7 +2,7 @@ const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { getFee } = require("../feeRateMap")
 const { deductBalance, getBalance } = require("../balance/balanceService")
-const { updateTransactionFeeRecord, getOptimisticAvailableBalance } = require("./feeTransactionService")
+const { updateTransactionFeeRecord, getOptimisticAvailableBalance, insertTransactionFeeRecord } = require("./feeTransactionService")
 const { BillingModelType } = require("../utils")
 const { getProfileBillingInfo } = require("../billingInfoService")
 const { transferType } = require("../../transfer/utils/transfer")
@@ -15,7 +15,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     if(transactionType === transferType.FIAT_TO_CRYPTO){
         const {data: fiatToCrypto, error: fiatToCryptoError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
-            .select("fiat_provider, crypto_provider, currency:source_currency, amount, user_id, profile: user_id(profile_id), status")
+            .select("fiat_provider, crypto_provider, currency:source_currency, fee_currency:destination_currency, amount, user_id, profile: user_id(profile_id), status")
             .eq("id", transactionId)
             .single());
 
@@ -24,7 +24,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     }else if(transactionType === transferType.CRYPTO_TO_FIAT){
         const {data: cryptoToFiat, error: cryptoToFiatError} = await supabaseCall(() => supabase
             .from("offramp_transactions")
-            .select("fiat_provider, crypto_provider, currency:destination_currency, amount, user_id, profile: user_id(profile_id), status: transaction_status")
+            .select("fiat_provider, crypto_provider, currency:destination_currency, fee_currency:source_currency, amount, user_id, profile: user_id(profile_id), status: transaction_status")
             .eq("id", transactionId)
             .single());
 
@@ -33,7 +33,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     }else if(transactionType === transferType.CRYPTO_TO_CRYPTO){
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabaseCall(() => supabase
             .from("crypto_to_crypto")
-            .select("amount, user_id: sender_user_id, profile: sender_user_id(profile_id), status")
+            .select("amount, user_id: sender_user_id, profile: sender_user_id(profile_id), status, fee_currency:currency")
             .eq("id", transactionId)
             .single());
 
@@ -63,7 +63,6 @@ const getTransactionFee = async (transactionRecord, transactionType, billingInfo
 const chargeTransactionFee = async (transactionId, transactionType) => {
 
     try{
-        // TODO: Uncomment below line prior to merging
         if(process.env.NODE_ENV === "development") return;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
@@ -71,14 +70,14 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
         if(transactionRecord.status != "COMPLETED" && transactionRecord.status != "CONFIRMED") return;
 
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
-        if(!billingInfo || billingInfo.billing_model !== BillingModelType.BALANCE) throw new Error("Billing info not found");
+        if(!billingInfo || billingInfo.billing_model !== BillingModelType.BALANCE) throw new Error("Billing info not found or is not BALANCE model");
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
         const balanceRecord = await getBalance(billingInfo.profile_id);
         if(!balanceRecord) throw new Error("Balance record not found");
 
         const toUpdate = {
             user_id: transactionRecord.user_id,
-            currency: transactionRecord.currency,
+            currency: transactionRecord.fee_currency,
             amount: billableDepositFee,
             status: FeeTransactionStatus.IN_PROGRESS
         }
@@ -88,13 +87,29 @@ const chargeTransactionFee = async (transactionId, transactionType) => {
         if(feeRecord.amount > 0){
             await deductBalance(billingInfo.profile_id, feeRecord.id, feeRecord.amount);
         }
-        
-        await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.COMPLETED});
 
     }catch(error){
         await updateTransactionFeeRecord(transactionId, {status: FeeTransactionStatus.FAILED});
         await createLog("chargeTransactionFee", null, `Failed to charge transaction fee for transaction: ${transactionId} with type: ${transactionType}`, error);
     }
+}
+
+const createTransactionFeeRecord = async (transactionId, transactionType) => {
+    if(process.env.NODE_ENV === "development") return;
+    const transactionRecord = await getTransactionRecord(transactionId, transactionType);
+    const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
+    if(!billingInfo) return;
+    const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
+
+    const toInsert = {
+        transaction_id: transactionId,
+        transaction_type: transactionType,
+        user_id: transactionRecord.user_id,
+        currency: transactionRecord.fee_currency,
+        amount: billableDepositFee,
+        status: FeeTransactionStatus.IN_PROGRESS
+    }
+    await insertTransactionFeeRecord(toInsert);
 }
 
 
@@ -105,7 +120,7 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
         if(process.env.NODE_ENV === "development") return true;
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
         const billingInfo = await getProfileBillingInfo(transactionRecord.profile.profile_id);
-        if(!billingInfo || billingInfo.billing_model !== BillingModelType.BALANCE) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
+        if(!billingInfo) return true; // if the customer doesn't have a billing info, it automatically means they have enough balance
         const billableDepositFee = await getTransactionFee(transactionRecord, transactionType, billingInfo);
 
         const balanceInfo = await getOptimisticAvailableBalance(billingInfo.profile_id);
@@ -116,11 +131,13 @@ const checkBalanceForTransactionFee = async (transactionId, transactionType) => 
 
         const toUpdate = {
             user_id: transactionRecord.user_id,
-            currency: transactionRecord.currency,
+            currency: transactionRecord.fee_currency,
             amount: billableDepositFee,
             status: FeeTransactionStatus.IN_PROGRESS
         }
         const feeRecord = await updateTransactionFeeRecord(transactionId, toUpdate);
+
+        if(billingInfo.billing_model !== BillingModelType.BALANCE) return true;
         
         if(hasEnoughBalance && billableDepositFee > (availableBalance - inProgressFeeTotal)){
             await sendSlackTransferBalanceAlert(billingInfo.profile_id, feeRecord.id, availableBalance, inProgressFeeTotal);
@@ -161,5 +178,6 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
 module.exports = {
     chargeTransactionFee,
     checkBalanceForTransactionFee,
-    syncTransactionFeeRecordStatus
+    syncTransactionFeeRecordStatus,
+    createTransactionFeeRecord
 }

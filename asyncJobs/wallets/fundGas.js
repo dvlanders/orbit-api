@@ -28,7 +28,7 @@ const fundGas = async(config) => {
         if (!success) throw new Error("Failed to fund GAS")
     }catch (error){
         await createLog("asyncJob/fundGas", config.userId, error.message, error)
-        throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, undefined, undefined, true)
+        throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, undefined, undefined, false)
     }
 }
 

@@ -1,3 +1,14 @@
+const { inStringEnum } = require("../common/filedValidationCheckFunctions");
+
+const BlindpayBankAccountType = {
+  PIX : "pix",
+  ACH : "ach",
+  WIRE : "wire",
+  SPEI_BITSO: "spei_bitso",
+  TRANSFERS_BITSO: "transfers_bitso",
+  ACH_COP_BITSO: "ach_cop_bitso"
+}
+
 const lightKYC = {
   requiredFields: [
     "type",
@@ -68,10 +79,10 @@ const standardKYC = {
     state_province_region: "string",
     postal_code: "string",
     id_doc_country: "string",
-    id_doc_type: "string",
+    id_doc_type: (value) => inStringEnum(value, ["PASSPORT", "ID_CARD", "DRIVERS"]),
     id_doc_front_file: "string",
     id_doc_back_file: "string",
-    proof_of_address_doc_type: "string",
+    proof_of_address_doc_type: (value) => inStringEnum(value, ["UTILITY_BILL", "BANK_STATEMENT", "RENTAL_AGREEMENT", "TAX_DOCUMENT", "GOVERNMENT_CORRESPONDENCE"]),
     proof_of_address_doc_file: "string",
   },
 };
@@ -135,10 +146,10 @@ const ownerAcceptedFields = {
   state_province_region: "string",
   postal_code: "string",
   id_doc_country: "string",
-  id_doc_type: "string",
+  id_doc_type: (value) => inStringEnum(value, ["PASSPORT", "ID_CARD", "DRIVERS"]),
   id_doc_front_file: "string",
   id_doc_back_file: "string",
-  proof_of_address_doc_type: "string",
+  proof_of_address_doc_type: (value) => inStringEnum(value, ["UTILITY_BILL", "BANK_STATEMENT", "RENTAL_AGREEMENT", "TAX_DOCUMENT", "GOVERNMENT_CORRESPONDENCE"]),
   proof_of_address_doc_file: "string",
 };
 
@@ -203,6 +214,7 @@ const pixAccountRequiredFields = [
   "type",
   "name",
   "pix_key",
+  "currency"
 ];
 
 const pixAccountAcceptedFields = {
@@ -211,6 +223,7 @@ const pixAccountAcceptedFields = {
   receiver_id: "string",
   name: "string",
   pix_key: "string",
+  currency: (value) => value === "brl",
 };
 const achAccountRequiredFields = [
   "user_id",
@@ -222,6 +235,7 @@ const achAccountRequiredFields = [
   "account_number",
   "account_type",
   "account_class",
+  "currency"
 ];
 
 const achAccountAcceptedFields = {
@@ -234,6 +248,7 @@ const achAccountAcceptedFields = {
   account_number: "string",
   account_type: "string",
   account_class: "string",
+  currency: (value) => value === "brl",
 };
 
 const wireAccountRequiredFields = [
@@ -250,6 +265,7 @@ const wireAccountRequiredFields = [
   "state_province_region",
   "country",
   "postal_code",
+  "currency"
 ];
 
 const wireAccountAcceptedFields = {
@@ -266,18 +282,102 @@ const wireAccountAcceptedFields = {
   state_province_region: "string",
   country: "string",
   postal_code: "string",
+  currency: (value) => value === "brl",
+};
+
+const speiBitsoAccountRequiredFields = [
+  "user_id",
+  "receiver_id",
+  "type",
+  "name",
+  "spei_protocol",
+  "spei_institution_code",
+  "beneficiary_name",
+  "currency"
+];
+
+const speiBitsoAccountAcceptedFields = {
+  type: "string",
+  user_id: "string",
+  receiver_id: "string",
+  name: "string",
+  spei_protocol: (value) => inStringEnum(value, ["clabe", "debitcard", "phonenum"]),
+  spei_institution_code: "string",
+  spei_clabe: "string",
+  beneficiary_name: "string",
+  currency: (value) => value === "mxn",
+};
+
+const transferBitsoAccountRequiredFields = [
+  "user_id",
+  "receiver_id",
+  "type",
+  "name",
+  "transfers_type",
+  "transfers_account",
+  "beneficiary_name",
+  "currency"
+];
+
+const transferBitsoAccountAcceptedFields = {
+  type: "string",
+  user_id: "string",
+  receiver_id: "string",
+  name: "string",
+  transfers_type: (value) => inStringEnum(value, ["CVU", "CBU", "ALIAS"]),
+  transfers_account: "string",
+  beneficiary_name: "string",
+  currency: (value) => value === "ars",
+};
+
+const achCopBitsoAccountRequiredFields = [
+  "user_id",
+  "receiver_id",
+  "type",
+  "name",
+  "account_type",
+  "ach_cop_beneficiary_first_name",
+  "ach_cop_beneficiary_last_name",
+  "ach_cop_document_id",
+  "ach_cop_document_type",
+  "ach_cop_email",
+  "ach_cop_bank_code",
+  "ach_cop_bank_account",
+  "currency"
+];
+
+const achCopBitsoAccountAcceptedFields = {
+  type: "string",
+  user_id: "string",
+  receiver_id: "string",
+  name: "string",
+  account_type: "string",
+  ach_cop_beneficiary_first_name: "string",
+  ach_cop_beneficiary_last_name: "string",
+  ach_cop_document_id: "string",
+  ach_cop_document_type: (value) => inStringEnum(value, ["CC", "CE", "NIT", "PASS", "PEP"]),
+  ach_cop_email: "string",
+  ach_cop_bank_code: "string",
+  ach_cop_bank_account: "string",
+  currency: (value) => value === "cop",
 };
 
 const bankAccountAcceptedFieldsMap = {
   pix: pixAccountAcceptedFields,
   ach: achAccountAcceptedFields,
   wire: wireAccountAcceptedFields,
+  spei_bitso: speiBitsoAccountAcceptedFields,
+  transfers_bitso: transferBitsoAccountAcceptedFields,
+  ach_cop_bitso: achCopBitsoAccountAcceptedFields,
 };
 
 const bankAccountRequiredFieldsMap = {
   pix: pixAccountRequiredFields,
   ach: achAccountRequiredFields,
   wire: wireAccountRequiredFields,
+  spei_bitso: speiBitsoAccountRequiredFields,
+  transfers_bitso: transferBitsoAccountRequiredFields,
+  ach_cop_bitso: achCopBitsoAccountRequiredFields,
 };
 
 const bankAccountFieldsNameMap = {
@@ -296,6 +396,19 @@ const bankAccountFieldsNameMap = {
   state_province_region: "state_province_region",
   country: "country",
   postal_code: "postal_code",
+  spei_protocol: "spei_protocol",
+  spei_institution_code: "spei_institution_code",
+  spei_clabe: "spei_clabe",
+  transfers_type: "transfers_type",
+  transfers_account: "transfers_account",
+  ach_cop_beneficiary_first_name: "ach_cop_beneficiary_first_name",
+  ach_cop_beneficiary_last_name: "ach_cop_beneficiary_last_name",
+  ach_cop_document_id: "ach_cop_document_id",
+  ach_cop_document_type: "ach_cop_document_type",
+  ach_cop_email: "ach_cop_email",
+  ach_cop_bank_code: "ach_cop_bank_code",
+  ach_cop_bank_account: "ach_cop_bank_account",
+  currency: "currency",
 };
 
 module.exports = {
@@ -307,4 +420,5 @@ module.exports = {
   bankAccountAcceptedFieldsMap,
   bankAccountRequiredFieldsMap,
   bankAccountFieldsNameMap,
+  BlindpayBankAccountType
 };

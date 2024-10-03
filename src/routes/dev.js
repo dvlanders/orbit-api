@@ -28,4 +28,5 @@ module.exports = (router) => {
 	router.get("/dev/testReapAccount", dev.testReapAccount)
 	router.get("/dev/testSelectOnEnum", dev.testSelectOnEnum)
 	router.post("/dev/testBridgeUsdc", dev.testBridgeUsdc)
+	router.post("/dev/insertAllFeeRecord", dev.insertAllFeeRecords)
 };
