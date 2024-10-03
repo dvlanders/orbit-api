@@ -1,0 +1,52 @@
+{
+    "BRIDGE": {
+      "usd": {
+        "base":{
+            "type": "PERCENT",
+            "value": 0.005
+        }
+      },
+      "DEFAULT": {
+        "base":{
+              "type": "PERCENT",
+              "value": 0.005
+        }
+      }
+    },
+    "DEFAULT": {
+        "DEFAULT":{
+            "base":{
+                "type": "PERCENT",
+                "value": 0.005
+            }
+        }
+    },
+    "CHECKBOOK": {
+      "usd": {
+        "base":{
+            "type": "FIX",
+            "value": 0.5
+        }
+      },
+      "DEFAULT": {
+        "base":{
+            "type": "FIX",
+            "value": 0.5
+        }
+      }
+    },
+    "MANUAL_DEPOSIT": {
+      "usd": {
+        "base":{
+            "type": "FIX",
+            "value": 0
+        }
+      },
+      "DEFAULT": {
+        "base":{
+            "type": "FIX",
+            "value": 0
+        }
+      }
+    }
+}

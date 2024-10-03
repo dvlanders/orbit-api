@@ -3,6 +3,7 @@ const BalanceTopupType = {
     AUTOPAY : "AUTOPAY",
     CHECKOUT : "CHECKOUT",
     ACCOUNT_MINIMUM : "ACCOUNT_MINIMUM",
+    MONTHLY_RESET : "MONTHLY_RESET"
 }
 
 const BalanceTopupStatus = {

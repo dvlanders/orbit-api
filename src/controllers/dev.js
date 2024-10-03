@@ -30,6 +30,9 @@ const { burnUsdc } = require("../util/smartContract/cctp/burn");
 const { fetchAttestation } = require("../util/smartContract/cctp/fetchAttestation");
 const { receiveMessageAndMint } = require("../util/smartContract/cctp/receiveMessageAndMint");
 const { createTransactionFeeRecord } = require("../util/billing/fee/transactionFeeBilling");
+const { getFee } = require("../util/billing/feeRateMap");
+const { transferType } = require("../util/transfer/utils/transfer");
+const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCalculator");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 
 const uploadFile = async (file, path) => {
@@ -110,7 +113,7 @@ exports.testwebhook = async(req, res) => {
                 console.error('Failed to verify token:', err.message);
                 throw new Error("wrong token")
             } else {
-                console.log('Token is valid. Decoded payload:', decoded);
+                // console.log('Token is valid. Decoded payload:', decoded);
             }
         });
         return res.status(200).json({message: "Success"})
@@ -240,7 +243,7 @@ exports.triggerOnRampFeeCharge = async(req, res) => {
 
 exports.testCreateBill = async(req, res) => {
     try{
-        const profileId = "e37f17be-1369-4853-8026-65e9903bd430"
+        const profileId = "e4c758d7-5475-4505-ba15-e129db0a441f"
         const {data: billingInformation, error: billingInformationError} = await supabase
             .from("billing_information")
             .select("*")
@@ -248,8 +251,10 @@ exports.testCreateBill = async(req, res) => {
             .single()
         
         await createStripeBill(billingInformation)
+
         return res.status(200).json({message: "success"})
     }catch (error){
+        console.error(error)
         return res.status(500).json({error: "Internal server error"})
 
     }
@@ -493,16 +498,17 @@ exports.insertAllFeeRecords = async (req, res) => {
 
 
     try{
-        // const {data: allTransactions, error: allTransactionsError} = await supabase
-        //     .from("crypto_to_crypto")
-        //     .select("*")
-        //     .eq("status", "CONFIRMED");
+        const {data: allTransactions, error: allTransactionsError} = await supabase
+            .from("crypto_to_crypto")
+            .select("id")
+            .eq("status", "CONFIRMED")
+
         
-        // if (allTransactionsError) throw allTransactionsError
-        // console.log(allTransactions.length)
-        // await Promise.all(allTransactions.map(async(transaction) => {
-        //     await createTransactionFeeRecord(transaction.id, "CRYPTO_TO_CRYPTO")
-        // }))
+        if (allTransactionsError) throw allTransactionsError
+        console.log(allTransactions.length)
+        await Promise.all(allTransactions.map(async(transaction) => {
+            await createTransactionFeeRecord(transaction.id, transferType.CRYPTO_TO_CRYPTO)
+        }))
 
         return res.status(200).json({message: "success"})
     }catch (error){
@@ -510,4 +516,59 @@ exports.insertAllFeeRecords = async (req, res) => {
         return res.status(500).json({error: "Internal server error"})
     }
 
+}
+
+exports.insertFeeTag = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .from("crypto_to_crypto")
+            .select("id, recipient_user_id")
+
+        await Promise.all( data.map(async(transaction) => {
+            successTags = []
+            failedTags = []
+
+            if (!transaction.recipient_user_id) {   
+                successTags.push("external")
+                failedTags.push("external")
+            }
+            else {
+                successTags.push("internal")
+                failedTags.push("internal")
+            }
+
+            const {data: feeTags, error: feeTagsError} = await supabase
+                .from("crypto_to_crypto")
+                .update({
+                    billing_tags_success: successTags,
+                    billing_tags_failed: failedTags
+                })
+                .eq("id", transaction.id)
+            if (feeTagsError) throw feeTagsError
+
+        }))
+        
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testAggregateFunction = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .rpc("get_fee_transactions_sum", {
+                profile_id: "e4c758d7-5475-4505-ba15-e129db0a441f",
+                start_date: "2024-09-01",
+                end_date: "2024-10-31",
+                transaction_type: transferType.CRYPTO_TO_CRYPTO,
+                status: "VOIDED"
+            })
+
+        return res.status(200).json({data, error})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
 }

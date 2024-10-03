@@ -35,6 +35,7 @@ const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSu
 const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
 const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
@@ -53,7 +54,7 @@ const getExchangeRate = async (userId, profileId,toCurrency) => {
 
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, fiat_provider, crypto_provider, paymentRail, achReference, sepaReference, wireMessage, swiftReference, receivedAmount } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, fiat_provider, crypto_provider, paymentRail, achReference, sepaReference, wireMessage, swiftReference, receivedAmount, accountInfo } = config
 
 	// get USDHIFI conversion rate
 	const conversionRate = {
@@ -68,6 +69,9 @@ const initTransferData = async (config) => {
 
     // convert received amount to amount
     const sentAmount = amount || parseFloat((receivedAmount / conversionRate.conversionRate).toFixed(2))
+
+	// get billing tags
+	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
 
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -94,6 +98,8 @@ const initTransferData = async (config) => {
 			sepa_reference: sepaReference,
 			wire_message: wireMessage,
 			swift_reference: swiftReference,
+			billing_tags_success: billingTags.success,
+			billing_tags_failed: billingTags.failed,
 		})
 		.eq("request_id", requestId)
 		.select()

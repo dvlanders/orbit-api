@@ -1,7 +1,46 @@
 const createLog = require("../logger/supabaseLogger")
 const supabase = require("../supabaseClient")
-const { getTotalBalanceTopups } = require("./balance/balanceService")
-const { feeMap } = require("./feeRateMap")
+const { transferType } = require("../transfer/utils/transfer")
+const { getTotalBalanceTopups, getBalance } = require("./balance/balanceService")
+
+const getTotalCryptoToCryptofee = async(profileId, startDate, endDate, status) => {
+    const {data, error} = await supabase
+        .rpc("get_fee_transactions_sum", {
+            profile_id: profileId,
+            start_date: startDate,
+            end_date: endDate,
+            transaction_type: transferType.CRYPTO_TO_CRYPTO,
+            status: status
+        })
+    if (error) throw error
+    return data
+}
+
+const getTotalCryptoToFiatfee = async(profileId, startDate, endDate, status) => {
+    const {data, error} = await supabase
+        .rpc("get_fee_transactions_sum", {
+            profile_id: profileId,
+            start_date: startDate,
+            end_date: endDate,
+            transaction_type: transferType.CRYPTO_TO_FIAT,
+            status: status
+        })
+    if (error) throw error
+    return data
+}
+
+const getTotalFiatToCryptoFee = async(profileId, startDate, endDate, status) => {
+    const {data, error} = await supabase
+        .rpc("get_fee_transactions_sum", {
+            profile_id: profileId,
+            start_date: startDate,
+            end_date: endDate,
+            transaction_type: transferType.FIAT_TO_CRYPTO,
+            status: status
+        })
+    if (error) throw error
+    return data
+}
 
 
 exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
@@ -16,32 +55,14 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
         if (!billingRate) throw new Error("No billing information found")
         if (billingRateError) throw billingRateError
 
-         // crypto to crypto payout
-         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabase
-         .rpc('get_total_crypto_to_crypto_transaction_payout', {
-             end_date: endDate, 
-             profile_id: profileId, 
-             start_date: startDate
-         })
-         if (cryptoToCryptoError) throw cryptoToCryptoError
-
-        // crypto to fiat
-        const {data: cryptoToFiat, error: cryptoToFiatError} = await supabase
-        .rpc('get_total_crypto_to_fiat_transaction_payout', {
-            end_date: endDate, 
-            profile_id: profileId, 
-            start_date: startDate
-        })
-        if (cryptoToFiatError) throw cryptoToFiatError
-        
-        // fiat to crypto
-        const {data: fiatToCrypto, error: fiatToCryptoError} = await supabase
-        .rpc('get_total_fiat_to_crypto_transaction_payout', {
-            end_date: endDate, 
-            profile_id: profileId, 
-            start_date: startDate
-            })
-        if (fiatToCryptoError) throw fiatToCryptoError
+        const [cryptoToCryptoSuccess, cryptoToCryptoFailed, cryptoToFiatSuccess, cryptoToFiatFailed, fiatToCryptoSuccess, fiatToCryptoFailed] = await Promise.all([
+            getTotalCryptoToCryptofee(profileId, startDate, endDate, "COMPLETED"),
+            getTotalCryptoToCryptofee(profileId, startDate, endDate, "FAILED"),
+            getTotalCryptoToFiatfee(profileId, startDate, endDate, "COMPLETED"),
+            getTotalCryptoToFiatfee(profileId, startDate, endDate, "FAILED"),
+            getTotalFiatToCryptoFee(profileId, startDate, endDate, "COMPLETED"),
+            getTotalFiatToCryptoFee(profileId, startDate, endDate, "FAILED")
+        ])
 
         // get active virtual account amount
         const {count: activeVirtualAccount, error: activeVirtualAccountError} = await supabase
@@ -55,18 +76,27 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
         // get total topups
         const totalTopUps = await getTotalBalanceTopups(profileId, startDate, endDate)
 
+        // get balance left
+        const balance = await getBalance(profileId)
+
         const billingInfo = {
             cryptoPayout:{
-                value: cryptoToCrypto * billingRate.crypto_payout_fee_percent,
+                value: cryptoToCryptoSuccess + cryptoToCryptoFailed || 0,
+                success: cryptoToCryptoSuccess || 0,
+                failed: cryptoToCryptoFailed || 0
             },
             fiatPayout: {
-                value: feeMap(cryptoToFiat, billingRate.fiat_payout_config)
+                value: cryptoToFiatSuccess + cryptoToFiatFailed || 0,
+                success: cryptoToFiatSuccess || 0,
+                failed: cryptoToFiatFailed || 0
             },
             fiatDeposit: {
-                value: feeMap(fiatToCrypto, billingRate.fiat_deposit_config)
+                value: fiatToCryptoSuccess + fiatToCryptoFailed || 0,
+                success: fiatToCryptoSuccess || 0,
+                failed: fiatToCryptoFailed || 0
             },
             virtualAccount: {
-                value: activeVirtualAccount * billingRate.active_virtual_account_fee
+                value: activeVirtualAccount * billingRate.active_virtual_account_fee || 0
             },
             monthlyMinimum: billingRate.monthly_minimum,
             integrationFee: billingRate.integration_fee,
@@ -74,11 +104,17 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             totalTopUps,
             updatedAt: billingRate.updated_at,
             billingPeriodStart: startDate,
-            billingPeriodEnd: endDate
+            billingPeriodEnd: endDate,
+            balance:{
+                id: balance.id,
+                balanceLeft: balance.balance || 0
+            }
         }
 
 
         billingInfo.total = billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value + billingInfo.fiatDeposit.value + billingInfo.virtualAccount.value
+        billingInfo.totalTransactionFeeSuccess = billingInfo.cryptoPayout.success + billingInfo.fiatPayout.success + billingInfo.fiatDeposit.success
+        billingInfo.totalTransactionFeeFailed = billingInfo.cryptoPayout.failed + billingInfo.fiatPayout.failed + billingInfo.fiatDeposit.failed
         billingInfo.payoutTotal = {
             value: billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value
         }

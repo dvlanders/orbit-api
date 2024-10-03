@@ -15,16 +15,21 @@ const { v4 } = require("uuid");
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("./fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../utils/simulateSandboxFiatToCryptoTransaction");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const transferFromPlaidToBridge = async(configs) => {
-    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId} = configs
+    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo} = configs
     try{
         if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const transferInfo = await bridgePlaidRailCheck(sourceAccountId, sourceCurrency, destinationCurrency, chain, sourceUserId, destinationUserId)
         // get the last virtual account activity
         const lastBridgeVirtualAccountActivity = await getLastBridgeVirtualAccountActivity(destinationUserId, transferInfo.bridge_virtual_account_id)
+
+        //get billing tags
+        const billingTags = await getBillingTagsFromAccount(requestId, transferType.FIAT_TO_CRYPTO, sourceUserId, accountInfo)
+
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
@@ -41,7 +46,9 @@ const transferFromPlaidToBridge = async(configs) => {
                 crypto_provider: "BRIDGE",
                 source_currency: sourceCurrency,
                 destination_currency: destinationCurrency,
-                chain: chain
+                chain: chain,
+                billing_tags_success: billingTags.success,
+                billing_tags_failed: billingTags.failed,
             })
             .eq("request_id", requestId)
             .select()
