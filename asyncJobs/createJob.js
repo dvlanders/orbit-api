@@ -20,7 +20,8 @@ const createJob = async(job, config, userId, profileId, createdAt=new Date().toI
                 number_of_retries: numberOfRetries + 1,
                 retry_deadline: retryDeadline,
                 retry_interval: retryInterval,
-                env: JOB_ENV
+                env: JOB_ENV,
+                in_process: true
             })
         
         if (error) throw error

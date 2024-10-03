@@ -59,7 +59,10 @@ exports.cryptoToFiatTransferAsync = async (config) => {
             throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} is not a supported rail`)
         }
 		const { asyncTransferExecuteFunc } = funcs
-		if (!asyncTransferExecuteFunc) throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
+		if (!asyncTransferExecuteFunc) {
+            await notifyTransaction(record.user_id, rampTypes.OFFRAMP, record.id, `${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
+            throw new Error(`${paymentRail}: ${record.source_currency} to ${record.destination_currency} does not support async transfer`)
+        }
 
 		const transferConfig = { profileId: config.profileId, recordId: record.id }
 
