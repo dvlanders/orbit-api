@@ -33,12 +33,29 @@ const getReapPayment = require("../../../reap/main/getPayment");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
+const createYellowcardRequestForQuote = require("../../../yellowcard/createTbdexRequestForQuote");
 
 const initTransferData = async (config) => {
+
 	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description } = config
 
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+
+
+
+	// create initial transfer record on yellowcard_transactions
+	const { data: yellowcardTransactionRecord, error: yellowcardTransactionRecordError } = await supabase
+		.from('yellowcard_transactions')
+		.insert({
+			user_id: sourceUserId,
+		})
+		.select()
+		.single()
+
+	if (yellowcardTransactionRecordError) throw yellowcardTransactionRecordError
+
+
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
 		.from('offramp_transactions')
@@ -51,7 +68,7 @@ const initTransferData = async (config) => {
 			transaction_status: 'OPEN_QUOTE',
 			contract_address: contractAddress,
 			action_name: "transfer",
-			fiat_provider: "TBDEX",
+			fiat_provider: "YELLOWCARD",
 			crypto_provider: "BASTION",
 			source_currency: sourceCurrency,
 			destination_currency: destinationCurrency,
@@ -60,12 +77,15 @@ const initTransferData = async (config) => {
 			bastion_user_id: sourceBastionUserId,
 			purpose_of_payment: purposeOfPayment,
 			description: description,
-			destination_currency_amount: receivedAmount
+			destination_currency_amount: receivedAmount,
+			yellowcard_transaction_id: yellowcardTransactionRecord.id,
 		})
 		.eq("request_id", requestId)
 		.select()
 		.single()
-	console.log("recordError", recordError)
+
+
+
 	if (recordError) throw recordError
 
 	// return if no fee charged
@@ -194,7 +214,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTbdexCryptoToFiatTransfer = async (config) => {
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount } = config
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount, internalAccountId } = config
 
 	//insert request record
 	const { record: initialTransferRecord, feeRecord } = await initTransferData(config)
@@ -210,50 +230,57 @@ const createTbdexCryptoToFiatTransfer = async (config) => {
 	}
 
 	// create quote and update record
-	const paymentConfig = {
-		amount: receivedAmount,
-		destinationCurrency: destinationCurrency.toUpperCase(),
-		sourceCurrency: sourceCurrency.toUpperCase(),
-		description: description,
-		purposeOfPayment: purposeOfPayment
-	}
+	// const paymentConfig = {
+	// 	amount: receivedAmount,
+	// 	destinationCurrency: destinationCurrency.toUpperCase(),
+	// 	sourceCurrency: sourceCurrency.toUpperCase(),
+	// 	description: description,
+	// 	purposeOfPayment: purposeOfPayment,
+	// 	internalAccountId: internalAccountId,
+	// }
 
-	console.log("paymentConfig", paymentConfig)
-	const reapQuoteResponse = await createPaymentQuote(destinationUserId, destinationAccountId, paymentConfig)
-	const reapQuoteResponseBody = await reapQuoteResponse.json()
-	if (!reapQuoteResponse.ok) {
-		await createLog("transfer/createReapCryptoToFiatTransfer", sourceUserId, reapQuoteResponseBody.message, reapQuoteResponseBody)
-		const toUpdate = {
-			transaction_status: "NOT_INITIATED",
-			reap_payment_response: reapQuoteResponseBody,
-			failed_reason: "Quote creation failed, please contact HIFI for more information",
-			amount: 0
-		}
-		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-	} else {
-		// get conversion rate
-		const conversionRate = {
-			validFrom: reapQuoteResponseBody.validFrom,
-			toCurrency: destinationCurrency,
-			validUntil: reapQuoteResponseBody.validTo,
-			fromCurrency: sourceCurrency,
-			conversionRate: reapQuoteResponseBody.fxInfo.clientRate
-		}
+	// const reapQuoteResponse = await createPaymentQuote(destinationUserId, destinationAccountId, paymentConfig)
+	// create the quote
 
-		const toUpdate = {
-			reap_payment_response: reapQuoteResponseBody,
-			reap_payment_status: reapQuoteResponseBody.status,
-			reap_payment_id: reapQuoteResponseBody.paymentId,
-			conversion_rate: conversionRate,
-			provider_fee: reapQuoteResponseBody.feeInfo.totalFee,
-			amount: reapQuoteResponseBody.paymentInfo.senderAmount,
-			destination_currency_amount: reapQuoteResponseBody.paymentInfo.receivingAmount
+	const tbdexQuoteResponse = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, receivedAmount, destinationCurrency, sourceCurrency, description, purposeOfPayment, internalAccountId)
 
-		}
-		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-	}
 
-	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+
+
+	// const reapQuoteResponseBody = await reapQuoteResponse.json()
+	// if (!reapQuoteResponse.ok) {
+	// 	await createLog("transfer/createReapCryptoToFiatTransfer", sourceUserId, reapQuoteResponseBody.message, reapQuoteResponseBody)
+	// 	const toUpdate = {
+	// 		transaction_status: "NOT_INITIATED",
+	// 		reap_payment_response: reapQuoteResponseBody,
+	// 		failed_reason: "Quote creation failed, please contact HIFI for more information",
+	// 		amount: 0
+	// 	}
+	// 	await updateRequestRecord(initialTransferRecord.id, toUpdate)
+	// } else {
+	// 	// get conversion rate
+	// 	const conversionRate = {
+	// 		validFrom: reapQuoteResponseBody.validFrom,
+	// 		toCurrency: destinationCurrency,
+	// 		validUntil: reapQuoteResponseBody.validTo,
+	// 		fromCurrency: sourceCurrency,
+	// 		conversionRate: reapQuoteResponseBody.fxInfo.clientRate
+	// 	}
+
+	// 	const toUpdate = {
+	// 		reap_payment_response: reapQuoteResponseBody,
+	// 		reap_payment_status: reapQuoteResponseBody.status,
+	// 		reap_payment_id: reapQuoteResponseBody.paymentId,
+	// 		conversion_rate: conversionRate,
+	// 		provider_fee: reapQuoteResponseBody.feeInfo.totalFee,
+	// 		amount: reapQuoteResponseBody.paymentInfo.senderAmount,
+	// 		destination_currency_amount: reapQuoteResponseBody.paymentInfo.receivingAmount
+
+	// 	}
+	// 	await updateRequestRecord(initialTransferRecord.id, toUpdate)
+	// }
+
+	// const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return { isExternalAccountExist: true, transferResult: result }
 }
 

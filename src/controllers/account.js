@@ -139,9 +139,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		accountNumber: 'string',
 		routingNumber: 'string',
 		accountOwnerType: 'string',
-        firstName: 'string',
-        lastName: 'string',
-        businessName: 'string',
+		firstName: 'string',
+		lastName: 'string',
+		businessName: 'string',
 		streetLine1: 'string',
 		streetLine2: 'string',
 		city: 'string',
@@ -209,9 +209,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 					beneficiary_country: country,
 					account_number: accountNumber,
 					routing_number: routingNumber,
-                    beneficiary_first_name: firstName,
-                    beneficiary_last_name: lastName,
-                    beneficiary_business_name: businessName,
+					beneficiary_first_name: firstName,
+					beneficiary_last_name: lastName,
+					beneficiary_business_name: businessName,
 					bridge_response: bridgeAccountResult.rawResponse,
 					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 				})
@@ -318,7 +318,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 			userId,
 			ibanAccountNumber,
 			businessIdentifierCode,
-            currency: "eur"
+			currency: "eur"
 		}).catch(error => {
 			console.error("Error checking EU off-ramp account", error);
 			throw new Error("Error checking EU off-ramp account: " + error.message);
@@ -1232,8 +1232,8 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 				.from('account_providers')
 				.select('id')
 				.eq('account_id', externalAccountRecordId)
-                .eq('payment_rail', 'wire')
-                .maybeSingle();
+				.eq('payment_rail', 'wire')
+				.maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
@@ -1309,14 +1309,14 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 
 
 	try {
-        const { externalAccountExist, externalAccountRecordId } = await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode, currency: "usd" });
+		const { externalAccountExist, externalAccountRecordId } = await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode, currency: "usd" });
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
 				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
-                null, null  // accountNumber and routingNumber not used for IBAN
+				null, null  // accountNumber and routingNumber not used for IBAN
 			);
 
 			if (bridgeAccountResult.status !== 200) {
@@ -1364,8 +1364,8 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 				.from('account_providers')
 				.select('id')
 				.eq('account_id', externalAccountRecordId)
-                .eq('payment_rail', 'swift')
-                .maybeSingle();
+				.eq('payment_rail', 'swift')
+				.maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
@@ -1514,7 +1514,7 @@ exports.createMomoMpesaAccount = async (req, res) => {
 	try {
 
 		// add the momo_mpesa_accounts record
-		const { data: momoMpesaAccountData, error: momoMpesaAccountError } = await supabase.from('momo_mpesa_accounts').insert({
+		const { data: momoMpesaAccountData, error: momoMpesaAccountError } = await supabase.from('yellowcard_momo_mpesa_accounts').insert({
 			account_number: fields.accountNumber,
 			account_holder_name: fields.accountHolderName,
 			user_id: userId

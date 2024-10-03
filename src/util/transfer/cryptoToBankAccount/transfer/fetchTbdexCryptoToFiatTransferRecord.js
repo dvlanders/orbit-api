@@ -9,7 +9,7 @@ const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchReapCryptoToFiatTransferRecord = async (id, profileId) => {
 	// get transactio record
-	const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "TBDEX", "BASTION")
+	const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "YELLOWCARD", "BASTION")
 	if (!record) return null
 	const account = await fetchAccountProviders(record.destination_account_id, profileId)
 	const accountInfo = await fetchReapAccountInformation(null, profileId, account.account_id)

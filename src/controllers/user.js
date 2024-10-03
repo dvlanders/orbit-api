@@ -34,7 +34,7 @@ const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 const { createBastionDeveloperUserWithType } = require('../util/bastion/main/createBastionUserForDeveloperUser');
-const createDecentralizedIdentifier = require('../util/tbdex/createDecentralizedIdentifier');
+const createDecentralizedIdentifier = require('../util/yellowcard/createDecentralizedIdentifier');
 const { create } = require('lodash');
 
 
