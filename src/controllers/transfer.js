@@ -39,7 +39,7 @@ const { fetchAccountProviders } = require("../util/account/accountProviders/acco
 const { walletType, allowedWalletTypes } = require("../util/transfer/utils/walletType");
 const { cryptoToFiatAmountCheck } = require("../util/transfer/cryptoToBankAccount/utils/check");
 const { transferObjectReconstructor, transferRecordsAggregator } = require("../util/transfer/utils/transfer");
-const { isInRange, isValidAmount, isValidMessage, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
+const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require("../util/common/filedValidationCheckFunctions");
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
 const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
@@ -224,7 +224,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"sameDayAch": "boolean",
 			"achReference": "string",
 			"sepaReference": "string",
-			"wireMessage": (value) => isValidMessage(value, 4, 35),
+			"wireMessage": "string",
 			"swiftReference": "string"
 		}
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
@@ -233,10 +233,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		}
 		if (!amount && !receivedAmount) return res.status(401).json({ error: "Either amount and receivedAmount is required" })
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
-
-		// // check if wire message is valid
-		// if (!isValidMessage(wireMessage, 4, 35))
-		//     return res.status(400).json({ error: "wireMessage should not exceed 4 lines, and each line should not exceed 35 characters." })
 
 		const { isAlreadyUsed, newRecord } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
