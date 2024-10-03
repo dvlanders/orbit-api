@@ -50,6 +50,12 @@ const BillingTagsForOfframp = {
                 failed: [],
             },
         },
+        fps:{
+            hkd:{
+                success: ["base"],
+                failed: [],
+            }
+        }
 }
 
 const BillingTagsForOnramp = {
@@ -62,13 +68,12 @@ const BillingTagsForOnramp = {
 }
 
 
-
 const getBillingTagsFromAccount = async(requestId, transactionType, userId, accountInfo) => {
     try{
         if (transactionType === transferType.CRYPTO_TO_FIAT){
-            return BillingTagsForOfframp[accountInfo.rail_type][accountInfo.currency]
+            return BillingTagsForOfframp[accountInfo.payment_rail][accountInfo.currency]
         }else if (transactionType === transferType.FIAT_TO_CRYPTO){
-            return BillingTagsForOnramp[accountInfo.rail_type][accountInfo.currency]
+            return BillingTagsForOnramp[accountInfo.payment_rail][accountInfo.currency]
         }
 
     }catch(error){

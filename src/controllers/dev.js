@@ -108,7 +108,7 @@ exports.testwebhook = async(req, res) => {
                 console.error('Failed to verify token:', err.message);
                 throw new Error("wrong token")
             } else {
-                console.log('Token is valid. Decoded payload:', decoded);
+                // console.log('Token is valid. Decoded payload:', decoded);
             }
         });
         return res.status(200).json({message: "Success"})
