@@ -7,6 +7,15 @@ const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType
 
 exports.insertRequestRecord = async(requestInfo) => {
 
+    // get billing tags
+    const billingTags = requestInfo.recipientUserId ? {
+        success: ["internal"],
+        failed: [],
+    } : {
+        success: ["external"],
+        failed: [""],
+    }
+
     const { data, error } = await supabaseCall(() => supabase
     .from('crypto_to_crypto')
     .update(
@@ -26,7 +35,9 @@ exports.insertRequestRecord = async(requestInfo) => {
             status: "CREATED",
             bastion_user_id: requestInfo.senderBastionUserId,
             sender_bastion_user_id: requestInfo.senderBastionUserId,
-            recipient_bastion_user_id: requestInfo.recipientBastionUserId
+            recipient_bastion_user_id: requestInfo.recipientBastionUserId,
+            billing_tags_success: billingTags.success,
+            billing_tags_failed: billingTags.failed,
         },
     )
     .eq('request_id', requestInfo.requestId)
