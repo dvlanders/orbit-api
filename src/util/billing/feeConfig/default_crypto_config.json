@@ -3,7 +3,7 @@
       "POLYGON_MAINNET": {
         "internal": {
           "type": "PERCENT",
-          "value": 0.001
+          "value": 0
         },
         "external": {
           "type": "PERCENT",
@@ -13,7 +13,7 @@
       "ETHEREUM_MAINNET": {     
         "internal": {
           "type": "PERCENT",
-          "value": 0.001
+          "value": 0
         },
         "external": {
           "type": "PERCENT",
@@ -23,7 +23,7 @@
       "DEFAULT": {     
         "internal": {
           "type": "PERCENT",
-          "value": 0.001
+          "value": 0
         },
         "external": {
           "type": "PERCENT",
@@ -35,7 +35,7 @@
       "POLYGON_MAINNET": {
         "internal": {
           "type": "PERCENT",
-          "value": 0.001
+          "value": 0
         },
         "external": {
           "type": "PERCENT",
@@ -45,7 +45,7 @@
       "ETHEREUM_MAINNET": {     
         "internal": {
           "type": "PERCENT",
-          "value": 0.001
+          "value": 0
         },
         "external": {
           "type": "PERCENT",
@@ -55,7 +55,7 @@
       "DEFAULT": {     
         "internal": {
           "type": "PERCENT",
-          "value": 0.001
+          "value": 0
         },
         "external": {
           "type": "PERCENT",
