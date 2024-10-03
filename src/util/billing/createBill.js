@@ -41,7 +41,7 @@ exports.createStripeBill = async(billingInformation) => {
         const monthlyMinimum = parseFloat(billingInfo.monthlyMinimum.toFixed(2))
         const balanceLeft = parseFloat(billingInfo.balance.balanceLeft.toFixed(2))
         const debt = (balanceLeft < 0 ? Math.abs(balanceLeft) : 0) + billingInfo.totalTransactionFeeFailed
-        const transactionFeeFailedToChargedOrMinimum = Math.max(Math.max(monthlyMinimum - totalTopUps, 0), debt)
+        const transactionFeeFailedToChargedOrMinimum = parseFloat((Math.max(Math.max(monthlyMinimum - totalTopUps, 0), debt).toFixed(2)))
         
         // service fee
         const billableVirtualAccountFee = parseFloat(billingInfo.virtualAccount.value.toFixed(2))
