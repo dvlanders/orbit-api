@@ -31,6 +31,7 @@ const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
 const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
+const { updateAccountInfoById } = require('../util/blindpay/bankAccountService');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -948,21 +949,14 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	try {
 		const response = await createBankAccount(bankAccountRecord);
 		const account = await insertAccountProviders(bankAccountRecord.id, bankAccountRecord.currency, "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id);
-		// insert the record to the blindpay_accounts table
-		const { error: bankAccountUpdateError } = await supabase
-			.from('blindpay_bank_accounts')
-			.update({
-				blindpay_response: response,
-				blindpay_account_id: response.id,
-				blockchain_address: response.blockchain_address,
-				global_account_id: account.id,
-			})
-			.eq('id', bankAccountRecord.id)
 
-		if (bankAccountUpdateError) {
-			await createLog("account/createBlindpayBankAccount", fields.user_id, bankAccountUpdateError.message, bankAccountUpdateError, null, res)
-			return res.status(500).json({ error: 'Internal Server Error' });
+		const toUpdate = {
+			blindpay_response: response,
+			blindpay_account_id: response.id,
+			blockchain_address: response.blockchain_address,
+			global_account_id: account.id,		
 		}
+		await updateAccountInfoById(bankAccountRecord.id, toUpdate);
 
 		const responseObject = {
 			status: "ACTIVE",

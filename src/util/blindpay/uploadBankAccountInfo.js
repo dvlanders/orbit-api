@@ -11,6 +11,7 @@ const { fieldsValidation } = require("../common/fieldsValidation");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { checkBrlOfframpBankAccount } = require("./checkBrlOfframpBankAccount");
+const { insertBankAccount } = require("./bankAccountService");
 
 const uploadBankAccountInfo = async (fields) => {
   const acceptedFields = bankAccountAcceptedFieldsMap[fields.type];
@@ -107,28 +108,7 @@ const uploadBankAccountInfo = async (fields) => {
     return { bankAccountExist, bankAccountRecord: existingBankAccountRecord };
   }
 
-  // update the blindpay_bank_accounts table record
-  const { data: bankAccountRecord, error: bankAccountRecordError } =
-    await supabaseCall(() =>
-      supabase
-        .from("blindpay_bank_accounts")
-        .insert(bankAccountData)
-        .select()
-        .single()
-    );
-
-  if (bankAccountRecordError) {
-    throw new BankAccountInfoUploadError(
-      BankAccountInfoUploadErrorType.INTERNAL_ERROR,
-      500,
-      "",
-      {
-        error:
-          "Unexpected error happened, please contact HIFI for more information",
-      }
-    );
-  }
-
+  const bankAccountRecord = await insertBankAccount(bankAccountData);
   bankAccountRecord.blindpay_receiver_id = receiverRecord.blindpay_receiver_id;
   return { bankAccountExist: false, bankAccountRecord };
 };

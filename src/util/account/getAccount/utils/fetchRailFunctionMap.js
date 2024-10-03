@@ -93,7 +93,7 @@ const accountInfoAggregator = async (funcs) => {
             const { func, accountId, currency, railType, paymentRail } = funcs[key];
             let accountInfo = await func(accountId); // this will always be one account object
 
-			if(!accountInfo) throw new Error(`No account found for accountId ${accountId}`);
+			if(!accountInfo) return { count: 0, banks: [] };
 			
 			accountInfo.accountId = key;
 			accountInfo.rail = {
