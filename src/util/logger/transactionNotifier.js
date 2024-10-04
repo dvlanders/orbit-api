@@ -6,7 +6,55 @@ const { getUserBalance } = require("../bastion/endpoints/getUserBalance");
 const transactionDbMap = {
     [rampTypes.ONRAMP]: "onramp_transactions",
     [rampTypes.OFFRAMP]: "offramp_transactions",
-    [rampTypes.CRYPTOTOCRYPTO]: ""
+    [rampTypes.CRYPTOTOCRYPTO]: "crypto_to_crypto",
+}
+
+const getOnrampAccountInfo = async (transactionRecord) => {
+    const { data: checkbookAccountId, error: checkbookAccountIdError } = await supabase
+        .from("checkbook_accounts")
+        .select("id")
+        .eq("user_id", transactionRecord.user_id)
+        .eq("connected_account_type", "PLAID")
+        .single();
+    if (checkbookAccountIdError || !checkbookAccountId) {
+        throw new Error("Failed to fetch checkbook account")
+    }
+
+    const { data: accountInfo, error: accountInfoError } = await supabase
+        .from("account_providers")
+        .select("*")
+        .eq("user_id", transactionRecord.user_id)
+        .eq("account_id", checkbookAccountId.id)
+        .single();
+    if (accountInfoError || !accountInfo) {
+        throw new Error("failed to fetch accountProvider data");
+    }
+
+    return accountInfo;
+}
+
+const getOfframpAccountInfo = async (transactionRecord) => {
+    const { data: accountInfo, error: accountInfoError } = await supabase
+        .from("account_providers")
+        .select("*")
+        .eq("id", transactionRecord.destination_account_id)
+        .single()
+
+    if (accountInfoError || !accountInfo) {
+        throw new Error("Failed to fetch accountProvider data");
+    }
+
+    return accountInfo;
+}
+
+const getCryptoToCryptoAccountInfo = async (transactionRecord) => {
+    return { payment_rail: transactionRecord.chain };
+}
+
+const getAccountInfoFunctionMap = {
+    [rampTypes.ONRAMP]: getOnrampAccountInfo,
+    [rampTypes.OFFRAMP]: getOfframpAccountInfo,
+    [rampTypes.CRYPTOTOCRYPTO]: getCryptoToCryptoAccountInfo,
 }
 
 async function notifyTransaction(userId, rampType, transactionId, messageJson) {
@@ -30,24 +78,16 @@ async function notifyTransaction(userId, rampType, transactionId, messageJson) {
         throw new Error("Failed to fetch profile data");
     }
 
-    const { data: transactonRecord, error: transactionRecordError } = await supabase
+    const { data: transactionRecord, error: transactionRecordError } = await supabase
         .from(transactionDbMap[rampType])
         .select("*")
         .eq("id", transactionId)
         .single()
-    if (transactionRecordError || !transactonRecord) {
+    if (transactionRecordError || !transactionRecord) {
         throw new Error("Failed to fetch transaction data");
     }
 
-    const { data: accountInfo, error: accountInfoError } = await supabase
-        .from("account_providers")
-        .select("*")
-        .eq("id", transactonRecord.destination_account_id)
-        .single()
-
-    if (accountInfoError || !accountInfo) {
-        throw new Error("Failed to fetch accountProvider data");
-    }
+    const accountInfo = await getAccountInfoFunctionMap[rampType](transactionRecord);
 
     // const messageJson = { message }
     // const walletResponse = await getUserBalance(userId, transactonRecord.chain);
@@ -59,7 +99,7 @@ async function notifyTransaction(userId, rampType, transactionId, messageJson) {
 
     // console.log({userData, profileEmail, transactonRecord})
 
-    await sendSlackTransactionMessage(profileEmail.email, userData.profile_id, userId, rampType, transactonRecord, accountInfo, messageJson);
+    await sendSlackTransactionMessage(profileEmail.email, userData.profile_id, userId, rampType, transactionRecord, accountInfo, messageJson);
 }
 
 module.exports = notifyTransaction;

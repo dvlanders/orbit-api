@@ -23,6 +23,7 @@ const pollAutopayRefill = require('./jobs/pollAutopayRefill');
 const pollBastionBaseAssetTransferStatus = require('./jobs/pollBastionBaseAssetTransferStatus');
 const pollFiatToFiatCheckbookStatus = require('./jobs/pollFiatToFiatCheckbookStatus');
 const pollStripeWebhookEvents = require('./jobs/pollStripeWebhookEvents');
+const pollHifiTrnsactionStatusNotification = require('./jobs/pollHIfiTransactionsStatusNotification');
 
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollDeleteBridgeOfframpTransfer); // every 60 seconds
@@ -48,3 +49,4 @@ cron.schedule('*/60 * * * * *', pollFeeTransactionRetry); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollAutopayRefill); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollFiatToFiatCheckbookStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollStripeWebhookEvents); // every 60 seconds
+cron.schedule('*/10 * * * * *', pollHifiTrnsactionStatusNotification); // every 10 seconds
