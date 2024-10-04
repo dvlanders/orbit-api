@@ -37,11 +37,11 @@ const pollAsyncJobs = async() => {
         await Promise.all(jobsQueue.map(async(job) => {
             let success = false;
             let reschedule = false;
+            let retry = false;
             let jobError
             try{
                 const jobFunc = jobMapping[job.job].execute
                 const result = await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
-                success = true
 
                 if(result?.retryDetails?.shouldRetry){
                     const { shouldRetry, retryDelay } = result.retryDetails;
@@ -51,7 +51,9 @@ const pollAsyncJobs = async() => {
                         in_process: false
                     };
                     await updateJob(job.id, toUpdate);
+                    retry = shouldRetry;
                 }
+                success = true
 
             }catch(error){
                 if ((error instanceof JobError && error.logging) || !(error instanceof JobError)){
@@ -88,7 +90,7 @@ const pollAsyncJobs = async() => {
                 }
             }finally{
                 await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success, jobError)
-                if(success || (!success && !reschedule)) await deleteJob(job.id)
+                if((success && !retry) || (!success && !reschedule)) await deleteJob(job.id)
             }
         }))
     }catch (error){
