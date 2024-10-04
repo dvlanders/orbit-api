@@ -113,7 +113,7 @@ const notifyCryptoToCryptoTransactions = async () => {
 
 const pollHifiTrnsactionStatusNotification = async () => {
     await Promise.all([
-        // notifyOnrampTransactions(),
+        notifyOnrampTransactions(),
         notifyOfframpTransactions(),
         notifyCryptoToCryptoTransactions(),
     ]);
