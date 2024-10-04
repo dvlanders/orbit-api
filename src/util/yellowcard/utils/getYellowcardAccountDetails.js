@@ -10,6 +10,7 @@ const getYellowcardAccountDetails = async (destinationAccountId) => {
 		.from('account_providers')
 		.select('*')
 		.eq('id', destinationAccountId)
+		.maybeSingle()
 
 	)
 
@@ -18,31 +19,26 @@ const getYellowcardAccountDetails = async (destinationAccountId) => {
 		throw new Error('Error fetching account provider details')
 	}
 
-	console.log('accountProviderRecord', accountProviderRecord)
 
 
+	// find the account details on the right table based on the rail
+	if (accountProviderRecord.payment_rail === 'momo_mpesa') {
+		const { data: momoMpesaAccountRecord, error: momoMpesaAccountRecordError } = await supabaseCall(() => supabase
+			.from('yellowcard_momo_mpesa_accounts')
+			.select('*')
+			.eq('id', accountProviderRecord.account_id)
+			.maybeSingle()
 
-	// find the account details on the right table based on the account provider
-	if (accountProviderRecord.provider === 'YELLOWCARD') {
-		return await getYellowcardAccountDetails(destinationAccountId)
+		)
+		if (momoMpesaAccountRecordError) {
+			createLog('error', momoMpesaAccountRecordError)
+			throw new Error('Error fetching account provider details')
+		}
+		return { payoutAccountDetails: momoMpesaAccountRecord }
 	}
 
-
-
-
-	const { data: yellowcardAccountDetails, error: yellowcardAccountDetailsError } = await supabaseCall(() => supabase
-		.from('yellowcard_accounts')
-		.select('*')
-		.eq('id', destinationAccountId)
-		.single()
-	)
-
-	if (yellowcardAccountDetailsError) {
-		createLog('error', yellowcardAccountDetailsError)
-		throw new Error('Error fetching yellowcard account details')
-	}
-
-	return yellowcardAccountDetails
+	// no account found so return error	
+	throw new Error('No account found for the account provider')
 }
 
 

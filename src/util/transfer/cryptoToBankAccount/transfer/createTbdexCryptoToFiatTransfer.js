@@ -89,7 +89,7 @@ const initTransferData = async (config) => {
 	if (recordError) throw recordError
 
 	// return if no fee charged
-	if (!feeType || parseFloat(feeValue) <= 0) return { record }
+	if (!feeType || parseFloat(feeValue) <= 0) return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
 
 	// insert fee record
 	let { feePercent, feeAmount, clientReceivedAmount } = getFeeConfig(feeType, feeValue, amount)
@@ -108,7 +108,7 @@ const initTransferData = async (config) => {
 			failed_reason: `Amount after subtracting fee is less than 1 dollar`
 		}
 		record = await updateRequestRecord(record.id, toUpdate)
-		return { record }
+		return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
 	}
 
 	// get payment processor contract
@@ -120,12 +120,12 @@ const initTransferData = async (config) => {
 			failed_reason: `Fee feature not available for ${currency} on ${chain}`
 		}
 		record = await updateRequestRecord(record.id, toUpdate)
-		return { record }
+		return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
 	}
 
 	// update into crypto to crypto table
 	await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
-	return { record, feeRecord }
+	return { record: record, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord }
 }
 
 const transferWithFee = async (initialTransferRecord, profileId) => {
@@ -217,7 +217,7 @@ const createTbdexCryptoToFiatTransfer = async (config) => {
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount, internalAccountId } = config
 
 	//insert request record
-	const { record: initialTransferRecord, feeRecord } = await initTransferData(config)
+	const { record: initialTransferRecord, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord } = await initTransferData(config)
 
 	if (!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)) {
 		const toUpdate = {
@@ -242,10 +242,75 @@ const createTbdexCryptoToFiatTransfer = async (config) => {
 	// const reapQuoteResponse = await createPaymentQuote(destinationUserId, destinationAccountId, paymentConfig)
 	// create the quote
 
-	const tbdexQuoteResponse = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, receivedAmount, destinationCurrency, sourceCurrency, description, purposeOfPayment, internalAccountId)
+	const { yellowcardRequestForQuote } = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment, internalAccountId)
+
+	let result = {
+		transferType: transferType.CRYPTO_TO_FIAT,
+		transferDetails: {
+			id: initialTransferRecord.id,
+			requestId: initialTransferRecord.request_id,
+			sourceUserId: sourceUserId,
+			destinationUserId: destinationUserId,
+			chain: chain,
+			sourceCurrency: sourceCurrency,
+			amount: amount,
+			destinationCurrency: destinationCurrency,
+			destinationAccountId: destinationAccountId,
+			createdAt: initialTransferRecord.created_at,
+			updatedAt: initialTransferRecord.updated_at,
+			status: initialTransferRecord.transaction_status,
+			contractAddress: initialTransferRecord.contract_address,
+			sourceUser: initialTransferRecord.source_user_id,
+			destinationUser: initialTransferRecord.destination_user_id,
+			failedReason: initialTransferRecord.failed_reason,
+			fee: feeRecord ? {
+				feeId: feeRecord.id,
+				feeType: feeRecord.fee_type,
+				feeAmount: feeRecord.fee_amount,
+				feePercent: feeRecord.fee_percent,
+				status: feeRecord.charged_status,
+				transactionHash: feeRecord.transaction_hash,
+				failedReason: feeRecord.failed_reason
+			} : null,
+		}
+	}
+	console.log('yellowcardTransactionRecord:', yellowcardTransactionRecord)
+	if (yellowcardRequestForQuote) {
+		// update yellowcard_transactions record
+		const { data: updatedRecord, error: updatedRecordError } = await supabase
+			.from('yellowcard_transactions')
+			.update({
+				yellowcard_rfq_response: yellowcardRequestForQuote,
+				payout_units_per_payin_unit: yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit,
+				quote_id: yellowcardRequestForQuote.metadata.id
+			})
+			.eq("id", yellowcardTransactionRecord.id)
+			.maybeSingle()
+
+		if (updatedRecordError) throw updatedRecordError
+
+
+		console.log('updatedRecord:', updatedRecord)
+		result.conversionRate = updatedRecord.payout_units_per_payin_unit
+
+
+	} else {
+		// update the yellowcard_transactions table when we fail to create quote
+		const { data: updatedRecord, error: updatedRecordError } = await supabase
+			.from('yellowcard_transactions')
+			.update({
+				yellowcard_rfq_response: yellowcardRequestForQuote,
+			})
+			.eq("id", yellowcardTransactionRecord.id)
+			.maybeSingle()
+
+		if (updatedRecordError) throw updatedRecordError
+
+	}
 
 
 
+	console.log('result:', result)
 
 	// const reapQuoteResponseBody = await reapQuoteResponse.json()
 	// if (!reapQuoteResponse.ok) {
