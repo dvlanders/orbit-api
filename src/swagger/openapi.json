@@ -5943,6 +5943,22 @@
             "type": "string",
             "description": "Must be supplied for countries that use postal codes."
           },
+          "hasOwnership": {
+            "type": "boolean",
+            "description": "True if the person has at least 25% ownership of the business."
+          },
+          "hasControl": {
+            "type": "boolean",
+            "description": "True if the person has a significant responsibility to control, manage, or direct the activities of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "isSigner": {
+            "type": "boolean",
+            "description": "True if the person can authorize transactions on behalf of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "relationshipEstablishedAt": {
+            "type": "string",
+            "description": "The date that the ultimateBeneficialOwners first became an owner, control person, or signer for the business in format yyyy-mm-dd."
+          },
           "govIdFront": {
             "type": "string",
             "description": "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
@@ -5969,7 +5985,11 @@
           "postalCode",
           "stateProvinceRegion",
           "govIdFront",
-          "proofOfResidency"
+          "proofOfResidency",
+          "hasOwnership",
+          "hasControl",
+          "isSigner",
+          "relationshipEstablishedAt"
         ]
       },
       "ToSLink": {

@@ -46,7 +46,11 @@ const bridgeFieldsToRequestFields = {
 	"address.state": "stateProvinceRegion",
 	signed_agreement_id: "signedAgreementId",
 	compliance_screening_explanation: "complianceScreeningExplanation",
-	business_type: "businessType"
+	business_type: "businessType",
+	has_ownership: "hasOwnership",
+	has_control: "hasControl",
+	is_signer: "isSigner",
+	relationship_established_at: "relationshipEstablishedAt"
 };
 
 
