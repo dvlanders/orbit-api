@@ -1,10 +1,21 @@
+const { isValidMessage } = require("../../../common/filedValidationCheckFunctions");
+
 const validatePaymentRailParams = (paymentRail, sameDayAch) => {
     return paymentRail == "ach" || !sameDayAch
 }
 
 const validateBridgeTransferParams = async (config) => {
-    const { amount, feeType, feeValue, paymentRail, sameDayAch } = config;
+    const { amount, feeType, feeValue, paymentRail, sameDayAch, wireMessage } = config;
     const validationRes = { invalidFieldsAndMessages: [], valid: true };
+    
+    // check if wire message is valid
+    if (wireMessage && !isValidMessage(wireMessage, 4, 35)) {
+        validationRes.invalidFieldsAndMessages.push({
+            invalidFields: ["wireMessage"],
+            errorMessage: "wireMessage should not exceed 4 lines, and each line should not exceed 35 characters.",
+        });
+        validationRes.valid = false;
+    }
 
     if (!validatePaymentRailParams(paymentRail, sameDayAch)) {
         validationRes.invalidFieldsAndMessages.push({

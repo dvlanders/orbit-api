@@ -8,7 +8,7 @@ const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFi
 
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
 
-const { validateBlindPayTransferParams, validateReapTransferParams, validateBridgeTransferParams } = require("./feildValidationFunctions");
+const { validateBlindPayTransferParams, validateReapTransferParams, validateBridgeTransferParams } = require("./fieldValidationFunctions");
 
 const CryptoToBankSupportedPairCheck = (paymentRail, sourceCurrency, destinationCurrency) => {
 	try {

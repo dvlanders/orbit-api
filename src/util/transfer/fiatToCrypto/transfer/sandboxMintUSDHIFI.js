@@ -18,16 +18,22 @@ const FiatToCryptoSupportedPairFetchFunctionsCheck = require("../utils/fiatToCry
 const { mintScheduleCheck } = require("../../../../../asyncJobs/sandbox/mint/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const sandboxMintUSDHIFI = async(config) => {
-    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, fiatProvider, cryptoProvider} = config
+    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, fiatProvider, cryptoProvider, accountInfo} = config
     try{
         if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const accountInfo = await fetchAccountProviders(sourceAccountId, profileId)
         // in sandbox, for mocking we always use the virtual bank account with usdc on POLYGON_AMOY
         const transferInfo = await bridgePlaidRailCheck(accountInfo.account_id, sourceCurrency, "usdc", "POLYGON_AMOY", sourceUserId, destinationUserId)
+        
+        //get billing tags
+        const billingTags = await getBillingTagsFromAccount(requestId, transferType.FIAT_TO_CRYPTO, sourceUserId, accountInfo)
+
+
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
             .from("onramp_transactions")
@@ -43,7 +49,9 @@ const sandboxMintUSDHIFI = async(config) => {
                 crypto_provider: "BRIDGE",
                 source_currency: sourceCurrency,
                 destination_currency: destinationCurrency,
-                chain: chain
+                chain: chain,
+                billing_tags_success: billingTags.success,
+                billing_tags_failed: billingTags.failed,
             })
             .eq("request_id", requestId)
             .select()

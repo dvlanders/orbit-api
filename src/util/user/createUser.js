@@ -75,6 +75,10 @@ const UBORequiredFields = [
 	"city",
 	"postalCode",
 	"stateProvinceRegion",
+	"hasOwnership",
+	"hasControl",
+	"isSigner",
+	"relationshipEstablishedAt"
 ];
 
 const UBOAcceptedFields = {
@@ -95,6 +99,11 @@ const UBOAcceptedFields = {
 	"govIdFront": (value) => isValidUrl(value),
 	"govIdBack": (value) => isValidUrl(value),
 	"govIdCountry": (value) => isValidCountryCode(value),
+	"hasOwnership": "boolean",
+	"hasControl": "boolean",
+	"isSigner": "boolean",
+	"relationshipEstablishedAt": (value) => isValidDate(value),
+	"isWalletOwner": "boolean"
 };
 
 
@@ -193,7 +202,12 @@ const userKycColumnsMap = {
 	proofOfResidencyPath: "proof_of_residency_path",
 	proofOfOwnershipPath: "proof_of_ownership_path",
 	formationDocPath: "formation_doc_path",
-	signedAgreementId: "signed_agreement_id"
+	signedAgreementId: "signed_agreement_id",
+	hasOwnership: "has_ownership",
+	hasControl: "has_control",
+	isSigner: "is_signer",
+	relationshipEstablishedAt: "relationship_established_at",
+	isWalletOwner: "is_wallet_owner"
 }
 
 
@@ -265,13 +279,21 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 
 	// check if the ultimate beneficial owners are valid
 	if (fields.userType == "business") {
+		// at least one UBO have isSigner and one UBO have hasControl
+		let isSignerExists = false
+		let hasControlExists = false
 		fields.ultimateBeneficialOwners.map((owner, index) => {
 			// check UBO field values
 			const { missingFields, invalidFields } = fieldsValidation(owner, UBORequiredFields, UBOAcceptedFields);
 			if (missingFields.length > 0 || invalidFields.length > 0) {
 				throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Fields of ultimateBeneficialOwner[${index}] provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
 			}
+			// check if isSigner and hasControl exists
+			if (owner.isSigner) isSignerExists = true
+			if (owner.hasControl) hasControlExists = true
 		})
+		if (!isSignerExists) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "At least one ultimateBeneficialOwners must have isSigner set to true", missingFields: [], invalidFields: ["isSigner"] });
+		if (!hasControlExists) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "At least one ultimateBeneficialOwners must have hasControl set to true", missingFields: [], invalidFields: ["hasControl"] });
 	}
 
 
@@ -417,6 +439,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 		// Process each UBO
 
 		try {
+			let walletOwnerIndex = null
 			const processedUbos = await Promise.all(ultimateBeneficialOwners.map(async (owner, index) => {
 				// Upload files for each UBO
 				await Promise.all(uboFiles.map(async (file) => {
@@ -429,7 +452,8 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 						delete owner[file.key];
 					}
 				}));
-
+				// get wallet owner index
+				if (walletOwnerIndex == null && owner.isWalletOwner) walletOwnerIndex = index
 				// Return the processed UBO data with is_primary set to true only for the first owner
 				return {
 					user_id: userId,
@@ -451,11 +475,21 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 					gov_id_front_path: owner.gov_id_front_path,
 					gov_id_back_path: owner.gov_id_back_path,
 					proof_of_residency_path: owner.proof_of_residency_path,
-					is_primary: index === 0 // sets the first ubo's is_primary to true and sets the rest to false
+					has_control: owner.hasControl,
+					has_ownership: owner.hasOwnership,
+					is_signer: owner.isSigner,
+					relationship_established_at: new Date(owner.relationshipEstablishedAt).toISOString(),
+					is_primary: false
 				};
 			}));
 
+			// if wallet owner is not set, set the first ubo with has_control equals true as the wallet owner
+			if (walletOwnerIndex == null) {
+				walletOwnerIndex = processedUbos.findIndex((ubo) => ubo.has_control)
+			}
 
+			// set the wallet owner's is_primary to true
+			processedUbos[walletOwnerIndex].is_primary = true
 
 			// Insert the processed UBO data into the database
 			const { data: ultimateBeneficialOwnersData, error: ultimateBeneficialOwnersError } = await supabaseCall(() =>

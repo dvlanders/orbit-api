@@ -95,6 +95,11 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 				invalidFields.push(`${ubo.legal_first_name} ${ubo.legal_last_name}: date_of_birth is missing or invalid`);
 			}
 
+			const formattedRelationshipEstablishedAt = ubo.relationship_established_at ? new Date(ubo.relationship_established_at).toISOString().split('T')[0] : undefined;
+			if (!formattedRelationshipEstablishedAt) {
+				invalidFields.push(`${ubo.legal_first_name} ${ubo.legal_last_name}: relationship_established_at is missing or invalid`);
+			}
+
 			// Fetch and convert base64 for gov_id_image_front
 			const govIdImageFront = ubo.gov_id_front_path ? await supabase.storage.from('compliance_id').createSignedUrl(ubo.gov_id_front_path, 200).then(({ data, error }) => {
 				if (error || !data) return null;
@@ -133,11 +138,13 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 				gov_id_country: ubo.gov_id_country,
 				gov_id_image_front: govIdImageFront, // Attached base64 image
 				gov_id_image_back: govIdImageBack,   // Attached base64 image
-				proof_of_address_document: proofOfResidency // Attached base64 image
+				proof_of_address_document: proofOfResidency, // Attached base64 image
+				is_signer: ubo.is_signer,
+				has_control: ubo.has_control,
+				has_ownership: ubo.has_ownership,
+				relationship_established_at: formattedRelationshipEstablishedAt,
 			};
 		}));
-
-
 
 		const idempotencyKey = v4();
 		// pre fill info
@@ -281,7 +288,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		} else if (response.status == 401) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)
 		} else {
-			await createLog("user/util/createIndividualBridgeCustomer", userId, responseBody.message, responseBody)
+			await createLog("user/util/createBusinessBridgeCustomer", userId, responseBody.message, responseBody)
 			// unknown error try to resubmit the application
 			const config = {
 				userId,

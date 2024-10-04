@@ -1,0 +1,122 @@
+{
+  "BRIDGE": {
+    "eur": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      },
+      "sepa": {
+        "type": "FIX",
+        "value": 1
+      }
+    },
+    "usd": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      },
+      "ach": {
+        "type": "FIX",
+        "value": 0.5
+      },
+      "ach_return": {
+        "type": "FIX",
+        "value": 6
+      },
+      "wire_domestic": {
+        "type": "FIX",
+        "value": 20
+      },
+      "wire_international": {
+        "type": "FIX",
+        "value": 40
+      },
+      "wire_return": {
+        "type": "FIX",
+        "value": 50
+      },
+      "swift": {
+        "type": "PERCENT",
+        "value": 0.00075
+      }
+    },
+    "DEFAULT": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      },
+      "sepa": {
+        "type": "FIX",
+        "value": 1
+      },
+      "ach": {
+        "type": "FIX",
+        "value": 0.5
+      },
+      "ach_return": {
+        "type": "FIX",
+        "value": 6
+      },
+      "wire_domestic": {
+        "type": "FIX",
+        "value": 20
+      },
+      "wire_international": {
+        "type": "FIX",
+        "value": 40
+      },
+      "wire_return": {
+        "type": "FIX",
+        "value": 50
+      },
+      "swift": {
+        "type": "PERCENT",
+        "value": 0.00075
+      }
+    }
+  },
+  "BASTION": {
+    "DEFAULT": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0
+      }
+    }
+  },
+  "BLINDPAY": {
+    "brl": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      }
+    },
+    "DEFAULT": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      }
+    }
+  },
+  "REAP": {
+    "hkd": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      }
+    },
+    "DEFAULT": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      }
+    }
+  },
+  "DEFAULT": {
+    "DEFAULT": {
+      "base": {
+        "type": "PERCENT",
+        "value": 0.0025
+      }
+    }
+  }
+}
