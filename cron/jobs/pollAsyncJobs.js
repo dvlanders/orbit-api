@@ -40,8 +40,19 @@ const pollAsyncJobs = async() => {
             let jobError
             try{
                 const jobFunc = jobMapping[job.job].execute
-                await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
+                const result = await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
                 success = true
+
+                if(result?.retryDetails?.shouldRetry){
+                    const { shouldRetry, retryDelay } = result.retryDetails;
+                    const toUpdate = {
+                        number_of_retries: job.number_of_retries + 1,
+                        next_retry: new Date(now.getTime() + retryDelay).toISOString(),
+                        in_process: false
+                    };
+                    await updateJob(job.id, toUpdate);
+                }
+
             }catch(error){
                 if ((error instanceof JobError && error.logging) || !(error instanceof JobError)){
                     await createLog("pollAsyncJobs", job.user_id, error.message)
