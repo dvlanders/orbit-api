@@ -293,7 +293,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			const config = {
 				userId,
 				bridgeId,
-				userType: "individual"
+				userType: "business"
 			}
 			// create asynbc job
 			await createJob("retryBridgeCustomerCreation", config, userId, null)
