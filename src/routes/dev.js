@@ -30,4 +30,9 @@ module.exports = (router) => {
 	router.post("/dev/insertAllFeeRecord", dev.insertAllFeeRecords)
 	router.post("/dev/insertAllFeeTag", dev.insertFeeTag)
 	router.get("/dev/testAggregateFunction", dev.testAggregateFunction)
+	router.post("/dev/migrateWallettoNewTable", dev.migrateWallettoNewTable)
+	router.get("/dev/genCypherText", dev.genCypherText)
+	router.post("/dev/testGenCircleWalletSet", dev.testGenCircleWalletSet)
+	router.post("/dev/testGenCircleWallet", dev.testGenCircleWallet)
+	router.get("/dev/testGetContractFromCircle", dev.testGetContractFromCircle)
 };
