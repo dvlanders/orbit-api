@@ -158,7 +158,9 @@ const processVirtualAccountEvent = async (event) => {
             source_currency: virtualAccount.source_currency,
             destination_currency: virtualAccount.destination_currency,
             chain: virtualAccountPaymentRailToChain[virtualAccount.destination_payment_rail],
-            source_manual_deposit: event.source
+            source_manual_deposit: event.source,
+            billing_tags_success: ["base"],
+            billing_tags_failed: []
         },
         { onConflict: "bridge_deposit_id" }
         )
