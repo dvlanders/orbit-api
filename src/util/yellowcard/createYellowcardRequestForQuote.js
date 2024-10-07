@@ -1,6 +1,6 @@
-const createLog = require('../../util/logger/supabaseLogger');
-const { supabaseCall } = require('../../util/supabaseWithRetry');
-const supabase = require('../../util/supabaseClient');
+const createLog = require('../logger/supabaseLogger');
+const { supabaseCall } = require('../supabaseWithRetry');
+const supabase = require('../supabaseClient');
 const { getYellowcardAccountDetails } = require('./utils/getYellowcardAccountDetails');
 const { fetchSelectedOffering } = require('./utils/fetchSelectedOffering');
 
@@ -22,10 +22,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 
 	// Retrieve the selected offering using the fetchSelectedOffering utility
 	const { foundOfferings, selectedOffering, payin, payout } = await fetchSelectedOffering(sourceCurrency, destinationCurrency);
-	console.log('selectedOffering:', selectedOffering);
-	console.log('foundOfferings:', foundOfferings);
-	console.log('payin:', payin.methods[0].kind);
-	console.log('payout:', payout.methods[0].kind);
+
 
 
 
@@ -41,10 +38,13 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		presentationDefinition: selectedOffering.data.requiredClaims
 	});
 
+
 	// convert amount to string
-	amount = amount.toString();
-
-
+	if (!amount) {
+		throw new Error('Amount is required');
+	} else {
+		amount = amount.toString();
+	}
 
 
 	const rfqData = {
@@ -78,18 +78,24 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	});
 
 	// FIXME: In the future, we will want to get the portable did from a secrets manager instead of storing it in the DB
-	const { data: hifiDidRecord, error: hifiDidError } = await supabaseCall(() => supabase
+	// const { data: hifiDidRecord, error: hifiDidError } = await supabaseCall(() => supabase
+	// 	.from('tbd_decentralized_identifiers')
+	// 	.select('*')
+	// 	.eq('id', '62713295-5b49-4b9f-b940-b770b49e8b19')
+	// 	.single()
+	// )
+
+	const { data: hifiDidRecord, error: hifiDidError } = await supabase
 		.from('tbd_decentralized_identifiers')
 		.select('*')
 		.eq('id', '62713295-5b49-4b9f-b940-b770b49e8b19')
-		.single()
-	)
+		.maybeSingle()
+
 
 	if (hifiDidError) {
 		createLog('error', hifiDidError)
 		throw new Error('Error fetching hifi did')
 	}
-	console.log('hifiDid', hifiDidRecord)
 
 	// console.log('rfq:', ycRfq);
 	const bearerDid = await BearerDid.import({ portableDid: hifiDidRecord.portable_did });
@@ -97,9 +103,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	await ycRfq.sign(bearerDid);
 
 
-	console.log('got here')
 	try {
-		console.log('****************ycRfq right before exchange:', ycRfq)
 		// create the exchange
 		await TbdexHttpClient.createExchange(ycRfq);
 
@@ -115,7 +119,6 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	let quote;
 	let close;
 	let exchange;
-	console.log("ycRfq.exchangeId", ycRfq.exchangeId);
 	//Wait for Quote message to appear in the exchange
 	while (!quote) {
 		try {
@@ -131,12 +134,10 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		}
 
 		quote = exchange.find(msg => msg instanceof Quote);
-		console.log('************found quote:', quote);
 
 		if (!quote) {
 			// Make sure the exchange is still open
 			close = exchange.find(msg => msg instanceof Close);
-			console.log('************found close:', close);
 			if (close) { break; }
 			else {
 				// Wait 2 seconds before making another request
@@ -144,9 +145,6 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 			}
 		}
 	}
-
-	console.log('quote:', quote);
-
 
 	return { yellowcardRequestForQuote: quote };
 }

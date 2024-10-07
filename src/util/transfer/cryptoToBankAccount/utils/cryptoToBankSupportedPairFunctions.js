@@ -1,6 +1,6 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
 const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer, executeAsyncTransferCryptoToFiat: executeReapAsyncTransferCryptoToFiat } = require("../transfer/createReapCryptoToFiatTransfer");
-const { createTbdexCryptoToFiatTransfer, acceptTbdexCryptoToFiatTransfer } = require("../transfer/createTbdexCryptoToFiatTransfer");
+const { createYellowcardCryptoToFiatTransfer, acceptYellowcardCryptoToFiatTransfer } = require("../transfer/createYellowcardCryptoToFiatTransfer");
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract_DEP");
 const { createTransferToBlindpaySmartContract, acceptBlindpayCryptoToFiatTransfer, executeAsyncBlindpayTransferCryptoToFiat } = require("../transfer/transferToBlindpaySmartContractV2");
 
@@ -90,8 +90,8 @@ const CryptoToBankSupportedPairFunctions = {
 	momo_mpesa: {
 		usdc: {
 			kes: {
-				transferFunc: createTbdexCryptoToFiatTransfer,
-				acceptQuoteFunc: acceptTbdexCryptoToFiatTransfer,
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams
 				//TODO - implement executeAsyncTransferCryptoToFiat
 				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat

@@ -200,7 +200,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 	const fields = req.body;
 	const { profileId } = req.query
 	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, accountHolderName, account } = fields
-
 	try {
 		// field validation
 		const requiredFields = ["requestId", "sourceUserId", "destinationAccountId", "chain", "sourceCurrency", "destinationCurrency"]
