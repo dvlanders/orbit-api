@@ -27,6 +27,7 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertBlinpdayTransactionInfo, updateBlinpdayTransactionInfo, getBlinpdayTransactionInfo } = require("../../../blindpay/transactionInfoService");
+const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck");
 
 const createPaymentQuote = async (config) => {
     const {recordId, blindpayAccountId, chain, amount, sourceUserId, contractAddress, bastionRequestId, blindpayTransferInfoId} = config;
@@ -230,6 +231,9 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
     // TODO: This is for Bridge, we need to fix it for Blindpay in the future when we want to allow Fee transfer
     const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
+    if (await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id)) {
+        await createJob("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id, profileId)
+    }
     return { isExternalAccountExist: true, transferResult: result }
 }
 
@@ -250,6 +254,9 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
         chain: initialTransferRecord.chain
     }
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
+    if (await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id)) {
+        await createJob("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id, profileId)
+    }
     const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
     return { isExternalAccountExist: true, transferResult: result }
 }

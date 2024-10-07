@@ -10,6 +10,8 @@ const notifyCryptoToFiatTransfer = require("../../../webhooks/transfer/notifyCry
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
 const { updateBlinpdayTransactionInfo } = require("../../../src/util/blindpay/transactionInfoService")
 
+const RETRY_DELAY = 60 * 1000; // 60 secs
+
 exports.executeBlindpayPayout = async (config) => {
 	try {
 		const { data: record, error } = await supabase
@@ -20,6 +22,11 @@ exports.executeBlindpayPayout = async (config) => {
 
 		if (error) throw error
 
+		if(record.transaction_status === 'SUBMITTED_ONCHAIN'){
+			return {retryDetails: { shouldRetry: true, retryDelay: RETRY_DELAY }};
+		}else if(record.transaction_status !== 'COMPLETED_ONCHAIN'){
+			return; // don't need to execute payour since Bastion action failed
+		}
 		const blindpayTransactionInfo = record.blindpay_transaction_info;
 
 		let blindpayExecutePayoutBody;
