@@ -956,7 +956,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 			blockchain_address: response.blockchain_address,
 			global_account_id: account.id,		
 		}
-		await updateAccountInfoById(bankAccountRecord.id, toUpdate);
+		await updateAccountInfoById(bankAccountRecord.id, bankAccountRecord.type, toUpdate);
 
 		const responseObject = {
 			status: "ACTIVE",

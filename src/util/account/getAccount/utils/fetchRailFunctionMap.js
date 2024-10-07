@@ -4,6 +4,7 @@ const fetchPlaidAccountInformation = require("../main/fetchPlaidAccountInformati
 const fetchCircleAccount = require("../main/fetchCircleAccount")
 const fetchBlindpayAccount = require("../main/fetchBlindpayAccount")
 const { fetchReapAccountInformation } = require("../main/fetchReapAccount")
+const { BlindpayBankAccountType } = require("../../../blindpay/utils")
 const createLog = require("../../../logger/supabaseLogger")
 const supabase = require("../../../supabaseClient")
 
@@ -35,22 +36,22 @@ const railFunctionsMap = {
 		},
 		BRL: {
 			PIX: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount("brl", null, accountId)
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.PIX, null, accountId)
 			},
 		},
 		MXN: {
 			SPEI_BITSO: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount("mxn", null, accountId)
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.MXN, null, accountId)
 			},
 		},
 		COP: {
 			ACH_COP_BITSO: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount("cop", null, accountId)
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.COP, null, accountId)
 			},
 		},
 		ARS: {
 			TRANSFERS_BITSO: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount("ars", null, accountId)
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.ARS, null, accountId)
 			}
 		},
 		HKD: {

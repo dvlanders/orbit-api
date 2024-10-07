@@ -35,9 +35,10 @@ const getBankAccountTableInfoFromAccountType = (bankAccountType) => {
   return mapping;
 };
 
-const updateAccountInfoById = async (id, toUpdate) => {
+const updateAccountInfoById = async (id, type, toUpdate) => {
+  const { table } = getBankAccountTableInfoFromAccountType(type);
   const { error } = await supabaseCall(() =>
-    supabase.from("blindpay_accounts")
+    supabase.from(table)
             .update(toUpdate)
             .eq("id", id));
 
@@ -49,18 +50,6 @@ const insertBankAccount = async (bankAccountInfo) => {
     const accountType = bankAccountInfo.type;
     const {table, existConditions} = getBankAccountTableInfoFromAccountType(accountType);
 
-    const toInsertBankAccount = {
-        type: accountType,
-        name: bankAccountInfo.name,
-        receiver_id: bankAccountInfo.receiver_id,
-        user_id: bankAccountInfo.user_id,
-        currency: bankAccountInfo.currency,
-    }
-
-    Object.keys(toInsertBankAccount).forEach(key => {
-        delete bankAccountInfo[key];
-    });
-
     const { data: bankAccountRecord, error: bankAccountRecordError } = await supabaseCall(() =>
         supabase.from(table)
                 .insert(bankAccountInfo)
@@ -69,38 +58,45 @@ const insertBankAccount = async (bankAccountInfo) => {
 
     if(bankAccountRecordError) throw bankAccountRecordError;
 
-    toInsertBankAccount[`${accountType}_account_id`] = bankAccountRecord.id;
-
-    const { data: accountRecord, error: accountRecordError } = await supabaseCall(() =>
-        supabase.from("blindpay_accounts")
-                .insert(toInsertBankAccount)
-                .select(`*, bank_account_info: ${table}(*)`)
-                .single());
-
-    if(accountRecordError) throw accountRecordError;
-
-    return accountRecord;
+    return bankAccountRecord;
 };
 
-const getFullBankAccountInfoById = async (id, type) => {
+const getBankAccountInfoById = async (id, type) => {
 
-    const { table } = getBankAccountTableInfoFromAccountType(type);
+  const { table } = getBankAccountTableInfoFromAccountType(type);
 
-    const { data, error } = await supabaseCall(() =>
-        supabase.from("blindpay_accounts")
-                .select(`*, bank_account_info: ${table}(*)`)
-                .eq("id", id)
-                .eq("type", type)
-                .single());
+  const { data, error } = await supabaseCall(() =>
+      supabase.from(table)
+              .select()
+              .eq("id", id)
+              .eq("type", type)
+              .single());
 
-    if(error) throw error;
+  if(error) throw error;
 
-    return data;
+  return data;
+}
+
+const getBankAccountInfoByGlobalId = async (id, type) => {
+
+  const { table } = getBankAccountTableInfoFromAccountType(type);
+
+  const { data, error } = await supabaseCall(() =>
+      supabase.from(table)
+              .select()
+              .eq("global_account_id", id)
+              .eq("type", type)
+              .maybeSingle());
+
+  if(error) throw error;
+
+  return data;
 }
 
 module.exports = {
   updateAccountInfoById,
   getBankAccountTableInfoFromAccountType,
   insertBankAccount,
-  getFullBankAccountInfoById
+  getBankAccountInfoById,
+  getBankAccountInfoByGlobalId
 };

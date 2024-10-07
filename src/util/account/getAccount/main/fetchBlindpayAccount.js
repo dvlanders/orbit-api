@@ -1,9 +1,7 @@
-const supabase = require("../../../supabaseClient");
-const { supabaseCall } = require("../../../supabaseWithRetry");
 const { getBankAccountInfo } = require("../../../blindpay/getBankAccountInfo");
 
-const fetchBlindpayAccount = async (currency, profileId, accountId) => {
-  return await getBankAccountInfo(accountId);
+const fetchBlindpayAccount = async (type, profileId, accountId) => {
+  return await getBankAccountInfo(accountId, type);
 };
 
 module.exports = fetchBlindpayAccount;

@@ -1,15 +1,14 @@
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { BlindpayBankAccountType } = require("./utils");
-const { getFullBankAccountInfoById } = require("./bankAccountService");
+const { getBankAccountInfoById } = require("./bankAccountService");
 
-const filterBankAccountInfo = (type, fullBankAccountInfo) => {
-  type = fullBankAccountInfo.type;
-  const bankAccountInfo = fullBankAccountInfo.bank_account_info;
+const filterBankAccountInfo = (type, bankAccountInfo) => {
+  type = bankAccountInfo.type;
   const filteredBankAccountInfo = {
-      accountId: fullBankAccountInfo.global_account_id,
-      type: fullBankAccountInfo.type,
-      name: fullBankAccountInfo.name,
+      accountId: bankAccountInfo.global_account_id,
+      type: bankAccountInfo.type,
+      name: bankAccountInfo.name,
     };
   
   if(type == BlindpayBankAccountType.PIX){
@@ -73,19 +72,9 @@ const filterBankAccountInfo = (type, fullBankAccountInfo) => {
   return filteredBankAccountInfo;
 }
 
-const getBankAccountInfo = async (accountId) => {
-
-    const {data, error} = await supabaseCall(() => supabase
-        .from('blindpay_accounts')
-        .select()
-        .eq('id', accountId)
-        .maybeSingle()
-    );
-
-    if(error) throw error;
-    if(!data) return null;
-    const fullBankAccountInfo = await getFullBankAccountInfoById(data.id, data.type);
-    return filterBankAccountInfo(fullBankAccountInfo.type, fullBankAccountInfo);
+const getBankAccountInfo = async (accountId, type) => {
+    const bankAccountInfo = await getBankAccountInfoById(accountId, type);
+    return filterBankAccountInfo(bankAccountInfo.type, bankAccountInfo);
 }
 
 module.exports = {

@@ -6,15 +6,15 @@ const checkBrlOfframpBankAccount = async (accountInfo) => {
   const type = accountInfo.type;
   const {table, existConditions} = getBankAccountTableInfoFromAccountType(type);
   let query = supabase
-    .from("blindpay_accounts")
-    .select(`*, bank_account_info: ${table}(*)`)
+    .from(table)
+    .select()
     .eq("user_id", accountInfo.user_id)
     .eq("receiver_id", accountInfo.receiver_id)
     .eq("type", type)
 	  .not('global_account_id', 'is', null);
 
-  existConditions.forEach(fields => {
-    query = query.eq(`bank_account_info.${fields}`, accountInfo[fields]);
+  existConditions.forEach(field => {
+    query = query.eq(field, accountInfo[field]);
   });
 
   const { data: bankAccountRecord, error: bankAccountRecordError } =
