@@ -38,6 +38,7 @@ exports.insertRequestRecord = async(requestInfo) => {
             recipient_bastion_user_id: requestInfo.recipientBastionUserId,
             billing_tags_success: billingTags.success,
             billing_tags_failed: billingTags.failed,
+            fee_transaction_id: requestInfo.feeTransactionId,
         },
     )
     .eq('request_id', requestInfo.requestId)
