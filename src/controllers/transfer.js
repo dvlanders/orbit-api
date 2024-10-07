@@ -45,6 +45,9 @@ const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandb
 const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
 const { insertTransactionFeeRecord } = require("../util/billing/fee/feeTransactionService");
 const { transferType } = require("../util/transfer/utils/transfer");
+const { createUsdcBridgingRequest } = require("../util/transfer/bridging/createUsdcBridingRequest");
+const { checkIsBridgingRequestIdAlreadyUsed } = require("../util/transfer/bridging/fetchRequestInformation");
+const fetchBridgingTransactions = require("../util/transfer/bridging/fetchBridgingTransactions");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -891,4 +894,79 @@ exports.getTransfers = async (req, res) => {
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
+}
+
+exports.createBridgingRequest = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId } = req.query
+	const fields = req.body
+	fields.profileId = profileId
+	const { sourceUserId, destinationUserId, requestId, sourceWalletType, destinationWalletType, sourceChain, destinationChain } = fields
+
+	try{
+		const requiredFields = ["sourceUserId", "destinationUserId", "amount", "sourceChain", "destinationChain", "requestId", "currency"]
+		const acceptedFields = {
+			"sourceUserId": (value) => isUUID(value),
+			"destinationUserId": (value) => isUUID(value),
+			"amount": (value) => isValidAmount(value),
+			"sourceChain": (value) => isHIFISupportedChain(value),
+			"destinationChain": (value) => isHIFISupportedChain(value),
+			"requestId": (value) => isUUID(value),
+			"currency": (value) => inStringEnum(value, ["usdc"]),
+			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]), 
+			"destinationWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]), 
+		}
+
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
+
+		// check if sourceUserId and destinationUserId are under profileId
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
+		if (!(await verifyUser(destinationUserId, profileId))) return res.status(401).json({ error: "destinationUserId not found" })
+		if (!sourceWalletType) fields.sourceWalletType = "INDIVIDUAL"
+		if (!destinationWalletType) fields.destinationWalletType = "INDIVIDUAL"
+
+		// check if source wallet is kyc passed
+		const {bastionUserId: sourceBastionUserId} = await getBastionWallet(sourceUserId, sourceChain, fields.sourceWalletType)
+		if (!(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+
+		// check if destination wallet is kyc passed
+		const {bastionUserId: destinationBastionUserId} = await getBastionWallet(destinationUserId, destinationChain, fields.destinationWalletType)
+		if (!(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `User is not allowed to receive crypto (user status invalid)` })
+
+		// check if requestId is already used
+		const { isAlreadyUsed } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+
+		// TODO: create function map for different currency
+		// right now only usdc bridging is supported
+		const result = await createUsdcBridgingRequest(fields);
+		return res.status(200).json(result);
+	}catch (error){
+		await createLog("transfer/createBridgingRequest", sourceUserId, error.message, error, profileId, res)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
+
+exports.getBridgingTransactions = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId, id } = req.query
+
+	try{
+		// TODO: create function map for different currency
+		// right now only usdc bridging is supported
+		const receipt = await fetchBridgingTransactions(id, profileId)
+		return res.status(200).json(receipt)
+
+	}catch (error){
+		await createLog("transfer/getBridgingTransactions", null, error.message, error, profileId, res)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+	
 }

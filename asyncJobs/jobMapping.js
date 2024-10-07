@@ -21,6 +21,7 @@ const { cryptoToCryptoTransferSandboxAsync } = require("./sandbox/cryptoToCrypto
 const { retryBridgeCustomerCreation, retryBridgeCustomerCreationCheck } = require("./user/retryBridgeCustomerCreation");
 const { baseAssetWithdrawAsyncScheduleCheck } = require("./transfer/baseAssetWithdraw/scheduleCheck");
 const { baseAssetWithdrawAsync } = require("./transfer/baseAssetWithdraw/baseAssetWithdraw");
+const { bridgingUsdcScheduleCheck, bridgeUsdc } = require("./bridging/cctp/bridgeUsdc");
 
 
 exports.jobMapping = {
@@ -87,7 +88,10 @@ exports.jobMapping = {
 	baseAssetWithdraw: {
 		scheduleCheck: baseAssetWithdrawAsyncScheduleCheck,
 		execute: baseAssetWithdrawAsync
+	},
+	bridgeUsdc: {
+		scheduleCheck: bridgingUsdcScheduleCheck,
+		execute: bridgeUsdc
 	}
-
 }
 
