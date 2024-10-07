@@ -18,4 +18,6 @@ module.exports = (router) => {
 	router.get("/transfer", authorize, logRequestResponse, transfer.getTransfers)
 	router.post("/transfer/createExchangeTransfer", transfer.createExchangeTransferTemp)
 
+	router.post("/transfer/bridge-asset", authorize, logRequestResponse, transfer.createBridgingRequest)
+	router.get("/transfer/bridge-asset", authorize, logRequestResponse, transfer.getBridgingTransactions)
 };

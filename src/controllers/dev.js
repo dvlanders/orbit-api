@@ -24,6 +24,11 @@ const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
 const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");
 const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transfer");
+const { toUnitsString } = require("../util/transfer/cryptoToCrypto/utils/toUnits");
+const { approveToTokenMessenger } = require("../util/smartContract/cctp/approve");
+const { burnUsdc } = require("../util/smartContract/cctp/burn");
+const { fetchAttestation } = require("../util/smartContract/cctp/fetchAttestation");
+const { receiveMessageAndMint } = require("../util/smartContract/cctp/receiveMessageAndMint");
 const { createTransactionFeeRecord } = require("../util/billing/fee/transactionFeeBilling");
 const { getFee } = require("../util/billing/feeRateMap");
 const { transferType } = require("../util/transfer/utils/transfer");
@@ -464,6 +469,25 @@ exports.testSelectOnEnum = async(req, res) => {
             .limit(10)
             
         return res.status(200).json({data, error})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+}
+
+exports.testBridgeUsdc = async(req, res) => {
+    try{
+        const userId = "adf65db6-38b7-4bc7-95aa-9c8e9c59481a"
+        const sourceChain = Chain.ETHEREUM_TESTNET
+        const destinationChain = Chain.POLYGON_AMOY
+        const {walletAddress: sourceAddress, bastionUserId: sourceBastionUserId} = await getBastionWallet(userId, sourceChain)
+        const {walletAddress: destinationAddress, bastionUserId: destinationBastionUserId} = await getBastionWallet(userId, destinationChain)
+        
+        const resultCircle = await fetchAttestation(sourceChain, "0xb04433f917b566034a3e9ec8d619b0e371f1df528a82bc8b72c49ca992cfd28a")
+        const result = await receiveMessageAndMint(userId, destinationBastionUserId, destinationChain, resultCircle.messageBytes, resultCircle.attestationSignature, destinationAddress)
+
+        return res.status(200).json(result)
+
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "error"})

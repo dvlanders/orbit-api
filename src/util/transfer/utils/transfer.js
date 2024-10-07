@@ -5,7 +5,8 @@ const transferType = {
 	CRYPTO_TO_FIAT: "CRYPTO_TO_FIAT",
 	FIAT_TO_CRYPTO: "FIAT_TO_CRYPTO",
 	BASE_ASSET: "BASE_ASSET",
-	FIAT_TO_FIAT: "FIAT_TO_FIAT"
+	FIAT_TO_FIAT: "FIAT_TO_FIAT",
+	BRIDGE_ASSET: "BRIDGE_ASSET"
 }
 
 const transferObjectReconstructor = async (transferInfo, externalAccountId = null) => {

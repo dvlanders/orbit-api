@@ -36,7 +36,7 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description, accountInfo } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description, accountInfo, feeTransactionId } = config
 
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
@@ -71,6 +71,7 @@ const initTransferData = async (config) => {
             destination_currency_amount: receivedAmount,
 			billing_tags_success: billingTags.success,
 			billing_tags_failed: billingTags.failed,
+			fee_transaction_id: feeTransactionId
 		})
 		.eq("request_id", requestId)
 		.select()
@@ -205,7 +206,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 const createReapCryptoToFiatTransfer = async (config) => {
 
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount } = config
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment, receivedAmount, feeTransactionId } = config
 	
     //insert request record
 	const {record:initialTransferRecord, feeRecord} = await initTransferData(config)

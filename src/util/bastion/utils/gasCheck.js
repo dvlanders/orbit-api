@@ -18,10 +18,17 @@ const gasThreshold = {
     ETHEREUM_MAINNET: BigInt(4 * Math.pow(10, 15))
 }
 
+const gasSupportedChain = [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET]
+
 const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId) => {
     try{
         if(chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET){
             console.log(`Don't check gas for TESTNET ${chain}`);
+            return {needFund: false, fundSubmitted: false, error: false}
+        }
+
+        if (!gasSupportedChain.includes(chain)){
+            await createLog("transfer/util/bastionGasCheck", userId, `Unsupported chain ${chain} for gas, skipping`, null)
             return {needFund: false, fundSubmitted: false, error: false}
         }
 
