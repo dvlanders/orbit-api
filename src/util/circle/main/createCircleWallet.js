@@ -6,6 +6,7 @@ const { CustomerStatus } = require("../../user/common")
 const { safeParseBody } = require("../../utils/response")
 const { circleChainToBlockchain } = require("../utils/chainConvert")
 const { generateCypherText } = require("../utils/generateCypherText")
+const { isAddress, getAddress } = require("ethers")
 
 const chainsToCreate = process.env.NODE_ENV === "development" ? ["MATIC-AMOY", "ETH-SEPOLIA", "SOL-DEVNET"] : ["MATIC", "ETH", "SOL"]
 
@@ -18,7 +19,7 @@ const insertWalletRecord = async (userId, walletSet, walletSetId, wallets, walle
                 wallet_set_id: walletSetId,
                 wallet_set_response: walletSet,
                 wallet_id: wallet.id,
-                address: wallet.address,
+                address: isAddress(wallet.address) ? getAddress(wallet.address) : wallet.address,
                 chain: circleChainToBlockchain[wallet.blockchain],
                 wallet_response: wallet,
                 custody_type: wallet.custodyType,
