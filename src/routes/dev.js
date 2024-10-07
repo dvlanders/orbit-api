@@ -36,4 +36,5 @@ module.exports = (router) => {
 	router.post("/dev/testGenCircleWalletSet", dev.testGenCircleWalletSet)
 	router.post("/dev/testGenCircleWallet", dev.testGenCircleWallet)
 	router.get("/dev/testGetContractFromCircle", dev.testGetContractFromCircle)
+	router.post("/dev/testSubmitTransactionCircle", dev.testSubmitTransactionCircle)
 };

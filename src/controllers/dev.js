@@ -717,3 +717,32 @@ exports.testGetContractFromCircle = async(req, res) => {
         return res.status(500).json({error: "Internal server error"})
     }
 }
+
+exports.testSubmitTransactionCircle = async(req, res) => {
+    try{
+        const url = `${process.env.CIRCLE_WALLET_URL}/v1/w3s/developer/transactions/contractExecution`
+        const options = {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "Authorization": `Bearer ${process.env.CIRCLE_WALLET_API_KEY}`
+            },
+            body: JSON.stringify({
+                "idempotencyKey": v4(),
+                "abiFunctionSignature": "transfer(address, uint256)",
+                "abiParameters": ["0xB1Ec8F89EFD7363A1B939bFe545d2Fca01Bb7381", "1000000"],
+                "ContractAddress": currencyContractAddress.POLYGON_AMOY.usdc,
+                "walletId": "53f6242a-9b80-5cda-b679-721eb93aa2fc",
+                "entitySecretCiphertext": generateCypherText(),
+                "feeLevel": "MEDIUM"
+            })
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
