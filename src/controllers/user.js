@@ -36,7 +36,7 @@ const { createBastionDeveloperUserWithType } = require('../util/bastion/main/cre
 const { createCircleWallet } = require('../util/circle/main/createCircleWallet');
 const { updateUserWallet } = require('../util/user/updateUserWallet');
 const { createUserWallet } = require('../util/user/createUserWallet');
-const { getUserWalletBalance } = require('../util/user/getUserWallet');
+const { getUserWalletBalance, getUserWallet } = require('../util/user/getUserWallet');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -1082,21 +1082,36 @@ exports.getDeveloperUserStatus = async (req, res) => {
 				basicKycStatus = await getBridgeCustomer(userId)
 			}
 
-			// get bastion kyc status
-			let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
+			// get user wallet provider using POLYGON_AMOY or POLYGON _MAINNET
+			const defaultChain = process.env.NODE_ENV === "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
+			const {walletProvider} = await getUserWallet(userId, defaultChain, "FEE_COLLECTION")
+			if (!walletProvider) return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
+
+			// get wallet kyc status
+			let walletKycPassed = false
+			if (walletProvider === "BASTION") {
+				// get bastion kyc status
+				let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
 				.from('bastion_users')
 				.select('kyc_passed, jurisdiction_check_passed, kyc_level')
 				.eq("bastion_user_id", `${userId}-FEE_COLLECTION`)
 				.maybeSingle())
 
-			if (bastionUserError) throw bastionUserError
-			if (!bastionUser) return res.status(200).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-			const bastionKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed
+				if (bastionUserError) throw bastionUserError
+				if (!bastionUser) return res.status(200).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
+				walletKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed	
+			} else if (walletProvider === "CIRCLE") {
+				// get circle kyc status, should always be true
+				walletKycPassed = true
+			} else {
+				// unknown wallet provider
+				return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
+			}
 
 			// get status
-			if (bridgeKycPassed && bastionKycPassed) {
+			if (bridgeKycPassed && walletKycPassed) {
 				status = "ACTIVE"
-			} else if (!bastionKycPassed) {
+			} else if (!walletKycPassed) {
 				status = "INACTIVE"
 			} else if (bridgeCustomer.status == "not_started") {
 				status = "PENDING"
@@ -1114,9 +1129,9 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		if (kycInformationError) throw kycInformationError
 
 		// get user wallet information, only polygon for now
-		const { walletAddress: feeCollectionWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
-		const { walletAddress: prefundedWalletAddress } = await getBastionWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
-		const { walletAddress: gasStationWalletAddress } = await getBastionWallet(userId, Chain.ETHEREUM_MAINNET, "GAS_STATION")
+		const { address: feeCollectionWalletAddress } = await getUserWallet(userId, Chain.POLYGON_MAINNET, "FEE_COLLECTION")
+		const { address: prefundedWalletAddress } = await getUserWallet(userId, Chain.POLYGON_MAINNET, "PREFUNDED")
+		const { address: gasStationWalletAddress } = await getUserWallet(userId, Chain.ETHEREUM_MAINNET, "GAS_STATION")
 
 		const userInformation = {
 			legalFirstName: kycInformation.legal_first_name,
@@ -1137,7 +1152,6 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		}
 
 		return res.status(200).json({ status, user: userInformation, basicKycStatus })
-
 
 	} catch (error) {
 		createLog("user/getDeveloperUser", userId, error.message, null, res)
@@ -1275,7 +1289,7 @@ exports.getUserWalletBalance = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		// check is supported currency
 		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase();
-		if (!currencyContract) return res.status(400).json({ error: `Currency not supported for provided chain`})
+		if (!currencyContract && currency !== "gas") return res.status(400).json({ error: `Currency not supported for provided chain`})
 		const walletBalance = await getUserWalletBalance(userId, chain, currency, "INDIVIDUAL")
 		return res.status(200).json(walletBalance)
 

@@ -1,11 +1,16 @@
 const createAndFundBastionUser = require("../bastion/main/createAndFundBastionUser")
+const updateBastionDeveloperUser = require("../bastion/main/updateBastionDeveloperUser")
 const { createCircleWallet } = require("../circle/main/createCircleWallet")
+const { checkAndUpdateCircleWallet } = require("../circle/main/updateCircleWallet")
+const { Chain } = require("../common/blockchain")
 const createLog = require("../logger/supabaseLogger")
 const supabase = require("../supabaseClient")
 const { supabaseCall } = require("../supabaseWithRetry")
 const { CustomerStatus } = require("./common")
 const { ipCheck } = require("./createUser")
+const { getUserWallet } = require("./getUserWallet")
 const { getUserWalletStatus } = require("./getUserWalletStatus")
+
 
 // This function should only be used to create wallets for users if non have been created yet
 const updateUserWallet = async (userId, walletType="INDIVIDUAL") => {
@@ -45,4 +50,29 @@ const updateUserWallet = async (userId, walletType="INDIVIDUAL") => {
     }
 }
 
-module.exports = { updateUserWallet }
+const updateDeveloperUserWallet = async (userId, walletTypes=["FEE_COLLECTION", "PREFUNDED"]) => {
+    try {
+        // get user Ip address
+        const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase
+            .from('user_kyc')
+            .select('ip_address')
+            .eq('user_id', userId)
+                    .single()
+            )
+
+        if (userKycError) throw new Error(userKycError.message)
+
+        // create wallet based on ip address
+        const ipAddress = userKyc.ip_address
+        const {isIpAllowed} = await ipCheck(ipAddress);
+        const walletUpdateFunction = isIpAllowed ? updateBastionDeveloperUser : checkAndUpdateCircleWallet
+        await walletUpdateFunction(userId, walletTypes)
+    } catch (error) {
+        await createLog("user/updateDeveloperUserWallet", userId, error.message, error)
+    }
+}
+
+module.exports = { 
+    updateUserWallet,
+    updateDeveloperUserWallet
+ }

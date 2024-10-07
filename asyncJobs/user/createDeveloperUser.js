@@ -7,6 +7,8 @@ const { Chain } = require("../../src/util/common/blockchain");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const { regsiterFeeWallet } = require("../../src/util/smartContract/registerWallet/registerFeeWallet");
 const supabase = require("../../src/util/supabaseClient");
+const { createDeveloperUserWallet } = require("../../src/util/user/createUserWallet");
+const { getUserWallet } = require("../../src/util/user/getUserWallet");
 const { JobError, JobErrorType } = require("../error");
 
 const chainToRegister = [
@@ -31,7 +33,7 @@ const createDeveloperUserAsync = async(config) => {
     try{
         // Create customer objects for providers
         await Promise.all([
-            createBastionDeveloperUser(userId),
+            createDeveloperUserWallet(userId, ["FEE_COLLECTION", "PREFUNDED"]),
             // createBusinessBridgeCustomer(userId), // FIXME business user can not yet be created successfully use individual instead for now
             createIndividualBridgeCustomer(userId), // use individual for now
             createCheckbookUser(userId)
@@ -39,8 +41,8 @@ const createDeveloperUserAsync = async(config) => {
 
         // register fee wallet on payment processor contract
         await Promise.all(chainToRegister.map(async(chain) => {
-            const {walletAddress} = await getBastionWallet(userId, chain, "FEE_COLLECTION")
-            await regsiterFeeWallet(userId, walletAddress, chain)
+            const {address} = await getUserWallet(userId, chain, "FEE_COLLECTION")
+            await regsiterFeeWallet(userId, address, chain)
         }))
 
     }catch (error){
