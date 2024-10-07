@@ -3,6 +3,7 @@ const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { CustomerStatus } = require("./common");
 const { getRawUserObject } = require("./getRawUserObject");
+const { getUserWalletStatus } = require("./getUserWalletStatus");
 
 const BridgeKycStatusMap = {
     active: CustomerStatus.ACTIVE,
@@ -16,7 +17,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     if (userId){
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
+        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status)")
         .eq("profile_id", profileId)
         .not("user_kyc", "is", null)
         .eq("id", userId)
@@ -28,7 +29,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     else if (userType == "all"){
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
+        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status)")
         .eq("profile_id", profileId)
         .eq("is_developer", false)
         .not("user_kyc", "is", null)
@@ -41,7 +42,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     }else if (userType == "individual") {
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain)")
+        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed)")
         .eq("profile_id", profileId)
         .eq("is_developer", false)
         .not("user_kyc", "is", null)
@@ -55,7 +56,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     }else if (userType == "business"){
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), bastion_wallets (address, chain), ultimate_beneficial_owners (id, legal_first_name, legal_last_name, compliance_email, compliance_phone, tax_identification_number)")
+        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), ultimate_beneficial_owners (id, legal_first_name, legal_last_name, compliance_email, compliance_phone, tax_identification_number)")
         .eq("profile_id", profileId)
         .eq("is_developer", false)
         .not("user_kyc", "is", null)
@@ -71,8 +72,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     const result = await Promise.all(users.map(async(user) => {
         const name = user.user_kyc ? (user.user_type == "business" ? user.user_kyc.business_name : user.user_kyc.legal_first_name + " " + user.user_kyc.legal_last_name) : null
         const bridgeKycStatus = user.bridge_customers? BridgeKycStatusMap[user.bridge_customers.status] || CustomerStatus.INACTIVE : CustomerStatus.INACTIVE
-        const walletstatus = user.bastion_users && user.bastion_users.length > 0 ? (user.bastion_users[0].kyc_passed && user.bastion_users[0].jurisdiction_check_passed ? CustomerStatus.ACTIVE : CustomerStatus.INACTIVE) : CustomerStatus.INACTIVE
-        const EVMwalletAddress = user.bastion_wallets && user.bastion_wallets.length > 0 ? user.bastion_wallets.find((wallet) => wallet.chain == "POLYGON_MAINNET") : null
+        const walletstatus = await getUserWalletStatus(user.id)
         const userInfo = {
             userId: user.id,
             userType: user.user_type,
@@ -82,8 +82,8 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
             phone: user.user_kyc ? user.user_kyc.compliance_phone: null,
             createdAt: new Date(user.created_at),
             userKycStatus: bridgeKycStatus, // now only represent bridge, which has the most functionality
-            walletStatus: walletstatus, // only represent bastion now
-            walletAddress: await getAllUserWallets(user.id),
+            walletStatus: walletstatus.walletStatus,
+            walletAddress: walletstatus.walletAddress,
         }
         if (user.user_type == "business") {
             userInfo.ultimateBeneficialOwners = user.ultimate_beneficial_owners

@@ -650,7 +650,7 @@ exports.testGenCircleWalletSet = async(req, res) => {
             body: JSON.stringify({
                 "entitySecretCiphertext": generateCypherText(),
                 "idempotencyKey": v4(),
-                "name": "HIFI Dev Sandbox"
+                "name": "HIFI Dev Sandbox2"
             })
         }
         const response = await fetch(url, options)
@@ -676,9 +676,9 @@ exports.testGenCircleWallet = async(req, res) => {
             body: JSON.stringify({
                 "idempotencyKey": v4(),
                 "accountType": "EOA",
-                "blockchains": ["MATIC-AMOY"],
+                "blockchains": ["MATIC-AMOY", "ETH-SEPOLIA", "AVAX-FUJI", "SOL-DEVNET", "ARB-SEPOLIA"],
                 "walletSetId": process.env.CIRCLE_WALLET_SET_ID,
-                "name": "HIFI Dev Sandbox",
+                "metadata": [{name: "123", refId: "123"}],
                 "entitySecretCiphertext": generateCypherText(),
                 "count": 1,
             })

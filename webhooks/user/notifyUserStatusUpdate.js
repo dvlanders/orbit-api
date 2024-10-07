@@ -4,6 +4,8 @@ const getCheckbookUser = require("../../src/util/checkbook/endpoint/getCheckbook
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
+const { CustomerStatus } = require("../../src/util/user/common");
+const { getUserWalletStatus } = require("../../src/util/user/getUserWalletStatus");
 const { sendMessage } = require("../sendWebhookMessage");
 const { webhookEventActionType, webhookEventType } = require("../webhookConfig");
 
@@ -18,7 +20,7 @@ const getUserStatus = async (userId) => {
 	// base response
 	let getHifiUserResponse = {
 		wallet: {
-			walletStatus: Status.INACTIVE,
+			walletStatus: CustomerStatus.PENDING,
 			actionNeeded: {
 				actions: [],
 				fieldsToResubmit: [],
@@ -27,7 +29,7 @@ const getUserStatus = async (userId) => {
 			walletAddress: {}
 		},
 		user_kyc: {
-			status: Status.INACTIVE, // represent bridge
+			status: CustomerStatus.PENDING, // represent bridge
 			actionNeeded: {
 				actions: [],
 				fieldsToResubmit: [],
@@ -37,14 +39,14 @@ const getUserStatus = async (userId) => {
 		ramps: {
 			usdAch: {
 				onRamp: {
-					status: Status.INACTIVE, // represent bridge
+					status: CustomerStatus.PENDING, // represent bridge
 					actionNeeded: {
 						actions: [],
 						fieldsToResubmit: [],
 					},
 					message: '',
 					achPull: {
-						achPullStatus: Status.INACTIVE, //represent bridge + checkbook
+						achPullStatus: CustomerStatus.PENDING, //represent bridge + checkbook
 						actionNeeded: {
 							actions: [],
 							fieldsToResubmit: [],
@@ -52,7 +54,7 @@ const getUserStatus = async (userId) => {
 					},
 				},
 				offRamp: {
-					status: Status.INACTIVE, // represent bridge
+					status: CustomerStatus.PENDING, // represent bridge
 					actionNeeded: {
 						actions: [],
 						fieldsToResubmit: [],
@@ -62,7 +64,7 @@ const getUserStatus = async (userId) => {
 			},
 			euroSepa: {
 				onRamp: {
-					status: Status.INACTIVE, // represent bridge
+					status: CustomerStatus.INACTIVE, // represent bridge
 					actionNeeded: {
 						actions: [],
 						fieldsToResubmit: [],
@@ -70,7 +72,7 @@ const getUserStatus = async (userId) => {
 					message: 'SEPA onRamp will be available in near future',
 				},
 				offRamp: {
-					status: Status.INACTIVE, // represent bridge
+					status: CustomerStatus.PENDING, // represent bridge
 					actionNeeded: {
 						actions: [],
 						fieldsToResubmit: [],
@@ -83,23 +85,23 @@ const getUserStatus = async (userId) => {
 			id: userId
 		}
 	}
-
-
-	const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-		getBastionUser(userId),
+	
+	// get status
+	const [walletStatus, bridgeResult, checkbookResult] = await Promise.all([
+		getUserWalletStatus(userId),
 		getBridgeCustomer(userId),
 		getCheckbookUser(userId)
 	])
 
 	// Bastion status
 	const wallet = {
-		walletStatus: bastionResult.walletStatus,
-		walletMessage: bastionResult.message,
+		walletStatus: walletStatus.walletStatus,
+		walletMessage: walletStatus.message,
 		actionNeeded: {
-			actions: [...bastionResult.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
-			fieldsToResubmit: [...bastionResult.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+			actions: [...walletStatus.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
+			fieldsToResubmit: [...walletStatus.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
 		},
-		walletAddress: bastionResult.walletAddress
+		walletAddress: walletStatus.walletAddress
 	}
 	getHifiUserResponse.wallet = wallet
 
@@ -120,7 +122,8 @@ const getUserStatus = async (userId) => {
 		actionNeeded: {
 			actions: bridgeResult.customerStatus.actions,
 			fieldsToResubmit: bridgeResult.customerStatus.fields,
-		}
+		},
+		message: bridgeResult.message
 	}
 	getHifiUserResponse.user_kyc = userKyc
 	// usRamp
@@ -128,12 +131,12 @@ const getUserStatus = async (userId) => {
 		onRamp: {
 			status: bridgeResult.usRamp.status,
 			actionNeeded: {
-				actions: bridgeResult.customerStatus.actions,
+				actions: bridgeResult.usRamp.actions,
 				fieldsToResubmit: bridgeResult.customerStatus.fields
 			},
 			message: bridgeResult.message,
 			achPull: {
-				achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
+				achPullStatus: checkbookResult.usOnRamp.status == CustomerStatus.INACTIVE || checkbookResult.usOnRamp.status == CustomerStatus.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
 				actionNeeded: {
 					actions: [...bridgeResult.usRamp.actions, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
 					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...getHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
@@ -152,7 +155,7 @@ const getUserStatus = async (userId) => {
 	// euRamp
 	const euroSepa = {
 		onRamp: {
-			status: Status.INACTIVE,
+			status: CustomerStatus.INACTIVE,
 			actionNeeded: {
 				actions: [],
 				fieldsToResubmit: [],
@@ -170,8 +173,17 @@ const getUserStatus = async (userId) => {
 	}
 	getHifiUserResponse.ramps.euroSepa = euroSepa
 
+	// determine the status code to return to the client -- copied from createHifiUser, make sure this logic still holds true
+	let status
+	if (checkbookResult.status === 200 && bridgeResult.status === 200 && walletStatus.status === 200) {
+		status = 200
+	} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || walletStatus.status == 500) {
+		status = 500;
+	} else {
+		status = 400;
+	}
 
-	return getHifiUserResponse
+	return {status, getHifiUserResponse}
 }
 
 const notifyUserStatusUpdate = async (userId) => {
@@ -192,11 +204,11 @@ const notifyUserStatusUpdate = async (userId) => {
 
 	if (user.is_developer) return
 
-	const userStatus = await getUserStatus(userId)
+	const { status, getHifiUserResponse } = await getUserStatus(userId)
 	const message = {
 		eventAction: webhookEventActionType.UPDATE,
 		eventType: webhookEventType["USER.STATUS"],
-		data: userStatus
+		data: getHifiUserResponse
 	}
 
 	await sendMessage(user.profile_id, message)

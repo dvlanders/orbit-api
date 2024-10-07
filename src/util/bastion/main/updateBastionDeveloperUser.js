@@ -1,7 +1,6 @@
 const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
-const createAndFundBastionUser = require("./createAndFundBastionUser");
 const { createBastionDeveloperWallet } = require("./createBastionUserForDeveloperUser");
 const getBastionUser = require("./getBastionUser");
 const submitBastionKyc = require("./submitBastionKyc");

@@ -260,11 +260,9 @@ const informationUploadForCreateUser = async (profileId, fields) => {
     if (!isValidState(fields.stateProvinceRegion))
         throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `${fields.stateProvinceRegion} is not a supported state for user creation. See here for a list of supported regions: https://docs.hifibridge.com/docs/supported-networks-chains-tokens` });
 
-	// check ip address
-    if (!fields.ipAddress)
-        throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: 'ipAdress is a required field.' });
-	const {isIpAllowed, message} = await ipCheck(fields.ipAddress);
-	if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}` });
+	// // check ip address
+	const {ipValid, message} = await ipCheck(fields.ipAddress);
+	if (!ipValid) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}`, missingFields: [], invalidFields: ["ipAddress"] });
 
 	// check signedAgreementId only for prod
 	if (process.env.NODE_ENV == "production") {
@@ -530,11 +528,11 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 const informationUploadForUpdateUser = async (userId, fields) => {
 
 	// check ip address
-	if (fields.ipAddress) {
-		const {isIpAllowed, message} = await ipCheck(fields.ipAddress)
-		if (!isIpAllowed) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}` })
+	if (fields.ipAddress) {		
+		const {ipValid, message} = await ipCheck(fields.ipAddress);
+		if (!ipValid) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}`, missingFields: [], invalidFields: ["ipAddress"] });
 	}
-
+	
 	let acceptedFields;
 	if (fields.userType === "business") {
 		acceptedFields = businessAcceptedFields;
@@ -617,7 +615,7 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 const ipCheck = async (ip) => {
     // check if ip is valid IPv4.
     if (!isValidIPv4(ip))
-        return {ipAllowed: false, message: "please make sure IP address provided is a public IPv4."}
+        return {ipAllowed: false, ipValid: false, message: "please make sure IP address provided is a public IPv4."}
 
 	// request options
 	const options = {
@@ -631,33 +629,33 @@ const ipCheck = async (ip) => {
 	const locationData = await locationRes.json();
 	if (locationRes.ok) {
 		if (!locationData.traits) {
-			return {ipAllowed: false, message: "unable to determine the geographic location from the provided IP address. "}
+			return {ipAllowed: false, ipValid: false, message: "unable to determine the geographic location from the provided IP address. "}
 		}
 		if (sanctionedCountries.includes(locationData.country.iso_code)) {
-			return {ipAllowed: false, message: "country information could not be retrieved for the provided IP address."}
+			return {ipAllowed: false, ipValid: false, message: "country information could not be retrieved for the provided IP address."}
 		}
 		if (locationData.country.iso_code == "US") {
             if (!locationData.subdivisions || !isArray(locationData.subdivisions))
-                return {ipAllowed: false, message: "state/province information could not be retrieved for the provided IP address."}
+                return {ipAllowed: false, ipValid: false, message: "state/province information could not be retrieved for the provided IP address."}
             else if (!allowedUsState.includes(locationData.subdivisions[0]['iso_code']))
-                return {ipAllowed: false, message: "please make sure provided IP address is not from unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)"}
+                return {ipAllowed: false, ipValid: true, message: "please make sure provided IP address is not from unsupported area. (https://docs.hifibridge.com/reference/supported-regionscountries)"}
         }
 	} else if (locationRes.status === 401) {
 		console.error(locationData)
 		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData.error)
         
         if (locationData.code === "IP_ADDRESS_RESERVED")
-            return {ipAllowed: false, message: "the provided IP address is a reserved (private, multicast, etc)."}
+            return {ipAllowed: false, ipValid: false, message: "the provided IP address is a reserved (private, multicast, etc)."}
 
-        return {ipAllowed: false, message: "the provided IP address is invalid."}
+        return {ipAllowed: false, ipValid: false, message: "the provided IP address is invalid."}
 		
 	} else {
 		console.error(locationData)
 		await createLog("user/util/ipCheck", null, "failed to get ip information", locationData.error)
-        return {ipAllowed: false, message: "the provided IP address is invalid."}
+        return {ipAllowed: false, ipValid: false, message: "the provided IP address is invalid."}
     }
 
-	return {isIpAllowed: true, message: ""}
+	return {isIpAllowed: true, ipValid: true, message: ""}
 };
 
 
