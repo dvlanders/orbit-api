@@ -48,6 +48,10 @@ const isUUID = (uuid) => {
 	return regex.test(uuid);
 }
 
+const isValidRoutingNumber = (routingNumber) => {
+    return /^[0-9]{9}$/.test(routingNumber);
+}
+
 const isValidISODateFormat = (dateString) => {
 	const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
 	const date = new Date(dateString);
@@ -58,5 +62,6 @@ const isValidISODateFormat = (dateString) => {
 module.exports = {
 	isUUID,
 	isValidISODateFormat,
-	fieldsValidation
+	fieldsValidation,
+    isValidRoutingNumber
 }

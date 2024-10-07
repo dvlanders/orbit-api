@@ -63,7 +63,10 @@
           "enum": [
             "usd",
             "eur",
-            "brl"
+            "brl",
+            "mxn",
+            "ars",
+            "cop"
           ]
         },
         "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
@@ -91,7 +94,10 @@
             "ach",
             "wire",
             "sepa",
-            "pix"
+            "pix",
+            "spei_bitso",
+            "transfers_bitso",
+            "ach_cop_bitso"
           ]
         },
         "required": false
@@ -250,7 +256,10 @@
           "enum": [
             "usd",
             "eur",
-            "brl"
+            "brl",
+            "mxn",
+            "ars",
+            "cop"
           ]
         },
         "required": true
@@ -272,7 +281,8 @@
           "enum": [
             "crypto-to-crypto",
             "fiat-to-crypto",
-            "crypto-to-fiat"
+            "crypto-to-fiat",
+            "fiat-to-fiat"
           ]
         },
         "description": "Transfer type",
@@ -286,7 +296,8 @@
           "enum": [
             "crypto-to-crypto",
             "fiat-to-crypto",
-            "crypto-to-fiat"
+            "crypto-to-fiat",
+            "fiat-to-fiat"
           ]
         },
         "description": "Transfer type",
@@ -408,53 +419,53 @@
           }
         }
       },
-      "BrlOfframpReceiverCreateBody": {
+      "SAOfframpReceiverCreateBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateIndividualLightKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateIndividualLightKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateIndividualStandardKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateIndividualStandardKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateBusinessLightKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateBusinessLightKYBAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateBusinessStandardKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateBusinessStandardKYBAccount"
                 }
               ]
             }
           }
         }
       },
-      "BrlOfframpReceiverUpdateBody": {
+      "SAOfframpReceiverUpdateBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateIndividualLightKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateIndividualLightKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateIndividualStandardKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateIndividualStandardKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateBusinessLightKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateBusinessLightKYBAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateBusinessStandardKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateBusinessStandardKYBAccount"
                 }
               ]
             }
           }
         }
       },
-      "BrlOfframpAccountBody": {
+      "SAOfframpAccountBody": {
         "required": true,
         "content": {
           "application/json": {
@@ -468,6 +479,15 @@
                 },
                 {
                   "$ref": "#/components/schemas/BrlOfframpWireAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/CopOfframpAchCopBitsoAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/MxnOfframpSpeiBitsoAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/ArsOfframpTransferBitsoAccount"
                 }
               ]
             }
@@ -504,6 +524,15 @@
                 },
                 {
                   "$ref": "#/components/schemas/SWIFTCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/SPEI_BITSOCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/TRANSFERS_BITSOCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/ACH_COP_BITSOCryptoToFiatTransfer"
                 }
               ]
             }
@@ -626,32 +655,32 @@
           }
         }
       },
-      "BrlOfframpReceiverCreateResponse": {
+      "SAOfframpReceiverCreateResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverCreateObject"
+              "$ref": "#/components/schemas/SAOfframpReceiverCreateObject"
             }
           }
         }
       },
-      "BrlOfframpReceiverUpdateResponse": {
+      "SAOfframpReceiverUpdateResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverUpdateObject"
+              "$ref": "#/components/schemas/SAOfframpReceiverUpdateObject"
             }
           }
         }
       },
-      "BrlOfframpReceiverGetResponse": {
+      "SAOfframpReceiverGetResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverGetObject"
+              "$ref": "#/components/schemas/SAOfframpReceiverGetObject"
             }
           }
         }
@@ -662,6 +691,36 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/BrlOfframpPixAccountObject"
+            }
+          }
+        }
+      },
+      "CopOfframpAchCopBitsoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CopOfframpAchCopBitsoAccountObject"
+            }
+          }
+        }
+      },
+      "MxnOfframpSpeiBitsoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MxnOfframpSpeiBitsoAccountObject"
+            }
+          }
+        }
+      },
+      "ArsOfframpTransferBitsoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ArsOfframpTransferBitsoAccountObject"
             }
           }
         }
@@ -1414,9 +1473,9 @@
           "ibanCountryCode"
         ]
       },
-      "BrlReceiverCreateIndividualLightKYCAccount": {
+      "SAReceiverCreateIndividualLightKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Light KYC Account",
+        "title": "Receiver Individual Light KYC Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1460,9 +1519,9 @@
           "country"
         ]
       },
-      "BrlReceiverCreateIndividualStandardKYCAccount": {
+      "SAReceiverCreateIndividualStandardKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Standard KYC Account",
+        "title": "Receiver Individual Standard KYC Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1493,7 +1552,7 @@
           },
           "country": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\". `country` should match `id_doc_country`."
           },
           "tax_id": {
             "type": "string"
@@ -1521,26 +1580,37 @@
           },
           "id_doc_country": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\". `id_doc_country` should match `country`."
           },
           "id_doc_type": {
             "type": "string",
             "enum": [
-              "passport",
-              "id_card"
+              "PASSPORT",
+              "ID_CARD",
+              "DRIVERS"
             ]
           },
           "id_doc_front_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "id_doc_back_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "proof_of_address_doc_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "UTILITY_BILL",
+              "BANK_STATEMENT",
+              "RENTAL_AGREEMENT",
+              "TAX_DOCUMENT",
+              "GOVERNMENT_CORRESPONDENCE"
+            ]
           },
           "proof_of_address_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           }
         },
         "required": [
@@ -1562,9 +1632,9 @@
           "id_doc_front_file"
         ]
       },
-      "BrlReceiverCreateBusinessLightKYBAccount": {
+      "SAReceiverCreateBusinessLightKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Light KYB Account",
+        "title": "Receiver Business Light KYB Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1608,9 +1678,9 @@
           "country"
         ]
       },
-      "BrlReceiverCreateBusinessStandardKYBAccount": {
+      "SAReceiverCreateBusinessStandardKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Standard KYB Account",
+        "title": "Receiver Business Standard KYB Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1665,10 +1735,12 @@
             "type": "string"
           },
           "incorporation_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "proof_of_ownership_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "owners": {
             "type": "array",
@@ -1695,9 +1767,9 @@
           "owners"
         ]
       },
-      "BrlReceiverUpdateIndividualLightKYCAccount": {
+      "SAReceiverUpdateIndividualLightKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Light KYC Account",
+        "title": "Receiver Individual Light KYC Account",
         "properties": {
           "first_name": {
             "type": "string"
@@ -1720,9 +1792,9 @@
           }
         }
       },
-      "BrlReceiverUpdateIndividualStandardKYCAccount": {
+      "SAReceiverUpdateIndividualStandardKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Standard KYC Account",
+        "title": "Receiver Individual Standard KYC Account",
         "properties": {
           "first_name": {
             "type": "string"
@@ -1792,9 +1864,9 @@
           }
         }
       },
-      "BrlReceiverUpdateBusinessLightKYBAccount": {
+      "SAReceiverUpdateBusinessLightKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Light KYB Account",
+        "title": "Receiver Business Light KYB Account",
         "properties": {
           "legal_name": {
             "type": "string"
@@ -1817,9 +1889,9 @@
           }
         }
       },
-      "BrlReceiverUpdateBusinessStandardKYBAccount": {
+      "SAReceiverUpdateBusinessStandardKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Standard KYB Account",
+        "title": "Receiver Business Standard KYB Account",
         "properties": {
           "legal_name": {
             "type": "string"
@@ -1916,21 +1988,32 @@
           "id_doc_type": {
             "type": "string",
             "enum": [
-              "passport",
-              "id_card"
+              "PASSPORT",
+              "ID_CARD",
+              "DRIVERS"
             ]
           },
           "id_doc_front_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "id_doc_back_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "proof_of_address_doc_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "UTILITY_BILL",
+              "BANK_STATEMENT",
+              "RENTAL_AGREEMENT",
+              "TAX_DOCUMENT",
+              "GOVERNMENT_CORRESPONDENCE"
+            ]
           },
           "proof_of_address_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           }
         },
         "required": [
@@ -1954,7 +2037,7 @@
       },
       "BrlOfframpPixAccount": {
         "type": "object",
-        "title": "BRL Offramp Pix Account",
+        "title": "BRL Offramp PIX Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1967,17 +2050,24 @@
           },
           "pix_key": {
             "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "brl"
+            ]
           }
         },
         "required": [
           "type",
           "name",
-          "pix_key"
+          "pix_key",
+          "currency"
         ]
       },
       "BrlOfframpAchAccount": {
         "type": "object",
-        "title": "BRL Offramp Ach Account",
+        "title": "BRL Offramp ACH Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2001,7 +2091,17 @@
             "type": "string"
           },
           "account_class": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "individual",
+              "business"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "brl"
+            ]
           }
         },
         "required": [
@@ -2011,12 +2111,13 @@
           "routing_number",
           "account_number",
           "account_type",
-          "account_class"
+          "account_class",
+          "currency"
         ]
       },
       "BrlOfframpWireAccount": {
         "type": "object",
-        "title": "BRL Offramp Wire Account",
+        "title": "BRL Offramp WIRE Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2050,10 +2151,23 @@
           },
           "country": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\".",
+            "enum": [
+              "US",
+              "BR",
+              "MX",
+              "CO",
+              "AR"
+            ]
           },
           "postal_code": {
             "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "brl"
+            ]
           }
         },
         "required": [
@@ -2067,7 +2181,166 @@
           "city",
           "state_province_region",
           "country",
-          "postal_code"
+          "postal_code",
+          "currency"
+        ]
+      },
+      "CopOfframpAchCopBitsoAccount": {
+        "type": "object",
+        "title": "COP Offramp ACH_COP_BITSO Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ach_cop_bitso"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "account_type": {
+            "type": "string",
+            "enum": [
+              "checking",
+              "savings"
+            ]
+          },
+          "ach_cop_beneficiary_first_name": {
+            "type": "string"
+          },
+          "ach_cop_beneficiary_last_name": {
+            "type": "string"
+          },
+          "ach_cop_document_id": {
+            "type": "string"
+          },
+          "ach_cop_document_type": {
+            "type": "string",
+            "enum": [
+              "CC",
+              "CE",
+              "NIT",
+              "PASS",
+              "PEP"
+            ]
+          },
+          "ach_cop_email": {
+            "type": "string"
+          },
+          "ach_cop_bank_code": {
+            "type": "string"
+          },
+          "ach_cop_bank_account": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cop"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "account_type",
+          "ach_cop_beneficiary_first_name",
+          "ach_cop_beneficiary_last_name",
+          "ach_cop_document_id",
+          "ach_cop_document_type",
+          "ach_cop_email",
+          "ach_cop_bank_code",
+          "ach_cop_bank_account",
+          "currency"
+        ]
+      },
+      "ArsOfframpTransferBitsoAccount": {
+        "type": "object",
+        "title": "ARS Offramp TRANSFERS_BITSO Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "transfers_bitso"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "transfers_type": {
+            "type": "string",
+            "enum": [
+              "CVU",
+              "CBU",
+              "ALIAS"
+            ]
+          },
+          "transfers_account": {
+            "type": "string"
+          },
+          "beneficiary_name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "ars"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "transfers_type",
+          "transfers_account",
+          "beneficiary_name",
+          "currency"
+        ]
+      },
+      "MxnOfframpSpeiBitsoAccount": {
+        "type": "object",
+        "title": "MXN Offramp SPEI_BITSO Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "spei_bitso"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "spei_protocol": {
+            "type": "string",
+            "enum": [
+              "clabe",
+              "debitcard",
+              "phonenum"
+            ]
+          },
+          "spei_institution_code": {
+            "type": "string"
+          },
+          "spei_clabe": {
+            "type": "string"
+          },
+          "beneficiary_name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "mxn"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "spei_protocol",
+          "spei_institution_code",
+          "beneficiary_name",
+          "currency"
         ]
       },
       "UsdOnrampAchAccountObject": {
@@ -2253,7 +2526,7 @@
           "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
         }
       },
-      "BrlOfframpReceiverCreateObject": {
+      "SAOfframpReceiverCreateObject": {
         "type": "object",
         "properties": {
           "id": {
@@ -2272,7 +2545,7 @@
           "kyc_type": "light"
         }
       },
-      "BrlOfframpReceiverUpdateObject": {
+      "SAOfframpReceiverUpdateObject": {
         "type": "object",
         "properties": {
           "success": {
@@ -2287,7 +2560,7 @@
           "id": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
         }
       },
-      "BrlOfframpReceiverGetObject": {
+      "SAOfframpReceiverGetObject": {
         "type": "object",
         "properties": {
           "count": {
@@ -2306,6 +2579,84 @@
         }
       },
       "BrlOfframpPixAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+        }
+      },
+      "CopOfframpAchCopBitsoAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+        }
+      },
+      "MxnOfframpSpeiBitsoAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+        }
+      },
+      "ArsOfframpTransferBitsoAccountObject": {
         "type": "object",
         "properties": {
           "status": {
@@ -2720,7 +3071,7 @@
       },
       "ACHCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to ACH",
+        "title": "Crypto to USD (ACH)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2761,9 +3112,7 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
-              "brl"
+              "usd"
             ]
           },
           "sameDayAch": {
@@ -2802,7 +3151,7 @@
       },
       "SEPACryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to SEPA",
+        "title": "Crypto to EUR (SEPA)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2843,9 +3192,7 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
-              "brl"
+              "eur"
             ]
           },
           "feeType": {
@@ -2880,7 +3227,7 @@
       },
       "WIRECryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to WIRE",
+        "title": "Crypto to Fiat (WIRE)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2923,7 +3270,10 @@
             "enum": [
               "usd",
               "eur",
-              "brl"
+              "brl",
+              "mxn",
+              "ars",
+              "cop"
             ]
           },
           "feeType": {
@@ -2958,7 +3308,7 @@
       },
       "PIXCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to PIX",
+        "title": "Crypto to BRL (PIX)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2999,9 +3349,223 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
               "brl"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "SPEI_BITSOCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to MXN (SPEI BITSO)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "mxn"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "TRANSFERS_BITSOCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to ARS (TRANSFERS BITSO)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ars"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "ACH_COP_BITSOCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to COP (ACH COP BITSO)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "cop"
             ]
           },
           "feeType": {
@@ -3032,7 +3596,7 @@
       },
       "SWIFTCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to SWIFT",
+        "title": "Crypto to Fiat (SWIFT)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3075,7 +3639,10 @@
             "enum": [
               "usd",
               "eur",
-              "brl"
+              "brl",
+              "mxn",
+              "ars",
+              "cop"
             ]
           },
           "swiftReference": {
@@ -5376,6 +5943,22 @@
             "type": "string",
             "description": "Must be supplied for countries that use postal codes."
           },
+          "hasOwnership": {
+            "type": "boolean",
+            "description": "True if the person has at least 25% ownership of the business."
+          },
+          "hasControl": {
+            "type": "boolean",
+            "description": "True if the person has a significant responsibility to control, manage, or direct the activities of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "isSigner": {
+            "type": "boolean",
+            "description": "True if the person can authorize transactions on behalf of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "relationshipEstablishedAt": {
+            "type": "string",
+            "description": "The date that the ultimateBeneficialOwners first became an owner, control person, or signer for the business in format yyyy-mm-dd."
+          },
           "govIdFront": {
             "type": "string",
             "description": "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
@@ -5402,7 +5985,11 @@
           "postalCode",
           "stateProvinceRegion",
           "govIdFront",
-          "proofOfResidency"
+          "proofOfResidency",
+          "hasOwnership",
+          "hasControl",
+          "isSigner",
+          "relationshipEstablishedAt"
         ]
       },
       "ToSLink": {
@@ -6348,10 +6935,10 @@
         }
       }
     },
-    "/account/brl/receiver": {
+    "/account/sa/receiver": {
       "post": {
-        "summary": "Create BRL Offramp Receiver",
-        "description": "Create a Receiver for Brazilian Real (BRL) Offramp. This should be called prior to \nadding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.\n",
+        "summary": "Create South America Offramp Receiver",
+        "description": "Create a Receiver for South America Offramp. This should be called prior to \nadding any South America offramp bank account since each South America offramp bank account is tied to a receiver.\n\n| Limit Type               | Individual Light KYC | Business Light KYB | Individual Standard KYC | Business Standard KYB |\n|--------------------------|----------------------|--------------------|-------------------------|-----------------------|\n| Per Transaction Limit    | $1,000               | $3,000             | $10,000                 | $30,000               |\n| Daily Limit              | $3,000               | $6,000             | $50,000                 | $100,000              |\n| Monthly Limit            | $10,000              | $15,000            | $100,000                | $250,000              |\n",
         "tags": [
           "Account"
         ],
@@ -6361,11 +6948,11 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpReceiverCreateBody"
+          "$ref": "#/components/requestBodies/SAOfframpReceiverCreateBody"
         },
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverCreateResponse"
+            "$ref": "#/components/responses/SAOfframpReceiverCreateResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -6379,8 +6966,8 @@
         }
       },
       "get": {
-        "summary": "Get BRL Offramp Receiver",
-        "description": "Get an existing BRL Offramp Receiver detail.",
+        "summary": "Get South America Offramp Receiver",
+        "description": "Get an existing South America Offramp Receiver detail.",
         "tags": [
           "Account"
         ],
@@ -6394,7 +6981,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverGetResponse"
+            "$ref": "#/components/responses/SAOfframpReceiverGetResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -6408,8 +6995,8 @@
         }
       },
       "put": {
-        "summary": "Update BRL Offramp Receiver",
-        "description": "Update an existing BRL Offramp Receiver detail.",
+        "summary": "Update South America Offramp Receiver",
+        "description": "Update an existing South America Offramp Receiver detail.",
         "tags": [
           "Account"
         ],
@@ -6422,11 +7009,11 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpReceiverUpdateBody"
+          "$ref": "#/components/requestBodies/SAOfframpReceiverUpdateBody"
         },
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverUpdateResponse"
+            "$ref": "#/components/responses/SAOfframpReceiverUpdateResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -6440,10 +7027,10 @@
         }
       }
     },
-    "/account/brl/offramp": {
+    "/account/sa/offramp": {
       "post": {
-        "summary": "Add BRL Offramp Bank Account (PIX)",
-        "description": "Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create BRL Offramp Receiver` endpoint.\n",
+        "summary": "Add a South America Offramp Bank Account",
+        "description": "Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.\n\n**We currently support Brazil (BRL), Argentina (ARS), Colombia (COP), and Mexico (MXN) offramp bank accounts.**\n",
         "tags": [
           "Account"
         ],
@@ -6456,7 +7043,7 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpAccountBody"
+          "$ref": "#/components/requestBodies/SAOfframpAccountBody"
         },
         "responses": {
           "200": {
@@ -6670,7 +7257,7 @@
     "/transfer/crypto-to-fiat": {
       "post": {
         "summary": "Convert Stablecoin to Fiat",
-        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * BRL offramp transfer\n",
+        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * South America offramp transfers\n",
         "tags": [
           "Transfer"
         ],

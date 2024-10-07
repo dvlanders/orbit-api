@@ -25,6 +25,7 @@ const { createQuote } = require("../../../blindpay/endpoint/createQuote");
 const fetchBlindpayCryptoToFiatTransferRecord = require("./fetchBlindpayCryptoToFiatTransferRecord");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const createPaymentQuote = async (config) => {
     const {recordId, blindpayAccountId, chain, amount, sourceUserId, contractAddress, bastionRequestId} = config;
@@ -113,9 +114,12 @@ const acceptPaymentQuote = async (config) => {
 }
 
 const initTransferData = async (config) => {
-    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId } = config
+    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId, accountInfo } = config
 
 	const contractAddress = getBlindpayContractAddress(chain, sourceCurrency)
+
+	// get billing tags
+	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
 
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -136,7 +140,9 @@ const initTransferData = async (config) => {
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
-			bastion_user_id: sourceBastionUserId
+			bastion_user_id: sourceBastionUserId,
+			billing_tags_success: billingTags.success,
+			billing_tags_failed: billingTags.failed,
 		})
 		.eq("request_id", requestId)
 		.select()

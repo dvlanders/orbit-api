@@ -41,10 +41,10 @@ const deductBalance = async (profileId, feeId, amount) => {
     
 }
 
-const topupBalance = async (profileId, amount, topupId) => {
+const topupBalance = async (profileId, amount, topupId, stripe_invoice_pdf) => {
 
-    console.log("topupBalance", profileId, amount, topupId)
-    const { data, error } = await supabase.rpc('balance_topup', { profile_id_arg: profileId, amount_arg: amount, topup_id_arg: topupId });
+    console.log("topupBalance", profileId, amount, topupId, stripe_invoice_pdf)
+    const { data, error } = await supabase.rpc('balance_topup', { profile_id_arg: profileId, amount_arg: amount, topup_id_arg: topupId, stripe_invoice_pdf_arg: stripe_invoice_pdf });
     if(error){
         console.log(error)
         throw error;
@@ -114,6 +114,18 @@ const getBalanceTopupsHistory = async (profileId, createdAfter=new Date("1900-01
     return convertKeysToCamelCase(data);
 }
 
+const checkBalanceDeductChangeExists = async (feeId) => {
+
+    const { data, error } = await supabaseCall(() => supabase
+        .from("balance_change_log")
+        .select()
+        .eq("fee_id", feeId)
+        .maybeSingle());
+
+    if(error) throw error;
+    return !!data;
+
+}
 
 module.exports = {
     addBaseBalanceRecord,
@@ -123,5 +135,6 @@ module.exports = {
     getTotalBalanceTopups,
     getBalanceTopupsHistory,
     insertBalanceTopupRecord,
-    updateBalanceTopupRecord
+    updateBalanceTopupRecord,
+    checkBalanceDeductChangeExists
 }

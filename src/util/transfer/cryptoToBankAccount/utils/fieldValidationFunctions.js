@@ -1,10 +1,21 @@
+const { isValidMessage } = require("../../../common/filedValidationCheckFunctions");
+
 const validatePaymentRailParams = (paymentRail, sameDayAch) => {
 	return paymentRail == "ach" || !sameDayAch
 }
 
 const validateBridgeTransferParams = async (config) => {
-	const { amount, feeType, feeValue, paymentRail, sameDayAch } = config;
+	const { amount, feeType, feeValue, paymentRail, sameDayAch, wireMessage } = config;
 	const validationRes = { invalidFieldsAndMessages: [], valid: true };
+
+	// check if wire message is valid
+	if (wireMessage && !isValidMessage(wireMessage, 4, 35)) {
+		validationRes.invalidFieldsAndMessages.push({
+			invalidFields: ["wireMessage"],
+			errorMessage: "wireMessage should not exceed 4 lines, and each line should not exceed 35 characters.",
+		});
+		validationRes.valid = false;
+	}
 
 	if (!validatePaymentRailParams(paymentRail, sameDayAch)) {
 		validationRes.invalidFieldsAndMessages.push({
@@ -85,34 +96,8 @@ const validateBlindPayTransferParams = async (config) => {
 	return validationRes;
 };
 
-const validateYellowCardTransferParams = async (config) => {
-	const { amount, feeType, feeValue, paymentRail, sameDayAch } = config;
-	const validationRes = { invalidFieldsAndMessages: [], valid: true };
-
-
-	if (amount < 1 || amount > 1000000) {
-		validationRes.invalidFieldsAndMessages.push({
-			invalidFields: ["amount"],
-			errorMessage:
-				"Transfer amount must be between 1 and 1000000.",
-		});
-		validationRes.valid = false;
-	}
-	if (feeType || feeValue > 0) {
-		validationRes.invalidFieldsAndMessages.push({
-			invalidFields: ["feeType", "feeValue"],
-			errorMessage:
-				"Fee collection feature is not yet available for this route",
-		});
-		validationRes.valid = false;
-	}
-
-	return validationRes;
-};
-
 module.exports = {
 	validateBridgeTransferParams,
 	validateBlindPayTransferParams,
 	validateReapTransferParams,
-	validateYellowCardTransferParams,
 };

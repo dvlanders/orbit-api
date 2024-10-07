@@ -101,6 +101,21 @@ const isValidAmount = (amount, min=0, max=Infinity) => {
     return (typeof amount === "number" && amount >= min && amount <= max) || (typeof amount === "string" && !isNaN(amount) && Number(amount) >= min && Number(amount) <= max)
 }
 
+const isValidMessage = (message, maxLines=Infinity, maxLengthPerLine=Infinity) => {
+    const lines = message.split('\n');
+    if (lines.length > maxLines) {
+        return false;
+    }
+
+    for (const line of lines) {
+        if (line.length > maxLengthPerLine) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 module.exports = {
     isValidDate,
     isValidEmail,
@@ -111,5 +126,6 @@ module.exports = {
     isValidIPv4,
     isInRange,
     isHIFISupportedChain,
-    isValidAmount
+    isValidAmount,
+    isValidMessage
 }

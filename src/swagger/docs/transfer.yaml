@@ -41,7 +41,7 @@
       * For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.
       
       Quote-based transfers:
-        * BRL offramp transfer
+        * South America offramp transfers
 
     tags:
       - Transfer

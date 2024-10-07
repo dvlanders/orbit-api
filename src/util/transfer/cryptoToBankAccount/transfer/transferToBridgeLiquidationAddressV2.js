@@ -29,12 +29,13 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference, accountInfo } = config
 
 
 
@@ -42,6 +43,9 @@ const initTransferData = async (config) => {
 	const conversionRate = await getBridgeConversionRate(sourceCurrency, destinationCurrency, profileId)
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
+
+	// get billing tags
+	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
 
 	//insert the initial record
 	let { data: record, error: recordError } = await supabase
@@ -69,6 +73,8 @@ const initTransferData = async (config) => {
 			sepa_reference: sepaReference,
 			wire_message: wireMessage,
 			swift_reference: swiftReference,
+			billing_tags_success: billingTags.success,
+			billing_tags_failed: billingTags.failed,
 		})
 		.eq("request_id", requestId)
 		.select()
@@ -269,6 +275,24 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		destination.ach_reference = initialTransferRecord.ach_reference
 	}
 
+	// this is for sandbox simulation
+	if (process.env.NODE_ENV == "development") {
+		const toUpdate = {
+			updated_at: new Date().toISOString(),
+			destination_currency_amount: amount,
+			to_wallet_address: "0x0000000000000000000000000000000000000000",
+			transaction_status: "COMPLETED",
+			failed_reason: "This is a simulated success response for sandbox environment only."
+		}
+
+		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+		await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+		const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return result
+	}
+
+
+
 	const clientReceivedAmount = amount.toFixed(2)
 	const bridgeResponse = await createBridgeTransfer(initialTransferRecord.id, clientReceivedAmount, destinationUserBridgeId, source, destination)
 	const bridgeResponseBody = await bridgeResponse.json()
@@ -328,18 +352,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 			failed_reason: message
 		}
 
-		// in sandbox, just return completed the transfer
-		if (process.env.NODE_ENV == "development") {
-			toUpdate.transaction_status = "COMPLETED"
-			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
-		}
-
 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-		// send out webhook message if in sandbox
-		if (process.env.NODE_ENV == "development") {
-			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-		}
 
 	} else {
 
