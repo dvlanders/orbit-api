@@ -74,6 +74,7 @@ const filterBankAccountInfo = (type, bankAccountInfo) => {
 
 const getBankAccountInfo = async (accountId, type) => {
     const bankAccountInfo = await getBankAccountInfoById(accountId, type);
+    if(!bankAccountInfo) return null;
     return filterBankAccountInfo(bankAccountInfo.type, bankAccountInfo);
 }
 

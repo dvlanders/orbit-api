@@ -70,7 +70,7 @@ const getBankAccountInfoById = async (id, type) => {
               .select()
               .eq("id", id)
               .eq("type", type)
-              .single());
+              .maybeSingle());
 
   if(error) throw error;
 

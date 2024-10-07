@@ -39,7 +39,7 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
             amount: record.amount,
             destinationCurrency: record.destination_currency,
             liquidationAddress: record.to_wallet_address,
-            destinationAccountId: bankAccountInfo.accountId,
+            destinationAccountId: bankAccountInfo?.accountId,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
             updatedAt: record.updated_at,
