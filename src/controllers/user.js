@@ -30,10 +30,13 @@ const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDe
 const { Chain, currencyContractAddress, hifiSupportedChain } = require('../util/common/blockchain');
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
 const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
-const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 const { createBastionDeveloperUserWithType } = require('../util/bastion/main/createBastionUserForDeveloperUser');
+const { createCircleWallet } = require('../util/circle/main/createCircleWallet');
+const { updateUserWallet } = require('../util/user/updateUserWallet');
+const { createUserWallet } = require('../util/user/createUserWallet');
+const { getUserWalletBalance } = require('../util/user/getUserWallet');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -149,23 +152,21 @@ exports.createHifiUser = async (req, res) => {
 			: createBusinessBridgeCustomer;
 
 		// Create customer objects for providers
-		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			createAndFundBastionUser(userId),
+		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
+			createUserWallet(userId, "INDIVIDUAL"),
 			bridgeFunction(userId),
 			createCheckbookUser(userId)
 		]);
 
-		// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.
-		// Submit Bastion kyc
-		// Bastion status
+		// wallet status
 		const wallet = {
-			walletStatus: bastionResult.walletStatus,
-			walletMessage: bastionResult.message,
+			walletStatus: walletResult.walletStatus,
+			walletMessage: walletResult.message,
 			actionNeeded: {
-				actions: [...bastionResult.actions, ...createHifiUserResponse.wallet.actionNeeded.actions],
-				fieldsToResubmit: [...bastionResult.invalidFileds, ...createHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+				actions: [...walletResult.actions, ...createHifiUserResponse.wallet.actionNeeded.actions],
+				fieldsToResubmit: [...walletResult.invalidFileds, ...createHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
 			},
-			walletAddress: bastionResult.walletAddress
+			walletAddress: walletResult.walletAddress
 		}
 		createHifiUserResponse.wallet = wallet
 
@@ -242,9 +243,9 @@ exports.createHifiUser = async (req, res) => {
 
 		let status
 		// determine the status code to return to the client
-		if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+		if (checkbookResult.status === 200 && bridgeResult.status === 200 && walletResult.status === 200) {
 			status = 200
-		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || walletResult.status == 500) {
 			status = 500;
 		} else {
 			status = 400;
@@ -343,10 +344,10 @@ exports.updateHifiUser = async (req, res) => {
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
 		// update customer object for providers
-		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			updateBastionUser(userId), // TODO: implement this function in utils and import before using it here
-			bridgeFunction(userId), // TODO: implement this function in utils and import before using it here
-			updateCheckbookUser(userId) // TODO: implement this function in utils and import before using it here
+		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
+			updateUserWallet(userId), 
+			bridgeFunction(userId),
+			updateCheckbookUser(userId)
 		])
 
 		// STEP 3: Update the bridge_customers, checkbook_users, and bastion_users tables with the new information
@@ -420,15 +421,15 @@ exports.updateHifiUser = async (req, res) => {
 			},
 		}
 
-		// Bastion status
+		// wallet status
 		const wallet = {
-			walletStatus: bastionResult.walletStatus,
-			walletMessage: bastionResult.message,
+			walletStatus: walletResult.walletStatus,
+			walletMessage: walletResult.message,
 			actionNeeded: {
-				actions: [...bastionResult.actions, ...updateHifiUserResponse.wallet.actionNeeded.actions],
-				fieldsToResubmit: [...bastionResult.invalidFileds, ...updateHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+				actions: [...walletResult.actions, ...updateHifiUserResponse.wallet.actionNeeded.actions],
+				fieldsToResubmit: [...walletResult.invalidFileds, ...updateHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
 			},
-			walletAddress: bastionResult.walletAddress
+			walletAddress: walletResult.walletAddress
 		}
 		updateHifiUserResponse.wallet = wallet
 
@@ -501,9 +502,9 @@ exports.updateHifiUser = async (req, res) => {
 
 		let status
 		// determine the status code to return to the client
-		if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+		if (checkbookResult.status === 200 && bridgeResult.status === 200 && walletResult.status === 200) {
 			status = 200
-		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || walletResult.status == 500) {
 			status = 500;
 		} else {
 			status = 400;
@@ -664,6 +665,7 @@ exports.createHifiUserAsync = async (req, res) => {
 			await createLog("user/createHifiUserAsync", null, `Failed to upload information for CreateUser for profile Id ${profileId}`, error, profileId, res)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
+
 
 		let createHifiUserResponse = {
 			wallet: {
@@ -1272,34 +1274,10 @@ exports.getUserWalletBalance = async (req, res) => {
 		const { missingFields, invalidFields } = fieldsValidation(req.query, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		// check is supported currency
-		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase()
-		if (!currencyContract) return res.status(400).json({ error: "Currency is not supported for the chain" })
-
-
-		const { bastionUserId: bastionUserId } = await getBastionWallet(userId, chain, "INDIVIDUAL")
-
-		const response = await getUserBalance(bastionUserId, chain)
-		const responseBody = await response.json()
-
-		if (!response.ok) {
-			createLog("user/getUserWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody, null, res)
-			return res.status(500).json({ error: 'Internal server error' });
-		}
-
-		const tokenInfo = responseBody.tokenBalances[currencyContract];
-		if (!tokenInfo) {
-			return res.status(200).json({ balance: "0", displayBalance: "0.00", tokenInfo: null });
-		}
-
-		// Calculate the display balance by adjusting for the decimal places
-		const displayBalance = (Number(tokenInfo.quantity) / Math.pow(10, tokenInfo.decimals)).toFixed(2);
-
-		return res.status(200).json({
-			balance: tokenInfo.quantity,
-			displayBalance,  // Adding the formatted balance for easier reading
-			tokenInfo
-		});
-
+		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase();
+		if (!currencyContract) return res.status(400).json({ error: `Currency not supported for provided chain`})
+		const walletBalance = await getUserWalletBalance(userId, chain, currency, "INDIVIDUAL")
+		return res.status(200).json(walletBalance)
 
 	} catch (error) {
 		console.error(error)

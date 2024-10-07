@@ -1,4 +1,3 @@
-const createAndFundBastionUser = require("../../src/util/bastion/main/createAndFundBastionUser");
 const {createBastionDeveloperUser} = require("../../src/util/bastion/main/createBastionUserForDeveloperUser");
 const { getBastionWallet } = require("../../src/util/bastion/utils/getBastionWallet");
 const { createBusinessBridgeCustomer } = require("../../src/util/bridge/endpoint/submitBusinessBridgeCustomerApplication");

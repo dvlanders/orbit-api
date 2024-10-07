@@ -1,9 +1,9 @@
 const { createUserAsyncCheck } = require("../../../asyncJobs/user/createUser")
-const getBastionUser = require("../bastion/main/getBastionUser")
 const getBridgeCustomer = require("../bridge/endpoint/getBridgeCustomer")
 const getCheckbookUser = require("../checkbook/endpoint/getCheckbookUser")
 const createLog = require("../logger/supabaseLogger")
 const { CustomerStatus } = require("./common")
+const { getUserWalletStatus } = require("./getUserWalletStatus")
 
 exports.getRawUserObject = async(userId, profileId) => {
     try{
@@ -81,21 +81,21 @@ exports.getRawUserObject = async(userId, profileId) => {
 		if (!canScheduled) return {status: 200 , getHifiUserResponse}
         
         // get status
-		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			getBastionUser(userId),
+		const [walletStatus, bridgeResult, checkbookResult] = await Promise.all([
+			getUserWalletStatus(userId),
 			getBridgeCustomer(userId),
 			getCheckbookUser(userId)
 		])
 
         // Bastion status
 		const wallet = {
-			walletStatus: bastionResult.walletStatus,
-			walletMessage: bastionResult.message,
+			walletStatus: walletStatus.walletStatus,
+			walletMessage: walletStatus.message,
 			actionNeeded: {
-				actions: [...bastionResult.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
-				fieldsToResubmit: [...bastionResult.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
+				actions: [...walletStatus.actions, ...getHifiUserResponse.wallet.actionNeeded.actions],
+				fieldsToResubmit: [...walletStatus.invalidFileds, ...getHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
 			},
-			walletAddress: bastionResult.walletAddress
+			walletAddress: walletStatus.walletAddress
 		}
 		getHifiUserResponse.wallet = wallet
 
@@ -169,9 +169,9 @@ exports.getRawUserObject = async(userId, profileId) => {
 
         // determine the status code to return to the client -- copied from createHifiUser, make sure this logic still holds true
 		let status
-		if (checkbookResult.status === 200 && bridgeResult.status === 200 && bastionResult.status === 200) {
+		if (checkbookResult.status === 200 && bridgeResult.status === 200 && walletStatus.status === 200) {
 			status = 200
-		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || bastionResult.status == 500) {
+		} else if (checkbookResult.status === 500 || bridgeResult.status === 500 || walletStatus.status == 500) {
 			status = 500;
 		} else {
 			status = 400;
