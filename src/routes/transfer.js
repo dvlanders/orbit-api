@@ -16,7 +16,6 @@ module.exports = (router) => {
 	router.put("/transfer/crypto-to-fiat/acceptQuote", authorize, logRequestResponse, transfer.acceptQuoteTypeCryptoToFiatTransfer)
 	router.post("/transfer/ach/pull", authorize, logRequestResponse, transfer.createFiatTotFiatTransfer)
 	router.get("/transfer", authorize, logRequestResponse, transfer.getTransfers)
-	// router.post("/transfer/createExchangeTransfer", transfer.createExchangeTransferTemp)
-	router.post("/account/kes/offramp", authorize, logRequestResponse, account.createMomoMpesaAccount);
+	router.post("/transfer/createExchangeTransfer", transfer.createExchangeTransferTemp)
 
 };

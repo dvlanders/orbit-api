@@ -34,7 +34,6 @@ const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/not
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const createYellowcardRequestForQuote = require("../../../yellowcard/createYellowcardRequestForQuote");
-const { executeYellowcardExchange } = require("../../../yellowcard/utils/executeYellowcardExchange");
 
 const initTransferData = async (config) => {
 
@@ -231,7 +230,7 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 	}
 
 	const { yellowcardRequestForQuote } = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment)
-	console.log('yellowcardRequestForQuote:', yellowcardRequestForQuote);
+
 	let result = {
 		transferType: transferType.CRYPTO_TO_FIAT,
 		transferDetails: {
@@ -303,12 +302,11 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 }
 
 const acceptYellowcardCryptoToFiatTransfer = async (config) => {
-
 	const { recordId, profileId } = config
-	// get the offramp_transactions record
+	// accept quote and update record
 	const { data: record, error: recordError } = await supabase
 		.from("offramp_transactions")
-		.select("yellowcard_transaction_id, user_id, destination_user_id")
+		.select("reap_payment_id, user_id, destination_user_id")
 		.eq("id", recordId)
 		.maybeSingle()
 
@@ -316,25 +314,22 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
 
 	// accept quote
-	const orderClose = await executeYellowcardExchange(record.yellowcard_transaction_id)
+	const response = await acceptPaymentQuote(record.reap_payment_id, record.destination_user_id)
+	const responseBody = await response.json()
+	if (!response.ok) {
+		let failed_reason = "Quote accept failed"
+		if (responseBody.code == "PAAS0003" && responseBody.message == "Quote has been expired") {
+			failed_reason = "Quote expired"
+		}
+		const toUpdate = {
+			transaction_status: "QUOTE_FAILED",
+			reap_payment_response: responseBody,
+			failed_reason
+		}
 
-	console.log('orderClose:', orderClose);
-	if (!orderClose.data.success) {
-
-
-		//update the yellowcard_transactions record
-		const { data: updatedRecord, error: updatedRecordError } = await supabase
-			.from('yellowcard_transactions')
-			.update({
-				yellowcard_order_execution_response: orderClose,
-			})
-			.eq("id", record.yellowcard_transaction_id)
-
-
-		if (updatedRecordError) throw updatedRecordError
-
-
-		return { status: "FAILED", message: responseBody.message }
+		await updateRequestRecord(recordId, toUpdate)
+		const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
+		return result
 	}
 
 	// get latest payment

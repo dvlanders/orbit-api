@@ -3,6 +3,7 @@ const { supabaseCall } = require('../supabaseWithRetry');
 const supabase = require('../supabaseClient');
 const { getYellowcardAccountDetails } = require('./utils/getYellowcardAccountDetails');
 const { fetchSelectedOffering } = require('./utils/fetchSelectedOffering');
+const { getBearerDid } = require('./utils/getBearerDid');
 
 
 
@@ -77,28 +78,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		data: rfqData,
 	});
 
-	// FIXME: In the future, we will want to get the portable did from a secrets manager instead of storing it in the DB
-	// const { data: hifiDidRecord, error: hifiDidError } = await supabaseCall(() => supabase
-	// 	.from('tbd_decentralized_identifiers')
-	// 	.select('*')
-	// 	.eq('id', '62713295-5b49-4b9f-b940-b770b49e8b19')
-	// 	.single()
-	// )
-
-	const { data: hifiDidRecord, error: hifiDidError } = await supabase
-		.from('tbd_decentralized_identifiers')
-		.select('*')
-		.eq('id', '62713295-5b49-4b9f-b940-b770b49e8b19')
-		.maybeSingle()
-
-
-	if (hifiDidError) {
-		createLog('error', hifiDidError)
-		throw new Error('Error fetching hifi did')
-	}
-
-	// console.log('rfq:', ycRfq);
-	const bearerDid = await BearerDid.import({ portableDid: hifiDidRecord.portable_did });
+	const bearerDid = await getBearerDid();
 	// console.log('rfq:', rfq);
 	await ycRfq.sign(bearerDid);
 
