@@ -13,7 +13,7 @@ const getUserWallet = async (userId, chain, walletType="INDIVIDUAL") => {
         .maybeSingle()
 
     if (userWalletError) throw new Error(userWalletError.message)
-    if (!userWallet) throw new Error("User wallet not found")
+    if (!userWallet) return {address: null, chain, walletType, walletProvider: null, bastionUserId: null, circleWalletId: null}
 
     let provider
     if (userWallet.bastionWallet) provider = "BASTION"

@@ -1,11 +1,10 @@
-const { currencyContractAddress } = require("../../common/blockchain");
+const { currencyContractAddress, convertWeiToEthers } = require("../../common/blockchain");
 const { safeParseBody } = require("../../utils/response");
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
 
 exports.getUserBalanceBastion = async(bastionUserId, chain, currency) => {
-    const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase();
     const url = `${BASTION_URL}/v1/users/${bastionUserId}/balances?chain=${chain}`;
 	const options = {
 		method: 'GET',
@@ -22,17 +21,27 @@ exports.getUserBalanceBastion = async(bastionUserId, chain, currency) => {
         throw new Error("Something went wrong when getting wallet balance")
     }
 
+    // base asset
+    if (currency == "gas"){
+        return { 
+            balance: responseBody.baseAssetBalance.quantity, 
+            displayBalance: convertWeiToEthers(responseBody.baseAssetBalance.quantity, "18"),
+            tokenInfo: {
+                decimals: 18
+            }	 
+        }
+    }
+
+    // other assets
+    const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase();
     const tokenInfo = responseBody.tokenBalances[currencyContract];
     if (!tokenInfo) {
         return { balance: "0", displayBalance: "0.00", tokenInfo: null }
     }
 
-    // Calculate the display balance by adjusting for the decimal places
-    const displayBalance = (Number(tokenInfo.quantity) / Math.pow(10, tokenInfo.decimals)).toFixed(2);
-
     return {
         balance: tokenInfo.quantity,
-        displayBalance,  // Adding the formatted balance for easier reading
+        displayBalance: convertWeiToEthers(tokenInfo.quantity, tokenInfo.decimals),
         tokenInfo
     }
 }
