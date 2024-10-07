@@ -5,6 +5,7 @@ const { Chain } = require('../common/blockchain');
 const createLog = require('../logger/supabaseLogger');
 const { getBastionWallet } = require('./utils/getBastionWallet');
 const { getDeveloperUserId } = require('../user/getDeveloperUser');
+const { getUserWallet } = require('../user/getUserWallet');
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -20,7 +21,7 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 	let shouldReschedule = true
 	try {
 		// get user wallet
-		const {walletAddress} = await getBastionWallet(userId, chain, type)
+		const {address: walletAddress} = await getUserWallet(userId, chain, type)
 		if (!walletAddress) throw new Error(`No user wallet found`)
 		
 		const currencySymbol = currencySymbolMap[chain]
@@ -36,10 +37,12 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 			// get developer userId
 			const developerUserId = await getDeveloperUserId(profileId)
 			if (!developerUserId) throw new Error(`No developer user found for profile ${profileId}`)
-			const walletInfo = await getBastionWallet(developerUserId, chain, "GAS_STATION")
-			if (!walletInfo.bastionUserId || !walletInfo.walletAddress) throw new Error(`Gastion wallet not created for profile ${profileId}`) 
-			gasStation = walletInfo.bastionUserId
-			gasStationWalletAddress = walletInfo.walletAddress
+			const {bastionUserId, address, provider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
+			// FIX ME
+			if (provider !== "BASTION") throw new Error(`Gastion wallet only supported for provider BASTION`) 
+			if (!bastionUserId || !address) throw new Error(`Gastion wallet not created for profile ${profileId}`) 
+			gasStation = bastionUserId
+			gasStationWalletAddress = address
 		}
 			
 		const requestId = uuidv4();
