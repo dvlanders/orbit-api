@@ -22,6 +22,7 @@ const getYellowcardAccountDetails = async (destinationAccountId) => {
 
 
 	// find the account details on the right table based on the rail
+	// TODO add more bank account types
 	if (accountProviderRecord.payment_rail === 'momo_mpesa') {
 		const { data: momoMpesaAccountRecord, error: momoMpesaAccountRecordError } = await supabaseCall(() => supabase
 			.from('yellowcard_momo_mpesa_accounts')

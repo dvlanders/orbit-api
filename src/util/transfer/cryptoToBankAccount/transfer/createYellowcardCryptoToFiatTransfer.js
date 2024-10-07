@@ -26,7 +26,7 @@ const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
 const createPaymentQuote = require("../../../reap/main/createPayment");
-const fetchTbdexCryptoToFiatTransferRecord = require("./fetchTbdexCryptoToFiatTransferRecord");
+const fetchTbdexCryptoToFiatTransferRecord = require("./fetchYellowcardCryptoToFiatTransferRecord");
 const getUserReapWalletAddress = require("../../../reap/main/getUserWallet");
 const acceptPaymentQuote = require("../../../reap/main/acceptPaymentQuote");
 const getReapPayment = require("../../../reap/main/getPayment");
@@ -35,6 +35,7 @@ const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simul
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const createYellowcardRequestForQuote = require("../../../yellowcard/createYellowcardRequestForQuote");
 const { executeYellowcardExchange } = require("../../../yellowcard/utils/executeYellowcardExchange");
+const fetchYellowcardCryptoToFiatTransferRecord = require("../../../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 
 const initTransferData = async (config) => {
 
@@ -301,8 +302,39 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 
 	return { isExternalAccountExist: true, transferResult: result }
 }
-
 const acceptYellowcardCryptoToFiatTransfer = async (config) => {
+	const { recordId, profileId } = config
+	// accept quote and update record
+	const { data: record, error: recordError } = await supabase
+		.from("offramp_transactions")
+		.select()
+		.eq("id", recordId)
+		.maybeSingle()
+
+	if (recordError) throw recordError
+	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
+
+	const toUpdate = {
+		transaction_status: "CREATED" // TODO: Why do we do CREATED here? Technically the quote was created earlier so why not 
+	}
+	await updateRequestRecord(recordId, toUpdate)
+	// create Job
+	const jobConfig = {
+		recordId
+	}
+	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
+		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
+	}
+
+
+	let result = await fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId)
+
+
+	return result
+}
+
+
+const acceptYellowcardCryptoToFiatTransferOld = async (config) => {
 
 	const { recordId, profileId } = config
 	// get the offramp_transactions record

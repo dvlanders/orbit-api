@@ -1,5 +1,5 @@
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService")
-const { fetchReapAccountInformation } = require("../../../account/getAccount/main/fetchReapAccount")
+const { getYellowcardAccountDetails } = require("../../../yellowcard/utils/getYellowcardAccountDetails")
 const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const supabase = require("../../../supabaseClient")
 const { supabaseCall } = require("../../../supabaseWithRetry")
@@ -7,12 +7,12 @@ const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 const { convertKeysToCamelCase } = require("../../../utils/object")
 
-const fetchReapCryptoToFiatTransferRecord = async (id, profileId) => {
+const fetchYellowcardCryptoToFiatTransferRecord = async (id, profileId) => {
 	// get transactio record
 	const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "YELLOWCARD", "BASTION")
 	if (!record) return null
 	const account = await fetchAccountProviders(record.destination_account_id, profileId)
-	const accountInfo = await fetchReapAccountInformation(null, profileId, account.account_id)
+	const accountInfo = await getYellowcardAccountDetails(record.destination_account_id,)
 
 	const result = {
 		transferType: transferType.CRYPTO_TO_FIAT,
@@ -61,4 +61,4 @@ const fetchReapCryptoToFiatTransferRecord = async (id, profileId) => {
 	return result
 }
 
-module.exports = fetchReapCryptoToFiatTransferRecord
+module.exports = fetchYellowcardCryptoToFiatTransferRecord
