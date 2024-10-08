@@ -3,6 +3,8 @@ const supabase = require('../../src/util/supabaseClient');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
+const notifyTransaction = require("../../src/util/logger/transactionNotifier");
+const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -32,7 +34,7 @@ const updateStatusWithBridgeTransferId = async (transaction) => {
 			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to fetch response from bridge', response);
 			return
 		}
-
+        
 		if (transaction.bridge_transaction_status == data.state) return
 
 		// Map the data.state to our transaction_status
@@ -58,6 +60,25 @@ const updateStatusWithBridgeTransferId = async (transaction) => {
 			await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to update transaction status', updateError);
 			return
 		}
+
+        // send slack notification if failed
+        if (["FAILED_FIAT_RETURNED", "FAILED_FIAT_REFUNDED", "FAILED_UNKNOWN"].includes(hifiOfframpTransactionStatus)) {
+            notifyTransaction(
+                transaction.user_id,
+                rampTypes.OFFRAMP,
+                transaction.id,
+                {
+                    prevTransactionStatus: transaction.transaction_status,
+                    updatedTransactionStatus: updateData.transaction_status,
+                    bastionTransactionStatus: updateData.bastion_transaction_status,
+                    bridgeTransactionStatus: updateData.bridge_transaction_status,
+                    circleStatus: updateData.circle_status,
+                    blindpayPayroutStatus: updateData.blindpay_payout_status,
+                    reapPaymentStatus: updateData.reap_payment_status,
+                    failedReason: updateData.failed_reason,
+                }
+            );
+        }
 
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
@@ -111,7 +132,7 @@ const updateStatus = async (transaction) => {
 							data.state === 'refunded' ? 'FAILED_FIAT_REFUNDED' :
 								data.state === 'error' ? 'FAILED_UNKNOWN' :
 									'UNKNOWN';
-
+                                    
 		if (hifiOfframpTransactionStatus == transaction.transaction_status) return
 
 		const { data: updateData, error: updateError } = await supabaseCall(() => supabase
@@ -132,6 +153,25 @@ const updateStatus = async (transaction) => {
 			await createLog('pollOfframpTransactionsBridgeStatus/updateStatus', transaction.user_id, 'Failed to update transaction status', updateError);
 			return
 		}
+
+        // send slack notification if failed
+        if (["FAILED_FIAT_RETURNED", "FAILED_FIAT_REFUNDED", "FAILED_UNKNOWN"].includes(hifiOfframpTransactionStatus)) {
+            notifyTransaction(
+                transaction.user_id,
+                rampTypes.OFFRAMP,
+                transaction.id,
+                {
+                    prevTransactionStatus: transaction.transaction_status,
+                    updatedTransactionStatus: updateData.transaction_status,
+                    bastionTransactionStatus: updateData.bastion_transaction_status,
+                    bridgeTransactionStatus: updateData.bridge_transaction_status,
+                    circleStatus: updateData.circle_status,
+                    blindpayPayroutStatus: updateData.blindpay_payout_status,
+                    reapPaymentStatus: updateData.reap_payment_status,
+                    failedReason: updateData.failed_reason,
+                }
+            );
+        }
 
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)

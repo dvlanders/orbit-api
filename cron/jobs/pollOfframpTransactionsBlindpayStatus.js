@@ -6,6 +6,8 @@ const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCrypto
 const { blindpayPayoutStatusMap } = require('../../src/util/blindpay/endpoint/utils');
 const { getPayout } = require('../../src/util/blindpay/endpoint/getPayout');
 const { updateRequestRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/updateRequestRecord');
+const notifyTransaction = require("../../src/util/logger/transactionNotifier");
+const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 const { updateBlinpdayTransactionInfo } = require('../../src/util/blindpay/transactionInfoService');
 
 const updateStatusWithBlindpayTransferId = async (transaction) => {
@@ -34,6 +36,25 @@ const updateStatusWithBlindpayTransferId = async (transaction) => {
 			updated_at: new Date().toISOString()
 		}
 		const updateData = await updateRequestRecord(transaction.id, toUpdateRequest);
+
+        // send slack notification if failed
+        if (["FAILED_FIAT_RETURNED", "FAILED_FIAT_REFUNDED", "FAILED_UNKNOWN"].includes(hifiOfframpTransactionStatus)) {
+            notifyTransaction(
+                transaction.user_id,
+                rampTypes.OFFRAMP,
+                transaction.id,
+                {
+                    prevTransactionStatus: transaction.transaction_status,
+                    updatedTransactionStatus: updateData.transaction_status,
+                    bastionTransactionStatus: updateData.bastion_transaction_status,
+                    bridgeTransactionStatus: updateData.bridge_transaction_status,
+                    circleStatus: updateData.circle_status,
+                    blindpayPayroutStatus: updateData.blindpay_payout_status,
+                    reapPaymentStatus: updateData.reap_payment_status,
+                    failedReason: updateData.failed_reason,
+                }
+            );
+        }
 
 		// send webhook message
 		await notifyCryptoToFiatTransfer(updateData)
