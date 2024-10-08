@@ -34,7 +34,6 @@ const { getUserBalance } = require("../util/bastion/endpoints/getUserBalance");
 const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 const { createBastionDeveloperUserWithType } = require('../util/bastion/main/createBastionUserForDeveloperUser');
-const createDecentralizedIdentifier = require('../util/yellowcard/createDecentralizedIdentifier');
 const { create } = require('lodash');
 
 
@@ -156,7 +155,6 @@ exports.createHifiUser = async (req, res) => {
 			createAndFundBastionUser(userId),
 			bridgeFunction(userId),
 			createCheckbookUser(userId),
-			createDecentralizedIdentifier(userId)
 		]);
 
 		// Create the Bastion user w/ wallet addresses. Fund the polygon wallet.

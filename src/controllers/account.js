@@ -159,15 +159,15 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
 	try {
-        // Verify ACH
-        if (!isValidRoutingNumber(routingNumber))
-            return res.status(400).json({ error: "Invalid Field, routingNumber must be 9 digits." });
+		// Verify ACH
+		if (!isValidRoutingNumber(routingNumber))
+			return res.status(400).json({ error: "Invalid Field, routingNumber must be 9 digits." });
 
-        const { status: verificationStatus, message: verificationMessage } = await verifyAchAccount(accountNumber, routingNumber);
-        if (verificationStatus === 400)
-            return res.status(400).json({ error: verificationMessage });
-        else if (verificationStatus === 500)
-            return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information." });
+		const { status: verificationStatus, message: verificationMessage } = await verifyAchAccount(accountNumber, routingNumber);
+		if (verificationStatus === 400)
+			return res.status(400).json({ error: verificationMessage });
+		else if (verificationStatus === 500)
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information." });
 
 		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({
@@ -929,7 +929,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res);
 		if (error instanceof BankAccountInfoUploadError) {
-			if(error.type === BankAccountInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === BankAccountInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -977,7 +977,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayBankAccount", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateBankAccountError) {
-			if(error.type === CreateBankAccountErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === CreateBankAccountErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the BR bank account. Please try again later." })
@@ -1003,7 +1003,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
-			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -1039,7 +1039,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateReceiverError) {
-			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1439,7 +1439,7 @@ exports.getBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
 		if (error instanceof ReceiverInfoGetError) {
-			if(error.type === ReceiverInfoGetErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === ReceiverInfoGetErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1466,7 +1466,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
-			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -1495,7 +1495,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/updateBlindpayReceiver", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateReceiverError) {
-			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1504,11 +1504,11 @@ exports.updateBlindpayReceiver = async (req, res) => {
 
 exports.createMomoMpesaAccount = async (req, res) => {
 	const { userId, profileId } = req.query;
-	const {
-		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
-		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
-	} = req.body;
+	// const {
+	// 	accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+	// 	businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+	// 	accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
+	// } = req.body;
 
 
 	const fields = req.body;
@@ -1517,6 +1517,8 @@ exports.createMomoMpesaAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
+
+	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
 	const requiredFields = [
 		'accountNumber',
 		'accountHolderName'
@@ -1526,6 +1528,12 @@ exports.createMomoMpesaAccount = async (req, res) => {
 		'accountNumber': "string",
 		'accountHolderName': "string"
 	};
+
+	// Validate the account number format as an international phone number
+	if (!/^\+\d{11,15}$/.test(fields.accountNumber)) {
+		return res.status(400).json({ error: 'The accountNumber must be in international phone number format (e.g., +254711111111).' });
+	}
+
 
 	// Execute fields validation
 	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
@@ -1548,7 +1556,7 @@ exports.createMomoMpesaAccount = async (req, res) => {
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
-		const accountProviderRecord = await insertAccountProviders(momoMpesaAccountData[0].id, "kes", "offramp", "momo_mpesa", "TBDEX", userId);
+		const accountProviderRecord = await insertAccountProviders(momoMpesaAccountData[0].id, "kes", "offramp", "momo_mpesa", "YELLOWCARD", userId);
 
 		return res.status(200).json({
 			status: "ACTIVE",
@@ -1560,6 +1568,92 @@ exports.createMomoMpesaAccount = async (req, res) => {
 	} catch (error) {
 		createLog("account/createMomoMpesaAccount", userId, error.message, error);
 		console.error('Error in createMomoMpesaAccount', error);
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
+	}
+};
+
+exports.createNibbsBankAccount = async (req, res) => {
+	const { userId, profileId } = req.query;
+	const {
+		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
+	} = req.body;
+
+
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+
+	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
+	const requiredFields = [
+		'accountNumber',
+		'accountHolderName',
+		'kind'
+
+	];
+
+	const acceptedFields = {
+		'accountNumber': "string",
+		'accountHolderName': "string",
+		'kind': (value) => inStringEnum(value, ["BANK_Access Bank", "BANK_GT Bank", 'BANK_United Bank for Africa']),
+		'accountHolderPhone': "string",
+	};
+
+
+	if (fields.kind === "BANK_Access Bank") {
+		if (!fields.accountHolderPhone) {
+			return res.status(400).json({ error: 'The accountHolderPhone field is required when the kind is BANK_Access Bank' });
+		} else if (!/^\+\d{11,15}$/.test(fields.accountHolderPhone)) {
+			// Validates that the phone number starts with '+' followed by 11 to 15 digits
+			return res.status(400).json({ error: 'The accountHolderPhone must be in a valid international format (e.g., +2348111111111)' });
+		}
+	} else if (fields.kind !== "BANK_Access Bank" && fields.accountHolderPhone != null) {
+		// Ensures phone number is null or undefined for other bank kinds
+		return res.status(400).json({ error: 'The accountHolderPhone field must be null or undefined when the kind is not BANK_Access Bank' });
+	}
+
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	}
+
+	try {
+
+		// add the momo_mpesa_accounts record
+		const { data: nibbsBankAccountData, error: nibbsBankAccountError } = await supabase
+			.from('yellowcard_nibbs_bank_accounts')
+			.insert({
+				account_number: fields.accountNumber,
+				account_holder_name: fields.accountHolderName,
+				user_id: userId,
+				kind: fields.kind,
+				account_holder_phone: fields.accountHolderPhone
+			})
+			.select();
+
+		if (nibbsBankAccountError) {
+			createLog("account/createNibbsBankAccount", userId, nibbsBankAccountError.message, nibbsBankAccountError);
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+		const accountProviderRecord = await insertAccountProviders(nibbsBankAccountData[0].id, "ngn", "offramp", "nibbs", "YELLOWCARD", userId);
+
+		return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+
+	} catch (error) {
+		createLog("account/createNibbsBankAccount", userId, error.message, error);
+		console.error('Error in createNibbsBankAccount', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };

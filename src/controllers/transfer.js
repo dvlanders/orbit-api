@@ -220,7 +220,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"amount": (value) => isValidAmount(value),
 			"chain": (value) => isHIFISupportedChain(value),
 			"sourceCurrency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]),
-			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "kes"]),
+			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "kes", "ngn"]),
 			"paymentRail": "string",
 			"description": "string",
 			"purposeOfPayment": "string",
@@ -302,7 +302,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, accountInfo, feeTransactionId: feeTransaction.id })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
-		console.log('transferResult', transferResult)
 		const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
 
 		return res.status(200).json(receipt);

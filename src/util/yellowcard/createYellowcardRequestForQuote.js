@@ -4,6 +4,7 @@ const supabase = require('../supabaseClient');
 const { getYellowcardAccountDetails } = require('./utils/getYellowcardAccountDetails');
 const { fetchSelectedOffering } = require('./utils/fetchSelectedOffering');
 const { getBearerDid } = require('./utils/getBearerDid');
+const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 
 
 
@@ -20,6 +21,11 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	if (!payoutAccountDetails) {
 		throw new Error('No payout account details found');
 	}
+
+
+	// const result = fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
+
+	// let bankKind = result.transferDetails.destinationAccount.kind;
 
 	// Retrieve the selected offering using the fetchSelectedOffering utility
 	const { foundOfferings, selectedOffering, payin, payout } = await fetchSelectedOffering(sourceCurrency, destinationCurrency);
@@ -51,13 +57,12 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	const rfqData = {
 		offeringId: selectedOffering.metadata.id,
 		payin: {
-			// FIXME: right now we assume there is only one method for payin and payout
+			// TODO: right now we assume there is only one method for payin and payout
 			kind: payin.methods[0].kind,
 			amount: amount,
 		},
 		payout: {
-			// FIXME: right now we assume there is only one method for payin and payout
-			kind: payout.methods[0].kind,
+			kind: payoutAccountDetails.kind || payout.methods[0].kind,
 			paymentDetails: {
 				accountNumber: payoutAccountDetails.account_number,
 				reason: purposeOfPayment,
@@ -66,6 +71,14 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		},
 		claims: selectedCredentials
 	};
+
+	if (payoutAccountDetails.account_holder_phone) {
+		rfqData.payout.paymentDetails.phoneNumber = payoutAccountDetails.account_holder_phone;
+	}
+
+
+	console.log('rfqData:', rfqData);
+
 
 	const rfqMetadata = {
 		to: selectedOffering.metadata.from,
@@ -90,7 +103,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	} catch (error) {
 		console.error('Error creating exchange:', error);
 		//log details
-		console.error("error details:", error.details);
+		console.error("Error details:", JSON.stringify(error.details.errors[0].detail, null, 2));
 
 		return res.status(500).json({ error: error });
 	}

@@ -129,90 +129,90 @@ const initTransferData = async (config) => {
 	return { record: record, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord }
 }
 
-const transferWithFee = async (initialTransferRecord, profileId) => {
-	const sourceCurrency = initialTransferRecord.source_currency
-	const chain = initialTransferRecord.chain
-	const sourceWalletAddress = initialTransferRecord.from_wallet_address
-	const developerFeeId = initialTransferRecord.developer_fee_id
-	const paymentProcessorContractAddress = initialTransferRecord.payment_processor_contract_address
-	const bastionUserId = initialTransferRecord.bastion_user_id
-	// get fee config
-	const { data: feeRecord, error: feeRecordError } = await supabase
-		.from("developer_fees")
-		.select("*")
-		.eq("id", developerFeeId)
-		.single()
+// const transferWithFee = async (initialTransferRecord, profileId) => {
+// 	const sourceCurrency = initialTransferRecord.source_currency
+// 	const chain = initialTransferRecord.chain
+// 	const sourceWalletAddress = initialTransferRecord.from_wallet_address
+// 	const developerFeeId = initialTransferRecord.developer_fee_id
+// 	const paymentProcessorContractAddress = initialTransferRecord.payment_processor_contract_address
+// 	const bastionUserId = initialTransferRecord.bastion_user_id
+// 	// get fee config
+// 	const { data: feeRecord, error: feeRecordError } = await supabase
+// 		.from("developer_fees")
+// 		.select("*")
+// 		.eq("id", developerFeeId)
+// 		.single()
 
-	if (feeRecordError) throw feeRecordError
+// 	if (feeRecordError) throw feeRecordError
 
-	const result = await CryptoToFiatWithFeeBastion(initialTransferRecord, feeRecord, paymentProcessorContractAddress, profileId)
-	return result
+// 	const result = await CryptoToFiatWithFeeBastion(initialTransferRecord, feeRecord, paymentProcessorContractAddress, profileId)
+// 	return result
 
-}
+// }
 
-const transferWithoutFee = async (initialTransferRecord, profileId) => {
-	const sourceUserId = initialTransferRecord.user_id
-	const sourceCurrency = initialTransferRecord.source_currency
-	const chain = initialTransferRecord.chain
-	const amount = initialTransferRecord.amount
-	const bastionUserId = initialTransferRecord.bastion_user_id
+// const transferWithoutFee = async (initialTransferRecord, profileId) => {
+// 	const sourceUserId = initialTransferRecord.user_id
+// 	const sourceCurrency = initialTransferRecord.source_currency
+// 	const chain = initialTransferRecord.chain
+// 	const amount = initialTransferRecord.amount
+// 	const bastionUserId = initialTransferRecord.bastion_user_id
 
-	//get payment rail
-	const decimals = currencyDecimal[sourceCurrency]
-	const transferAmount = toUnitsString(amount, decimals)
-	const bodyObject = {
-		requestId: initialTransferRecord.bastion_request_id,
-		userId: bastionUserId,
-		contractAddress: initialTransferRecord.contract_address,
-		actionName: "transfer",
-		chain: chain,
-		actionParams: erc20Transfer(sourceCurrency, chain, initialTransferRecord.to_wallet_address, transferAmount)
-	};
+// 	//get payment rail
+// 	const decimals = currencyDecimal[sourceCurrency]
+// 	const transferAmount = toUnitsString(amount, decimals)
+// 	const bodyObject = {
+// 		requestId: initialTransferRecord.bastion_request_id,
+// 		userId: bastionUserId,
+// 		contractAddress: initialTransferRecord.contract_address,
+// 		actionName: "transfer",
+// 		chain: chain,
+// 		actionParams: erc20Transfer(sourceCurrency, chain, initialTransferRecord.to_wallet_address, transferAmount)
+// 	};
 
-	const bastionResponse = await submitUserAction(bodyObject)
-	const bastionResponseBody = await bastionResponse.json();
+// 	const bastionResponse = await submitUserAction(bodyObject)
+// 	const bastionResponseBody = await bastionResponse.json();
 
-	// map status
-	if (!bastionResponse.ok) {
-		// fail to transfer
-		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
-		const { message, type } = getMappedError(bastionResponseBody.message)
+// 	// map status
+// 	if (!bastionResponse.ok) {
+// 		// fail to transfer
+// 		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
+// 		const { message, type } = getMappedError(bastionResponseBody.message)
 
-		const toUpdate = {
-			bastion_response: bastionResponseBody,
-			bastion_transaction_status: "FAILED",
-			transaction_status: "NOT_INITIATED",
-			failed_reason: message
-		}
+// 		const toUpdate = {
+// 			bastion_response: bastionResponseBody,
+// 			bastion_transaction_status: "FAILED",
+// 			transaction_status: "NOT_INITIATED",
+// 			failed_reason: message
+// 		}
 
-		// in sandbox, just return SUBMITTED_ONCHAIN status
-		if (process.env.NODE_ENV == "development") {
-			toUpdate.transaction_status = "COMPLETED"
-			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
-		}
+// 		// in sandbox, just return SUBMITTED_ONCHAIN status
+// 		if (process.env.NODE_ENV == "development") {
+// 			toUpdate.transaction_status = "COMPLETED"
+// 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
+// 		}
 
-		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+// 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
 
-		// send out webhook message if in sandbox
-		if (process.env.NODE_ENV == "development") {
-			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-		}
+// 		// send out webhook message if in sandbox
+// 		if (process.env.NODE_ENV == "development") {
+// 			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
+// 		}
 
-	} else {
+// 	} else {
 
-		const toUpdate = {
-			bastion_response: bastionResponseBody,
-			transaction_hash: bastionResponseBody.transactionHash,
-			bastion_transaction_status: bastionResponseBody.status,
-			transaction_status: bastionResponseBody.status == "FAILED" ? "NOT_INITIATED" : "SUBMITTED_ONCHAIN",
-			failed_reason: bastionResponseBody.failureDetails,
-		}
-		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-	}
+// 		const toUpdate = {
+// 			bastion_response: bastionResponseBody,
+// 			transaction_hash: bastionResponseBody.transactionHash,
+// 			bastion_transaction_status: bastionResponseBody.status,
+// 			transaction_status: bastionResponseBody.status == "FAILED" ? "NOT_INITIATED" : "SUBMITTED_ONCHAIN",
+// 			failed_reason: bastionResponseBody.failureDetails,
+// 		}
+// 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+// 	}
 
-	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
-	return result
-}
+// 	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+// 	return result
+// }
 
 const createYellowcardCryptoToFiatTransfer = async (config) => {
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment } = config
@@ -226,7 +226,7 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 			failed_reason: "Insufficient balance for transaction fee"
 		}
 		await updateRequestRecord(initialTransferRecord.id, toUpdate);
-		const result = fetchTbdexCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
+		const result = fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
 		return { isExternalAccountExist: true, transferResult: result };
 	}
 
@@ -272,6 +272,7 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 				yellowcard_rfq_response: yellowcardRequestForQuote,
 				payout_units_per_payin_unit: yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit,
 				quote_id: yellowcardRequestForQuote.metadata.id,
+				quote_expires_at: new Date(yellowcardRequestForQuote.data.expiresAt).toISOString().replace('Z', '+00:00'),
 			})
 			.eq("id", yellowcardTransactionRecord.id)
 			.select()
@@ -320,35 +321,34 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	}
 
 	try {
+
+		// TODO: Pass the offramp_transactions record down to the executeYellowcardExchange function so we don't have to call it again
 		// Execute the exchange process, which returns status and additional data
-		const exchangeResult = await executeYellowcardExchange(record.yellowcard_transaction_id);
-		if (exchangeResult.error) {
-			console.error('Exchange process failed:', exchangeResult.error);
-			throw new Error(`Exchange error: ${exchangeResult.error}`);
-		}
+		const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await executeYellowcardExchange(record);
+
 
 		// Construct the result object based on the exchange outcome and additional queries as needed
 		const result = {
 			transferType: "CRYPTO_TO_FIAT",
 			transferDetails: {
-				id: record.id,
-				requestId: record.request_id,
-				sourceUserId: record.user_id,
-				destinationUserId: record.destination_user_id,
-				chain: record.chain,
-				sourceCurrency: record.source_currency,
-				amount: record.amount,
-				destinationCurrency: record.destination_currency,
-				conversionRate: record.conversion_rate,
-				destinationAccountId: record.destination_account_id,
-				createdAt: record.created_at,
-				updatedAt: record.updated_at,
-				expiresAt: record.expires_at ? new Date(record.expires_at).toISOString().replace('Z', '+00:00') : null,
-				status: exchangeResult.transaction_status,
-				contractAddress: record.contract_address,
-				sourceUser: record.sender_user_id,
-				destinationUser: record.recipient_user_id,
-				failedReason: exchangeResult.failed_reason,
+				id: updatedOfframpTransactionRecord.id,
+				requestId: updatedOfframpTransactionRecord.request_id,
+				sourceUserId: updatedOfframpTransactionRecord.user_id,
+				destinationUserId: updatedOfframpTransactionRecord.destination_user_id,
+				chain: updatedOfframpTransactionRecord.chain,
+				sourceCurrency: updatedOfframpTransactionRecord.source_currency,
+				amount: updatedOfframpTransactionRecord.amount,
+				destinationCurrency: updatedOfframpTransactionRecord.destination_currency,
+				conversionRate: updatedYellowcardTransactionRecord.payout_units_per_payin_unit,
+				destinationAccountId: updatedOfframpTransactionRecord.destination_account_id,
+				createdAt: updatedOfframpTransactionRecord.created_at,
+				updatedAt: updatedOfframpTransactionRecord.updated_at,
+				expiresAt: updatedYellowcardTransactionRecord.quote_expires_at,
+				status: updatedOfframpTransactionRecord.transaction_status,
+				contractAddress: updatedOfframpTransactionRecord.contract_address,
+				sourceUser: updatedOfframpTransactionRecord.sender_user_id,
+				destinationUser: updatedOfframpTransactionRecord.recipient_user_id,
+				failedReason: updatedOfframpTransactionRecord.failed_reason,
 				fee: null
 			}
 		};

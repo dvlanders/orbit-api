@@ -153,7 +153,16 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
-				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
+		}
+	},
+	nibbs: {
+		usdc: {
+			ngn: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
 			},
 		}
 	}

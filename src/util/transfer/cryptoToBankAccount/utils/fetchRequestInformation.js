@@ -14,7 +14,6 @@ const fetchCryptoToFiatRequestInfortmaionById = async (id, profileId, fiatProvid
 		.eq("id", id)
 		.eq("source_user.profile_id", profileId)
 		.maybeSingle())
-	console.log('request on fetchCryptoToFiatRequestInfortmaionById', request)
 
 	if (requestError) throw requestError
 	if (!request) return null

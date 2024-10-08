@@ -36,6 +36,19 @@ const getYellowcardAccountDetails = async (destinationAccountId) => {
 			throw new Error('Error fetching account provider details')
 		}
 		return { payoutAccountDetails: momoMpesaAccountRecord }
+	} else if (accountProviderRecord.payment_rail === 'nibbs') {
+		const { data: bankAccountRecord, error: bankAccountRecordError } = await supabaseCall(() => supabase
+			.from('yellowcard_nibbs_bank_accounts')
+			.select('*')
+			.eq('id', accountProviderRecord.account_id)
+			.maybeSingle()
+
+		)
+		if (bankAccountRecordError) {
+			createLog('error', bankAccountRecordError)
+			throw new Error('Error fetching account provider details')
+		}
+		return { payoutAccountDetails: bankAccountRecord }
 	}
 
 	// no account found so return error	

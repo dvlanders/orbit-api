@@ -14,7 +14,7 @@ async function getBearerDid() {
 	const { data: hifiDidRecord, error: hifiDidError } = await supabase
 		.from('tbd_decentralized_identifiers')
 		.select('*')
-		.eq('id', '62713295-5b49-4b9f-b940-b770b49e8b19')
+		.eq('did', 'did:dht:on8o3read6tk1fueadjee3r18banb5tj3k8xatkfjq1g6r9ezdto')
 		.maybeSingle()
 
 
