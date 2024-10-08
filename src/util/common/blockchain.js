@@ -13,6 +13,15 @@ const Chain = {
 
 }
 
+const ChainId = {
+	ETHEREUM_MAINNET: 1,
+	OPTIMISM_MAINNET: 10,
+	POLYGON_MAINNET: 137,
+	ETHEREUM_TESTNET: 11155111,
+	OPTIMISM_SEPOLIA: 11155420,
+	POLYGON_AMOY: 80002,
+	BASE_MAINNET: 8453
+}
 const hifiSupportedChain = NODE_ENV == "development" ?
 	[Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET] // FIXME: remove Chain.POLYGON_MAINNET from development
 
@@ -69,5 +78,6 @@ module.exports = {
 	currencyDecimal,
 	currencyContractAddress,
 	baseAssetMap,
-	convertWeiToEthers
+	convertWeiToEthers,
+	ChainId
 }

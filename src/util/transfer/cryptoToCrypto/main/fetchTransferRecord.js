@@ -19,6 +19,7 @@ const fetchCryptoToCryptoTransferRecord = async(id, profileId) => {
             recipientAddress: record.recipient_address,
             chain: record.chain,
             currency: record.currency,
+            amount: record.amount,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
             updatedAt: record.updated_at,

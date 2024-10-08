@@ -23,7 +23,7 @@ const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const sandboxMintUSDHIFI = async(config) => {
-    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, fiatProvider, cryptoProvider, accountInfo} = config
+    const {requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, fiatProvider, cryptoProvider, accountInfo, feeTransactionId} = config
     try{
         if(!isValidAmount(amount, 1)) throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
         const accountInfo = await fetchAccountProviders(sourceAccountId, profileId)
@@ -52,6 +52,7 @@ const sandboxMintUSDHIFI = async(config) => {
                 chain: chain,
                 billing_tags_success: billingTags.success,
                 billing_tags_failed: billingTags.failed,
+                fee_transaction_id: feeTransactionId
             })
             .eq("request_id", requestId)
             .select()

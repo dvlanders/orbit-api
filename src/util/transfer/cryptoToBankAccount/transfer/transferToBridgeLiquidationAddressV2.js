@@ -35,7 +35,7 @@ const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference, accountInfo } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, createdRecordId, sourceWalletType, bridgeExternalAccountId, feeType, feeValue, sourceBastionUserId, paymentRail, sameDayAch, achReference, sepaReference, wireMessage, swiftReference, accountInfo, feeTransactionId } = config
 
 
 
@@ -75,6 +75,7 @@ const initTransferData = async (config) => {
 			swift_reference: swiftReference,
 			billing_tags_success: billingTags.success,
 			billing_tags_failed: billingTags.failed,
+			fee_transaction_id: feeTransactionId
 		})
 		.eq("request_id", requestId)
 		.select()
@@ -371,7 +372,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBridgeLiquidationAddress = async (config) => {
-	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference, sourceBastionUserId } = config
+	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, achReference, sepaReference, wireMessage, swiftReference, sourceBastionUserId, feeTransactionId } = config
 
 	// use the destinationAccountId to get the internalAccountId so we can pass the internalAccountId to the bridgeRailCheck function
 	// We should do a holistic refactor of the usage of bridgeRailCheck and fetchAccountProviders to simplify the code

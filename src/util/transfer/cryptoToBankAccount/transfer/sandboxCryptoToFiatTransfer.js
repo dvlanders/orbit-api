@@ -54,7 +54,7 @@ const getExchangeRate = async (userId, profileId,toCurrency) => {
 
 
 const initTransferData = async (config) => {
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, fiat_provider, crypto_provider, paymentRail, achReference, sepaReference, wireMessage, swiftReference, receivedAmount, accountInfo } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, fiat_provider, crypto_provider, paymentRail, achReference, sepaReference, wireMessage, swiftReference, receivedAmount, accountInfo, feeTransactionId } = config
 
 	// get USDHIFI conversion rate
 	const conversionRate = {
@@ -100,6 +100,7 @@ const initTransferData = async (config) => {
 			swift_reference: swiftReference,
 			billing_tags_success: billingTags.success,
 			billing_tags_failed: billingTags.failed,
+			fee_transaction_id: feeTransactionId
 		})
 		.eq("request_id", requestId)
 		.select()
@@ -293,7 +294,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 
 
 const createSandboxCryptoToFiatTransfer = async (config) => {
-	const { destinationAccountId, amount, profileId, sourceUserId, sourceBastionUserId, chain, sourceCurrency } = config
+	const { destinationAccountId, amount, profileId, sourceUserId, sourceBastionUserId, chain, sourceCurrency, feeTransactionId } = config
 
 	if (amount < 1) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 1.")
     
