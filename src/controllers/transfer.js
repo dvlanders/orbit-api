@@ -118,7 +118,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// get transfer function
-		const transferFunc = cryptoToCryptoSupportedFunctions[chain][currency]["transferFunc"][senderWalletProvider]
+		const {transferFunc} = cryptoToCryptoSupportedFunctions[chain][currency][senderWalletProvider]
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported transfer` })
 		// transfer
 		const receipt = await transferFunc(fields)
