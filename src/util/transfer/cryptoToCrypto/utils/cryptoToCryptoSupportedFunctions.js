@@ -9,78 +9,75 @@ userId, currency, chain, amout, recipientAddress, contractAddress, requestId, re
 const cryptoToCryptoSupportedFunctions = {
     POLYGON_MAINNET: {
         usdc: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionCryptoTransfer,
-                CIRCLE: createCircleCryptoTransfer
-            },
-            asyncExecuteFunc: {
-                BASTION: executeAsyncBastionCryptoTransfer,
-                CIRCLE: executeAsyncCircleCryptoTransfer
+                BASTION:{
+                    transferFunc: createBastionCryptoTransfer,
+                    asyncExecuteFunc: executeAsyncBastionCryptoTransfer
+                },
+                CIRCLE:{
+                    transferFunc: createCircleCryptoTransfer,
+                    asyncExecuteFunc: executeAsyncCircleCryptoTransfer
+                }
             }
-        }
     },
     ETHEREUM_MAINNET: {
         usdc: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionCryptoTransfer,
-                CIRCLE: createCircleCryptoTransfer
+            BASTION:{
+                transferFunc: createBastionCryptoTransfer,
+                asyncExecuteFunc: executeAsyncBastionCryptoTransfer
             },
-            asyncExecuteFunc: {
-                BASTION: executeAsyncBastionCryptoTransfer,
-                CIRCLE: executeAsyncCircleCryptoTransfer
+            CIRCLE:{
+                transferFunc: createCircleCryptoTransfer,
+                asyncExecuteFunc: executeAsyncCircleCryptoTransfer
             }
         },
         usdt: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionCryptoTransfer,
-                CIRCLE: createCircleCryptoTransfer
+            BASTION:{
+                transferFunc: createBastionCryptoTransfer,
+                asyncExecuteFunc: executeAsyncBastionCryptoTransfer
             },
-            asyncExecuteFunc: {
-                BASTION: executeAsyncBastionCryptoTransfer,
-                CIRCLE: executeAsyncCircleCryptoTransfer
+            CIRCLE:{
+                transferFunc: createCircleCryptoTransfer,
+                asyncExecuteFunc: executeAsyncCircleCryptoTransfer
             }
-        }
+        },
     },
     POLYGON_AMOY: {
         usdc: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionCryptoTransfer,
-                CIRCLE: createCircleCryptoTransfer
+            BASTION:{
+                transferFunc: createBastionCryptoTransfer,
+                asyncExecuteFunc: executeAsyncBastionCryptoTransfer
             },
-            asyncExecuteFunc: {
-                BASTION: executeAsyncBastionCryptoTransfer,
-                CIRCLE: executeAsyncCircleCryptoTransfer
+            CIRCLE:{
+                transferFunc: createCircleCryptoTransfer,
+                asyncExecuteFunc: executeAsyncCircleCryptoTransfer
             }
         },
         usdHifi: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionSandboxCryptoTransfer,
-                CIRCLE: null
+            BASTION:{
+                transferFunc: createBastionSandboxCryptoTransfer
+            },
+            CIRCLE: {
+                transferFunc: createBastionSandboxCryptoTransfer
             }
         }
     },
     ETHEREUM_TESTNET:{
         usdc: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionCryptoTransfer,
-                CIRCLE: createCircleCryptoTransfer
+            BASTION:{
+                transferFunc: createBastionCryptoTransfer,
+                asyncExecuteFunc: executeAsyncBastionCryptoTransfer
             },
-            asyncExecuteFunc: {
-                BASTION: executeAsyncBastionCryptoTransfer,
-                CIRCLE: executeAsyncCircleCryptoTransfer
+            CIRCLE:{
+                transferFunc: createCircleCryptoTransfer,
+                asyncExecuteFunc: executeAsyncCircleCryptoTransfer
             }
         },
         usdHifi: {
-            walletProviderTable: "bastion_wallets",
-            transferFunc: {
-                BASTION: createBastionSandboxCryptoTransfer,
-                CIRCLE: null
+            BASTION:{
+                transferFunc: createBastionSandboxCryptoTransfer
+            },
+            CIRCLE: {
+                transferFunc: createBastionSandboxCryptoTransfer
             }
         }
     }
