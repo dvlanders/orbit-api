@@ -141,14 +141,6 @@ const updateStatus = async (transaction) => {
 			}
 
 			// console.log('Updated transaction status for transaction ID', transaction.id, 'to', hifiOfframpTransactionStatus);
-			
-			// if the on-chain transfer is completed, it means we can execute the payout for the Blindpay offramp
-			if(hifiOfframpTransactionStatus === 'COMPLETED_ONCHAIN' && transaction.fiat_provider === "BLINDPAY"){
-				const canSchedule = await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id)
-				if (canSchedule) {
-					await createJob("executeBlindpayPayout", { recordId: transaction.id }, transaction.user_id, null)
-				}
-			}
 
 			// send webhook message
 			await notifyCryptoToFiatTransfer(updateData)
