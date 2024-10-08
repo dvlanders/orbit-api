@@ -158,7 +158,9 @@ const processVirtualAccountEvent = async (event) => {
             source_currency: virtualAccount.source_currency,
             destination_currency: virtualAccount.destination_currency,
             chain: virtualAccountPaymentRailToChain[virtualAccount.destination_payment_rail],
-            source_manual_deposit: event.source
+            source_manual_deposit: event.source,
+            billing_tags_success: ["base"],
+            billing_tags_failed: []
         },
         { onConflict: "bridge_deposit_id" }
         )
@@ -169,7 +171,8 @@ const processVirtualAccountEvent = async (event) => {
       throw initialRecordError;
     }
 
-    await createTransactionFeeRecord(initialRecord.id, transferType.FIAT_TO_CRYPTO);
+    const feeTransaction = await createTransactionFeeRecord(initialRecord.id, transferType.FIAT_TO_CRYPTO);
+    await supabase.from("onramp_transactions").update({ fee_transaction_id: feeTransaction.id }).eq("id", initialRecord.id);
 
     await notifyFiatToCryptoTransfer(initialRecord);
   } catch (error) {

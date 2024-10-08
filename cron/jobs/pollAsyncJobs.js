@@ -1,5 +1,5 @@
-const createJob = require("../../asyncJobs/createJob");
 const { deleteJob } = require("../../asyncJobs/deleteJob");
+const { updateJob } = require("../../asyncJobs/updateJob");
 const { JobError } = require("../../asyncJobs/error");
 const insertJobHistory = require("../../asyncJobs/insertJobHistory");
 const { jobMapping } = require("../../asyncJobs/jobMapping");
@@ -31,18 +31,30 @@ const pollAsyncJobs = async() => {
         .order('next_retry', {ascending: true})
     
         if (error) {
-            await createLog("pollAsyncJobs", null, error.message, error)
-            return
+            return await createLog("pollAsyncJobs", null, error.message, error)
         }
     
         await Promise.all(jobsQueue.map(async(job) => {
-            let success
+            let success = false;
+            let reschedule = false;
+            let retry = false;
             let jobError
             try{
                 const jobFunc = jobMapping[job.job].execute
-                await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
-                await deleteJob(job.id)
+                const result = await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
+
+                if(result?.retryDetails?.shouldRetry){
+                    const { shouldRetry, retryDelay } = result.retryDetails;
+                    const toUpdate = {
+                        number_of_retries: job.number_of_retries + 1,
+                        next_retry: new Date(now.getTime() + retryDelay).toISOString(),
+                        in_process: false
+                    };
+                    await updateJob(job.id, toUpdate);
+                    retry = shouldRetry;
+                }
                 success = true
+
             }catch(error){
                 if ((error instanceof JobError && error.logging) || !(error instanceof JobError)){
                     await createLog("pollAsyncJobs", job.user_id, error.message)
@@ -50,8 +62,13 @@ const pollAsyncJobs = async() => {
                 // record error and create new job if needed
                 if (error instanceof JobError){
                     if (error.needToReschedule) {
-                        const newNextRetry = new Date(now.getTime() + job.retry_interval).toISOString()
-                        await createJob(job.job, job.config, job.user_id, job.profile_id, job.created_at, job.number_of_retries, newNextRetry, job.retry_deadline, job.retry_interval)
+                        reschedule = true;
+                        const toUpdate = {
+                            number_of_retries: job.number_of_retries + 1,
+                            next_retry: new Date(now.getTime() + job.retry_interval).toISOString(),
+                            in_process: false
+                        };
+                        await updateJob(job.id, toUpdate);
                         if(job.number_of_retries > retryAlertThreshold){
                             await createLog("pollAsyncJobs", job.user_id, `Job has been retried ${job.number_of_retries} times`, error.message)
                         }
@@ -71,11 +88,9 @@ const pollAsyncJobs = async() => {
                         rawResponse: error,
                     }
                 }
-                // delete the job after create a new one
-                await deleteJob(job.id)
-                success = false
             }finally{
                 await insertJobHistory(job.job, job.config, job.user_id, job.profile_id, success, jobError)
+                if((success && !retry) || (!success && !reschedule)) await deleteJob(job.id)
             }
         }))
     }catch (error){

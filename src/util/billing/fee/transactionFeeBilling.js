@@ -109,7 +109,7 @@ const createTransactionFeeRecord = async (transactionId, transactionType) => {
         amount: billableDepositFee,
         status: FeeTransactionStatus.IN_PROGRESS
     }
-    await insertTransactionFeeRecord(toInsert);
+    return await insertTransactionFeeRecord(toInsert);
 }
 
 const checkBalanceForTransactionFee = async (transactionId, transactionType) => {
