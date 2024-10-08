@@ -206,6 +206,7 @@ const receiverFieldsNameMap = {
   incorporation_doc_file: "incorporation_doc_file",
   proof_of_ownership_doc_file: "proof_of_ownership_doc_file",
   role: "role",
+  kyc_failed_reasons: "kyc_failed_reasons",
 };
 
 const pixAccountRequiredFields = [

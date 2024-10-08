@@ -5,8 +5,10 @@ const {
   CreateBankAccountError,
 } = require("../errors");
 const { BlindpayBankAccountType } = require("../utils");
+const { updateAccountInfoById } = require("../bankAccountService");
 
 const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
+
   const bankAccountRequestBody = {
     type: bankAccountInfo.type,
     name: bankAccountInfo.name,
@@ -102,13 +104,7 @@ const createBankAccount = async (bankAccountInfo) => {
 
   // console.log(responseBody);
   if (!response.ok) {
-    // Insert response into blindpay_bank_accounts table
-    const { error } = await supabase
-      .from("blindpay_bank_accounts")
-      .update({
-        blindpay_response: responseBody,
-      })
-      .eq("id", bankAccountInfo.id);
+    await updateAccountInfoById(bankAccountInfo.id, bankAccountInfo.type, { blindpay_response: responseBody });
 
     if (responseBody.message === "kyc_type_not_supported") {
       throw new CreateBankAccountError(

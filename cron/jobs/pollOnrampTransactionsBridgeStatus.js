@@ -6,6 +6,8 @@ const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatTo
 const { BridgeTransactionStatusMap } = require("../../src/util/bridge/utils");
 const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
 const createJob = require("../../asyncJobs/createJob");
+const notifyTransaction = require("../../src/util/logger/transactionNotifier");
+const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -83,6 +85,21 @@ const updateStatus = async (onrampTransaction) => {
 						}
 					}
 
+                    // send slack notification if failed
+                    if (update.status === "REFUNDED") {
+                        notifyTransaction(
+                            onrampTransaction.user_id,
+                            rampTypes.ONRAMP,
+                            onrampTransaction.id,
+                            {
+                                prevTransactionStatus: onrampTransaction.status,
+                                updatedTransactionStatus: update.status,
+                                checkbookStatus: update.checkbook_status,
+                                bridgeStatus: update.bridge_status,
+                                failedReason: update.failed_reason,
+                            }
+                        );
+                    }
 					await notifyFiatToCryptoTransfer(update)
 					break
 

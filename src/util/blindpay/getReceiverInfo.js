@@ -3,6 +3,10 @@ const { supabaseCall } = require("../supabaseWithRetry");
 const { ReceiverInfoGetErrorType, ReceiverInfoGetError } = require("./errors");
 const { receiverAcceptedFieldsMap, receiverFieldsNameMap } = require("./utils");
 
+const filterKYCFailedReasons = (kycFailedReasons) => {
+  return kycFailedReasons.map(({ warning_id, ...rest }) => rest);
+}
+
 const filterReceiverInfo = (receiverInfo) => {
   const acceptedFields =
     receiverAcceptedFieldsMap[receiverInfo.type]?.[receiverInfo.kyc_type];
@@ -19,6 +23,11 @@ const filterReceiverInfo = (receiverInfo) => {
       keepFields[colName] = receiverInfo[colName];
     }
   });
+
+  if(receiverInfo.kyc_failed_reasons){
+    keepFields.kyc_failed_reasons = filterKYCFailedReasons(receiverInfo.kyc_failed_reasons);
+  }
+
   return keepFields;
 };
 

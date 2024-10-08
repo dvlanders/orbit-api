@@ -194,7 +194,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	const responseBody = await response.json()
 	if (!response.ok) {
 		// failed to create tranfser
-		await createLog("transfer/createTransferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
+        await createLog("transfer/createTransferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
 		const toUpdate = {
 			transaction_status: "NOT_INITIATED",
 			updated_at: new Date().toISOString(),
@@ -343,7 +343,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	// map status
 	if (!bastionResponse.ok) {
 		// fail to transfer
-		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
+        await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
 		const { message, type } = getMappedError(bastionResponseBody.message)
 
 		const toUpdate = {
