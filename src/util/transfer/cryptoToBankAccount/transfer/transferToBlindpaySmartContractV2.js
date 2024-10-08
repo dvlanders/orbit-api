@@ -114,7 +114,7 @@ const acceptPaymentQuote = async (config) => {
 }
 
 const initTransferData = async (config) => {
-    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId, accountInfo } = config
+    const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, blindpayAccountId, accountInfo, feeTransactionId } = config
 
 	const contractAddress = getBlindpayContractAddress(chain, sourceCurrency)
 
@@ -143,6 +143,7 @@ const initTransferData = async (config) => {
 			bastion_user_id: sourceBastionUserId,
 			billing_tags_success: billingTags.success,
 			billing_tags_failed: billingTags.failed,
+            fee_transaction_id: feeTransactionId
 		})
 		.eq("request_id", requestId)
 		.select()
@@ -245,7 +246,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 }
 
 const createTransferToBlindpaySmartContract = async (config) => {
-    const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType } = config
+    const { requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, sourceBastionUserId, sourceWalletType, feeTransactionId } = config
     
     const { isExternalAccountExist, blindpayAccountId, destinationUserId } = await blindpayRailCheck(destinationAccountId)
     if (!isExternalAccountExist) return { isExternalAccountExist: false, transferResult: null }

@@ -58,7 +58,7 @@ const insertRecord = async(fields) => {
 }
 
 const createBastionCryptoTransfer = async(fields) => {
-    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionuserId, profileId } = fields
+    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionuserId, profileId, feeTransactionId } = fields
     if (!isValidAmount(amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[currency]
