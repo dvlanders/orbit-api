@@ -34,7 +34,14 @@ class fileUploadError extends Error {
 
 async function uploadFileFromUrl(fileUrl, bucketName, filePath, acceptedFileTypes = AcceptedFileTypes) {
 	// Fetch the file from the URL
-	const response = await fetch(fileUrl);
+    let response;
+    try {
+        response = await fetch(fileUrl);
+    } catch (error) {
+        console.error(error);
+        throw new fileUploadError(fileUploadErrorType.FAILED_TO_FETCH, `Failed to fetch file: ${fileUrl}`);
+    }
+    
 	if (!response.ok) {
 		throw new fileUploadError(fileUploadErrorType.FAILED_TO_FETCH, `Failed to fetch file: ${fileUrl}`);
 	}

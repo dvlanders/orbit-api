@@ -11,6 +11,7 @@ const { fieldsValidation } = require("../common/fieldsValidation");
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { checkBrlOfframpBankAccount } = require("./checkBrlOfframpBankAccount");
+const { insertBankAccount } = require("./bankAccountService");
 
 const uploadBankAccountInfo = async (fields) => {
   const acceptedFields = bankAccountAcceptedFieldsMap[fields.type];
@@ -50,7 +51,7 @@ const uploadBankAccountInfo = async (fields) => {
     await supabaseCall(() =>
       supabase
         .from("blindpay_receivers_kyc")
-        .select("blindpay_receiver_id, kyc_status")
+        .select("blindpay_receiver_id, kyc_status, kyc_type")
         .eq("id", fields.receiver_id)
         .eq("user_id", fields.user_id)
         .maybeSingle()
@@ -90,6 +91,17 @@ const uploadBankAccountInfo = async (fields) => {
     );
   }
 
+  if (receiverRecord && receiverRecord.kyc_type !== "standard" && (fields.type === "ach" || fields.type === "wire")) {
+    throw new BankAccountInfoUploadError(
+      BankAccountInfoUploadErrorType.KYC_TYPE_NOT_SUPPORTED,
+      400,
+      "",
+      {
+        error: `Your KYC type [${receiverRecord.kyc_type}] does not supported bank account type [${fields.type}]`,
+      }
+    );
+  }
+
   const bankAccountData = {
     user_id: fields.user_id,
     receiver_id: fields.receiver_id,
@@ -103,32 +115,9 @@ const uploadBankAccountInfo = async (fields) => {
 
   // check if the bank account already exists
   const { bankAccountExist, bankAccountRecord: existingBankAccountRecord } = await checkBrlOfframpBankAccount(bankAccountData);
-  if(bankAccountExist) {
-    return { bankAccountExist, bankAccountRecord: existingBankAccountRecord };
-  }
+  if(bankAccountExist) return { bankAccountExist, bankAccountRecord: existingBankAccountRecord };
 
-  // update the blindpay_bank_accounts table record
-  const { data: bankAccountRecord, error: bankAccountRecordError } =
-    await supabaseCall(() =>
-      supabase
-        .from("blindpay_bank_accounts")
-        .insert(bankAccountData)
-        .select()
-        .single()
-    );
-
-  if (bankAccountRecordError) {
-    throw new BankAccountInfoUploadError(
-      BankAccountInfoUploadErrorType.INTERNAL_ERROR,
-      500,
-      "",
-      {
-        error:
-          "Unexpected error happened, please contact HIFI for more information",
-      }
-    );
-  }
-
+  const bankAccountRecord = await insertBankAccount(bankAccountData);
   bankAccountRecord.blindpay_receiver_id = receiverRecord.blindpay_receiver_id;
   return { bankAccountExist: false, bankAccountRecord };
 };
