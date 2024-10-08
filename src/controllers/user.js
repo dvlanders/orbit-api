@@ -8,7 +8,8 @@ const { createBusinessBridgeCustomer } = require('../util/bridge/endpoint/submit
 const { createToSLink } = require("../util/bridge/endpoint/createToSLink_dep");
 const { supabaseCall } = require('../util/supabaseWithRetry');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
-const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided, informationUploadForUpdateUser, informationUploadForCreateUser, InformationUploadError, ipCheck } = require("../util/user/createUser");
+const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided, informationUploadForUpdateUser, informationUploadForCreateUser, ipCheck } = require("../util/user/createUser");
+const { InformationUploadError } = require('../util/user/errors');
 const { uploadFileFromUrl, fileUploadErrorType } = require('../util/supabase/fileUpload');
 const getBastionUser = require('../util/bastion/main/getBastionUser');
 const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
@@ -37,12 +38,8 @@ const { createCircleWallet } = require('../util/circle/main/createCircleWallet')
 const { updateUserWallet } = require('../util/user/updateUserWallet');
 const { createUserWallet } = require('../util/user/createUserWallet');
 const { getUserWalletBalance, getUserWallet } = require('../util/user/getUserWallet');
-
-const Status = {
-	ACTIVE: "ACTIVE",
-	INACTIVE: "INACTIVE",
-	PENDING: "PENDING",
-}
+const { defaultKycInfo, updateKycInfo, KycLevel } = require('../util/user/kycInfo');
+const { getUserRecord, updateUserRecord } = require('../util/user/userService');
 
 exports.getPing = async (req, res) => {
 	if (req.method !== 'GET') {
@@ -71,78 +68,8 @@ exports.createHifiUser = async (req, res) => {
 			if (error instanceof InformationUploadError) {
 				return res.status(error.status).json(error.rawResponse)
 			}
-			await createLog("user/create", null, `Failed to Information Upload For Create User profile Id: ${profileId}, error: ${error.message}`, error, profileId, res)
+			await createLog("user/create/informationUploadForCreateUser", null, `Failed to Information Upload For Create User profile Id: ${profileId}, error: ${error.message}`, error, profileId, res)
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		}
-
-		// base response
-		let createHifiUserResponse = {
-			wallet: {
-				walletStatus: Status.INACTIVE,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: Status.INACTIVE, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: Status.INACTIVE, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-
-						},
-					},
-					offRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-			user: {
-				id: userId,
-			}
 		}
 
 		// create customer object for providers
@@ -158,88 +85,9 @@ exports.createHifiUser = async (req, res) => {
 			createCheckbookUser(userId)
 		]);
 
-		// wallet status
-		const wallet = {
-			walletStatus: walletResult.walletStatus,
-			walletMessage: walletResult.message,
-			actionNeeded: {
-				actions: [...walletResult.actions, ...createHifiUserResponse.wallet.actionNeeded.actions],
-				fieldsToResubmit: [...walletResult.invalidFileds, ...createHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			},
-			walletAddress: walletResult.walletAddress
-		}
-		createHifiUserResponse.wallet = wallet
-
-		//checkbook status
-		const achPull = {
-			achPullStatus: checkbookResult.usOnRamp.status,
-			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-			},
-			message: checkbookResult.message
-		}
-		createHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
-
-		// bridge status
-		// kyc
-		const userKyc = {
-			status: bridgeResult.customerStatus.status,
-			actionNeeded: {
-				actions: bridgeResult.customerStatus.actions,
-				fieldsToResubmit: bridgeResult.customerStatus.fields,
-			},
-			message: bridgeResult.message,
-		}
-		createHifiUserResponse.user_kyc = userKyc
-		// usRamp
-		const usdAch = {
-			onRamp: {
-				status: bridgeResult.usRamp.status,
-				actionNeeded: {
-					actions: bridgeResult.customerStatus.actions,
-					fieldsToResubmit: bridgeResult.customerStatus.fields
-				},
-				message: bridgeResult.message,
-				achPull: {
-					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-					},
-					message: checkbookResult.message
-				}
-			},
-			offRamp: {
-				status: bridgeResult.usRamp.status,
-				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...createHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...createHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
-				},
-			}
-		}
-		createHifiUserResponse.ramps.usdAch = usdAch
-		// euRamp
-		const euroSepa = {
-			onRamp: {
-				status: Status.INACTIVE,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: 'SEPA onRamp will be available in near future',
-			},
-			offRamp: {
-				status: bridgeResult.euRamp.status,
-				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.fields, ...createHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.fieldsToResubmit],
-				},
-				message: ''
-			},
-		}
-		createHifiUserResponse.ramps.euroSepa = euroSepa
-
+		// base response
+		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel); // this is the new KYC info structure we want our users to slowly migrate to
+		updateKycInfo(createHifiUserResponse, walletResult, bridgeResult, checkbookResult);
 
 		let status
 		// determine the status code to return to the client
@@ -269,24 +117,8 @@ exports.getHifiUser = async (req, res) => {
 	try {
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
-		// check if user is created
-		let { data: user, error: userError } = await supabaseCall(() => supabase
-			.from('users')
-			.select('*')
-			.eq("id", userId)
-			.maybeSingle()
-		)
-
-		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
-
-		// check is developer user
-		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use GET user/developer" })
-
 		// get status
 		const { status, getHifiUserResponse } = await getRawUserObject(userId, profileId)
-
-
 		return res.status(status).json(getHifiUserResponse);
 	} catch (error) {
 		console.error(error)
@@ -306,16 +138,9 @@ exports.updateHifiUser = async (req, res) => {
 	try {
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
-		// check if user is created
-		let { data: user, error: userError } = await supabaseCall(() => supabase
-			.from('users')
-			.select('*')
-			.eq("id", userId)
-			.maybeSingle()
-		)
-		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 
+		const user = await getUserRecord(userId);
+		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 		// check is developer user
 		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use PUT user/developer" })
 
@@ -330,6 +155,8 @@ exports.updateHifiUser = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 		// STEP 2: Update the 3rd party providers with the new information
+
+		const kycLevel = fields.kycLevel || user.kyc_level;
 
 		// if the user is an individual, update the individual bridge customer
 		// if the user is a business, update the business bridge customer
@@ -353,152 +180,8 @@ exports.updateHifiUser = async (req, res) => {
 		// STEP 3: Update the bridge_customers, checkbook_users, and bastion_users tables with the new information
 
 		// STEP 4: Contruct the response object based on the responses from the 3rd party providers
-		let updateHifiUserResponse = {
-			user: {
-				id: userId
-			},
-			wallet: {
-				walletStatus: Status.INACTIVE,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: Status.INACTIVE, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: Status.INACTIVE, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-						},
-					},
-					offRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-		}
-
-		// wallet status
-		const wallet = {
-			walletStatus: walletResult.walletStatus,
-			walletMessage: walletResult.message,
-			actionNeeded: {
-				actions: [...walletResult.actions, ...updateHifiUserResponse.wallet.actionNeeded.actions],
-				fieldsToResubmit: [...walletResult.invalidFileds, ...updateHifiUserResponse.wallet.actionNeeded.fieldsToResubmit]
-			},
-			walletAddress: walletResult.walletAddress
-		}
-		updateHifiUserResponse.wallet = wallet
-
-		//checkbook status
-		const achPull = {
-			achPullStatus: checkbookResult.usOnRamp.status,
-			actionNeeded: {
-				actions: [...checkbookResult.usOnRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
-				fieldsToResubmit: [...checkbookResult.usOnRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-			}
-		}
-		updateHifiUserResponse.ramps.usdAch.onRamp.achPull = achPull
-
-		// bridge status
-		// kyc
-		const userKyc = {
-			status: bridgeResult.customerStatus.status,
-			actionNeeded: {
-				actions: bridgeResult.customerStatus.actions,
-				fieldsToResubmit: bridgeResult.customerStatus.fields,
-			},
-			message: bridgeResult.message,
-		}
-		updateHifiUserResponse.user_kyc = userKyc
-		// usRamp
-		const usdAch = {
-			onRamp: {
-				status: bridgeResult.usRamp.status,
-				actionNeeded: {
-					actions: bridgeResult.customerStatus.actions,
-					fieldsToResubmit: bridgeResult.customerStatus.fields
-				},
-				achPull: {
-					achPullStatus: checkbookResult.usOnRamp.status == Status.INACTIVE || checkbookResult.usOnRamp.status == Status.PENDING ? checkbookResult.usOnRamp.status : bridgeResult.usRamp.status,
-					actionNeeded: {
-						actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.actions],
-						fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.onRamp.achPull.actionNeeded.fieldsToResubmit]
-					}
-				}
-			},
-			offRamp: {
-				status: bridgeResult.usRamp.status,
-				actionNeeded: {
-					actions: [...bridgeResult.usRamp.actions, ...updateHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.usRamp.fields, ...updateHifiUserResponse.ramps.usdAch.offRamp.actionNeeded.fieldsToResubmit]
-				},
-			}
-		}
-		updateHifiUserResponse.ramps.usdAch = usdAch
-		// euRamp
-		const euroSepa = {
-			onRamp: {
-				status: Status.INACTIVE,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: 'SEPA onRamp will be available in near future',
-			},
-			offRamp: {
-				status: bridgeResult.euRamp.status,
-				actionNeeded: {
-					actions: [...bridgeResult.euRamp.actions, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.actions],
-					fieldsToResubmit: [...bridgeResult.euRamp.fields, ...updateHifiUserResponse.ramps.euroSepa.offRamp.actionNeeded.fieldsToResubmit],
-				},
-				message: ''
-			},
-		}
-		updateHifiUserResponse.ramps.euroSepa = euroSepa
+		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
+		updateKycInfo(updateHifiUserResponse, walletResult, bridgeResult, checkbookResult);
 
 		let status
 		// determine the status code to return to the client
@@ -666,75 +349,7 @@ exports.createHifiUserAsync = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
-
-		let createHifiUserResponse = {
-			wallet: {
-				walletStatus: CustomerStatus.PENDING,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: CustomerStatus.PENDING, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: CustomerStatus.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: CustomerStatus.PENDING, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-
-						},
-					},
-					offRamp: {
-						status: CustomerStatus.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: CustomerStatus.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-			user: {
-				id: userId,
-			}
-		}
+		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 
 		// insert async jobs
 		const canSchedule = await createUserAsyncCheck("createUser", { userId, userType: fields.userType }, userId, profileId)
@@ -768,14 +383,8 @@ exports.updateHifiUserAsync = async (req, res) => {
 
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
-		// check if user is created
-		let { data: user, error: userError } = await supabaseCall(() => supabase
-			.from('users')
-			.select('*')
-			.eq("id", userId)
-			.maybeSingle()
-		)
-		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+
+		const user = await getUserRecord(userId);
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 		// check is developer user
 		if (user.is_developer) return res.status(400).json({ error: "This is a developer user account, please use PUT user/developer" })
@@ -790,73 +399,8 @@ exports.updateHifiUserAsync = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
-		let updateHifiUserResponse = {
-			user: {
-				id: userId
-			},
-			wallet: {
-				walletStatus: Status.PENDING,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: Status.PENDING, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: Status.PENDING, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-						},
-					},
-					offRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-		}
+		const kycLevel = fields.kycLevel || user.kyc_level;
+		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
 
 		// insert async jobs
 		const canSchedule = await updateUserAsyncCheck("updateUser", { userId, userType: user.user_type }, userId, profileId)
@@ -933,75 +477,7 @@ exports.createDeveloperUser = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
-		let createHifiUserResponse = {
-			wallet: {
-				walletStatus: CustomerStatus.PENDING,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: CustomerStatus.PENDING, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: CustomerStatus.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: CustomerStatus.PENDING, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-
-						},
-					},
-					offRamp: {
-						status: CustomerStatus.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: CustomerStatus.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-			user: {
-				id: userId,
-			}
-		}
-
+		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 		// update developer user id into profile
 		const { data, error } = await supabaseCall(() => supabase
 			.from("profiles")
@@ -1014,16 +490,7 @@ exports.createDeveloperUser = async (req, res) => {
 
 		if (error) throw error
 
-		// update user account type to is_developer
-		const { data: user, error: userError } = await supabaseCall(() => supabase
-			.from("users")
-			.update({
-				is_developer: true
-			})
-			.eq("id", userId)
-		)
-
-		if (error) throw error
+		await updateUserRecord(userId, { is_developer: true});
 
 		// insert async jobs
 		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
@@ -1079,7 +546,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 			const bridgeKycPassed = bridgeCustomer.status == "active"
 
 			if (bridgeCustomer.status == "rejected") {
-				basicKycStatus = await getBridgeCustomer(userId)
+				basicKycStatus = await getBridgeCustomer(userId, user.kyc_level)
 			}
 
 			// get user wallet provider using POLYGON_AMOY or POLYGON _MAINNET
@@ -1171,14 +638,7 @@ exports.updateDeveloperUser = async (req, res) => {
 
 		//invalid user_id
 		if (!isUUID(userId)) return res.status(404).json({ error: "User not found for provided userId" })
-		// check if user is created
-		let { data: user, error: userError } = await supabaseCall(() => supabase
-			.from('users')
-			.select('*')
-			.eq("id", userId)
-			.maybeSingle()
-		)
-		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
+		const user = await getUserRecord(userId);
 		if (!user) return res.status(404).json({ error: "User not found for provided userId" })
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use PUT user" })
@@ -1193,73 +653,8 @@ exports.updateDeveloperUser = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened" })
 		}
 
-		let updateHifiUserResponse = {
-			user: {
-				id: userId
-			},
-			wallet: {
-				walletStatus: Status.PENDING,
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				walletMessage: "",
-				walletAddress: {}
-			},
-			user_kyc: {
-				status: Status.PENDING, // represent bridge
-				actionNeeded: {
-					actions: [],
-					fieldsToResubmit: [],
-				},
-				message: '',
-			},
-			ramps: {
-				usdAch: {
-					onRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: '',
-						achPull: {
-							achPullStatus: Status.PENDING, //represent bridge + checkbook
-							actionNeeded: {
-								actions: [],
-								fieldsToResubmit: [],
-							},
-						},
-					},
-					offRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-				euroSepa: {
-					onRamp: {
-						status: Status.INACTIVE, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: 'SEPA onRamp will be available in near future',
-					},
-					offRamp: {
-						status: Status.PENDING, // represent bridge
-						actionNeeded: {
-							actions: [],
-							fieldsToResubmit: [],
-						},
-						message: ''
-					},
-				},
-			},
-		}
+		const kycLevel = fields.kycLevel || user.kyc_level;
+		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
 
 		// insert async jobs
 		const canSchedule = await updateDeveloperUserAsyncCheck("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
