@@ -1,5 +1,6 @@
 const { isUUID } = require("../../../common/fieldsValidation");
 const { isValidAmount, inStringEnum, isHIFISupportedChain } = require("../../../common/filedValidationCheckFunctions");
+const { allowedWalletTypes } = require("../../utils/walletType");
 
 const requiredFields = [
     "senderUserId", "amount", "requestId", "chain", "currency"
@@ -15,8 +16,8 @@ const acceptedFields = {
     "currency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]),
     "feeType": (value) => inStringEnum(value, ["FIX", "PERCENT"]),
     "feeValue": (value) => isValidAmount(value),
-    "senderWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
-    "recipientWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"])
+    "senderWalletType": (value) => inStringEnum(value, allowedWalletTypes),
+    "recipientWalletType": (value) => inStringEnum(value, allowedWalletTypes)
 };
 
 const CreateCryptoToCryptoTransferErrorType = {

@@ -1,5 +1,6 @@
-const { createBastionCryptoTransfer } = require("../main/bastionTransfer")
+const { createBastionCryptoTransfer, executeAsyncBastionCryptoTransfer } = require("../main/bastionTransfer")
 const { createBastionSandboxCryptoTransfer } = require("../main/bastionTransfeSandboxUSDHIFI")
+const { createCircleCryptoTransfer, executeAsyncCircleCryptoTransfer } = require("../main/circleTransfer")
 
 /**
 transfer information should include
@@ -9,37 +10,78 @@ const cryptoToCryptoSupportedFunctions = {
     POLYGON_MAINNET: {
         usdc: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionCryptoTransfer,
+                CIRCLE: createCircleCryptoTransfer
+            },
+            asyncExecuteFunc: {
+                BASTION: executeAsyncBastionCryptoTransfer,
+                CIRCLE: executeAsyncCircleCryptoTransfer
+            }
         }
     },
     ETHEREUM_MAINNET: {
         usdc: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionCryptoTransfer,
+                CIRCLE: createCircleCryptoTransfer
+            },
+            asyncExecuteFunc: {
+                BASTION: executeAsyncBastionCryptoTransfer,
+                CIRCLE: executeAsyncCircleCryptoTransfer
+            }
         },
         usdt: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionCryptoTransfer,
+                CIRCLE: createCircleCryptoTransfer
+            },
+            asyncExecuteFunc: {
+                BASTION: executeAsyncBastionCryptoTransfer,
+                CIRCLE: executeAsyncCircleCryptoTransfer
+            }
         }
     },
     POLYGON_AMOY: {
         usdc: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionCryptoTransfer,
+                CIRCLE: createCircleCryptoTransfer
+            },
+            asyncExecuteFunc: {
+                BASTION: executeAsyncBastionCryptoTransfer,
+                CIRCLE: executeAsyncCircleCryptoTransfer
+            }
         },
         usdHifi: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionSandboxCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionSandboxCryptoTransfer,
+                CIRCLE: null
+            }
         }
     },
     ETHEREUM_TESTNET:{
         usdc: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionCryptoTransfer,
+                CIRCLE: createCircleCryptoTransfer
+            },
+            asyncExecuteFunc: {
+                BASTION: executeAsyncBastionCryptoTransfer,
+                CIRCLE: executeAsyncCircleCryptoTransfer
+            }
         },
         usdHifi: {
             walletProviderTable: "bastion_wallets",
-            transferFunc: createBastionSandboxCryptoTransfer,
+            transferFunc: {
+                BASTION: createBastionSandboxCryptoTransfer,
+                CIRCLE: null
+            }
         }
     }
 }

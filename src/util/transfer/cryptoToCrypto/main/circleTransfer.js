@@ -23,18 +23,45 @@ const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
 const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling")
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
-const { isBastionKycPassed } = require("../../../common/privilegeCheck")
 const { v4 } = require("uuid")
+const { insertSingleCircleTransactionRecord, updateCircleTransactionRecord } = require("../../../circle/main/circleTransactionTableService")
+const { chargeFeeCircle } = require("../../fee/chargeFeeCircle")
+const { getUserWallet } = require("../../../user/getUserWallet")
+const { erc20TransferWithFunctionName } = require("../../../smartContract/utils/erc20")
+const { submitTransactionCircle } = require("../../../circle/main/submitTransaction")
+const { safeParseBody } = require("../../../utils/response")
+
+const statusMap = {
+    "INITIATED": "SUBMITTED",
+    "QUEUED": "PENDING",
+	"PENDING_RISK_SCREENING": "PENDING",
+	"SENT": "PENDING",
+	"CONFIRMED": "PENDING",
+	"COMPLETE": "CONFIRMED",
+	"CANCELED": "CANCELED",
+	"FAILED": "FAILED",
+	"DENIED": "FAILED",
+	"ACCELERATED": "PENDING"
+}
 
 
 const insertRecord = async(fields) => {
+    // insert circle transaction record
+    const requestId = v4()
+    const toInsertCircleTransaction = {
+        user_id: fields.senderUserId,
+        request_id: requestId,
+        circle_wallet_id: fields.senderCircleWalletId,
+    }
+    const circleTransactionRecord = await insertSingleCircleTransactionRecord(toInsertCircleTransaction)
+    fields.circleTransactionId = circleTransactionRecord.id
+
     // insert record
-    fields.bastionRequestId = v4()
     const requestRecord = await insertRequestRecord(fields)
+    // return if no fee
     if (!fields.feeType || parseFloat(fields.feeValue) <= 0) return {validTransfer: true, record: requestRecord}
 
     // insert fee record
-    // check if allowance is enough 
     const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][fields.chain]
     if (!paymentProcessorContractAddress) {
         // no paymentProcessorContract available
@@ -54,18 +81,14 @@ const insertRecord = async(fields) => {
         currency: fields.currency,
         chargedWalletAddress: fields.senderAddress
     }
-    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, requestRecord.bastion_request_id)
+    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, requestId)
     // update into crypto to crypto table
     const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
     return {validTransfer: true, record}
 }
 
-const createBastionCryptoTransfer = async(fields) => {
-    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionUserId, profileId, feeTransactionId } = fields
-    // check privilege
-    if (!(await isBastionKycPassed(senderBastionUserId))) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Sender wallet is not kyc passed")
-    if (senderBastionUserId && !(await isBastionKycPassed(recipientBastionUserId))) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Recipient wallet is not kyc passed")
-    // check amount
+const createCircleCryptoTransfer = async(fields) => {
+    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, profileId, feeTransactionId, senderCircleWalletId } = fields
     if (!isValidAmount(amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[currency]
@@ -120,10 +143,26 @@ const transferWithFee = async(record, profileId) => {
         .single()
         
     if (error) throw error
-
     // perfrom transfer with fee
-    await CryptoToCryptoWithFeeBastion(record, feeRecord, record.payment_processor_contract_address, profileId)
+    const {updatedFeeRecord, submittedSuccessfully, responseBody} = await chargeFeeCircle(record, feeRecord, record.payment_processor_contract_address, record.recipient_address, record.units_amount, record.circleTransaction.circle_wallet_id)
 
+    // update circle transaction record
+    const toUpdateCircleTransaction = {
+        circle_status: responseBody.data.state,
+        circle_transaction_id: responseBody.data.id,
+        circle_response: responseBody,
+        updated_at: new Date().toISOString()
+    }
+    // update crypto to crypto record
+    const toUpdateCryptoToCrypto = {
+        status: submittedSuccessfully ? "SUBMITTED" : "NOT_INITIATED",
+        updated_at: new Date().toISOString()
+    }
+
+    await Promise.all([
+        updateRequestRecord(record.id, toUpdateCryptoToCrypto),
+        updateCircleTransactionRecord(record.circle_transaction_record_id, toUpdateCircleTransaction)
+    ])
     // send notification
     await notifyCryptoToCryptoTransfer(record)
     
@@ -133,41 +172,48 @@ const transferWithFee = async(record, profileId) => {
 const transferWithoutFee = async(record, profileId) => {
     const decimal = currencyDecimal[record.currency]
     const unitsAmount = toUnitsString(record.amount, decimal) 
-    // transfer without fee
-    const bodyObject = {
-        requestId: record.bastion_request_id,
-        userId: record.sender_bastion_user_id,
-        contractAddress: record.contract_address,
-        actionName: "transfer",
-        chain: record.chain,
-        actionParams: erc20Transfer(record.currency, record.chain, record.recipient_address, unitsAmount)
-    };
+    const transferFunction = erc20TransferWithFunctionName(record.currency, record.recipient_address, unitsAmount)
 
-    const response = await submitUserAction(bodyObject)
-    const responseBody = await response.json()
+    const response = await submitTransactionCircle(record.id, record.circleTransaction.request_id, record.circleTransaction.circle_wallet_id, record.contract_address, transferFunction.functionName, transferFunction.params)
+    const responseBody = await safeParseBody(response)
 
+    let toUpdateCryptoToCrypto, toUpdateCircleTransaction
     if (!response.ok) {
-        await createLog("transfer/bastionTransfer/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
+        await createLog("transfer/circleTransfer/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
         const {message, type} = getMappedError(responseBody.message)
-
-         // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
+        // update circle transaction record
+        toUpdateCircleTransaction = {
+            circle_status: "FAILED",
+            circle_response: responseBody,
+            updated_at: new Date().toISOString()
+        }
+        // update crypto to crypto record
+        toUpdateCryptoToCrypto = {
             status: "NOT_INITIATED",
-            failed_reason: message
+            failed_reason: message,
+            updated_at: new Date().toISOString()
         }
-        await updateRequestRecord(record.id, toUpdate)
     }else{
-        // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: responseBody.status,
-            transaction_hash: responseBody.transactionHash,
-            failed_reason: responseBody.failureDetails,
+        // update circle transaction record
+        toUpdateCircleTransaction = {
+            circle_status: responseBody.data.state,
+            circle_transaction_id: responseBody.data.id,
+            circle_response: responseBody,
+            updated_at: new Date().toISOString()
         }
-        
-        await updateRequestRecord(record.id, toUpdate)
+
+        // update crypto to crypto record
+        toUpdateCryptoToCrypto = {
+            status: statusMap[responseBody.data.state],
+            updated_at: new Date().toISOString()
+        }
     }
+
+    // update records
+    await Promise.all([
+        updateRequestRecord(record.id, toUpdateCryptoToCrypto),
+        updateCircleTransactionRecord(record.circle_transaction_record_id, toUpdateCircleTransaction)
+    ])
 
     // send notification
     await notifyCryptoToCryptoTransfer(record)
@@ -176,11 +222,11 @@ const transferWithoutFee = async(record, profileId) => {
     return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
 }
 
-const executeAsyncBastionCryptoTransfer = async(config) => {
+const executeAsyncCircleCryptoTransfer = async(config) => {
     // fetch from created record
 	const {data, error} = await supabase
     .from('crypto_to_crypto')
-    .select("*")
+    .select("*, circleTransaction: circle_transaction_record_id(*)")
     .eq("id", config.recordId)
     .single()
 
@@ -198,8 +244,6 @@ const executeAsyncBastionCryptoTransfer = async(config) => {
 }
 
 module.exports = {
-    CreateCryptoToCryptoTransferError,
-    CreateCryptoToCryptoTransferErrorType,
-    createBastionCryptoTransfer,
-    executeAsyncBastionCryptoTransfer
+    createCircleCryptoTransfer,
+    executeAsyncCircleCryptoTransfer
 }
