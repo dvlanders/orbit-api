@@ -1,14 +1,11 @@
-const { v4 } = require("uuid");
-const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
-const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const { transferType } = require("../../utils/transfer");
-const createLog = require("../../../logger/supabaseLogger");
-const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain");
-const { updateFeeRecord } = require("../../fee/updateFeeRecord");
-const { submitTransactionCircle } = require("../../../circle/main/submitTransaction");
-const { paymentProcessorProcessPaymentFunction } = require("../../../smartContract/utils/paymentProcessor");
-const { safeParseBody } = require("../../../utils/response");
-const { insertSingleCircleTransactionRecord } = require("../../../circle/main/circleTransactionTableService");
+const { toUnitsString } = require("../cryptoToCrypto/utils/toUnits");
+const createLog = require("../../logger/supabaseLogger");
+const { currencyDecimal, currencyContractAddress } = require("../../common/blockchain");
+const { updateFeeRecord } = require("./updateFeeRecord");
+const { submitTransactionCircle } = require("../../circle/main/submitTransaction");
+const { paymentProcessorProcessPaymentFunction } = require("../../smartContract/utils/paymentProcessor");
+const { safeParseBody } = require("../../utils/response");
+const { insertSingleCircleTransactionRecord } = require("../../circle/main/circleTransactionTableService");
 
 const chargedStatusMap = {
     "INITIATED": "SUBMITTED",
@@ -33,9 +30,10 @@ const chargeFeeCircle = async(requestRecord, feeRecord, paymentProcessorContract
         
         const response = await submitTransactionCircle(feeRecord.id, feeRecord.request_id, circleWalletId, paymentProcessorContractAddress, processPaymentFunction.functionName, processPaymentFunction.params)
         const responseBody = await safeParseBody(response)
-        let feeToUpdate
+        let feeToUpdate, submittedSuccessfully
 
         if (response.ok){
+            submittedSuccessfully = true
             // insert to circle transaction record
             const circleTransactionRecord = {
                 user_id: feeRecord.charged_user_id,
@@ -55,6 +53,7 @@ const chargeFeeCircle = async(requestRecord, feeRecord, paymentProcessorContract
 
         }else{
             await createLog("transfer/chargeFeeCircle", feeRecord.charged_user_id, responseBody.message, responseBody)
+            submittedSuccessfully = false
             // insert to circle transaction record
             const circleTransactionRecord = {
                 user_id: feeRecord.charged_user_id,
@@ -74,7 +73,7 @@ const chargeFeeCircle = async(requestRecord, feeRecord, paymentProcessorContract
 
         // update record
         const updatedFeeRecord = await updateFeeRecord(feeRecord.id, feeToUpdate)
-        return updatedFeeRecord
+        return {updatedFeeRecord, submittedSuccessfully, responseBody}
     }catch (error){
         await createLog("transfer/fee/chargeFeeCircle", feeRecord.charged_user_id, error.message)
         // update fee record
@@ -85,7 +84,11 @@ const chargeFeeCircle = async(requestRecord, feeRecord, paymentProcessorContract
 
         const updatedFeeRecord = await updateFeeRecord(feeRecord.id, feeToUpdate)
 
-        return updatedFeeRecord
+        return {updatedFeeRecord, submittedSuccessfully: false, responseBody: null}
     }
 
+}
+
+module.exports = {
+    chargeFeeCircle
 }

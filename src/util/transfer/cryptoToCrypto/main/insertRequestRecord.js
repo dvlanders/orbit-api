@@ -29,9 +29,9 @@ exports.insertRequestRecord = async(requestInfo) => {
             units_amount: requestInfo.unitsAmount,
             currency: requestInfo.currency,
             contract_address: requestInfo.contractAddress,
-            provider: requestInfo.provider,
-            transfer_from_wallet_type: requestInfo.senderWalletType || "INDIVIDUAL",
-            transfer_to_wallet_type: requestInfo.recipientWalletType || "INDIVIDUAL",
+            provider: requestInfo.senderWalletProvider,
+            transfer_from_wallet_type: requestInfo.senderWalletType,
+            transfer_to_wallet_type: requestInfo.recipientWalletType,
             status: "CREATED",
             bastion_user_id: requestInfo.senderBastionUserId,
             sender_bastion_user_id: requestInfo.senderBastionUserId,
@@ -39,6 +39,8 @@ exports.insertRequestRecord = async(requestInfo) => {
             billing_tags_success: billingTags.success,
             billing_tags_failed: billingTags.failed,
             fee_transaction_id: requestInfo.feeTransactionId,
+            circle_transaction_record_id: requestInfo.circleTransactionId,
+            bastion_request_id: requestInfo.bastionRequestId,
         },
     )
     .eq('request_id', requestInfo.requestId)

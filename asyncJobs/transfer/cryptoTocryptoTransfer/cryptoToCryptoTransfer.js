@@ -6,6 +6,8 @@ const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = requi
 const { getTokenAllowance } = require("../../../src/util/smartContract/approve/getApproveAmount")
 const supabase = require("../../../src/util/supabaseClient")
 const { executeAsyncBastionCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/bastionTransfer")
+const { executeAsyncCircleCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/circleTransfer")
+const cryptoToCryptoSupportedFunctions = require("../../../src/util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { JobError, JobErrorType } = require("../../error")
 
@@ -37,7 +39,9 @@ const cryptoToCryptoTransferAsync = async(config) => {
             }
         }
         
-        await executeAsyncBastionCryptoTransfer(config)
+        const executeFunc = cryptoToCryptoSupportedFunctions[record.chain][record.currency]["asyncExecuteFunc"][record.provider]
+        if (!executeFunc) throw new Error(`No transfer function found for trancation: ${record.id}`)
+        await executeFunc(config)
 
     }catch (error){
         if (error instanceof JobError) throw error

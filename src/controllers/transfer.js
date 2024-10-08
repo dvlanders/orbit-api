@@ -48,6 +48,7 @@ const { transferType } = require("../util/transfer/utils/transfer");
 const { createUsdcBridgingRequest } = require("../util/transfer/bridging/createUsdcBridingRequest");
 const { checkIsBridgingRequestIdAlreadyUsed } = require("../util/transfer/bridging/fetchRequestInformation");
 const fetchBridgingTransactions = require("../util/transfer/bridging/fetchBridgingTransactions");
+const { getUserWallet } = require("../util/user/getUserWallet");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -90,27 +91,24 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_CRYPTO, status: "CREATED" });
 
 		// fetch sender wallet address information
-		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-		if (senderWalletType && !allowedWalletTypes.includes(senderWalletType)) return res.status(400).json({ error: `wallet type ${senderWalletType} is not supported` })
 		const _senderWalletType = senderWalletType || "INDIVIDUAL"
-		const { walletAddress: senderAddress, bastionUserId: senderBastionUserId } = await getBastionWallet(senderUserId, chain, _senderWalletType)
-		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+		const { address: senderAddress, bastionUserId: senderBastionUserId, walletProvider: senderWalletProvider, circleWalletId: senderCircleWalletId } = await getUserWallet(senderUserId, chain, _senderWalletType)
+		if (!senderAddress) return res.status(400).json({ error: `Sender is not allowed to trasnfer crypto (user wallet record not found)` })
 		fields.senderAddress = senderAddress
 		fields.senderBastionUserId = senderBastionUserId
 		fields.feeTransactionId = feeTransaction.id
-		// check privilege
-		if (!(await isBastionKycPassed(senderBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
-
+		fields.senderWalletProvider = senderWalletProvider
+		fields.senderCircleWalletId = senderCircleWalletId
+		fields.senderWalletType = _senderWalletType
 		// check recipient wallet address if using recipientUserId
 		if (recipientUserId) {
-			if (recipientWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-			if (recipientWalletType && !allowedWalletTypes.includes(recipientWalletType)) return res.status(400).json({ error: `wallet type ${recipientWalletType} is not supported` })
 			const _recipientWalletType = recipientWalletType || "INDIVIDUAL"
-			const { walletAddress: recipientAddress, bastionUserId: recipientBastionUserId } = await getBastionWallet(recipientUserId, chain, _recipientWalletType)
-			if (!recipientAddress || !recipientBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+			const { address: recipientAddress, bastionUserId: recipientBastionUserId, walletProvider: recipientWalletProvider } = await getUserWallet(recipientUserId, chain, _recipientWalletType)
+			if (!recipientAddress) return res.status(400).json({ error: `Recipient is not allowed to trasnfer crypto (user wallet record not found)` })
 			fields.recipientAddress = recipientAddress
 			fields.recipientBastionUserId = recipientBastionUserId
-			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
+			fields.recipientWalletProvider = recipientWalletProvider
+			fields.recipientWalletType = _recipientWalletType
 		}
 
 
@@ -120,7 +118,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// get transfer function
-		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const transferFunc = cryptoToCryptoSupportedFunctions[chain][currency]["transferFunc"][senderWalletProvider]
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported transfer` })
 		// transfer
 		const receipt = await transferFunc(fields)
 

@@ -6,7 +6,7 @@ const { getTokenAllowance } = require("../../../src/util/smartContract/approve/g
 const supabase = require("../../../src/util/supabaseClient")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { chargeFeeBastion } = require("../../../src/util/transfer/fiatToCrypto/transfer/chargeFeeBastion")
-const { chargeFeeCircle } = require("../../../src/util/transfer/fiatToCrypto/transfer/chargeFeeCircle")
+const { chargeFeeCircle } = require("../../../src/util/transfer/fee/chargeFeeCircle")
 const { getUserWallet } = require("../../../src/util/user/getUserWallet")
 const { JobError, JobErrorType } = require("../../error")
 

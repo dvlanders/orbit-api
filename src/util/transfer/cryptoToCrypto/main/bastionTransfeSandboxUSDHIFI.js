@@ -24,6 +24,7 @@ const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/n
 const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/transfer")
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
+const { v4 } = require("uuid")
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
@@ -51,15 +52,16 @@ const insertRecord = async(fields) => {
             units_amount: fields.unitsAmount,
             currency: fields.currency,
             contract_address: fields.contractAddress,
-            provider: fields.provider,
-            transfer_from_wallet_type: fields.senderWalletType || "INDIVIDUAL",
-            transfer_to_wallet_type: fields.recipientWalletType || "INDIVIDUAL",
+            provider: "BASTION",
+            transfer_from_wallet_type: fields.senderWalletType,
+            transfer_to_wallet_type: fields.recipientWalletType,
             status: "CREATED",
-            sender_bastion_user_id: gasStation,
+            sender_bastion_user_id: gasStation, // function called by gas station
             recipient_bastion_user_id: fields.recipientBastionUserId,
             billing_tags_success: billingTags.success,
             billing_tags_failed: billingTags.failed,
             fee_transaction_id: fields.feeTransactionId,
+            bastion_request_id: v4()
         },
     )
     .eq("request_id", fields.requestId)
@@ -72,7 +74,6 @@ const insertRecord = async(fields) => {
     if (!fields.feeType || parseFloat(fields.feeValue) <= 0) return {validTransfer: true, record: requestRecord}
 
     // insert fee record
-    // check if allowance is enough 
     const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][fields.chain]
     if (!paymentProcessorContractAddress) {
         // no paymentProcessorContract available
@@ -107,7 +108,6 @@ const createBastionSandboxCryptoTransfer = async(fields) => {
     fields.unitsAmount = unitsAmount
     const contractAddress = currencyContractAddress[chain][currency]
     fields.contractAddress = contractAddress
-    fields.provider = "BASTION"
     // insert record
     const {validTransfer, record} = await insertRecord(fields)
     const receipt = await fetchCryptoToCryptoTransferRecord(record.id, profileId)
