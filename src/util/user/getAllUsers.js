@@ -4,6 +4,7 @@ const { supabaseCall } = require("../supabaseWithRetry");
 const { CustomerStatus } = require("./common");
 const { getRawUserObject } = require("./getRawUserObject");
 const { getUserWalletStatus } = require("./getUserWalletStatus");
+const { KycLevel } = require("./kycInfo");
 
 const BridgeKycStatusMap = {
     active: CustomerStatus.ACTIVE,
@@ -17,7 +18,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     if (userId){
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status)")
+        .select("id, created_at, kyc_level, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status)")
         .eq("profile_id", profileId)
         .not("user_kyc", "is", null)
         .eq("id", userId)
@@ -29,7 +30,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     else if (userType == "all"){
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status)")
+        .select("id, created_at, kyc_level, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status)")
         .eq("profile_id", profileId)
         .eq("is_developer", false)
         .not("user_kyc", "is", null)
@@ -42,7 +43,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     }else if (userType == "individual") {
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed)")
+        .select("id, created_at, kyc_level, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed)")
         .eq("profile_id", profileId)
         .eq("is_developer", false)
         .not("user_kyc", "is", null)
@@ -56,7 +57,7 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
     }else if (userType == "business"){
         const {data, error: usersError} = await supabase
         .from("users")
-        .select("id, created_at, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), ultimate_beneficial_owners (id, legal_first_name, legal_last_name, compliance_email, compliance_phone, tax_identification_number)")
+        .select("id, created_at, kyc_level, user_type, user_kyc (legal_first_name, legal_last_name, date_of_birth, compliance_email, compliance_phone, business_name), bridge_customers (status), bastion_users (kyc_passed, jurisdiction_check_passed), ultimate_beneficial_owners (id, legal_first_name, legal_last_name, compliance_email, compliance_phone, tax_identification_number)")
         .eq("profile_id", profileId)
         .eq("is_developer", false)
         .not("user_kyc", "is", null)
@@ -81,7 +82,8 @@ const getAllUsers = async(userId, profileId, userType="all", limit=10, createdAf
             email: user.user_kyc ? user.user_kyc.compliance_email: null,
             phone: user.user_kyc ? user.user_kyc.compliance_phone: null,
             createdAt: new Date(user.created_at),
-            userKycStatus: bridgeKycStatus, // now only represent bridge, which has the most functionality
+            userKycStatus: user.kyc_level === KycLevel.ONE ? walletstatus.walletStatus : bridgeKycStatus, // represent wallet status if KYC level is 1, else represent bridge status
+            userKycLevel: user.kyc_level, 
             walletStatus: walletstatus.walletStatus,
             walletAddress: walletstatus.walletAddress,
         }
