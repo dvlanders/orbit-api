@@ -1,5 +1,5 @@
 const { v4 } = require("uuid");
-const { paymentProcessorContractMap, paymentProcessorContractOwnerMap } = require("../approve/approveTokenBastion");
+const { paymentProcessorContractMap, paymentProcessorContractOwnerMap } = require("../approve/approveToken");
 const createLog = require("../../logger/supabaseLogger");
 const { insertContractActionRecord } = require("../insertContractActionRecord");
 const { updateContractActionRecord } = require("../updateContractActionRecord");
@@ -10,8 +10,8 @@ exports.regsiterFeeWallet = async(userId, walletAddress, chain) => {
     try{
 
         const requestId = v4()
-        const paymentProcessorContractAddress = paymentProcessorContractMap["production"][chain]
-        const paymentProcessorContractOwner = paymentProcessorContractOwnerMap["production"][chain]
+        const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][chain]
+        const paymentProcessorContractOwner = paymentProcessorContractOwnerMap[process.env.NODE_ENV][chain]
         if (!paymentProcessorContractAddress) throw new Error(`No payment processor contract found on ${chain}`)
         if (!paymentProcessorContractOwner) throw new Error(`No payment processor contract owner found on ${chain}`)
 

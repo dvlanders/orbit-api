@@ -7,7 +7,7 @@ const { getLastBridgeVirtualAccountActivity } = require("../utils/getLastBridgeV
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../utils/utils");
 const { isValidAmount } = require("../../../common/transferValidation");
 const { getMappedError } = require("../utils/errorMappings")
-const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveTokenBastion");
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getFeeConfig } = require("../../fee/utils");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
@@ -16,6 +16,7 @@ const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("./fetchCheckbook
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../utils/simulateSandboxFiatToCryptoTransaction");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
+const { getUserWallet } = require("../../../user/getUserWallet");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -89,7 +90,8 @@ const transferFromPlaidToBridge = async(configs) => {
                 currency: destinationCurrency,
                 chargedWalletAddress: transferInfo.destinationWalletAddress
             }
-            feeRecord = await createNewFeeRecord(initialRecord.id, feeType, feePercent, feeAmount, profileId, info, transferType.FIAT_TO_CRYPTO, "BASTION", v4())
+            const {walletProvider} = await getUserWallet(destinationUserId, chain)
+            feeRecord = await createNewFeeRecord(initialRecord.id, feeType, feePercent, feeAmount, profileId, info, transferType.FIAT_TO_CRYPTO,walletProvider, v4())
             // update into crypto to crypto table
             await updateRequestRecord(initialRecord.id, {developer_fee_id: feeRecord.id})
         }

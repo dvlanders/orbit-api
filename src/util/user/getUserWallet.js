@@ -19,7 +19,7 @@ const getUserWallet = async (userId, chain, walletType="INDIVIDUAL") => {
     if (userWallet.bastionWallet) provider = "BASTION"
     else if (userWallet.circleWallet) provider = "CIRCLE"
 
-    return {address: userWallet.address, chain, walletType, walletProvider: provider, bastionUserId: userWallet.bastionWallet?.bastion_user_id, circleWalletId: userWallet.circleWallet?.wallet_id}
+    return {walletId: userWallet.id, address: userWallet.address, chain, walletType, walletProvider: provider, bastionUserId: userWallet.bastionWallet?.bastion_user_id, circleWalletId: userWallet.circleWallet?.wallet_id}
 }
 
 const getUserWalletBalance = async (userId, chain, currency, walletType="INDIVIDUAL") => {

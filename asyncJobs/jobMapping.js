@@ -8,7 +8,7 @@ const { cryptoToCryptoTransferAsync } = require("./transfer/cryptoTocryptoTransf
 const { cryptoToFiatTransferScheduleCheck } = require("./transfer/cryptoToFiatTransfer/scheduleCheck");
 const { cryptoToFiatTransferAsync } = require("./transfer/cryptoToFiatTransfer/cryptoToFiatTransfer");
 const { chargeFeeOnFundReceivedScheduleCheck } = require("./transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
-const { chargeFeeOnFundReceivedBastionAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
+const { chargeFeeOnFundReceivedAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
 const { executeBlindpayPayoutScheduleCheck } = require("./transfer/executeBlindpayPayout/scheduleCheck");
 const { executeBlindpayPayout } = require("./transfer/executeBlindpayPayout/executeBlindpayPayout");
 const { updateDeveloperUserAsyncCheck, updateDeveloperUserAsync } = require("./user/updateDeveloperUser");
@@ -52,9 +52,9 @@ exports.jobMapping = {
 		scheduleCheck: cryptoToFiatTransferScheduleCheck,
 		execute: cryptoToFiatTransferAsync,
 	},
-	chargeFeeOnFundReceivedBastion: {
+	chargeFeeOnFundReceived: {
 		scheduleCheck: chargeFeeOnFundReceivedScheduleCheck,
-		execute: chargeFeeOnFundReceivedBastionAsync,
+		execute: chargeFeeOnFundReceivedAsync,
 	},
 	executeBlindpayPayout: {
 		scheduleCheck: executeBlindpayPayoutScheduleCheck,
