@@ -3,11 +3,10 @@ const createJob = require("../../asyncJobs/createJob");
 const {sendMessage} = require("../../webhooks/sendWebhookMessage");
 const { submitUserAction } = require("../util/bastion/endpoints/submitUserAction");
 const { Chain, currencyContractAddress } = require("../util/common/blockchain");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveTokenBastion");
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveToken");
 const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken");
 const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
-const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { createStripeBill } = require("../util/billing/createBill");
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const createLog = require("../util/logger/supabaseLogger");
@@ -236,7 +235,7 @@ exports.registerFeeWallet = async(req, res) => {
 
 exports.triggerOnRampFeeCharge = async(req, res) => {
     try{
-        await chargeFeeOnFundReceivedBastion("ae1a8634-4c7c-4c7c-b3f1-c090411340b1")
+        await createJob("chargeFeeOnFundReceived", {recordId: "c2f5a76b-d631-4725-a783-e39f9fea6cbc"}, "8f766843-5a41-4799-8c20-29906a212f66", "e37f17be-1369-4853-8026-65e9903bd430")
         return res.status(200).json({message: "ok"})
     }catch (error){
         console.error(error)

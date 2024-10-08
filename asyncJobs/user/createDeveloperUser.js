@@ -11,7 +11,9 @@ const { createDeveloperUserWallet } = require("../../src/util/user/createUserWal
 const { getUserWallet } = require("../../src/util/user/getUserWallet");
 const { JobError, JobErrorType } = require("../error");
 
-const chainToRegister = [
+const chainToRegister = process.env.NODE_ENV == "development" ? [
+    Chain.POLYGON_AMOY
+] : [
     Chain.POLYGON_MAINNET
 ]
 
