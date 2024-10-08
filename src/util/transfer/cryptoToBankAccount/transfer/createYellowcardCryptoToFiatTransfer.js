@@ -39,7 +39,7 @@ const fetchYellowcardCryptoToFiatTransferRecord = require("../../../../util/tran
 
 const initTransferData = async (config) => {
 
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, description } = config
 
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
@@ -66,7 +66,6 @@ const initTransferData = async (config) => {
 			destination_user_id: destinationUserId,
 			chain: chain,
 			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
-			// to_wallet_address: isAddress(userReapWalletAddress) ? getAddress(userReapWalletAddress) : userReapWalletAddress,
 			transaction_status: 'OPEN_QUOTE',
 			contract_address: contractAddress,
 			action_name: "transfer",
@@ -79,7 +78,7 @@ const initTransferData = async (config) => {
 			bastion_user_id: sourceBastionUserId,
 			purpose_of_payment: purposeOfPayment,
 			description: description,
-			destination_currency_amount: receivedAmount,
+			amount: amount,
 			yellowcard_transaction_id: yellowcardTransactionRecord.id,
 		})
 		.eq("request_id", requestId)
@@ -232,7 +231,6 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 	}
 
 	const { yellowcardRequestForQuote } = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment)
-	console.log('yellowcardRequestForQuote:', yellowcardRequestForQuote);
 	let result = {
 		transferType: transferType.CRYPTO_TO_FIAT,
 		transferDetails: {
@@ -303,35 +301,65 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 	return { isExternalAccountExist: true, transferResult: result }
 }
 const acceptYellowcardCryptoToFiatTransfer = async (config) => {
-	const { recordId, profileId } = config
-	// accept quote and update record
+	const { recordId, profileId } = config;
+
+	// Fetch the offramp transaction record by recordId
 	const { data: record, error: recordError } = await supabase
 		.from("offramp_transactions")
-		.select()
+		.select("*")
 		.eq("id", recordId)
-		.maybeSingle()
+		.maybeSingle();
 
-	if (recordError) throw recordError
-	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
-
-	const toUpdate = {
-		transaction_status: "CREATED" // TODO: Why do we do CREATED here? Technically the quote was created earlier so why not 
+	if (recordError) {
+		console.error('Database error when fetching offramp transaction:', recordError.message);
+		throw new Error(`Database error: ${recordError.message}`);
 	}
-	await updateRequestRecord(recordId, toUpdate)
-	// create Job
-	const jobConfig = {
-		recordId
-	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
+	if (!record) {
+		console.error('No transaction found for the provided record ID:', recordId);
+		throw new Error("No transaction found for provided record Id");
 	}
 
+	try {
+		// Execute the exchange process, which returns status and additional data
+		const exchangeResult = await executeYellowcardExchange(record.yellowcard_transaction_id);
+		if (exchangeResult.error) {
+			console.error('Exchange process failed:', exchangeResult.error);
+			throw new Error(`Exchange error: ${exchangeResult.error}`);
+		}
 
-	let result = await fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId)
+		// Construct the result object based on the exchange outcome and additional queries as needed
+		const result = {
+			transferType: "CRYPTO_TO_FIAT",
+			transferDetails: {
+				id: record.id,
+				requestId: record.request_id,
+				sourceUserId: record.user_id,
+				destinationUserId: record.destination_user_id,
+				chain: record.chain,
+				sourceCurrency: record.source_currency,
+				amount: record.amount,
+				destinationCurrency: record.destination_currency,
+				conversionRate: record.conversion_rate,
+				destinationAccountId: record.destination_account_id,
+				createdAt: record.created_at,
+				updatedAt: record.updated_at,
+				expiresAt: record.expires_at ? new Date(record.expires_at).toISOString().replace('Z', '+00:00') : null,
+				status: exchangeResult.transaction_status,
+				contractAddress: record.contract_address,
+				sourceUser: record.sender_user_id,
+				destinationUser: record.recipient_user_id,
+				failedReason: exchangeResult.failed_reason,
+				fee: null
+			}
+		};
 
+		return result;
+	} catch (error) {
+		console.error('Failed to process Yellowcard crypto to fiat transfer:', error);
+		throw new Error(`Error processing transfer: ${error.message}`);
+	}
+};
 
-	return result
-}
 
 
 const acceptYellowcardCryptoToFiatTransferOld = async (config) => {

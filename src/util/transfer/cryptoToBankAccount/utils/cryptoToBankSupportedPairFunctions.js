@@ -152,9 +152,8 @@ const CryptoToBankSupportedPairFunctions = {
 			kes: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
-				validationFunc: validateYellowCardTransferParams
-				//TODO - implement executeAsyncTransferCryptoToFiat
-				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
 			},
 		}
 	}
