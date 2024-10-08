@@ -4,6 +4,8 @@ const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
 const { BASTION_URL, BASTION_API_KEY } = process.env;
+const notifyTransaction = require("../../src/util/logger/transactionNotifier");
+const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 
 
 const updateStatus = async (transaction) => {
@@ -66,7 +68,20 @@ const updateStatus = async (transaction) => {
 				return
 			}
 		}
-
+        
+        // send slack notification if failed
+        if (updateData.status === 'FAILED') {
+            notifyTransaction(
+                transaction.sender_user_id,
+                rampTypes.CRYPTOTOCRYPTO,
+                transaction.id,
+                {
+                    prevTransactionStatus: transaction.status,
+                    updatedTransactionStatus: updateData.status,
+                    failedReason: updateData.failed_reason,
+                }
+            );
+        }
 		await notifyCryptoToCryptoTransfer(updateData)
 
 

@@ -3,6 +3,8 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
+const notifyTransaction = require("../../src/util/logger/transactionNotifier");
+const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -62,7 +64,7 @@ const updateStatus = async (onrampTransaction) => {
 			updated_at: new Date().toISOString()
 		})
 		.eq('id', onrampTransaction.id)
-		.select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, plaid_checkbook_id, fiat_provider, crypto_provider")
+		.select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, checkbook_status, bridge_status, failed_reason, plaid_checkbook_id, fiat_provider, crypto_provider")
 		.single())
 
 	if (updateError) {
@@ -71,6 +73,22 @@ const updateStatus = async (onrampTransaction) => {
 	}
 
     if (status != onrampTransaction.status){
+        // send slack notification if failed
+        if (status === "REFUNDED") {
+            notifyTransaction(
+                onrampTransaction.user_id,
+                rampTypes.ONRAMP,
+                onrampTransaction.id,
+                {
+                    prevTransactionStatus: onrampTransaction.status,
+                    updatedTransactionStatus: update.status,
+                    checkbookStatus: update.checkbook_status,
+                    bridgeStatus: update.bridge_status,
+                    failedReason: update.failed_reason,
+                }
+            );
+        }
+
         await notifyFiatToCryptoTransfer(update)
     }
 
