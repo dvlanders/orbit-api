@@ -3,13 +3,17 @@ UserObjectPendingResponse:
   content:
     application/json:
       schema:
-        $ref: "#/components/schemas/UserObjectPending"
+        oneOf:
+          - $ref: "#/components/schemas/UserObjectPending"
+          - $ref: "#/components/schemas/UserObjectPending_dep"
 UserObjectActiveResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: "#/components/schemas/UserObjectActive"
+        oneOf:
+          - $ref: "#/components/schemas/UserObjectActive"
+          - $ref: "#/components/schemas/UserObjectActive_dep"
 AllUserObjectsResponse:
   description: Success
   content:
