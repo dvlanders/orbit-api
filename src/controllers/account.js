@@ -923,6 +923,11 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	if (!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "userId not found" })
 
+	// TODO: this is temporary until Blindpay ships Argentina
+	if(fields.currency === "ars") {
+		return res.status(503).json({ error: "Service for Argentina is coming soon. Please check back later." });
+	}
+
 	let bankAccountExist, bankAccountRecord
 	// upload information and create new user
 	try {
