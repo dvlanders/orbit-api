@@ -39,7 +39,7 @@ const cryptoToCryptoTransferAsync = async(config) => {
             }
         }
         
-        const {asyncExecuteFunc} = cryptoToCryptoSupportedFunctions[record.chain][record.currency][record.provider]
+        const {asyncExecuteFunc} = cryptoToCryptoSupportedFunctions[record.chain][record.currency]
         if (!asyncExecuteFunc) throw new Error(`No transfer function found for trancation: ${record.id}`)
         await asyncExecuteFunc(config)
 

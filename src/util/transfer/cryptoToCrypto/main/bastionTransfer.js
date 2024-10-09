@@ -200,6 +200,4 @@ const executeAsyncBastionCryptoTransfer = async(config) => {
 module.exports = {
     CreateCryptoToCryptoTransferError,
     CreateCryptoToCryptoTransferErrorType,
-    createBastionCryptoTransfer,
-    executeAsyncBastionCryptoTransfer
 }

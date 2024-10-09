@@ -1,4 +1,4 @@
-const { updateCircleTransactionRecord } = require("../../circle/main/circleTransactionTableService");
+const { updateCircleTransactionRecord, getCircleTransactionRecord } = require("../../circle/main/circleTransactionTableService");
 const createLog = require("../../logger/supabaseLogger");
 const { safeParseBody } = require("../../utils/response");
 const { updateFeeRecord } = require("./updateFeeRecord");
@@ -22,7 +22,9 @@ const statusMapCircle = {
 const updateDeveloperFeeRecordCircle = async (feeTransaction, responseBody=null, response=null) => {
     let data = responseBody
     if (!data) {
-        const circleTransactionId = feeTransaction.circle_transaction.circle_transaction_id
+        // get the transactionId from the circle transaction
+        const circleTransaction = await getCircleTransactionRecord(feeTransaction.circle_transaction_record_id)
+        const circleTransactionId = circleTransaction.circle_transaction_id
         const url = `${CIRCLE_WALLET_URL}/v1/w3s/transactions/${circleTransactionId}`;
         const options = {
             method: 'GET',

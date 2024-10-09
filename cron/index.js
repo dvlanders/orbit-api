@@ -37,7 +37,7 @@ cron.schedule('*/20 * * * * *', pollBastionBaseAssetTransferStatus);
 cron.schedule('0 0 * * *', pollCleanWebhookQueue); // every 24 hrs
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsBridgeStatus)
 cron.schedule('*/10 * * * * *', pollAsyncJobs)
-cron.schedule('*/10 * * * * *', pollDeveloperFeeStatus)
+cron.schedule('*/60 * * * * *', pollDeveloperFeeStatus)
 cron.schedule('*/60 * * * * *', pollOfframpTransactionsForCircleWireExecution); // every 60 seconds
 cron.schedule('0 10 * * *', pollBillingCreate) // every day at 10 AM
 cron.schedule('*/60 * * * * *', pollBridgeWebhookEvents) // every 60 seconds

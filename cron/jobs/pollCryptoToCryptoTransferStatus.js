@@ -1,3 +1,4 @@
+const { updateBastionTransactionRecord } = require("../../src/util/bastion/main/bastionTransactionTableService");
 const { BastionTransferStatus } = require("../../src/util/bastion/utils/utils");
 const { updateCircleTransactionRecord } = require("../../src/util/circle/main/circleTransactionTableService");
 const createLog = require("../../src/util/logger/supabaseLogger");
@@ -6,6 +7,7 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const { updateRequestRecord } = require("../../src/util/transfer/cryptoToCrypto/main/updateRequestRecord");
 const { updateDeveloperFeeRecordBastion } = require("../../src/util/transfer/fee/updateFeeBastion");
 const { updateDeveloperFeeRecordCircle } = require("../../src/util/transfer/fee/updateFeeCircle");
+const { statusMapBastion } = require("../../src/util/transfer/walletOperations/bastion/statusMap");
 const { safeParseBody } = require("../../src/util/utils/response");
 const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
 const { BASTION_URL, BASTION_API_KEY, CIRCLE_WALLET_URL, CIRCLE_WALLET_API_KEY } = process.env;
@@ -23,10 +25,13 @@ const statusMapCircle = {
 	"ACCELERATED": "PENDING"
 }
 
+const cryptoToCryptoStatusMapBastion = statusMapBastion.CRYPTO_TO_CRYPTO
+
 
 const updateStatusBastion = async (transaction) => {
-	const bastionUserId = transaction.sender_bastion_user_id
-	const url = `${BASTION_URL}/v1/user-actions/${transaction.bastion_request_id}?userId=${bastionUserId}`;
+	const bastionUserId = transaction.bastionTransaction.bastion_user_id
+	const bastionRequestId = transaction.bastionTransaction.request_id
+	const url = `${BASTION_URL}/v1/user-actions/${bastionRequestId}?userId=${bastionUserId}`;
 	const options = {
 		method: 'GET',
 		headers: {
@@ -37,39 +42,35 @@ const updateStatusBastion = async (transaction) => {
 
 	try {
 		const response = await fetch(url, options);
-		const data = await response.json();
-
-		if (response.status === 404 || !response.ok) {
+		const data = await safeParseBody(response)
+		const toUpdate = {
+			updated_at: new Date().toISOString()
+		}
+		const toUpdateBastionTransaction = {
+			updated_at: new Date().toISOString()
+		}
+		if (response.status == 404){
+			await createLog('pollCryptoToCryptoTransferStatus/updateStatus', transaction.sender_user_id, `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${bastionRequestId}`, data);
+		}else if (!response.ok){
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${transaction.bastion_request_id}`;
-			console.error(errorMessage);
 			await createLog('pollCryptoToCryptoTransferStatus/updateStatus', transaction.sender_user_id, errorMessage, data);
-			return
+		}else{
+			toUpdate.status = cryptoToCryptoStatusMapBastion[data.status] || "UNKNOWN"
+			toUpdate.transaction_hash = data.transactionHash
+
+			toUpdateBastionTransaction.bastion_response = data
+			toUpdateBastionTransaction.bastion_status = data.status
 		}
+		
+
+		const [updatedRequest, updateBastionTransaction, updatedFeeRecord] = await Promise.all([
+			updateRequestRecord(transaction.id, toUpdate),
+			updateBastionTransactionRecord(transaction.bastion_transaction_record_id, toUpdateBastionTransaction),
+			transaction.developer_fee_id ? updateDeveloperFeeRecordBastion(transaction.feeRecord, data, response) : Promise.resolve(null)
+		])
+
 		if (data.status == transaction.status) return
-		// If the hifiOfframpTransactionStatus is different from the current transaction_status or if the data.status is different than the transaction.bastion_transaction_status, update the transaction_status
-		const { data: updateData, error: updateError } = await supabaseCall(() => supabase
-			.from('crypto_to_crypto')
-			.update({
-				status: data.status,
-				bastion_response: data,
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', transaction.id)
-			.select("*")
-			.single())
-
-		if (updateError) {
-			console.error('Failed to update transaction status', updateError);
-			await createLog('pollOfframpTransactionsBastionStatus/updateStatus', transaction.sender_user_id, 'Failed to update transaction status', updateError);
-			return
-		}
-
-		if (transaction.developer_fee_id) {
-			// update fee charged
-			await updateDeveloperFeeRecordBastion(transaction.feeRecord, data, response)
-		}
-
-		await notifyCryptoToCryptoTransfer(updateData)
+		await notifyCryptoToCryptoTransfer(updatedRequest)
 
 
 	} catch (error) {
@@ -94,14 +95,11 @@ const updateStatusCircle = async (transaction) => {
 		const data = await safeParseBody(response)
 		let toUpdate, toUpdateCircleTransaction
 		if (!response.ok) {
-			await createLog('pollOfframpTransactionsStatus/updateStatusCircle', contractAction.user_id, data.message, data);
+			await createLog('pollOfframpTransactionsStatus/updateStatusCircle', transaction.sender_user_id, data.message, data);
             toUpdate = {
-				status: "FAILED",
                 updated_at: new Date().toISOString(),
-				failed_reason: "Please contact HIFI support for more information"
             }
 			toUpdateCircleTransaction = {
-				circle_status: "FAILED",
 				updated_at: new Date().toISOString(),
 				circle_response: data,
 			}
@@ -122,11 +120,7 @@ const updateStatusCircle = async (transaction) => {
 		const [updatedRequest, updateCircleTransaction, updatedFeeRecord] = await Promise.all([
 			updateRequestRecord(transaction.id, toUpdate),
 			updateCircleTransactionRecord(transaction.circle_transaction_record_id, toUpdateCircleTransaction),
-			async() => {
-				if (transaction.developer_fee_id) {
-					await updateDeveloperFeeRecordCircle(transaction.feeRecord, data, response)
-				}
-			}
+			transaction.developer_fee_id ? updateDeveloperFeeRecordCircle(transaction.feeRecord, data, response) : Promise.resolve(null)
 		])
 
 		if (transaction.status == toUpdate.status) return
@@ -145,8 +139,6 @@ const updateFunctionMap = {
 	CIRCLE: updateStatusCircle
 }
 
-
-
 async function pollCryptoToCryptoTransferStatus() {
 	try {
 		// Get all records where the bastion_transaction_status is not BastionTransferStatus.CONFIRMED or BastionTransferStatus.FAILED
@@ -155,7 +147,7 @@ async function pollCryptoToCryptoTransferStatus() {
 			.update({ updated_at: new Date().toISOString() })
 			.or("status.eq.SUBMITTED,status.eq.ACCEPTED,status.eq.PENDING")
 			.order('updated_at', { ascending: true })
-			.select('*, circleTransaction: circle_transaction_record_id(*), feeRecord: developer_fee_id(*)')
+			.select('*, circleTransaction: circle_transaction_record_id(*), feeRecord: developer_fee_id(*), bastionTransaction: bastion_transaction_record_id(*)')
 		)
 
 		if (cryptoTransactionDataError) {
