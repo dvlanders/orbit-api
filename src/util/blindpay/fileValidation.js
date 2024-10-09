@@ -2,7 +2,7 @@
 
 const fileSizeCheck = async (fileUrl, minMB, maxMB) => {
     try {
-        const response = await fetch(fileUrl, { method: 'HEAD' });
+        const response = await fetch(fileUrl, { method: 'GET' });
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
