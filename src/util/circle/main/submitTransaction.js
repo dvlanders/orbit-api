@@ -14,7 +14,7 @@ Example request body:
 
 */
 
-const submitTransactionCircle = async (recordId, requestId, walletId, contractAddress, functionName, params) => {
+const submitTransactionCircle = async (referenceId, requestId, walletId, contractAddress, functionName, params) => {
     const url = `${process.env.CIRCLE_WALLET_URL}/v1/w3s/developer/transactions/contractExecution`
     const options = {
         method: "POST",
@@ -31,7 +31,7 @@ const submitTransactionCircle = async (recordId, requestId, walletId, contractAd
             walletId: walletId,
             entitySecretCiphertext: generateCypherText(),
             feeLevel: "MEDIUM",
-            refId: recordId
+            refId: referenceId
         })
     }
     const response = await fetch(url, options)

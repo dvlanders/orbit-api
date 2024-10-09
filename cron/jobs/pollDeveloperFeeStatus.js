@@ -18,9 +18,8 @@ async function pollDeveloperFeeStatus() {
 			.from('developer_fees')
             .update({updated_at: new Date().toISOString()})
             .or("charged_status.eq.SUBMITTED, charged_status.eq.PENDING")
-            .not("request_id", "is", null)
 			.order('updated_at', { ascending: true })
-			.select("*, circle_transaction: circle_transaction_record_id(*)")
+			.select("*")
 		)
 
         

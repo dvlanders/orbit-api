@@ -25,10 +25,19 @@ const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/transfer")
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
 const { v4 } = require("uuid")
+const { insertSingleBastionTransactionRecord } = require("../../../bastion/main/bastionTransactionTableService")
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
 
 const insertRecord = async(fields) => {
+    // insert provider record
+    const toInsert = {
+        user_id: fields.userId,
+        request_id: fields.requestId,
+        bastion_user_id: gasStation,
+    }
+    const providerRecord = await insertSingleBastionTransactionRecord(toInsert)
+
     // get billing tags
     const billingTags = fields.recipientUserId ? {
         success: ["internal"],
@@ -56,12 +65,11 @@ const insertRecord = async(fields) => {
             transfer_from_wallet_type: fields.senderWalletType,
             transfer_to_wallet_type: fields.recipientWalletType,
             status: "CREATED",
-            sender_bastion_user_id: gasStation, // function called by gas station
             recipient_bastion_user_id: fields.recipientBastionUserId,
             billing_tags_success: billingTags.success,
             billing_tags_failed: billingTags.failed,
             fee_transaction_id: fields.feeTransactionId,
-            bastion_request_id: v4()
+            bastion_transaction_record_id: providerRecord.id,
         },
     )
     .eq("request_id", fields.requestId)
@@ -93,7 +101,7 @@ const insertRecord = async(fields) => {
         currency: fields.currency,
         chargedWalletAddress: fields.senderAddress
     }
-    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, "BASTION", requestRecord.bastion_request_id)
+    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, "BASTION", null, {bastion_transaction_record_id: providerRecord.id})
     // update into crypto to crypto table
     const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
     return {validTransfer: true, record: requestRecord}
@@ -135,6 +143,7 @@ const createBastionSandboxCryptoTransfer = async(fields) => {
 
 }
 
+// FIXME fee charge currently not allowed
 const transferWithFee = async(record, profileId) => {
     // get fee record
     const {data: feeRecord, error} = await supabase
@@ -152,33 +161,30 @@ const transferWithFee = async(record, profileId) => {
 
 const transferWithoutFee = async(record, profileId) => {
 
-    const response = await transferUSDHIFI(record.sender_address, record.recipient_address, record.amount, record.chain, record.bastion_request_id)
-    const responseBody = await response.json()
+    const transferConfig = {
+        providerRecordId: record.bastion_transaction_record_id,
+        fromWalletAddress: record.sender_address,
+        currency: record.currency,
+        unitsAmount: record.units_amount,
+        chain: record.chain,
+        userId: record.sender_user_id,
+        toWalletAddress: record.recipient_address,
+        transferType: transferType.CRYPTO_TO_CRYPTO
+    }
+    const {response, responseBody, mainTableStatus, providerStatus, failedReason} = await transferUSDHIFI(transferConfig)
 
+     // update crypto to crypto record
+     const toUpdateCryptoToCrypto ={
+        status: mainTableStatus,
+        updated_at: new Date().toISOString()
+    }
     if (!response.ok) {
         // before fixing the smart contract default as Not enough error
         await createLog("transfer/bastionTransferSandboxUSDHIFI/transferWithoutFee", record.sender_user_id, responseBody.message, responseBody)
-        // const {message, type} = getMappedError(responseBody.message)
-
-         // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: "FAILED",
-            failed_reason: "Transfer amount exceeds balance."
-        }
-        await updateRequestRecord(record.id, toUpdate)
-    }else{
-        // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: responseBody.status,
-            transaction_hash: responseBody.transactionHash,
-            failed_reason: responseBody.failureDetails,
-        }
-        
-        await updateRequestRecord(record.id, toUpdate)
+        toUpdateCryptoToCrypto.failed_reason = failedReason
     }
-
+    
+    await updateRequestRecord(record.id, toUpdateCryptoToCrypto)
     // send notification
     await notifyCryptoToCryptoTransfer(record)
 }
