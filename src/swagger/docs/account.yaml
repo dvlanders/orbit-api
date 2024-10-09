@@ -101,7 +101,7 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
-/account/sa/receiver:
+/account/south-america/receiver:
   post:
     summary: Create South America Offramp Receiver
     description: |
@@ -164,13 +164,13 @@
         $ref: '#/components/responses/NotFoundResponse'
       '500':
         $ref: '#/components/responses/InternalServerErrorResponse'
-/account/sa/offramp:
+/account/south-america/offramp:
   post:
     summary: Add a South America Offramp Bank Account
     description: |
       Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.
 
-      **We currently support Brazil (BRL), Argentina (ARS), Colombia (COP), and Mexico (MXN) offramp bank accounts.**
+      **We currently support Brazil (BRL), Colombia (COP), and Mexico (MXN) offramp bank accounts. (Argentina (ARS) coming soon ...)**
     tags:
       - Account
     parameters:

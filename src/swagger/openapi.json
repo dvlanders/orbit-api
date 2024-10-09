@@ -6935,7 +6935,7 @@
         }
       }
     },
-    "/account/sa/receiver": {
+    "/account/south-america/receiver": {
       "post": {
         "summary": "Create South America Offramp Receiver",
         "description": "Create a Receiver for South America Offramp. This should be called prior to \nadding any South America offramp bank account since each South America offramp bank account is tied to a receiver.\n\n| Limit Type               | Individual Light KYC | Business Light KYB | Individual Standard KYC | Business Standard KYB |\n|--------------------------|----------------------|--------------------|-------------------------|-----------------------|\n| Per Transaction Limit    | $1,000               | $3,000             | $10,000                 | $30,000               |\n| Daily Limit              | $3,000               | $6,000             | $50,000                 | $100,000              |\n| Monthly Limit            | $10,000              | $15,000            | $100,000                | $250,000              |\n",
@@ -7027,10 +7027,10 @@
         }
       }
     },
-    "/account/sa/offramp": {
+    "/account/south-america/offramp": {
       "post": {
         "summary": "Add a South America Offramp Bank Account",
-        "description": "Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.\n\n**We currently support Brazil (BRL), Argentina (ARS), Colombia (COP), and Mexico (MXN) offramp bank accounts.**\n",
+        "description": "Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.\n\n**We currently support Brazil (BRL), Colombia (COP), and Mexico (MXN) offramp bank accounts. (Argentina (ARS) coming soon ...)**\n",
         "tags": [
           "Account"
         ],
