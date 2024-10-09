@@ -82,11 +82,17 @@ const oldKycInfo = () => ({
 
 const defaultKycInfo = (userId, kycLevel = KycLevel.ZERO) => {
     const defaultStructure = {
-        ...oldKycInfo(),
+        user: {
+            id: userId,
+            kyc: {
+                level: kycLevel ? kycLevel : KycLevel.ZERO,
+                ...createStatusStruct()
+            }
+        },
         onChain: {
             wallet: {
                 ...createStatusStruct(),
-                walletAddress: {}
+                addresses: {}
             }
         },
         onRamp: {
@@ -117,14 +123,7 @@ const defaultKycInfo = (userId, kycLevel = KycLevel.ZERO) => {
                 }
             }
         },
-        user: {
-            id: userId,
-            kyc: {
-                level: kycLevel ? kycLevel : KycLevel.ZERO,
-                ...createStatusStruct()
-            }
-        }
-    
+        ...oldKycInfo()
     }
 
     return defaultStructure;
@@ -153,7 +152,7 @@ const updateKycInfo = (kycInfo, walletResult, bridgeResult, checkbookResult) => 
             actions: walletResult.actions,
             fieldsToResubmit: walletResult.invalidFileds
         },
-        walletAddress: walletResult.walletAddress
+        addresses: walletResult.walletAddress
     }
     kycInfo.onChain.wallet = walletUpdates;
 

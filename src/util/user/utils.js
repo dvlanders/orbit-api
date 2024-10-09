@@ -5,7 +5,7 @@ const KycLevel = {
     TWO: 2,
 }
 
-const individualKycOneRequiredFields = ["userType", "kycLevel", "legalFirstName", "legalLastName", "dateOfBirth", "signedAgreementId", "ipAddress"]
+const individualKycOneRequiredFields = ["userType", "kycLevel", "legalFirstName", "legalLastName", "dateOfBirth", "ipAddress"]
 
 const individualKycOneAcceptedFields = {
     "userType": "string",
@@ -13,17 +13,15 @@ const individualKycOneAcceptedFields = {
     "legalFirstName": "string",
     "legalLastName": "string",
     "dateOfBirth": (value) => isValidDate(value),
-    "signedAgreementId": "string",
     "ipAddress": (value) => isValidIPv4(value)
 }
 
-const businessKycOneRequiredFields = ["userType", "kycLevel", "businessName", "signedAgreementId", "ipAddress", "ultimateBeneficialOwners"]
+const businessKycOneRequiredFields = ["userType", "kycLevel", "businessName", "ipAddress", "ultimateBeneficialOwners"]
 
 const businessKycOneAcceptedFields = {
     "userType": "string",
     "kycLevel": "number",
     "businessName": "string",
-    "signedAgreementId": "string",
     "ipAddress": (value) => isValidIPv4(value),
 	"ultimateBeneficialOwners": (value) => Array.isArray(value) && value.length > 0
 }
