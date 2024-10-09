@@ -566,10 +566,16 @@
             "schema": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/IndividualUserCreate"
+                  "$ref": "#/components/schemas/IndividualUserKycOneCreate"
                 },
                 {
-                  "$ref": "#/components/schemas/BusinessUserCreate"
+                  "$ref": "#/components/schemas/IndividualUserKycTwoCreate"
+                },
+                {
+                  "$ref": "#/components/schemas/BusinessUserKycOneCreate"
+                },
+                {
+                  "$ref": "#/components/schemas/BusinessUserKycTwoCreate"
                 }
               ]
             }
@@ -920,7 +926,14 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/UserObjectPending"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UserObjectPending"
+                },
+                {
+                  "$ref": "#/components/schemas/UserObjectPending_dep"
+                }
+              ]
             }
           }
         }
@@ -930,7 +943,14 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/UserObjectActive"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UserObjectActive"
+                },
+                {
+                  "$ref": "#/components/schemas/UserObjectActive_dep"
+                }
+              ]
             }
           }
         }
@@ -5488,10 +5508,60 @@
           }
         }
       },
-      "IndividualUserCreate": {
+      "IndividualUserKycOneCreate": {
         "type": "object",
-        "title": "Create Individual User",
+        "title": "Create Individual User (KYC Level 1)",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              1
+            ]
+          },
+          "userType": {
+            "type": "string",
+            "enum": [
+              "individual"
+            ]
+          },
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user. \n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
+            "format": "ipv4"
+          }
+        },
+        "required": [
+          "kycLevel",
+          "userType",
+          "legalFirstName",
+          "legalLastName",
+          "dateOfBirth",
+          "ipAddress"
+        ]
+      },
+      "IndividualUserKycTwoCreate": {
+        "type": "object",
+        "title": "Create Individual User (KYC Level 2)",
+        "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              2
+            ]
+          },
           "userType": {
             "type": "string",
             "enum": [
@@ -5570,6 +5640,7 @@
           }
         },
         "required": [
+          "kycLevel",
           "userType",
           "legalFirstName",
           "legalLastName",
@@ -5588,10 +5659,57 @@
           "ipAddress"
         ]
       },
-      "BusinessUserCreate": {
+      "BusinessUserKycOneCreate": {
         "type": "object",
-        "title": "Create Business User",
+        "title": "Create Business User (KYC Level 1)",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              1
+            ]
+          },
+          "userType": {
+            "type": "string",
+            "enum": [
+              "business"
+            ]
+          },
+          "businessName": {
+            "type": "string"
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
+            "format": "ipv4"
+          },
+          "ultimateBeneficialOwners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UltimateBeneficialOwnerKycOne"
+            }
+          }
+        },
+        "required": [
+          "kycLevel",
+          "userType",
+          "businessName",
+          "ipAddress",
+          "ultimateBeneficialOwners"
+        ]
+      },
+      "BusinessUserKycTwoCreate": {
+        "type": "object",
+        "title": "Create Business User (KYC Level 2)",
+        "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              2
+            ]
+          },
           "userType": {
             "type": "string",
             "enum": [
@@ -5686,7 +5804,7 @@
           "ultimateBeneficialOwners": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UltimateBeneficialOwner"
+              "$ref": "#/components/schemas/UltimateBeneficialOwnerKycTwo"
             }
           },
           "proofOfResidency": {
@@ -5695,6 +5813,7 @@
           }
         },
         "required": [
+          "kycLevel",
           "userType",
           "businessName",
           "businessType",
@@ -5721,6 +5840,13 @@
         "type": "object",
         "title": "Update Individual User",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "If provided, the KYC level of the user will be upgraded to the provided level and the user will be required to submit all the fields required for the new KYC level. \nYou can refer to the Create Individual User (KYC Level 2) endpoint for the required fields.\n\nCurrently you can only upgrade from KYC level 1 to 2.\n",
+            "enum": [
+              2
+            ]
+          },
           "legalFirstName": {
             "type": "string"
           },
@@ -5797,6 +5923,13 @@
         "type": "object",
         "title": "Update Business User",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "If provided, the KYC level of the user will be upgraded to the provided level and the user will be required to submit all the fields required for the new KYC level. \nYou can refer to the Create Business User (KYC Level 2) endpoint for the required fields.\n\nCurrently you can only upgrade from KYC level 1 to 2.\n",
+            "enum": [
+              2
+            ]
+          },
           "businessName": {
             "type": "string"
           },
@@ -5885,7 +6018,7 @@
           "ultimateBeneficialOwners": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UltimateBeneficialOwner"
+              "$ref": "#/components/schemas/UltimateBeneficialOwnerKycTwo"
             }
           },
           "proofOfResidency": {
@@ -5894,7 +6027,38 @@
           }
         }
       },
-      "UltimateBeneficialOwner": {
+      "UltimateBeneficialOwnerKycOne": {
+        "type": "object",
+        "properties": {
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "hasControl": {
+            "type": "boolean",
+            "description": "True if the person has a significant responsibility to control, manage, or direct the activities of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "isSigner": {
+            "type": "boolean",
+            "description": "True if the person can authorize transactions on behalf of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          }
+        },
+        "required": [
+          "legalFirstName",
+          "legalLastName",
+          "dateOfBirth",
+          "hasControl",
+          "isSigner"
+        ]
+      },
+      "UltimateBeneficialOwnerKycTwo": {
         "type": "object",
         "properties": {
           "legalFirstName": {
@@ -6014,6 +6178,348 @@
         ]
       },
       "UserObjectPending": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "kyc": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "onChain": {
+            "type": "object",
+            "properties": {
+              "wallet": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "addresses": {
+                    "type": "object",
+                    "properties": {
+                      "POLYGON_AMOY": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "achPush": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "achPull": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "offRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "ach": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "user": {
+            "id": "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa",
+            "kyc": {
+              "level": 2,
+              "status": "ACTIVE",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "message": ""
+            }
+          },
+          "onChain": {
+            "wallet": {
+              "status": "ACTIVE",
+              "message": "",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "addresses": {
+                "POLYGON_AMOY": {
+                  "address": "0x43B343Bb48E23F58406271131B71448fF95787AD"
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "usd": {
+              "achPush": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              },
+              "achPull": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "SEPA onRamp will be available in near future"
+              }
+            }
+          },
+          "offRamp": {
+            "usd": {
+              "ach": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              }
+            }
+          }
+        }
+      },
+      "UserObjectPending_dep": {
         "type": "object",
         "properties": {
           "wallet": {
@@ -6322,6 +6828,348 @@
         }
       },
       "UserObjectActive": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "kyc": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "onChain": {
+            "type": "object",
+            "properties": {
+              "wallet": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "addresses": {
+                    "type": "object",
+                    "properties": {
+                      "POLYGON_AMOY": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "achPush": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "achPull": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "offRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "ach": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "user": {
+            "id": "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa",
+            "kyc": {
+              "level": 2,
+              "status": "ACTIVE",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "message": ""
+            }
+          },
+          "onChain": {
+            "wallet": {
+              "status": "ACTIVE",
+              "message": "",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "addresses": {
+                "POLYGON_AMOY": {
+                  "address": "0x43B343Bb48E23F58406271131B71448fF95787AD"
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "usd": {
+              "achPush": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              },
+              "achPull": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "SEPA onRamp will be available in near future"
+              }
+            }
+          },
+          "offRamp": {
+            "usd": {
+              "ach": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            }
+          }
+        }
+      },
+      "UserObjectActive_dep": {
         "type": "object",
         "properties": {
           "wallet": {
@@ -6663,6 +7511,9 @@
                 "userKycStatus": {
                   "type": "string"
                 },
+                "userKycLevel": {
+                  "type": "integer"
+                },
                 "walletStatus": {
                   "type": "string"
                 },
@@ -6695,6 +7546,7 @@
               "phone": "+11234567890",
               "createdAt": "2024-08-08T19:54:33.035Z",
               "userKycStatus": "ACTIVE",
+              "userKycLevel": 2,
               "walletStatus": "ACTIVE",
               "walletAddress": {
                 "POLYGON_MAINNET": {
