@@ -206,6 +206,7 @@ const updateUboData = async (userId, ultimateBeneficialOwners) => {
 }
 
 const informationUploadForCreateUser = async (profileId, fields) => {
+	if (!fields.kycLevel) fields.kycLevel = 2; // for backward compatibility. default to kyc level 2
 	if (!fields.userType || !fields.kycLevel) {
 		throw new InformationUploadError(
 			InformationUploadErrorType.FIELD_MISSING,
@@ -245,7 +246,7 @@ const informationUploadForCreateUser = async (profileId, fields) => {
 	if (!ipValid) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: `Invalid ipAddress, ${message}`, missingFields: [], invalidFields: ["ipAddress"] });
 
 	// check signedAgreementId only for prod
-	if (process.env.NODE_ENV == "production") {
+	if (process.env.NODE_ENV == "production" && fields.signedAgreementId) {
 		if (!(await checkIsSignedAgreementIdSigned(fields.signedAgreementId))) throw new InformationUploadError(InformationUploadErrorType.INVALID_FIELD, 400, "", { error: "Invalid signedAgreementId" });
 	}
 
