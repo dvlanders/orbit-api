@@ -50,6 +50,12 @@ const BillingTagsForOfframp = {
                 failed: [],
             },
         },
+        nibbs:{
+            ngn:{
+                success: ["base"],  
+                failed: [],
+            },
+        },
         fps:{
             hkd:{
                 success: ["base"],
