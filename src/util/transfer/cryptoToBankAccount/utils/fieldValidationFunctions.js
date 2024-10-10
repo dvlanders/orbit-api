@@ -108,11 +108,11 @@ const validateYellowCardTransferParams = async (config) => {
 		});
 		validationRes.valid = false;
 	}
-	if (amount < 10 || amount > 1000) {
+	if (amount < 1 || amount > 10000000) {
 		validationRes.invalidFieldsAndMessages.push({
 			invalidFields: ["amount"],
 			errorMessage:
-				"Transfer amount must be between 10 and 1000.",
+				"Transfer amount must be between 1 and 10,000,000.",
 		});
 		validationRes.valid = false;
 	}

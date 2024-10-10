@@ -2,9 +2,6 @@ const createLog = require('../../logger/supabaseLogger');
 const { supabaseCall } = require('../../supabaseWithRetry');
 const supabase = require('../../supabaseClient');
 
-const ycDid = process.env.YC_PFI_DID;
-
-
 // Fetches offerings from a specific PFI and returns a selected offering based on currency pair.
 async function getBearerDid() {
 
@@ -17,14 +14,12 @@ async function getBearerDid() {
 		.eq('did', 'did:dht:on8o3read6tk1fueadjee3r18banb5tj3k8xatkfjq1g6r9ezdto')
 		.maybeSingle()
 
-
 	if (hifiDidError) {
 		createLog('error', hifiDidError)
 		throw new Error('Error fetching hifi did')
 	}
 
 	const bearerDid = await BearerDid.import({ portableDid: hifiDidRecord.portable_did });
-
 	return bearerDid;
 }
 
