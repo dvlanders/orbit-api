@@ -194,7 +194,7 @@ const updateStatusBastion = async (transaction) => {
 		])
 
 		// sandbox specific
-		if (process.env.NODE_ENV == "development"){
+		if (process.env.NODE_ENV == "development" && transaction.fiat_provider !== "BLINDPAY"){
 			const toUpdateInSandbox = {
 				transaction_status: sandboxHifiOfframpTransactionStatusMap[toUpdate.transaction_status] || "UNKNOWN",
 				updated_at: new Date().toISOString()

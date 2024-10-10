@@ -23,8 +23,10 @@ exports.executeBlindpayPayout = async (config) => {
 		if (error) throw error
 
 		if(record.transaction_status === 'SUBMITTED_ONCHAIN'){
+			// console.log("Transaction is still SUBMITTED_ONCHAIN, retrying in 60 seconds")
 			return {retryDetails: { retry: true, delay: RETRY_DELAY, reason: "Transaction is still SUBMITTED_ONCHAIN"}};
 		}else if(record.transaction_status !== 'COMPLETED_ONCHAIN'){
+			// console.log("Transaction is not COMPLETED_ONCHAIN, skipping: " + record.transaction_status)
 			return; // don't need to execute payour since Bastion action failed
 		}
 		const blindpayTransactionInfo = record.blindpay_transaction_info;

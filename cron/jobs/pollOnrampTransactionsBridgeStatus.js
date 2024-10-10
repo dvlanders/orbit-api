@@ -8,8 +8,6 @@ const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transf
 const createJob = require("../../asyncJobs/createJob");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
-const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
-const createJob = require("../../asyncJobs/createJob");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 

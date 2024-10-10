@@ -4,7 +4,7 @@ const supabase = require("../../supabaseClient")
 const updateBastionTransactionRecord = async(bastionTransactionId, toUpdate) => {
     const {data, error} = await supabase
         .from('bastion_transactions')
-        .update(toUpdate)
+        .update({updated_at: new Date().toISOString(), ...toUpdate})
         .eq('id', bastionTransactionId)
         .single()
 
