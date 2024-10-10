@@ -10,9 +10,6 @@ const { getFeeConfig } = require("../../fee/utils");
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
-const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
-const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
-const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
@@ -233,7 +230,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         unitsAmount, 
         chain, 
         destinationAddress: liquidationAddress, 
-        transferType: transferType.CRYPTO_TO_CRYPTO,
+        transferType: transferType.CRYPTO_TO_FIAT,
         paymentProcessorContract: paymentProcessorContractAddress,
         feeUnitsAmount,
         feeCollectionWalletAddress,
@@ -245,7 +242,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 
 	// update offramp transaction record
 	toUpdateOfframpRecord ={
-        status: mainTableStatus,
+        transaction_status: mainTableStatus,
         updated_at: new Date().toISOString(),
     }
     const toUpdateFeeRecord = {

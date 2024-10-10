@@ -33,8 +33,7 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		if (record.developer_fee_id) {
             const unitsAmount = toUnitsString(record.amount, currencyDecimal[record.source_currency])
 			const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][record.chain]
-			const { walletAddress: sourceWalletAddress } = await getBastionWallet(record.user_id, record.chain)
-			const allowance = await getTokenAllowance(record.chain, record.source_currency, sourceWalletAddress, paymentProcessorContractAddress)
+			const allowance = await getTokenAllowance(record.chain, record.source_currency, record.from_wallet_address, paymentProcessorContractAddress)
 			if (allowance < BigInt(unitsAmount)) {
                 await approveMaxTokenToPaymentProcessor(record.user_id, record.chain, record.source_currency)
 				throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)

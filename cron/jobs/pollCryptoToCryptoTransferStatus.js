@@ -95,7 +95,7 @@ const updateStatusCircle = async (transaction) => {
 		const data = await safeParseBody(response)
 		let toUpdate, toUpdateCircleTransaction
 		if (!response.ok) {
-			await createLog('pollOfframpTransactionsStatus/updateStatusCircle', transaction.sender_user_id, data.message, data);
+			await createLog('pollCryptoToCryptoTransferStatus/updateStatusCircle', transaction.sender_user_id, data.message, data);
             toUpdate = {
                 updated_at: new Date().toISOString(),
             }
@@ -130,7 +130,7 @@ const updateStatusCircle = async (transaction) => {
 
 	} catch (error) {
 		console.error('Failed to fetch transaction status from Circle API', error);
-		await createLog('pollOfframpTransactionsStatus/updateStatusCircle', transaction.sender_user_id, 'Failed to fetch transaction status from Circle API', error);
+		await createLog('pollCryptoToCryptoTransferStatus/updateStatusCircle', transaction.sender_user_id, 'Failed to fetch transaction status from Circle API', error);
 	}
 }
 
