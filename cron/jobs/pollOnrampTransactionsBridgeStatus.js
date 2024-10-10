@@ -8,6 +8,8 @@ const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transf
 const createJob = require("../../asyncJobs/createJob");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
+const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
+const createJob = require("../../asyncJobs/createJob");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -123,7 +125,7 @@ async function pollOnrampTransactionsBridgeStatus() {
 	// Get all records where the bridge_transaction_status is not 
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
-		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id, developer_fee_id, bridge_deposit_id, destination_user: destination_user_id(profile_id)')
+		.select('id, user_id, bridge_virtual_account_id, destination_user_id, last_bridge_virtual_account_event_id, developer_fee_id, bridge_deposit_id, status, destination_user: destination_user_id(profile_id)')
 		.eq("crypto_provider", "BRIDGE")
 		.or('status.eq.FIAT_PROCESSED,status.eq.FIAT_CONFIRMED,status.eq.CRYPTO_SUBMITTED,status.eq.CRYPTO_IN_REVIEW')
 		.order('updated_at', { ascending: true })

@@ -23,7 +23,7 @@ exports.executeBlindpayPayout = async (config) => {
 		if (error) throw error
 
 		if(record.transaction_status === 'SUBMITTED_ONCHAIN'){
-			return {retryDetails: { shouldRetry: true, retryDelay: RETRY_DELAY }};
+			return {retryDetails: { retry: true, delay: RETRY_DELAY, reason: "Transaction is still SUBMITTED_ONCHAIN"}};
 		}else if(record.transaction_status !== 'COMPLETED_ONCHAIN'){
 			return; // don't need to execute payour since Bastion action failed
 		}
