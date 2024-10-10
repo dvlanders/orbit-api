@@ -43,12 +43,16 @@ const getExchangeRate = async (userId, profileId,toCurrency) => {
     if (toCurrency == "usd" || toCurrency == "eur") {
         const conversionRate = await getBridgeConversionRate("usdc", toCurrency, profileId)
         return conversionRate.conversionRate
-    }else if (toCurrency == "hkd") {
+    } else if (toCurrency == "hkd") {
         const responseBody = await getReapExchangeRate(userId, "usdc", toCurrency)
         return responseBody.exchangeRate
-    }else if (toCurrency == "brl") {
+    } else if (toCurrency == "brl") {
         //FIXME
         return 5.6
+    } else if (toCurrency == "kes") {
+        return 128
+    } else if (toCurrency == "ngn") {
+        return 1620
     }
 }
 
@@ -305,7 +309,7 @@ const createSandboxCryptoToFiatTransfer = async (config) => {
     config.crypto_provider = "BASTION"
 
 	// fetch or insert request record
-	const initialTransferRecord = await initTransferData(config)
+	const initialTransferRecord = await initTransferData({ ...config, accountInfo })
 
     if(!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)){
         const toUpdate = {
