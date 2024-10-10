@@ -12,6 +12,20 @@ const cryptoToCryptoStatusMap = {
 	"ACCELERATED": "PENDING"
 }
 
+const cryptoToFiatStatusMap = {
+	"NOT_INITIATED": "NOT_INITIATED",
+    "INITIATED": "SUBMITTED_ONCHAIN",
+    "QUEUED": "SUBMITTED_ONCHAIN",
+	"PENDING_RISK_SCREENING": "SUBMITTED_ONCHAIN",
+	"SENT": "SUBMITTED_ONCHAIN",
+	"CONFIRMED": "SUBMITTED_ONCHAIN",
+	"COMPLETE": "COMPLETED_ONCHAIN",
+	"CANCELED": "NOT_INITIATED",
+	"FAILED": "FAILED_ONCHAIN",
+	"DENIED": "FAILED_ONCHAIN",
+	"ACCELERATED": "SUBMITTED_ONCHAIN"
+}
+
 const feeRecordStatusMap = {
     "NOT_INITIATED": "NOT_INITIATED",
     "INITIATED": "SUBMITTED",
@@ -24,7 +38,8 @@ const feeRecordStatusMap = {
 
 const statusMapCircle = {
     "CRYPTO_TO_CRYPTO": cryptoToCryptoStatusMap,
-    "FEE": feeRecordStatusMap
+    "FEE": feeRecordStatusMap,
+    "CRYPTO_TO_FIAT": cryptoToFiatStatusMap
 }
 
 module.exports = {

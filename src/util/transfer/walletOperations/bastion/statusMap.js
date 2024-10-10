@@ -7,6 +7,15 @@ const cryptoToCryptoStatusMap = {
 	"ACCEPTED": "SUBMITTED"
 }
 
+const cryptoToFiatStatusMap = {
+    "SUBMITTED": "SUBMITTED_ONCHAIN",
+    "PENDING": "SUBMITTED_ONCHAIN",
+	"FAILED": "FAILED_ONCHAIN",
+	"NOT_INITIATED": "NOT_INITIATED",
+	"CONFIRMED": "COMPLETED_ONCHAIN",
+	"ACCEPTED": "SUBMITTED_ONCHAIN"
+}
+
 const feeRecordStatusMap = {
     "SUBMITTED": "SUBMITTED",
     "PENDING": "PENDING",
@@ -18,7 +27,8 @@ const feeRecordStatusMap = {
 
 const statusMapBastion = {
     "CRYPTO_TO_CRYPTO": cryptoToCryptoStatusMap,
-    "FEE": feeRecordStatusMap
+    "FEE": feeRecordStatusMap,
+    "CRYPTO_TO_FIAT": cryptoToFiatStatusMap
 }
 
 module.exports = {

@@ -22,7 +22,6 @@ const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCove
 const { v4 } = require("uuid");
 const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiatTransferRecordV2");
 const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
-const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
 const createPaymentQuote = require("../../../reap/main/createPayment");
