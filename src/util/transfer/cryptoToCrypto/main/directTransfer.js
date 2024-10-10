@@ -18,46 +18,19 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
 const { v4 } = require("uuid")
 const { getUserWallet } = require("../../../user/getUserWallet")
-const { transferToAddressBastion } = require("../../walletOperations/bastion/transferToAddress")
-const { transferToAddressBastionWithPP } = require("../../walletOperations/bastion/transferToAddressWithPP")
-const { transferToAddressCircle } = require("../../walletOperations/circle/transferToAddress")
-const { transferToAddressCircleWithPP } = require("../../walletOperations/circle/transferToAddressWithPP")
 const { updateFeeRecord } = require("../../fee/updateFeeRecord")
-const { insertSingleBastionTransactionRecord } = require("../../../bastion/main/bastionTransactionTableService")
-const { insertSingleCircleTransactionRecord } = require("../../../circle/main/circleTransactionTableService")
-
-const walletTransferFunctionMap = {
-    BASTION: {
-        transfer: transferToAddressBastion,
-        transferWithPP: transferToAddressBastionWithPP
-    },
-    CIRCLE: {
-        transfer: transferToAddressCircle,
-        transferWithPP: transferToAddressCircleWithPP
-    }
-}
-
-const providerRecordInsertFunctionMap = {
-    BASTION: insertSingleBastionTransactionRecord,
-    CIRCLE: insertSingleCircleTransactionRecord
-}
-
-const providerRecordColumnMap = {
-    BASTION: "bastion_transaction_record_id",
-    CIRCLE: "circle_transaction_record_id"
-}
-
+const { getWalletColumnNameFromProvider } = require("../../walletOperations/utils")
+const { insertWalletTransactionRecord } = require("../../walletOperations/utils")
+const { transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils")
 
 const insertRecord = async(fields) => {
     // insert record in provider table
-    const providerInsertFunction = providerRecordInsertFunctionMap[fields.senderWalletProvider]
-    const toInsert = {user_id: fields.senderUserId, request_id: v4()}
-    const providerRecord = await providerInsertFunction(toInsert)
-    const providerRecordIdToInsert = {
-        [providerRecordColumnMap[fields.senderWalletProvider]]: providerRecord.id
-    }
+    const toInsert = {user_id: fields.senderUserId, request_id: v4()};
+    const walletTxRecord = await insertWalletTransactionRecord(fields.senderWalletProvider, toInsert);
+    const walletColName = getWalletColumnNameFromProvider(fields.senderWalletProvider);
+    fields[walletColName] = walletTxRecord.id;
     // insert record
-    const requestRecord = await insertRequestRecord(fields, providerRecordIdToInsert)
+    const requestRecord = await insertRequestRecord(fields)
     // return if no fee
     if (!fields.feeType || parseFloat(fields.feeValue) <= 0) return {validTransfer: true, record: requestRecord}
 
@@ -150,7 +123,7 @@ const transferWithFee = async(record, profileId) => {
     const feeCollectionWalletAddress = feeRecord.fee_collection_wallet_address
     const feeUnitsAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
     const unitsAmount = toUnitsString(record.amount, currencyDecimal[record.currency]) 
-    const providerRecordId = record[providerRecordColumnMap[record.provider]]
+    const providerRecordId = record[getWalletColumnNameFromProvider(record.provider)]
 
     // perfrom transfer with fee
     const transferConfig = {
@@ -168,9 +141,7 @@ const transferWithFee = async(record, profileId) => {
         providerRecordId
     }
 
-    const {transferWithPP} = walletTransferFunctionMap[record.provider]
-    const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferWithPP(transferConfig)
-
+    const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(record.provider, transferConfig);
 
     // update crypto to crypto record
     const toUpdateCryptoToCrypto ={
@@ -200,7 +171,7 @@ const transferWithoutFee = async(record, profileId) => {
 
     // fetch sender wallet information
     const {circleWalletId, bastionUserId} = await getUserWallet(record.sender_user_id, record.chain, record.transfer_from_wallet_type)
-    const providerRecordId = record[providerRecordColumnMap[record.provider]]
+    const providerRecordId = record[getWalletColumnNameFromProvider(record.provider)]
     const decimal = currencyDecimal[record.currency]
     const unitsAmount = toUnitsString(record.amount, decimal) 
 
@@ -216,10 +187,7 @@ const transferWithoutFee = async(record, profileId) => {
         providerRecordId
     }
     
-    // transfer to address with provider
-    const {transfer} = walletTransferFunctionMap[record.provider]
-    const {response, responseBody, mainTableStatus, providerStatus, failedReason} = await transfer(transferConfig)
-
+    const {response, responseBody, mainTableStatus, providerStatus, failedReason} = await transferToWallet(record.provider, transferConfig);
 
     // update crypto to crypto record
     const toUpdateCryptoToCrypto ={

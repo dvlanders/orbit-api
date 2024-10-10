@@ -5,7 +5,7 @@ const { toUnitsString } = require("../utils/toUnits");
 const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType } = require("../utils/createTransfer");
 
 
-exports.insertRequestRecord = async(requestInfo, additionalInsert={}) => {
+exports.insertRequestRecord = async(requestInfo) => {
 
     // get billing tags
     const billingTags = requestInfo.recipientUserId ? {
@@ -36,7 +36,8 @@ exports.insertRequestRecord = async(requestInfo, additionalInsert={}) => {
             billing_tags_success: billingTags.success,
             billing_tags_failed: billingTags.failed,
             fee_transaction_id: requestInfo.feeTransactionId,
-            ...additionalInsert
+            circle_transaction_record_id: requestInfo.circle_transaction_record_id || null,
+            bastion_transaction_record_id: requestInfo.bastion_transaction_record_id || null,
         },
     )
     .eq('request_id', requestInfo.requestId)
