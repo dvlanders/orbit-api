@@ -28,9 +28,7 @@ const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/bal
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertBlinpdayTransactionInfo, updateBlinpdayTransactionInfo } = require("../../../blindpay/transactionInfoService");
 const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck");
-const { getWalletColumnNameFromProvider } = require("../../walletOperations/utils");
-const { insertWalletTransactionRecord } = require("../../walletOperations/utils")
-const { submitWalletUserAction } = require("../../walletOperations/utils")
+const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, submitWalletUserAction } = require("../../walletOperations/utils");
 const { v4 } = require("uuid")
 const { getUserWallet } = require("../../../user/getUserWallet")
 

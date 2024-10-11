@@ -8,23 +8,23 @@ const { submitBastionUserAction } = require("./bastion/submitUserAction")
 const { submitCircleUserAction } = require("./circle/submitUserAction")
 const { getUserAction: getBastionUserAction } = require("./bastion/getUserAction")
 const { getTransaction } = require("./circle/getTransaction")
-const { updateDeveloperFeeRecordBastion } = require("../fee/updateFeeBastion")
-const { updateDeveloperFeeRecordCircle } = require("../fee/updateFeeCircle")
+const { approveActionBastion } = require("./bastion/approveAction")
+const { approveActionCircle } = require("./circle/approveAction")
 
 const walletTransferFunctionMap = {
     BASTION: {
         transfer: transferToAddressBastion,
         transferWithPP: transferToAddressBastionWithPP,
+        approve: approveActionBastion,
         action: submitBastionUserAction,
         getAction: getBastionUserAction,
-        updateDeveloperFeeRecord: updateDeveloperFeeRecordBastion
     },
     CIRCLE: {
         transfer: transferToAddressCircle,
         transferWithPP: transferToAddressCircleWithPP,
+        approve: approveActionCircle,
         action: submitCircleUserAction,
         getAction: getTransaction,
-        updateDeveloperFeeRecord: updateDeveloperFeeRecordCircle
     }
 }
 
@@ -64,9 +64,9 @@ const getUserAction = async (provider, actionInfo) => {
     return await getAction(actionInfo);
 }
 
-const updateDeveloperFeeRecord = async (provider, feeInfo) => {
-    const { updateDeveloperFeeRecord } = walletTransferFunctionMap[provider];
-    return await updateDeveloperFeeRecord(feeInfo);
+const approveAction = async (provider, actionInfo) => {
+    const { approve } = walletTransferFunctionMap[provider];
+    return await approve(actionInfo);
 }
 
 const insertWalletTransactionRecord = async(provider, toInsert) => {
@@ -85,6 +85,6 @@ module.exports = {
     transferToWalletWithPP,
     submitWalletUserAction,
     getUserAction,
-    updateDeveloperFeeRecord,
-    insertWalletTransactionRecord
+    insertWalletTransactionRecord,
+    approveAction
 }
