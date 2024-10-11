@@ -50,7 +50,7 @@ const isValidState = (stateCode) => {
     const invalidStates = ["NY", "AK", "FL", "LA", "CT", "GA", "ID", "KS", "RI", "SC", "TX", "WA"];
 
     // Check if stateCode is a string
-    if (typeof stateCode !== 'string' || stateCode.length !== 2) {
+    if (typeof stateCode !== 'string') {
         return false;
     }
 
