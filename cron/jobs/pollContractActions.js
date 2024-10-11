@@ -4,6 +4,8 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const { updateContractActionRecord } = require("../../src/util/smartContract/updateContractActionRecord");
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
+const { statusMapBastion } = require("../../src/util/transfer/walletOperations/bastion/statusMap");
+const { getUserAction, updateWalletTransactionRecord } = require("../../src/util/transfer/walletOperations/utils");
 const { safeParseBody } = require("../../src/util/utils/response");
 const { BASTION_URL, BASTION_API_KEY, CIRCLE_WALLET_URL, CIRCLE_WALLET_API_KEY } = process.env;
 
@@ -20,8 +22,7 @@ const statusMapCircle = {
 	"ACCELERATED": "PENDING"
 }
 
-
-const updateBastionStatus = async (contractAction) => {
+const updateBastionStatusLegacy = async (contractAction) => {
 	const bastionUserId = contractAction.bastion_user_id
 	const url = `${BASTION_URL}/v1/user-actions/${contractAction.bastion_request_id}?userId=${bastionUserId}`;
 	const options = {
@@ -52,6 +53,41 @@ const updateBastionStatus = async (contractAction) => {
             }
         }
         await updateContractActionRecord(contractAction.id, toUpdate)
+
+
+	} catch (error) {
+		console.error('Failed to fetch transaction status from Bastion API', error);
+		await createLog('pollContractAction/updateBastionStatus', transaction.sender_user_id, 'Failed to fetch transaction status from Bastion API', error);
+	}
+}
+
+
+const updateBastionStatus = async (contractAction) => {
+	if (!contractAction.bastionTransaction) {
+		await updateBastionStatusLegacy(contractAction)
+		return
+	}
+	
+	try {
+		const {response, responseBody} = await getUserAction("BASTION", {requestId: contractAction.bastionTransaction.request_id, bastionUserId: contractAction.bastionTransaction.bastion_user_id})
+        const toUpdateBastionTransactionRecord = {
+            bastion_response: responseBody,
+			bastion_status: responseBody.status,
+            updated_at: new Date().toISOString()
+        }
+		const toUpdateContractActionRecord = {
+			status: responseBody.status ? statusMapBastion.CONTRACT_ACTION[responseBody.status] || "UNKNOWN" : "UNKNOWN",
+			updated_at: new Date().toISOString()
+		}
+
+		if (!response.ok) {
+			toUpdateContractActionRecord.failed_reason = responseBody.message || "Unknown error"
+		}
+
+		await Promise.all([
+			updateWalletTransactionRecord("BASTION",contractAction.bastionTransaction.id, toUpdateBastionTransactionRecord),
+			updateContractActionRecord(contractAction.id, toUpdateContractActionRecord)
+		])
 
 
 	} catch (error) {
@@ -124,7 +160,7 @@ async function pollContractAction() {
 			.update({updated_at: new Date().toISOString()})
 			.or("status.eq.SUBMITTED,status.eq.ACCEPTED,status.eq.PENDING")
 			.order('updated_at', { ascending: true })
-			.select('*, circle_transaction: circle_transaction_record_id(*)')
+			.select('*, circle_transaction: circle_transaction_record_id(*), bastionTransaction: bastion_transaction_record_id(*)')
 		)
 
 

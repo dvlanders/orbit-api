@@ -1,6 +1,7 @@
 const { updateCircleTransactionRecord, getCircleTransactionRecord } = require("../../../circle/main/circleTransactionTableService")
 const { submitTransactionCircle } = require("../../../circle/main/submitTransaction")
-const { safeParseBody } = require("../../../utils/response")
+const { safeParseBody } = require("../../../utils/response");
+const { statusMapCircle } = require("./statusMap");
 
 const submitCircleUserAction = async(config) => {
     const {referenceId, senderCircleWalletId, actionName, actionParams, contractAddress, transferType, providerRecordId} = config;
@@ -25,7 +26,11 @@ const submitCircleUserAction = async(config) => {
     }
 
     await updateCircleTransactionRecord(providerRecord.id, toUpdate)
-    return {response, responseBody}
+
+    const mainStatusMapping = statusMapCircle[transferType]
+    const mainTableStatus = mainStatusMapping[toUpdate.circle_status] || "UNKNOWN"
+
+    return {response, responseBody, mainTableStatus};
 
 } 
 

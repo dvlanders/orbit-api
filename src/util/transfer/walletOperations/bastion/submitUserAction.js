@@ -1,6 +1,7 @@
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction")
 const { updateBastionTransactionRecord, getBastionTransactionRecord } = require("../../../bastion/main/bastionTransactionTableService")
-const { safeParseBody } = require("../../../utils/response")
+const { safeParseBody } = require("../../../utils/response");
+const { statusMapBastion } = require("./statusMap");
 
 const submitBastionUserAction = async(config) => {
     const {senderBastionUserId, senderUserId, contractAddress, actionName, chain, actionParams, transferType, providerRecordId} = config;   
@@ -10,7 +11,7 @@ const submitBastionUserAction = async(config) => {
 
     const bodyObject = {
         requestId: requestId,
-        userId: senderUserId,
+        userId: senderBastionUserId,
         contractAddress, 
         actionName,
         chain,
@@ -33,7 +34,12 @@ const submitBastionUserAction = async(config) => {
     }
 
     await updateBastionTransactionRecord(providerRecord.id, toUpdate)
-    return {response, responseBody};
+
+    const mainStatusMapping = statusMapBastion[transferType]
+    const mainTableStatus = mainStatusMapping[toUpdate.bastion_status] || "UNKNOWN"
+
+
+    return {response, responseBody, mainTableStatus};
 
 } 
 
