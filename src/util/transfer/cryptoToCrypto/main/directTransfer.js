@@ -19,9 +19,7 @@ const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/bal
 const { v4 } = require("uuid")
 const { getUserWallet } = require("../../../user/getUserWallet")
 const { updateFeeRecord } = require("../../fee/updateFeeRecord")
-const { getWalletColumnNameFromProvider } = require("../../walletOperations/utils")
-const { insertWalletTransactionRecord } = require("../../walletOperations/utils")
-const { transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils")
+const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils")
 
 const insertRecord = async(fields) => {
     // insert record in provider table
