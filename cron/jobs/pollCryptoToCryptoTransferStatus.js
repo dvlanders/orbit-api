@@ -8,23 +8,14 @@ const { updateRequestRecord } = require("../../src/util/transfer/cryptoToCrypto/
 const { updateDeveloperFeeRecordBastion } = require("../../src/util/transfer/fee/updateFeeBastion");
 const { updateDeveloperFeeRecordCircle } = require("../../src/util/transfer/fee/updateFeeCircle");
 const { statusMapBastion } = require("../../src/util/transfer/walletOperations/bastion/statusMap");
+const { statusMapCircle } = require("../../src/util/transfer/walletOperations/circle/statusMap");
 const { safeParseBody } = require("../../src/util/utils/response");
 const notifyCryptoToCryptoTransfer = require("../../webhooks/transfer/notifyCryptoToCryptoTransfer");
 const { BASTION_URL, BASTION_API_KEY, CIRCLE_WALLET_URL, CIRCLE_WALLET_API_KEY } = process.env;
 
-const statusMapCircle = {
-	"INITIATED": "SUBMITTED",
-	"QUEUED": "PENDING",
-	"PENDING_RISK_SCREENING": "PENDING",
-	"SENT": "PENDING",
-	"CONFIRMED": "PENDING",
-	"COMPLETE": "CONFIRMED",
-	"CANCELED": "CANCELED",
-	"FAILED": "FAILED",
-	"DENIED": "FAILED",
-	"ACCELERATED": "PENDING"
-}
 
+
+const cryptoToCryptoStatusMapCircle = statusMapCircle.CRYPTO_TO_CRYPTO
 const cryptoToCryptoStatusMapBastion = statusMapBastion.CRYPTO_TO_CRYPTO
 
 
@@ -107,7 +98,7 @@ const updateStatusCircle = async (transaction) => {
 		}else{
 			const transaction = data.data.transaction
             toUpdate = {
-                status: statusMapCircle[transaction.state] || "UNKNOWN",
+                status: cryptoToCryptoStatusMapCircle[transaction.state] || "UNKNOWN",
                 transaction_hash: transaction.txHash,
                 updated_at: new Date().toISOString()
             }

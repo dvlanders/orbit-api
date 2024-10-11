@@ -28,7 +28,7 @@ const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/not
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertSingleOfframpTransactionRecord, updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
-const { providerRecordInsertFunctionMap: walletProviderRecordInsertFunctionMap, providerRecordColumnMap: walletProviderRecordColumnMap, walletTransferFunctionMap } = require("../../walletOperations/utils");
+const { providerRecordInsertFunctionMap: walletProviderRecordInsertFunctionMap, providerRecordColumnMap: walletProviderRecordColumnMap, walletTransferFunctionMap, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils");
 const { insertSingleBridgeTransactionRecord, updateBridgeTransactionRecord } = require("../../../bridge/bridgeTransactionTableService");
 const { getUserWallet } = require("../../../user/getUserWallet");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
@@ -237,8 +237,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         providerRecordId
     }
 
-    const {transferWithPP} = walletTransferFunctionMap[walletProvider]
-    const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferWithPP(transferConfig)
+    const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(walletProvider, transferConfig)
 
 	// update offramp transaction record
 	toUpdateOfframpRecord ={
@@ -365,7 +364,6 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const decimals = currencyDecimal[sourceCurrency]
 	const transferAmount = toUnitsString(amount, decimals)
 	const providerRecordId = initialTransferRecord[walletProviderRecordColumnMap[walletProvider]]
-	const {transfer} = walletTransferFunctionMap[walletProvider]
 	const transferConfig = {
 		referenceId: initialTransferRecord.id, 
         senderCircleWalletId: circleWalletId, 
@@ -377,7 +375,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
         transferType: transferType.CRYPTO_TO_FIAT,
         providerRecordId
 	}
-	const {response: walletResponse, responseBody: walletResponseBody, failedReason: walletFailedReason, providerStatus: walletProviderStatus, mainTableStatus} = await transfer(transferConfig)
+	const {response: walletResponse, responseBody: walletResponseBody, failedReason: walletFailedReason, providerStatus: walletProviderStatus, mainTableStatus} = await transferToWallet(walletProvider, transferConfig)
 
 	// map status
 	toUpdateOfframpRecord = {
