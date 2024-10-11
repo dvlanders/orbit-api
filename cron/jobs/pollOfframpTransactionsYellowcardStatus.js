@@ -41,8 +41,6 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
         .from('offramp_transactions')
         .update({
             transaction_status: hifiOfframpTransactionStatus,
-            bridge_transaction_status: data.state,
-            bridge_response: data,
             updated_at: new Date().toISOString(),
             failed_reason: close.data.success ? undefined : close.data.reason,
         })
