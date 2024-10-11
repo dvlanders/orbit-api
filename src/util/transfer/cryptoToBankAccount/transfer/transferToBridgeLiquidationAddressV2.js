@@ -28,7 +28,7 @@ const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/not
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertSingleOfframpTransactionRecord, updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
-const { providerRecordInsertFunctionMap: walletProviderRecordInsertFunctionMap, providerRecordColumnMap: walletProviderRecordColumnMap, walletTransferFunctionMap, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils");
+const { transferToWallet, transferToWalletWithPP, insertWalletTransactionRecord, getWalletColumnNameFromProvider } = require("../../walletOperations/utils");
 const { insertSingleBridgeTransactionRecord, updateBridgeTransactionRecord } = require("../../../bridge/bridgeTransactionTableService");
 const { getUserWallet } = require("../../../user/getUserWallet");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
@@ -43,8 +43,8 @@ const initTransferData = async (config) => {
 		user_id: sourceUserId,
 		request_id: v4()
 	}
-	const walletProviderRecordInsertFunction = walletProviderRecordInsertFunctionMap[sourceWalletProvider]
-	const walletProviderRecord = await walletProviderRecordInsertFunction(toInsertProviderRecord)
+
+	const walletProviderRecord = await insertWalletTransactionRecord(sourceWalletProvider, toInsertProviderRecord)
 
 	// insert bridge transaction record
 	const toInsertBridgeRecord = {
@@ -84,7 +84,7 @@ const initTransferData = async (config) => {
 		billing_tags_success: billingTags.success,
 		billing_tags_failed: billingTags.failed,
 		fee_transaction_id: feeTransactionId,
-		[walletProviderRecordColumnMap[sourceWalletProvider]]: walletProviderRecord.id,
+		[getWalletColumnNameFromProvider(sourceWalletProvider)]: walletProviderRecord.id,
 		bridge_transaction_record_id: bridgeRecord.id
 	}
 	const record = await updateOfframpTransactionRecord(newRecord.id, toInsertOfframpRecord)
@@ -100,7 +100,7 @@ const initTransferData = async (config) => {
 		currency: sourceCurrency,
 		chargedWalletAddress: sourceWalletAddress
 	}
-	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, sourceWalletProvider, null, {[walletProviderRecordColumnMap[sourceWalletProvider]]: walletProviderRecord.id})
+	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, sourceWalletProvider, null, {[getWalletColumnNameFromProvider(sourceWalletProvider)]: walletProviderRecord.id})
 
 	// return if amount is less than 1 dollar
 	if (clientReceivedAmount < 1) {
@@ -219,7 +219,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     const feeCollectionWalletAddress = feeRecord.fee_collection_wallet_address
     const feeUnitsAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
     const unitsAmount = toUnitsString(amount, currencyDecimal[sourceCurrency]) 
-    const providerRecordId = updatedRecord[walletProviderRecordColumnMap[walletProvider]]
+    const providerRecordId = updatedRecord[getWalletColumnNameFromProvider(walletProvider)]
 
     // perfrom transfer with fee
     const transferConfig = {
@@ -363,7 +363,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	// initiate transfer to liquidation address
 	const decimals = currencyDecimal[sourceCurrency]
 	const transferAmount = toUnitsString(amount, decimals)
-	const providerRecordId = initialTransferRecord[walletProviderRecordColumnMap[walletProvider]]
+	const providerRecordId = initialTransferRecord[getWalletColumnNameFromProvider(walletProvider)]
 	const transferConfig = {
 		referenceId: initialTransferRecord.id, 
         senderCircleWalletId: circleWalletId, 

@@ -1,23 +1,13 @@
-const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
+const { currencyContractAddress } = require("../../../common/blockchain");
 const supabase = require("../../../supabaseClient");
 const bridgeRailCheck = require("../railCheck/bridgeRailCheckV2");
 const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
-const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
-const { transferType, transferObjectReconstructor } = require("../../utils/transfer");
-const { getFeeConfig } = require("../../fee/utils");
-const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken");
+const { transferType } = require("../../utils/transfer");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
-const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
 const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
-const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
-const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
-const { getMappedError } = require("../../../bastion/utils/errorMappings");
-const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
 const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCoversionRate");
 const { v4 } = require("uuid");
 const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiatTransferRecordV2");
@@ -25,18 +15,14 @@ const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { safeStringToFloat } = require("../../../utils/number");
-const { initial } = require("lodash");
-const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
-const { mintUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/burn");
-const { USDHIFIContractAddressMap } = require("../../../smartContract/sandboxUSDHIFI/utils");
 const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSupportedPairFetchFunctions");
 const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
 const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
-const { providerRecordInsertFunctionMap: walletProviderRecordInsertFunctionMap, providerRecordColumnMap: walletProviderRecordColumnMap, walletTransferFunctionMap } = require("../../walletOperations/utils");
+const { insertWalletTransactionRecord } = require("../../walletOperations/utils");
 const { safeParseBody } = require("../../../utils/response");
 const { updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
 const { updateBastionTransactionRecord } = require("../../../bastion/main/bastionTransactionTableService");
@@ -66,8 +52,7 @@ const initTransferData = async (config) => {
 		request_id: v4(),
 		bastion_user_id: gasStation
 	}
-	const walletProviderRecordInsertFunction = walletProviderRecordInsertFunctionMap.BASTION
-	const walletProviderRecord = await walletProviderRecordInsertFunction(toInsertWalletProviderRecord)
+	const walletProviderRecord = await insertWalletTransactionRecord("BASTION", toInsertWalletProviderRecord)
 
 	// get conversion rate
 	// get USDHIFI conversion rate
