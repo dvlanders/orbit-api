@@ -24,9 +24,9 @@ const pollFiatToFiatCheckbookStatus = require('./jobs/pollFiatToFiatCheckbookSta
 const pollStripeWebhookEvents = require('./jobs/pollStripeWebhookEvents');
 const pollOfframpTransactionsCryptoStatus = require('./jobs/pollOfframpTransactionsCryptoStatus');
 
-cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
+cron.schedule('*/10 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollDeleteBridgeOfframpTransfer); // every 60 seconds
-cron.schedule('*/20 * * * * *', pollOfframpTransactionsCryptoStatus); // every 20 seconds
+cron.schedule('*/10 * * * * *', pollOfframpTransactionsCryptoStatus); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollCryptoToCryptoTransferStatus); // every 20 seconds

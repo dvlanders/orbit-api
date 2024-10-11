@@ -10,7 +10,6 @@ const { getMappedError } = require("../utils/errorMappings")
 const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getFeeConfig } = require("../../fee/utils");
-const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { v4 } = require("uuid");
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = require("./fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../utils/simulateSandboxFiatToCryptoTransaction");

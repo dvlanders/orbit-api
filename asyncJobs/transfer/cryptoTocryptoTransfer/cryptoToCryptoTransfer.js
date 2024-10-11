@@ -9,6 +9,7 @@ const { executeAsyncBastionCryptoTransfer } = require("../../../src/util/transfe
 const { executeAsyncCircleCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/circleTransfer")
 const cryptoToCryptoSupportedFunctions = require("../../../src/util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
+const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const { JobError, JobErrorType } = require("../../error")
 
 const cryptoToCryptoTransferAsync = async(config) => {
@@ -23,7 +24,7 @@ const cryptoToCryptoTransferAsync = async(config) => {
         if (error) throw error
 
         // gas check
-        const { needFund, fundSubmitted } = await bastionGasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
+        const { needFund, fundSubmitted } = await gasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
         if (needFund){
             throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
         }

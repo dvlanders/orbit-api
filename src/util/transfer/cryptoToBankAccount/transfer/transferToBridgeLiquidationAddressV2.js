@@ -384,7 +384,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	}
 	if (!walletResponse.ok) {
 		// fail to transfer
-        await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, walletResponseBody)
+        await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, walletResponseBody.message, walletResponseBody)
 		toUpdateOfframpRecord.failed_reason = walletFailedReason
 	}
 	await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframpRecord)

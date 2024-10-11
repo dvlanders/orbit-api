@@ -54,7 +54,7 @@ const insertRecord = async(fields) => {
         currency: fields.currency,
         chargedWalletAddress: fields.senderAddress
     }
-    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, null, providerRecordIdToInsert)
+    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, null, {[walletColName]: walletTxRecord.id})
     // update into crypto to crypto table
     const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
     return {validTransfer: true, record}

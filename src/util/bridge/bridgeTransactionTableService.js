@@ -5,6 +5,7 @@ const updateBridgeTransactionRecord = async(bridgeTransactionId, toUpdate) => {
         .from('bridge_transactions')
         .update(toUpdate)
         .eq('id', bridgeTransactionId)
+        .select()
         .single()
 
     if (error) throw new Error(error.message)

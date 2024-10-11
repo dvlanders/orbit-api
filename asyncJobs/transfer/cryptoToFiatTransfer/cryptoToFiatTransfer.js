@@ -10,6 +10,7 @@ const { transferToBridgeLiquidationAddress } = require("../../../src/util/transf
 const { executeAsyncTransferCryptoToFiat } = require("../../../src/util/transfer/cryptoToBankAccount/transfer/transferToBridgeLiquidationAddressV2")
 const CryptoToBankSupportedPairCheck = require("../../../src/util/transfer/cryptoToBankAccount/utils/cryptoToBankSupportedPairFunctions")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
+const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const { JobError, JobErrorType } = require("../../error")
 
 exports.cryptoToFiatTransferAsync = async (config) => {
@@ -24,7 +25,7 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		if (error) throw error
 
 		// gas check
-		const { needFund, fundSubmitted } = await bastionGasCheck(record.user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
+		const { needFund, fundSubmitted } = await gasCheck(record.user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
 		if (needFund) {
             throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
 		}
