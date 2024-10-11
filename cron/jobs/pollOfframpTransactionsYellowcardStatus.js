@@ -50,7 +50,7 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
     
     if (updateError) {
         console.error('Failed to update transaction status', updateError);
-        await createLog('pollOfframpTransactionsBridgeStatus/updateStatusWithBridgeTransferId', transaction.user_id, 'Failed to update transaction status', updateError);
+        await createLog('pollOfframpTransactionsYellowcardStatus/updateStatusWithYellowcardTransferId', transaction.user_id, 'Failed to update transaction status', updateError);
         return
     }
 
