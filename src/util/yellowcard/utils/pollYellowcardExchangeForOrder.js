@@ -10,6 +10,7 @@ const { updateRequestRecord } = require("../../transfer/cryptoToBankAccount/util
 const { erc20Transfer } = require("../../bastion/utils/erc20FunctionMap");
 const { updateOfframpAndYellowcardRecords } = require('./updateOfframpAndYellowcardRecords');
 const { currencyDecimal } = require("../../common/blockchain");
+const { toUnitsString } = require("../../../util/transfer/cryptoToCrypto/utils/toUnits")
 
 
 async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, bearerDid) {
@@ -25,6 +26,8 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 
 			for (const message of exchange) {
 				if (message instanceof OrderInstructions) {
+					console.log('**********order instructions:', message)
+
 					const requestId = uuidv4();
 					const payinLink = message.data.payin.link;
 					const urlParams = new URLSearchParams(new URL(payinLink).search);
@@ -49,8 +52,8 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 					const bastionResponse = await submitUserAction(bodyObject);
 					const bastionResponseBody = await bastionResponse.json();
 
-
-					if (!bastionResponse.ok || bastionResponse.status !== 200) {
+					console.log('bastionResponseBody:', bastionResponseBody)
+					if (!bastionResponse.ok) {
 						// failed bastion user action
 						console.log('failed bastion user action')
 
@@ -102,10 +105,11 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 					return { offrampTransactionRecord: updatedOfframpTransactionRecord, yellowcardTransactionRecord: exchange };
 				} else if (message instanceof Close) {
 					// failed to get yellowcard order isntructions indicating failure of some kind on the yellowcard side
+					console.log('**********close message:', message)
 
 					const offrampTransactionRecordToUpdate = {
 						transaction_status: "NOT_INITIATED",
-						failed_reason: "Order closed due to invalid account details"
+						failed_reason: "Order closed"
 					};
 
 					const yellowcardTransactionRecordToUpdate = {
