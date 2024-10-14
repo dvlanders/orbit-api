@@ -9,6 +9,9 @@ const { getMappedError } = require("../../bastion/utils/errorMappings");
 const { updateRequestRecord } = require("../../transfer/cryptoToBankAccount/utils/updateRequestRecord")
 const { erc20Transfer } = require("../../bastion/utils/erc20FunctionMap");
 const { updateOfframpAndYellowcardRecords } = require('./updateOfframpAndYellowcardRecords');
+const { currencyDecimal } = require("../../common/blockchain");
+const { toUnitsString } = require("../../../util/transfer/cryptoToCrypto/utils/toUnits")
+
 
 async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, bearerDid) {
 	const { TbdexHttpClient, OrderInstructions, Close } = await import('@tbdex/http-client');
@@ -23,10 +26,17 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 
 			for (const message of exchange) {
 				if (message instanceof OrderInstructions) {
+					console.log('**********order instructions:', message)
+
 					const requestId = uuidv4();
 					const payinLink = message.data.payin.link;
 					const urlParams = new URLSearchParams(new URL(payinLink).search);
 					const yellowcardLiquidationWalletAddress = urlParams.get('walletAddress');
+
+					// prepare the "amount" for the bastion submit user action call format
+					const decimals = currencyDecimal[offrampTransactionRecord.source_currency]
+					const transferAmount = toUnitsString(offrampTransactionRecord.amount, decimals)
+
 
 					const bodyObject = {
 						requestId: requestId,
@@ -34,14 +44,16 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 						contractAddress: offrampTransactionRecord.contract_address,
 						actionName: 'transfer',
 						chain: offrampTransactionRecord.chain,
-						actionParams: erc20Transfer(offrampTransactionRecord.source_currency, offrampTransactionRecord.chain, yellowcardLiquidationWalletAddress, offrampTransactionRecord.amount)
+						actionParams: erc20Transfer(offrampTransactionRecord.source_currency, offrampTransactionRecord.chain, yellowcardLiquidationWalletAddress, transferAmount)
 					};
+
+
 
 					const bastionResponse = await submitUserAction(bodyObject);
 					const bastionResponseBody = await bastionResponse.json();
 
-
-					if (!bastionResponse.ok || bastionResponse.status !== 200) {
+					console.log('bastionResponseBody:', bastionResponseBody)
+					if (!bastionResponse.ok) {
 						// failed bastion user action
 						console.log('failed bastion user action')
 
@@ -93,10 +105,11 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 					return { offrampTransactionRecord: updatedOfframpTransactionRecord, yellowcardTransactionRecord: exchange };
 				} else if (message instanceof Close) {
 					// failed to get yellowcard order isntructions indicating failure of some kind on the yellowcard side
+					console.log('**********close message:', message)
 
 					const offrampTransactionRecordToUpdate = {
 						transaction_status: "NOT_INITIATED",
-						failed_reason: "Order closed due to invalid account details"
+						failed_reason: "Order closed"
 					};
 
 					const yellowcardTransactionRecordToUpdate = {
