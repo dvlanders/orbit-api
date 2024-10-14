@@ -1191,7 +1191,7 @@
       },
       "UsdOfframpWireNonUSAccount": {
         "type": "object",
-        "title": "USD Offramp Wire to Non-US Bank Account",
+        "title": "USD Offramp Wire to IBAN Bank Account",
         "properties": {
           "accountType": {
             "type": "string",
@@ -6875,7 +6875,7 @@
         }
       }
     },
-    "/account/wire/international/offramp": {
+    "/account/wire/us/offramp": {
       "post": {
         "summary": "Add USD Offramp Bank Account (Wire)",
         "tags": [
