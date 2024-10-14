@@ -4,10 +4,10 @@ const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCrypto
 const { getBearerDid } = require('../../src/util/yellowcard/utils/getBearerDid');
 
 const hifiOfframpTransactionStatusMap = {
-	"processing": "IN_PROGRESS_FIAT",
-	'pending': 'IN_PROGRESS_FIAT',
-	'complete': 'COMPLETED',
-	'failed': 'FAILED_FIAT_RETURNED'
+	"PAYOUT_INITIATED": "IN_PROGRESS_FIAT",
+	'PAYOUT_PENDING': 'IN_PROGRESS_FIAT',
+	'PAYOUT_SETTLED': 'COMPLETED',
+	'PAYIN_FAILED': 'FAILED_FIAT_RETURNED'
 }
 
 const updateStatusWithYellowcardTransferId = async (transaction) => {
@@ -42,7 +42,7 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
     } else {
         const latestMessage = exchange[exchange.length - 1];
         if (latestMessage instanceof OrderStatus) {
-            hifiOfframpTransactionStatus = hifiOfframpTransactionStatusMap[latestMessage.data.orderStatus];
+            hifiOfframpTransactionStatus = hifiOfframpTransactionStatusMap[latestMessage.data.status];
         }
     }
 
