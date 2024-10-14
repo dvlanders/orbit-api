@@ -3,11 +3,18 @@ const createLog = require('../../src/util/logger/supabaseLogger');
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const { getBearerDid } = require('../../src/util/yellowcard/utils/getBearerDid');
 
+const hifiOfframpTransactionStatusMap = {
+	"processing": "IN_PROGRESS_FIAT",
+	'pending': 'IN_PROGRESS_FIAT',
+	'complete': 'COMPLETED',
+	'failed': 'FAILED_FIAT_RETURNED'
+}
+
 const updateStatusWithYellowcardTransferId = async (transaction) => {
     const { data: yellowcardTransactionRecord, error: yellowcardTransactionError } = await supabase
 		.from('yellowcard_transactions')
 		.select('*')
-		.eq('id', offrampTransactionRecord.yellowcard_transaction_id)
+		.eq('id', transaction.yellowcard_transaction_id)
 		.maybeSingle();
 
     if (yellowcardTransactionError || !yellowcardTransactionRecord) {
@@ -18,31 +25,36 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
     const bearerDid = await getBearerDid();
 
     // fetch exchange
-    const { TbdexHttpClient, Close } = await import('@tbdex/http-client');
+    const { OrderStatus } = await import('@tbdex/http-server');
+    const { TbdexHttpClient } = await import('@tbdex/http-client');
     const exchange = await TbdexHttpClient.getExchange({
         pfiDid: yellowcardTransactionRecord.yellowcard_rfq_response.metadata.from,
         did: bearerDid,
         exchangeId: yellowcardTransactionRecord.yellowcard_rfq_response.metadata.exchangeId
     });
 
-    let close;
-    for (const message of exchange) {
-        if (message instanceof Close) {
-            close = message;
-            break;
+    const close = exchange.find(message => message.kind === 'close');
+
+    let closed_reason, hifiOfframpTransactionStatus;
+    if (close) {
+        hifiOfframpTransactionStatus = close.data.success ? "COMPLETED" : "FAILED_FIAT_RETURNED";
+        closed_reason = close.data.reason;
+    } else {
+        const latestMessage = exchange[exchange.length - 1];
+        if (latestMessage instanceof OrderStatus) {
+            hifiOfframpTransactionStatus = hifiOfframpTransactionStatusMap[latestMessage.data.orderStatus];
         }
     }
 
-    if (!close) return;
-
-    const hifiOfframpTransactionStatus = close.data.success ? "COMPLETED" : "FAILED_FIAT_RETURNED";
+    if (!hifiOfframpTransactionStatus || hifiOfframpTransactionStatus === transaction.transaction_status)
+        return;
 
     const { data: updateData, error: updateError } = await supabase
         .from('offramp_transactions')
         .update({
             transaction_status: hifiOfframpTransactionStatus,
             updated_at: new Date().toISOString(),
-            failed_reason: close.data.success ? undefined : close.data.reason,
+            failed_reason: hifiOfframpTransactionStatus === "FAILED_FIAT_RETURNED" ? undefined : closed_reason,
         })
         .eq('id', transaction.id)
         .select()
