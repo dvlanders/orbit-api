@@ -143,13 +143,12 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 
 				return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
 			}
-		}
 		} catch (error) {
-		console.error('Error during exchange processing:', error);
-		await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, "Exchange processing error", error);
-		return { error: "Exchange process failed", details: error };
+			console.error('Error during exchange processing:', error);
+			await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, "Exchange processing error", error);
+			return { error: "Exchange process failed", details: error };
+		}
 	}
-}
 }
 
 module.exports = {
