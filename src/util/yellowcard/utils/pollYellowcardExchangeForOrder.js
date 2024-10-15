@@ -14,7 +14,7 @@ const { toUnitsString } = require("../../../util/transfer/cryptoToCrypto/utils/t
 
 
 async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, bearerDid) {
-	const { TbdexHttpClient, OrderInstructions, Close } = await import('@tbdex/http-client');
+	const { TbdexHttpClient } = await import('@tbdex/http-client');
 	let orderClose;
 	while (!orderClose) {
 		try {
@@ -23,104 +23,107 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 				did: bearerDid,
 				exchangeId: order.exchangeId
 			});
+            
+            // return if order is closed
+            orderClose = exchange.find(message => message.kind === 'close')
+            if (orderClose) {
+                // failed to get yellowcard order isntructions indicating failure of some kind on the yellowcard side
+                console.log('**********close message:', orderClose)
 
-			for (const message of exchange) {
-				if (message instanceof OrderInstructions) {
-					console.log('**********order instructions:', message)
+                const offrampTransactionRecordToUpdate = {
+                    transaction_status: "NOT_INITIATED",
+                    failed_reason: "Order closed"
+                };
 
-					const requestId = uuidv4();
-					const payinLink = message.data.payin.link;
-					const urlParams = new URLSearchParams(new URL(payinLink).search);
-					const yellowcardLiquidationWalletAddress = urlParams.get('walletAddress');
-
-					// prepare the "amount" for the bastion submit user action call format
-					const decimals = currencyDecimal[offrampTransactionRecord.source_currency]
-					const transferAmount = toUnitsString(offrampTransactionRecord.amount, decimals)
-
-
-					const bodyObject = {
-						requestId: requestId,
-						userId: offrampTransactionRecord.user_id,
-						contractAddress: offrampTransactionRecord.contract_address,
-						actionName: 'transfer',
-						chain: offrampTransactionRecord.chain,
-						actionParams: erc20Transfer(offrampTransactionRecord.source_currency, offrampTransactionRecord.chain, yellowcardLiquidationWalletAddress, transferAmount)
-					};
+                const yellowcardTransactionRecordToUpdate = {
+                    order_close_message: orderClose,
+                }
 
 
+                const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
 
-					const bastionResponse = await submitUserAction(bodyObject);
-					const bastionResponseBody = await bastionResponse.json();
+                return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
+            }
 
-					console.log('bastionResponseBody:', bastionResponseBody)
-					if (!bastionResponse.ok) {
-						// failed bastion user action
-						console.log('failed bastion user action')
+            const orderInstructions = exchange.find(message => message.kind === 'orderinstructions')
+            if (orderInstructions) {
+            
+                console.log('**********order instructions:', orderInstructions)
 
-						await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, "Error executing transfer", bastionResponseBody);
+                const requestId = uuidv4();
+                const payinLink = orderInstructions.data.payin.link;
+                const urlParams = new URLSearchParams(new URL(payinLink).search);
+                const yellowcardLiquidationWalletAddress = urlParams.get('walletAddress');
 
-
-						const offrampTransactionRecordToUpdate = {
-							bastion_response: bastionResponseBody,
-							bastion_transaction_status: "FAILED",
-							transaction_status: "NOT_INITIATED",
-							failed_reason: bastionResponseBody.message,
-						}
-
-						const yellowcardTransactionRecordToUpdate = {
-							order_instructions_message: message,
-							payin_wallet_address: yellowcardLiquidationWalletAddress,
-						}
+                // prepare the "amount" for the bastion submit user action call format
+                const decimals = currencyDecimal[offrampTransactionRecord.source_currency]
+                const transferAmount = toUnitsString(offrampTransactionRecord.amount, decimals)
 
 
-						const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
+                const bodyObject = {
+                    requestId: requestId,
+                    userId: offrampTransactionRecord.user_id,
+                    contractAddress: offrampTransactionRecord.contract_address,
+                    actionName: 'transfer',
+                    chain: offrampTransactionRecord.chain,
+                    actionParams: erc20Transfer(offrampTransactionRecord.source_currency, offrampTransactionRecord.chain, yellowcardLiquidationWalletAddress, transferAmount)
+                };
 
 
 
-						return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
-					} else {
+                const bastionResponse = await submitUserAction(bodyObject);
+                const bastionResponseBody = await bastionResponse.json();
 
-						// successful bastion user action
-						console.log('successful bastion user action')
+                console.log('bastionResponseBody:', bastionResponseBody)
+                if (!bastionResponse.ok) {
+                    // failed bastion user action
+                    console.log('failed bastion user action')
 
-						const offrampTransactionRecordToUpdate = {
-							bastion_response: bastionResponseBody,
-							transaction_hash: bastionResponseBody.transactionHash,
-							bastion_transaction_status: bastionResponseBody.status,
-							transaction_status: bastionResponseBody.status == "FAILED" ? "NOT_INITIATED" : "SUBMITTED_ONCHAIN",
-							failed_reason: bastionResponseBody.message,
-						}
-
-						const yellowcardTransactionRecordToUpdate = {
-							order_instructions_message: message,
-							payin_wallet_address: yellowcardLiquidationWalletAddress,
-						}
+                    await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, "Error executing transfer", bastionResponseBody);
 
 
-						const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
+                    const offrampTransactionRecordToUpdate = {
+                        bastion_response: bastionResponseBody,
+                        bastion_transaction_status: "FAILED",
+                        transaction_status: "NOT_INITIATED",
+                        failed_reason: bastionResponseBody.message,
+                    }
 
-						return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
-					}
-
-					return { offrampTransactionRecord: updatedOfframpTransactionRecord, yellowcardTransactionRecord: exchange };
-				} else if (message instanceof Close) {
-					// failed to get yellowcard order isntructions indicating failure of some kind on the yellowcard side
-					console.log('**********close message:', message)
-
-					const offrampTransactionRecordToUpdate = {
-						transaction_status: "NOT_INITIATED",
-						failed_reason: "Order closed"
-					};
-
-					const yellowcardTransactionRecordToUpdate = {
-						order_close_message: message,
-					}
+                    const yellowcardTransactionRecordToUpdate = {
+                        order_instructions_message: orderInstructions,
+                        payin_wallet_address: yellowcardLiquidationWalletAddress,
+                    }
 
 
-					const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
+                    const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
 
-					return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
-				}
+
+
+                    return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
+                } else {
+
+                    // successful bastion user action
+                    console.log('successful bastion user action')
+
+                    const offrampTransactionRecordToUpdate = {
+                        bastion_response: bastionResponseBody,
+                        transaction_hash: bastionResponseBody.transactionHash,
+                        bastion_transaction_status: bastionResponseBody.status,
+                        transaction_status: bastionResponseBody.status == "FAILED" ? "NOT_INITIATED" : "SUBMITTED_ONCHAIN",
+                        failed_reason: bastionResponseBody.message,
+                    }
+
+                    const yellowcardTransactionRecordToUpdate = {
+                        order_instructions_message: orderInstructions,
+                        payin_wallet_address: yellowcardLiquidationWalletAddress,
+                    }
+
+
+                    const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
+
+                    return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
+                }
+
 			}
 		} catch (error) {
 			console.error('Error during exchange processing:', error);
