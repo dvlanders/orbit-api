@@ -1,9 +1,8 @@
 const cron = require('node-cron');
-const pollOfframpTransactionsBastionStatus = require('./jobs/pollOfframpTransactionsBastionStatus');
 const pollOfframpTransactionsBridgeStatus = require('./jobs/pollOfframpTransactionsBridgeStatus');
 const pollBridgeCustomerStatus = require('./jobs/pollBridgeCustomerStatus');
 const pollOnrampTransactionsCheckbookStatus = require('./jobs/pollOnrampTransactionsCheckbookStatus');
-const pollBastionCryptoToCryptoTransferStatus = require('./jobs/pollBastionCryptoToCryptoTransferStatus');
+const pollCryptoToCryptoTransferStatus = require('./jobs/pollCryptoToCryptoTransferStatus');
 const pollWebhookRetry = require('./jobs/pollWebhookRetry');
 const pollCleanWebhookQueue = require('./jobs/utils/pollCleanWebhookQueue');
 const pollOnrampTransactionsBridgeStatus = require('./jobs/pollOnrampTransactionsBridgeStatus');
@@ -23,13 +22,14 @@ const pollAutopayRefill = require('./jobs/pollAutopayRefill');
 const pollBastionBaseAssetTransferStatus = require('./jobs/pollBastionBaseAssetTransferStatus');
 const pollFiatToFiatCheckbookStatus = require('./jobs/pollFiatToFiatCheckbookStatus');
 const pollStripeWebhookEvents = require('./jobs/pollStripeWebhookEvents');
+const pollOfframpTransactionsCryptoStatus = require('./jobs/pollOfframpTransactionsCryptoStatus');
 
-cron.schedule('*/60 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
+cron.schedule('*/10 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollDeleteBridgeOfframpTransfer); // every 60 seconds
-cron.schedule('*/20 * * * * *', pollOfframpTransactionsBastionStatus); // every 20 seconds
+cron.schedule('*/10 * * * * *', pollOfframpTransactionsCryptoStatus); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds
-cron.schedule('*/20 * * * * *', pollBastionCryptoToCryptoTransferStatus); // every 20 seconds
+cron.schedule('*/20 * * * * *', pollCryptoToCryptoTransferStatus); // every 20 seconds
 cron.schedule('*/20 * * * * *', pollContractAction); // every 20 seconds
 cron.schedule('*/60 * * * * *', pollBastionGasTransaction); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollWebhookRetry);

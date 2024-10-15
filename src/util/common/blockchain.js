@@ -1,3 +1,5 @@
+const { formatUnits } = require("ethers")
+
 const NODE_ENV = process.env.NODE_ENV
 
 const Chain = {
@@ -60,6 +62,15 @@ const baseAssetMap = {
 	POLYGON_AMOY: "MATIC",
 }
 
+const convertWeiToEthers = (wei, decimals="0", toFixed=2) => {
+    const _wei = BigInt(wei)
+    const ether = formatUnits(_wei, parseInt(decimals))
+    const [int, dic] = ether.split(".")
+
+    const formated = `${int}.${dic ? dic.slice(0, toFixed) : "00"}`
+    return formated
+}
+
 
 module.exports = {
 	Chain,
@@ -67,5 +78,6 @@ module.exports = {
 	currencyDecimal,
 	currencyContractAddress,
 	baseAssetMap,
+	convertWeiToEthers,
 	ChainId
 }

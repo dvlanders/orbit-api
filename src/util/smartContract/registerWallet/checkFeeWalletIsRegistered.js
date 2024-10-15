@@ -1,6 +1,6 @@
 const { ethers, Contract, JsonRpcProvider } = require("ethers");
 const { urlMap } = require("../alchemyApiUrlMap");
-const { paymentProcessorContractMap } = require("../approve/approveTokenBastion");
+const { paymentProcessorContractMap } = require("../approve/approveToken");
 
 const abi = [
     "function isFeeWalletRegistered(address feeWallet) view returns (bool)"

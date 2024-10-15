@@ -4,6 +4,7 @@ const { createIndividualBridgeCustomer } = require("../../src/util/bridge/endpoi
 const { createCheckbookUser } = require("../../src/util/checkbook/endpoint/createCheckbookUser");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
+const { createUserWallet } = require("../../src/util/user/createUserWallet");
 const notifyUserStatusUpdate = require("../../webhooks/user/notifyUserStatusUpdate");
 const { JobError, JobErrorType } = require("../error");
 
@@ -31,8 +32,8 @@ const createUserAsync = async(config) => {
 			throw new Error(`userType is not found: ${config.userType}`)	
 		}
         // Create customer objects for providers
-        const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-            createAndFundBastionUser(config.userId),
+        const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
+            createUserWallet(config.userId),
             bridgeFunction(config.userId),
             createCheckbookUser(config.userId)
         ]);
