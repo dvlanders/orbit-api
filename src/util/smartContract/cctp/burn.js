@@ -52,7 +52,8 @@ const _burnUsdcBastion = async(amount, sourceChain, sourceUserId, sourceBastionU
         action_input: contractInput,
         tag: "BURN_USDC_ON_SOURCE_CHAIN",
         status: "CREATED",
-        chain: sourceChain
+        chain: sourceChain,
+        bastion_transaction_record_id: providerRecord.id
     }
 
     const contractActionRecord = await insertSingleContractActionRecord(toInsertContractActionRecord)
@@ -115,7 +116,8 @@ const _burnUsdcCircle = async(amount, sourceChain, sourceUserId, sourceCircleWal
         action_input: contractInput,
         tag: "BURN_USDC_ON_SOURCE_CHAIN",
         status: "CREATED",
-        chain: sourceChain
+        chain: sourceChain,
+        circle_transaction_record_id: providerRecord.id
     }
 
     const contractActionRecord = await insertSingleContractActionRecord(toInsertContractActionRecord)

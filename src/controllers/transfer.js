@@ -936,12 +936,12 @@ exports.createBridgingRequest = async (req, res) => {
 		if (destinationBastionUserId && !(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `Destination user is not allowed to receive crypto (user status invalid)` })
 
 		// check if requestId is already used
-		const { isAlreadyUsed } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
+		const { isAlreadyUsed, newRecord } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// TODO: create function map for different currency
 		// right now only usdc bridging is supported
-		const result = await createUsdcBridgingRequest(fields);
+		const result = await createUsdcBridgingRequest({...fields, newRecord});
 		return res.status(200).json(result);
 	}catch (error){
 		await createLog("transfer/createBridgingRequest", sourceUserId, error.message, error, profileId, res)

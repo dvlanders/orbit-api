@@ -9,6 +9,7 @@ const { insertWalletTransactionRecord, submitWalletUserAction } = require("../..
 const { insertSingleContractActionRecord } = require("../../transfer/contractAction/contractActionTableService")
 const { updateContractActionRecord } = require("../updateContractActionRecord")
 const { getUserWallet } = require("../../user/getUserWallet")
+const { transferType } = require("../../transfer/utils/transfer")
 
 const _receiveMessageAndMintBastion = async (userId, chain, bastionUserId, walletAddress, messageBytes, attestationSignature, messageTransmitterInfo) => {
     // insert provider record
@@ -40,7 +41,8 @@ const _receiveMessageAndMintBastion = async (userId, chain, bastionUserId, walle
         action_input: contractInput,
         tag: "RECEIVE_MESSAGE_AND_MINT",
         status: "CREATED",
-        chain: chain
+        chain: chain,
+        bastion_transaction_record_id: providerRecord.id
     }
 
     const contractActionRecord = await insertSingleContractActionRecord(toInsertContractActionRecord)
@@ -54,7 +56,8 @@ const _receiveMessageAndMintBastion = async (userId, chain, bastionUserId, walle
         chain: chain, 
         actionParams: contractInput, 
         transferType: transferType.CONTRACT_ACTION, 
-        providerRecordId: providerRecord.id
+        providerRecordId: providerRecord.id,
+        bastion_transaction_record_id: providerRecord.id
     }
 
     const {response, responseBody, mainTableStatus, providerStatus} = await submitWalletUserAction("BASTION", userActionConfig)
@@ -101,7 +104,8 @@ const _receiveMessageAndMintCircle = async (userId, chain, circleWalletId, walle
         action_input: contractInput,
         tag: "RECEIVE_MESSAGE_AND_MINT",
         status: "CREATED",
-        chain: chain
+        chain: chain,
+        circle_transaction_record_id: providerRecord.id
     }
 
     const contractActionRecord = await insertSingleContractActionRecord(toInsertContractActionRecord)

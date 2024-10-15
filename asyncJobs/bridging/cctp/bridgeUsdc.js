@@ -1,11 +1,10 @@
-const bastionGasCheck = require("../../../src/util/bastion/utils/gasCheck")
-const { updateBridgeTransactionRecord, getBridgeTransactionRecord } = require("../../../src/util/bridge/bridgeTransactionTableService")
-const { burnUsdc } = require("../../../src/util/smartContract/cctp/burn")
 const supabase = require("../../../src/util/supabaseClient")
+const { updateBridgingTransactionRecord, getBridgingTransactionRecord } = require("../../../src/util/transfer/bridging/bridgingTransactionTableService")
 const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const notifyBridgingUpdate = require("../../../webhooks/bridging/notifyBridgingUpdate")
 const createJob = require("../../createJob")
 const { JobError, JobErrorType } = require("../../error")
+const areObjectsEqual = require("../../utils/configCompare")
 const { approveUsdc } = require("./approveUsdc")
 const { depositUsdcForBurn } = require("./burnUsdc")
 const { mintUsdc } = require("./mintUsdc")
@@ -36,9 +35,9 @@ const checkIsContractActionConfirmedAndUpdateStatus = async(recordId, bridgingRe
     if (error) throw error
 
     // update bridging record status
-    if (!data.status) await updateBridgeTransactionRecord(bridgingRecordId, { stage_status: "FAILED", status: "FAILED", failed_reason: "Please contact HIFI for more information" })
-    else if (data.status === "FAILED") await updateBridgeTransactionRecord(bridgingRecordId, { stage_status: "FAILED", status: "FAILED", failed_reason: "Please contact HIFI for more information" })
-    else if (data.status === "CONFIRMED") await updateBridgeTransactionRecord(bridgingRecordId, { stage_status: "COMPLETED" })
+    if (!data.status) await updateBridgingTransactionRecord(bridgingRecordId, { stage_status: "FAILED", status: "FAILED", failed_reason: "Please contact HIFI for more information" })
+    else if (data.status === "FAILED") await updateBridgingTransactionRecord(bridgingRecordId, { stage_status: "FAILED", status: "FAILED", failed_reason: "Please contact HIFI for more information" })
+    else if (data.status === "CONFIRMED") await updateBridgingTransactionRecord(bridgingRecordId, { stage_status: "COMPLETED" })
 
     return data.status
 }
@@ -48,10 +47,10 @@ const bridgeUsdc = async (config) => {
     const { bridgingRecordId, userId, profileId } = config
 
     // get bridging record
-    const bridgingRecord = await getBridgeTransactionRecord(bridgingRecordId, profileId)
+    const bridgingRecord = await getBridgingTransactionRecord(bridgingRecordId)
 
     // update bridging record status to in progress
-    await updateBridgeTransactionRecord(bridgingRecordId, { status: "PROCESSING" })
+    await updateBridgingTransactionRecord(bridgingRecordId, { status: "PROCESSING" })
 
     try{
         // approve usdc
@@ -131,18 +130,10 @@ const bridgeUsdc = async (config) => {
         }
         // check if attestation is confirmed, then mint usdc
         else if (bridgingRecord.current_stage === "FETCH_ATTESTATION") {
-            // check gas
-            const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.destination_user_id, bridgingRecord.destination_chain, bridgingRecord.destination_wallet_type, profileId)
-            if (needFund) {
-                // reschedule job, wait for gas to be enough
-                const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
-            }
             // mint usdc
             const { success, shouldReschedule, message, isAttestationConfirmed } = await mintUsdc(bridgingRecord.destination_user_id, profileId, bridgingRecord)
             if (!success) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to mint usdc", null, null, shouldReschedule, true)
-            
+            console.log(message)
             // create job to either fetch attestation or confirm final status
             const nextRetryTime = new Date(new Date().getTime() + 60000).toISOString() // check status after 60 seconds
             await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
@@ -161,7 +152,7 @@ const bridgeUsdc = async (config) => {
             }
             
             // update bridging record status to success
-            const updatedBridgingRecord = await updateBridgeTransactionRecord(bridgingRecordId, { status: "COMPLETED", updated_at: new Date().toISOString() })
+            const updatedBridgingRecord = await updateBridgingTransactionRecord(bridgingRecordId, { status: "COMPLETED", updated_at: new Date().toISOString() })
 
             // send notification
             await notifyBridgingUpdate(updatedBridgingRecord)
@@ -169,7 +160,7 @@ const bridgeUsdc = async (config) => {
         }else{
             // unknown stage
             // update bridging record status to failed
-            const updatedBridgingRecord = await updateBridgeTransactionRecord(bridgingRecordId, { status: "FAILED", updated_at: new Date().toISOString() })
+            const updatedBridgingRecord = await updateBridgingTransactionRecord(bridgingRecordId, { status: "FAILED", updated_at: new Date().toISOString() })
             throw new JobError(JobErrorType.INTERNAL_ERROR, "Unknown bridging stage: " + bridgingRecord.current_stage, null, null, false, true)
         }
     } catch (error) {

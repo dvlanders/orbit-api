@@ -28,12 +28,12 @@ const _bastionApprove = async(userId, chain, walletAddress, bastionUserId, amoun
 
     // insert initial record
     const toInsertContractActionRecord = {
-        userId,
+        user_id: userId,
         chain,
-        contractAddress: usdcContractAddress,
-        walletAddress,
-        provider: "BASTION",
-        actionInput: erc20Approve(currency, tokenMessengerInfo.address, amount),
+        contract_address: usdcContractAddress,
+        wallet_address: walletAddress,
+        wallet_provider: "BASTION",
+        action_input: erc20Approve("usdc", tokenMessengerInfo.address, amount),
         tag: "APPROVE_TO_TOKEN_MESSENGER",
         bastion_transaction_record_id: providerRecord.id,
         status: "CREATED"
@@ -47,7 +47,7 @@ const _bastionApprove = async(userId, chain, walletAddress, bastionUserId, amoun
         spender: tokenMessengerInfo.address, 
         unitsAmount: amount, 
         chain, 
-        currency: usdc, 
+        currency: "usdc", 
         providerRecordId: providerRecord.id, 
         transferType: "CONTRACT_ACTION"
 	};
@@ -103,7 +103,7 @@ const _circleApprove = async(userId, chain, walletAddress, circleWalletId, amoun
 
     // approve
     const approveConfig = {
-        referenceId: contractActionRecord, 
+        referenceId: contractActionRecord.id, 
         senderCircleWalletId: circleWalletId, 
         currency: "usdc", 
         spender: tokenMessengerInfo.address, 
