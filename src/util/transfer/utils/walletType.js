@@ -1,1 +1,1 @@
-exports.allowedWalletTypes = ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]
+exports.allowedWalletTypes = ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED", "GAS_STATION"]

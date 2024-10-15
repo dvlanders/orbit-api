@@ -1,6 +1,7 @@
 const bastionGasCheck = require("../../../src/util/bastion/utils/gasCheck")
 const { burnUsdc } = require("../../../src/util/smartContract/cctp/burn")
 const supabase = require("../../../src/util/supabaseClient")
+const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const notifyBridgingUpdate = require("../../../webhooks/bridging/notifyBridgingUpdate")
 const createJob = require("../../createJob")
 const { JobError, JobErrorType } = require("../../error")
@@ -71,7 +72,7 @@ const bridgeUsdc = async (config) => {
         // approve usdc
         if (bridgingRecord.current_stage === "INITIATE_BRIDGE") {
             // check gas
-            const { needFund, fundSubmitted } = await bastionGasCheck(bridgingRecord.source_user_id, bridgingRecord.source_chain, bridgingRecord.source_wallet_type, profileId)
+            const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.source_user_id, bridgingRecord.source_chain, bridgingRecord.source_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
                 const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
@@ -99,7 +100,7 @@ const bridgeUsdc = async (config) => {
                 return
             }
             // check gas
-            const { needFund, fundSubmitted } = await bastionGasCheck(bridgingRecord.source_user_id, bridgingRecord.source_chain, bridgingRecord.source_wallet_type, profileId)
+            const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.source_user_id, bridgingRecord.source_chain, bridgingRecord.source_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
                 const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
@@ -127,7 +128,7 @@ const bridgeUsdc = async (config) => {
                 return
             }
             // check gas
-            const { needFund, fundSubmitted } = await bastionGasCheck(bridgingRecord.destination_user_id, bridgingRecord.destination_chain, bridgingRecord.destination_wallet_type, profileId)
+            const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.destination_user_id, bridgingRecord.destination_chain, bridgingRecord.destination_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
                 const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
@@ -146,7 +147,7 @@ const bridgeUsdc = async (config) => {
         // check if attestation is confirmed, then mint usdc
         else if (bridgingRecord.current_stage === "FETCH_ATTESTATION") {
             // check gas
-            const { needFund, fundSubmitted } = await bastionGasCheck(bridgingRecord.destination_user_id, bridgingRecord.destination_chain, bridgingRecord.destination_wallet_type, profileId)
+            const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.destination_user_id, bridgingRecord.destination_chain, bridgingRecord.destination_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
                 const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds

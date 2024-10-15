@@ -10,34 +10,15 @@ const getBillingPeriod = require("../util/billing/getBillingPeriod");
 const { convertKeysToCamelCase } = require("../util/utils/object");
 const getOrganizationInformation = require("../util/dashboard/organization");
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
+const { getUserWalletBalance } = require("../util/user/getUserWallet");
 
 exports.getWalletBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
 	const { userId, chain, currency, walletType } = req.query
 	try {
-		let { bastionUserId } = await getBastionWallet(userId, chain, walletType)
-		const response = await getUserBalance(bastionUserId, chain)
-		const responseBody = await response.json()
-		if (!response.ok) {
-			createLog("dashboard/getWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody)
-			return res.status(500).json({ error: 'Internal server error' });
-		}
-		if (currency == "gas"){
-			// base asset
-			return res.status(200).json({ 
-				balance: responseBody.baseAssetBalance.quantity, 
-				tokenInfo: {
-					decimals: 18
-				}	 
-			})
-		}else{
-			const currencyContract = currencyContractAddress[chain][currency].toLowerCase()
-			const tokenInfo = responseBody.tokenBalances[currencyContract]
-			if (!tokenInfo) return res.status(200).json({ balance: "0", tokenInfo: null })
-			return res.status(200).json({ balance: tokenInfo.quantity, tokenInfo })
-		}
-
+		const walletBalance = await getUserWalletBalance(userId, chain, currency, walletType)
+		return res.status(200).json(walletBalance)
 	} catch (error) {
 		console.error(error)
 		await createLog("dashboard/getWalletBalance", userId, error.message, error)

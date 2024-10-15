@@ -4,6 +4,8 @@ const { updateIndividualBridgeCustomer } = require("../../src/util/bridge/endpoi
 const { updateCheckbookUser } = require("../../src/util/checkbook/endpoint/updateCheckbookUser");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const supabase = require("../../src/util/supabaseClient");
+const { updateUserWallet } = require("../../src/util/user/updateUserWallet");
+const notifyUserStatusUpdate = require("../../webhooks/user/notifyUserStatusUpdate");
 const { JobError, JobErrorType } = require("../error");
 
 
@@ -32,11 +34,13 @@ const updateUserAsync = async(config) => {
 
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
 		// update customer object for providers
-		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			updateBastionUser(config.userId), // TODO: implement this function in utils and import before using it here
-			bridgeFunction(config.userId), // TODO: implement this function in utils and import before using it here
-			updateCheckbookUser(config.userId) // TODO: implement this function in utils and import before using it here
+		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
+			updateUserWallet(config.userId),
+			bridgeFunction(config.userId),
+			updateCheckbookUser(config.userId)
 		])
+
+        if (process.env.NODE_ENV === "development") await notifyUserStatusUpdate(config.userId)
 
 
     }catch (error){

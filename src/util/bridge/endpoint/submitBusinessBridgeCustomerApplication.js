@@ -7,6 +7,7 @@ const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
 const { safeParseBody } = require("../../utils/response");
 const createJob = require("../../../../asyncJobs/createJob");
+const { KycLevel } = require("../../user/kycInfo");
 
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -46,7 +47,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		// check if user exists
 		let { data: user, error: user_error } = await supabaseCall(() => supabase
 			.from('users')
-			.select('profile_id, user_type')
+			.select('profile_id, user_type, kyc_level')
 			.eq('id', userId)
 			.maybeSingle()
 		)
@@ -57,6 +58,8 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 		if (!user) {
 			throw new createBridgeCustomerError(createBridgeCustomerErrorType.RECORD_NOT_FOUND, "User record not found");
 		}
+
+		if(user.kyc_level === KycLevel.ONE) return pendingResult(); // kyc level one does not support Bridge
 
 		// fetch user kyc data
 		const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase

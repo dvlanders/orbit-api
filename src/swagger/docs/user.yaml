@@ -5,6 +5,8 @@
       Create a new Hifi user (Individual/Business)
 
       HIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.
+
+      To learn more about user KYC levels, see [here](https://docs.hifibridge.com/docs/kyc-level).
     tags:
       - User
     requestBody:

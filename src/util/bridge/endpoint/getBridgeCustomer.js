@@ -4,6 +4,7 @@ const { v4 } = require("uuid");
 const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields, bridgeFieldsToRequestFields, pendingResult } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { CustomerStatus } = require("../../user/common");
+const { KycLevel } = require("../../user/kycInfo");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -54,9 +55,32 @@ const BridgeEndorsementStatus = {
  * @param {*} userId 
  * @returns 
  */
-const getBridgeCustomer = async(userId) => {
+const getBridgeCustomer = async(userId, kycLevel = null) => {
 
     try{
+
+        if(kycLevel === KycLevel.ONE){
+            return {
+                status: 200,
+                customerStatus: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                usRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                euRamp: {
+                    status: CustomerStatus.INACTIVE,
+                    actions: [],
+                    fields: []
+                },
+                message: ""
+            }
+        }
+
         // check if the application is submitted
         const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
             .from('bridge_customers')

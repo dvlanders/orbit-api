@@ -16,15 +16,6 @@ UsdOfframpAchAccountBody:
     application/json:
       schema:
         $ref: "#/components/schemas/UsdOfframpAchAccount"
-# UsdOfframpWireAccountBody:
-#   required: true
-#   content:
-#     application/json:
-#       schema:
-#         oneOf:
-#           - $ref: '#/components/schemas/UsdOfframpWireUSAccount'
-#           - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanSupportedAccount'
-#           - $ref: '#/components/schemas/UsdOfframpWireNonUSIbanUnsupportedAccount'
 UsdOfframpWireAccountBody:
   required: true
   content:

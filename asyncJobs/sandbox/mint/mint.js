@@ -1,16 +1,19 @@
 const { v4 } = require("uuid")
-const { insertContractActionRecord } = require("../../../src/util/smartContract/insertContractActionRecord")
 const { mintUSDHIFI } = require("../../../src/util/smartContract/sandboxUSDHIFI/mint")
-const { updateContractActionRecord } = require("../../../src/util/smartContract/updateContractActionRecord")
 const createJob = require("../../createJob")
 const { mintCheckScheduleCheck } = require("./scheduleCheck")
 const createLog = require("../../../src/util/logger/supabaseLogger")
-const { getUserActions } = require("../../../src/util/bastion/endpoints/getUserAction")
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../../../src/util/transfer/fiatToCrypto/utils/simulateSandboxFiatToCryptoTransaction")
 const notifyFiatToCryptoTransfer = require("../../../webhooks/transfer/notifyFiatToCryptoTransfer")
 const supabase = require("../../../src/util/supabaseClient")
 const { USDHIFIContractAddressMap } = require("../../../src/util/smartContract/sandboxUSDHIFI/utils")
+const { getUserWallet } = require("../../../src/util/user/getUserWallet")
+const { insertWalletTransactionRecord, submitWalletUserAction, getUserAction, updateWalletTransactionRecord } = require("../../../src/util/transfer/walletOperations/utils")
+const { transferType } = require("../../../src/util/transfer/utils/transfer")
+const { updateOnrampTransactionRecord } = require("../../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService")
+const { updateContractActionRecord, insertSingleContractActionRecord, getContractActionRecord } = require("../../../src/util/transfer/contractAction/contractActionTableService")
+const { statusMapBastion } = require("../../../src/util/transfer/walletOperations/bastion/statusMap")
 
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
@@ -23,38 +26,14 @@ const mintCheck = async(config) => {
     const profileId = config.profileId
     try{
         // check contract actions
-        const {data, error} = await supabase
+        const {data: contractActionRecord, error: contractActionRecordError} = await supabase
             .from("contract_actions")
-            .select("*")
+            .select("*, bastionTransaction: bastion_transaction_record_id(request_id, bastion_user_id), bastion_transaction_record_id")
             .eq("id", contractActionRecordId)
             .maybeSingle()
-        
-        if (error) throw error
-        if (!data) throw new Error("Contract action record not found")
-
-        const response = await getUserActions(data.bastion_request_id, data.bastion_user_id)
-        const responseBody = await response.json()
-
-        const toUpdate = {
-            bastion_response: responseBody
-        }
-
-        if (!response.ok){
-            toUpdate.status =  "FAILED"
-            toUpdate.failed_reason=  responseBody.message
-            await createLog("asyncJob/mintCheck", userId, responseBody.message, responseBody, profileId)
-        }else{
-            toUpdate.status = responseBody.status
-            toUpdate.bastion_status = responseBody.status
-            toUpdate.transaction_hash = responseBody.transactionHash
-        }
-
-        await updateContractActionRecord(contractActionRecordId, toUpdate)
-
-        if (!response.ok || !responseBody.status) return
 
         // reinsert check job if not yet in final status
-        if (responseBody.status && (responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED")){
+        if ((contractActionRecord.status == "SUBMITTED" || contractActionRecord.status == "ACCEPTED" || contractActionRecord.status == "PENDING")){
             const currentTime = new Date();
             currentTime.setSeconds(currentTime.getSeconds() + 30);
             const nextRetry = currentTime.toISOString()
@@ -62,44 +41,25 @@ const mintCheck = async(config) => {
             return
         }
 
-        // update onramp record
-        const {data: onrampRecord, error: onrampRecordError} = await supabase
-            .from("onramp_transactions")
-            .update({
-                status: responseBody.status == "CONFIRMED" ? "CONFIRMED" : "FAILED",
-                updated_at: new Date().toISOString(),
-                transaction_hash: responseBody.transactionHash
-            })
-            .eq("id", onRampRecordId)
-            .select("*")
-            .maybeSingle()
+        const toUpdateOnrampRecord = {
+            status: contractActionRecord.status == "CONFIRMED" ? "CONFIRMED" : "FAILED",
+            updated_at: new Date().toISOString(),
+        }
 
-        if (onrampRecordError) throw onrampRecordError
-        if (!onrampRecord) throw new Error("Onramp record not found")
-        await simulateSandboxFiatToCryptoTransactionStatus(onrampRecord)
-        await notifyFiatToCryptoTransfer(onrampRecord)
+        // update onramp record
+        const onRampRecord = await updateOnrampTransactionRecord(onRampRecordId, toUpdateOnrampRecord)
+        await simulateSandboxFiatToCryptoTransactionStatus(onRampRecord)
+        await notifyFiatToCryptoTransfer(onRampRecord)
     }catch (error){
         await createLog("asyncJob/mintCheck", userId, error.message, error, profileId)
-
-        // update contract action record
-        const toUpdate = {
-            status: "FAILED",
-            failed_reason: error.message
-        }
-        await updateContractActionRecord(contractActionRecordId, toUpdate)
-
         // update onramp record
-        const {data: onrampRecord, error: onrampRecordError} = await supabase
-            .from("onramp_transactions")
-            .update({
-                status: "FAILED",
-                failed_reason: "Please contact HIFI for more information"
-            })
-            .eq("id", onRampRecordId)
-            .select("*")
-            .maybeSingle()
-            
-        await notifyFiatToCryptoTransfer(onrampRecord)
+        const toUpdateOnrampRecord = {
+            status: "FAILED",
+            failed_reason: "Please contact HIFI for more information",
+            updated_at: new Date().toISOString()
+        }
+        const onRampRecord = await updateOnrampTransactionRecord(onRampRecordId, toUpdateOnrampRecord)
+        await notifyFiatToCryptoTransfer(onRampRecord)
     }
 }
 
@@ -111,65 +71,71 @@ const mint = async(config) => {
     const onRampRecordId = config.onRampRecordId
     const profileId = config.profileId
     try{
+        // insert wallet provider record
+        const toInsertWalletProviderRecord = {
+            user_id: userId,
+            request_id: v4(),
+            bastion_user_id: gasStation
+        }
+        const walletProviderRecord = await insertWalletTransactionRecord("BASTION", toInsertWalletProviderRecord)
+
         // mint USDHIFI
-        const requestId = v4()
         const contractAddress = USDHIFIContractAddressMap[chain];
         const unitsAmount = amount * Math.pow(10, 6)
+        const actionInput = [
+            { name: "to", value: walletAddress },
+            { name: "amount", value: unitsAmount }
+        ]
+
         // insert initial record
-        const requestInfo = {
-            bastionRequestId: requestId,
-            userId,
+        const mintRequestInfo = { 
+            user_id: userId,
+            wallet_address: walletAddress,
+            contract_address: contractAddress,
+            wallet_provider: "BASTION",
             chain,
-            contractAddress: contractAddress,
-            walletAddress,
-            provider: "BASTION",
-            actionInput: 
-                [
-                    { name: "to", value: walletAddress },
-                    { name: "amount", value: unitsAmount }
-                ]
-            ,
+            action_input: actionInput,
+            status: "CREATED",
             tag: "MINT_USDHIFI",
-            bastionUserId: gasStation
+            bastion_transaction_record_id: walletProviderRecord.id
         }
 
-        const record = await insertContractActionRecord(requestInfo)
+        const record = await insertSingleContractActionRecord(mintRequestInfo)
 
-        // submit user action to bastion
-        const response = await mintUSDHIFI(walletAddress, amount, chain, requestId)
-        const responseBody = await response.json()
+        const mintActionInfo = {
+            senderBastionUserId: gasStation,
+            senderUserId: userId,
+            contractAddress,
+            actionName: "mint",
+            chain,
+            actionParams: actionInput,
+            transferType: transferType.CONTRACT_ACTION,
+            providerRecordId: walletProviderRecord.id
+        }
 
-        const toUpdate = {
-            bastion_response: responseBody,
+        const {response, responseBody, mainTableStatus} = await submitWalletUserAction("BASTION", mintActionInfo)
+
+        const toUpdateContractActionRecord = {
+            status: mainTableStatus,
             updated_at: new Date().toISOString()
         }
 
         if (!response.ok){
-            toUpdate.status = "FAILED"
-            toUpdate.bastion_status = "FAILED"
-            toUpdate.failed_reason = responseBody.message
-        }else{
-            toUpdate.status = responseBody.status
-            toUpdate.bastion_status = responseBody.status
-            toUpdate.transaction_hash = responseBody.transactionHash
+            toUpdateContractActionRecord.failed_reason = responseBody.message || "Unknown error"
         }
 
-        await updateContractActionRecord(record.id, toUpdate)
+        await updateContractActionRecord(record.id, toUpdateContractActionRecord)
 
         // update onramp record
-        const {data: onrampRecord, error: onrampRecordError} = await supabase
-            .from("onramp_transactions")
-            .update({
-                status: responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED" ? "FIAT_SUBMITTED" : "FAILED",
-                updated_at: new Date().toISOString(),
-                transaction_hash: responseBody.transactionHash
-            })
-            .eq("id", onRampRecordId)
-            .select("*")
-            .maybeSingle()
+        const toUpdateOnrampRecord = {
+            status: responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED" ? "FIAT_SUBMITTED" : "FAILED",
+            updated_at: new Date().toISOString(),
+            transaction_hash: responseBody.transactionHash
+        }
+        await updateOnrampTransactionRecord(onRampRecordId, toUpdateOnrampRecord)
 
         // insert mint check if success
-        if (responseBody.status && (responseBody.status == "SUBMITTED" || responseBody.status == "ACCEPTED")){
+        if (mainTableStatus == "SUBMITTED" || mainTableStatus == "ACCEPTED"){
             const newJogConfig = {...config, contractActionRecordId: record.id}
             if (!(await mintCheckScheduleCheck("mintCheck", newJogConfig, userId, profileId))) return
             const currentTime = new Date();
@@ -180,18 +146,13 @@ const mint = async(config) => {
 
     }catch (error){
         await createLog("asyncJob/mint", userId, error.message, error, profileId)
-        const toUpdate = {
+        // update onramp record
+        const toUpdateOnrampRecord = {
             status: "FAILED",
             failed_reason: "Please contact HIFI for more information",
             updated_at: new Date().toISOString()
         }
-        // update onramp record
-        const {data: onrampRecord, error: onrampRecordError} = await supabase
-            .from("onramp_transactions")
-            .update(toUpdate)
-            .eq("id", onRampRecordId)
-            .select("*")
-            .maybeSingle()
+        await updateOnrampTransactionRecord(onRampRecordId, toUpdateOnrampRecord)
         
         throw new Error("Failed to mint USDHIFI to user")
     }

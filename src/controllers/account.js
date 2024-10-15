@@ -1175,7 +1175,7 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'firstName': "string",
 		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': "string"
+		'accountType': (value) => inStringEnum(value, ["us", "iban"])
 	};
 
 	// Execute fields validation
