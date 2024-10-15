@@ -109,7 +109,7 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 
 					const offrampTransactionRecordToUpdate = {
 						transaction_status: "NOT_INITIATED",
-						failed_reason: "Order closed"
+						failed_reason: "Internal server error"
 					};
 
 					const yellowcardTransactionRecordToUpdate = {
