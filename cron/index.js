@@ -27,7 +27,7 @@ const pollOfframpTransactionsCryptoStatus = require('./jobs/pollOfframpTransacti
 cron.schedule('*/10 * * * * *', pollOfframpTransactionsBridgeStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollDeleteBridgeOfframpTransfer); // every 60 seconds
 cron.schedule('*/10 * * * * *', pollOfframpTransactionsCryptoStatus); // every 20 seconds
-// cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
+cron.schedule('*/60 * * * * *', pollBridgeCustomerStatus); // every 60 seconds
 cron.schedule('*/60 * * * * *', pollOnrampTransactionsCheckbookStatus); // every 60 seconds
 cron.schedule('*/20 * * * * *', pollCryptoToCryptoTransferStatus); // every 20 seconds
 cron.schedule('*/20 * * * * *', pollContractAction); // every 20 seconds
