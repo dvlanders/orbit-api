@@ -14,6 +14,14 @@ const BalanceTopupStatus = {
     CREATED: "CREATED"
 }
 
+const validTransitions = {
+    [BalanceTopupStatus.CREATED]: [BalanceTopupStatus.CREATED],
+    [BalanceTopupStatus.PENDING]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING],
+    [BalanceTopupStatus.SUCCEEDED]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING, BalanceTopupStatus.SUCCEEDED],
+    [BalanceTopupStatus.CANCELLED]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING, BalanceTopupStatus.CANCELLED],
+    [BalanceTopupStatus.FAILED]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING, BalanceTopupStatus.FAILED]
+};
+
 const generateHIFICreditId = () => {
     const timestamp = Date.now().toString(16);
     const randomPart = Math.floor(Math.random() * 1e8).toString(16);
@@ -23,5 +31,6 @@ const generateHIFICreditId = () => {
 module.exports = {
     BalanceTopupType,
     BalanceTopupStatus,
-    generateHIFICreditId
+    generateHIFICreditId,
+    validTransitions
 }

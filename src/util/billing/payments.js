@@ -58,7 +58,7 @@ const autopay = async (profileId, balanceId, amount = 0) => {
       });
 
       const invoicePay = await stripe.invoices.pay(invoice.id);
-      console.log(invoicePay);
+
       await updateBalanceTopupRecord(topupRecord.id, {stripe_invoice_id: invoicePay.id, status: BalanceTopupStatus.PENDING});
   
     }catch(error){
