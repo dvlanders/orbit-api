@@ -7,6 +7,8 @@ const filterBankAccountInfo = (type, bankAccountInfo) => {
   type = bankAccountInfo.type;
   const filteredBankAccountInfo = {
       accountId: bankAccountInfo.global_account_id,
+      userId: bankAccountInfo.user_id,
+      receiverId: bankAccountInfo.receiver_id,
       type: bankAccountInfo.type,
       name: bankAccountInfo.name,
     };
