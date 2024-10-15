@@ -9,6 +9,7 @@ const checkBalanceForTransactionAmount = async (userId, amount, chain, currency,
         if(process.env.NODE_ENV === "development") return true;
         const walletBalance = await getUserWalletBalance(userId, chain, currency, walletType)
         const tokenInfo = walletBalance.tokenInfo
+        if(!tokenInfo) return false;
         const balance = BigInt(walletBalance.balance);
         const unitAmount = BigInt(toUnitsString(amount, tokenInfo.decimals));
         
