@@ -1,8 +1,10 @@
 const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
+const { updateBridgeTransactionRecord } = require("../../../src/util/bridge/bridgeTransactionTableService")
 const createLog = require("../../../src/util/logger/supabaseLogger")
 const { approveToTokenMessenger } = require("../../../src/util/smartContract/cctp/approve")
 const supabase = require("../../../src/util/supabaseClient")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
+const { getUserWallet } = require("../../../src/util/user/getUserWallet")
 
 const usdcDecimals = 6
 
@@ -16,21 +18,16 @@ const approveUsdc = async (userId, profileId, bridgingRecord) => {
         const bridgingRecordId = bridgingRecord.id
         
         // update bridging record status to in progress
-        const { data, error } = await supabase
-            .from('bridging_transactions')
-            .update({ 
-                stage_status: "PROCESSING", 
-                current_stage: "APPROVE_TO_TOKEN_MESSENGER",
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', bridgingRecordId)
-            .select()
-            .single()
+        const toUpdate = {
+            stage_status: "PROCESSING", 
+            current_stage: "APPROVE_TO_TOKEN_MESSENGER",
+            updated_at: new Date().toISOString()
+        }
+        const data = await updateBridgeTransactionRecord(bridgingRecordId, toUpdate)
         
         const stageRecords = data.stage_records
             
-        const { walletAddress, bastionUserId } = await getBastionWallet(userId, chain, walletType)
-        const { success, record, errorMessageForCustomer } = await approveToTokenMessenger(unitAmount, chain, userId, bastionUserId, walletAddress)
+        const { success, record, errorMessageForCustomer } = await approveToTokenMessenger(unitAmount, chain, userId, walletType)
 
         // update stage record
         stageRecords.APPROVE_TO_TOKEN_MESSENGER = record.id

@@ -1,9 +1,9 @@
 const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
 const createLog = require("../../../src/util/logger/supabaseLogger")
-const { approveToTokenMessenger } = require("../../../src/util/smartContract/cctp/approve")
 const { burnUsdc } = require("../../../src/util/smartContract/cctp/burn")
 const supabase = require("../../../src/util/supabaseClient")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
+const { getUserWallet } = require("../../../src/util/user/getUserWallet")
 
 const usdcDecimals = 6
 
@@ -35,9 +35,7 @@ const depositUsdcForBurn = async (userId, profileId, bridgingRecord) => {
         
         const stageRecords = data.stage_records
             
-        const { walletAddress: sourceWalletAddress, bastionUserId: sourceBastionUserId } = await getBastionWallet(sourceUserId, sourceChain, sourceWalletType)
-        const { walletAddress: destinationWalletAddress } = await getBastionWallet(destinationUserId, destinationChain, destinationWalletType)
-        const { success, record, errorMessageForCustomer } = await burnUsdc(unitAmount, sourceChain, destinationChain, sourceUserId, sourceBastionUserId, sourceWalletAddress, destinationWalletAddress)
+        const { success, record, errorMessageForCustomer } = await burnUsdc(unitAmount, sourceChain, destinationChain, sourceUserId, destinationUserId, sourceWalletType, destinationWalletType)
 
         // update stage record
         stageRecords.BURN_USDC_ON_SOURCE_CHAIN = record.id
