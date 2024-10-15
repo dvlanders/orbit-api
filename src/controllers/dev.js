@@ -24,7 +24,6 @@ const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");
 const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transfer");
 const { toUnitsString } = require("../util/transfer/cryptoToCrypto/utils/toUnits");
-const { approveToTokenMessenger } = require("../util/smartContract/cctp/approve");
 const { burnUsdc } = require("../util/smartContract/cctp/burn");
 const { fetchAttestation } = require("../util/smartContract/cctp/fetchAttestation");
 const { receiveMessageAndMint } = require("../util/smartContract/cctp/receiveMessageAndMint");

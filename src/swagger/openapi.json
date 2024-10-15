@@ -2213,7 +2213,7 @@
       },
       "CopOfframpAchCopBitsoAccount": {
         "type": "object",
-        "title": "COP Offramp ACH_COP_BITSO Account",
+        "title": "COP Offramp ACH Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2282,7 +2282,7 @@
       },
       "ArsOfframpTransferBitsoAccount": {
         "type": "object",
-        "title": "ARS Offramp TRANSFERS_BITSO Account",
+        "title": "ARS Offramp TRANSFERS Account",
         "properties": {
           "type": {
             "type": "string",
@@ -2325,7 +2325,7 @@
       },
       "MxnOfframpSpeiBitsoAccount": {
         "type": "object",
-        "title": "MXN Offramp SPEI_BITSO Account",
+        "title": "MXN Offramp SPEI Account",
         "properties": {
           "type": {
             "type": "string",
@@ -3406,7 +3406,7 @@
       },
       "SPEI_BITSOCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to MXN (SPEI BITSO)",
+        "title": "Crypto to MXN (SPEI)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3478,7 +3478,7 @@
       },
       "TRANSFERS_BITSOCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to ARS (TRANSFERS BITSO)",
+        "title": "Crypto to ARS (TRANSFERS)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3550,7 +3550,7 @@
       },
       "ACH_COP_BITSOCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to COP (ACH COP BITSO)",
+        "title": "Crypto to COP (ACH)",
         "properties": {
           "requestId": {
             "type": "string",

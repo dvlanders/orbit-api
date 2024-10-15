@@ -845,7 +845,7 @@ BrlOfframpWireAccount:
     - currency
 CopOfframpAchCopBitsoAccount:
   type: object
-  title: "COP Offramp ACH_COP_BITSO Account"
+  title: "COP Offramp ACH_COP Account"
   properties:
     type:
       type: string
@@ -887,7 +887,7 @@ CopOfframpAchCopBitsoAccount:
     - currency
 ArsOfframpTransferBitsoAccount:
   type: object
-  title: "ARS Offramp TRANSFERS_BITSO Account"
+  title: "ARS Offramp TRANSFERS Account"
   properties:
     type:
       type: string
@@ -913,7 +913,7 @@ ArsOfframpTransferBitsoAccount:
     - currency
 MxnOfframpSpeiBitsoAccount:
   type: object
-  title: "MXN Offramp SPEI_BITSO Account"
+  title: "MXN Offramp SPEI Account"
   properties:
     type:
       type: string

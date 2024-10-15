@@ -152,7 +152,6 @@ const _circleApprove = async(userId, chain, currency, walletAddress, circleWalle
             circle_status: "FAILED",
             circle_response: responseBody,
             updated_at: new Date().toISOString(),
-            failed_reason: responseBody.message
         }
 
         // update to contract action record and circle transaction record

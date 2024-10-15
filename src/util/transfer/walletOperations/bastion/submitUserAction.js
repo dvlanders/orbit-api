@@ -39,7 +39,7 @@ const submitBastionUserAction = async(config) => {
     const mainTableStatus = mainStatusMapping[toUpdate.bastion_status] || "UNKNOWN"
 
 
-    return {response, responseBody, mainTableStatus};
+    return {response, responseBody, mainTableStatus, providerStatus: toUpdate.bastion_status};
 
 } 
 

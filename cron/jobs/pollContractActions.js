@@ -77,6 +77,7 @@ const updateBastionStatus = async (contractAction) => {
         }
 		const toUpdateContractActionRecord = {
 			status: responseBody.status ? statusMapBastion.CONTRACT_ACTION[responseBody.status] || "UNKNOWN" : "UNKNOWN",
+			transaction_hash: responseBody.transactionHash,
 			updated_at: new Date().toISOString()
 		}
 
