@@ -8444,7 +8444,7 @@
     "/user/create": {
       "post": {
         "summary": "Create User",
-        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.\n",
+        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.\n\nTo learn more about user KYC levels, see [here](https://docs.hifibridge.com/docs/kyc-level).\n",
         "tags": [
           "User"
         ],

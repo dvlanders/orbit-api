@@ -273,6 +273,8 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		if (!sourceWalletAddress) return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
 		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
+		if(sourceWalletProvider === "CIRCLE" && accountInfo.provider === "REAP") return res.status(400).json({ error: `User wallet type if not supported for the offramp rail` });
+
 		// sandbox transfer
 		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && sourceCurrency == "usdHifi") {
 			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceCircleWalletId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, feeTransactionId: feeTransaction.id, sourceWalletProvider, newRecord, accountInfo })
@@ -926,12 +928,12 @@ exports.createBridgingRequest = async (req, res) => {
 		if (!destinationWalletType) fields.destinationWalletType = "INDIVIDUAL"
 
 		// check if source wallet is kyc passed
-		const {bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider} = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
-		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		const {bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
+		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `Source user is not allowed to transfer crypto (user status invalid)` })
 
 		// check if destination wallet is kyc passed
-		const {bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider} = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
-		if (destinationBastionUserId && !(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `User is not allowed to receive crypto (user status invalid)` })
+		const {bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider, circleWalletId: destinationCircleWalletId } = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
+		if (destinationBastionUserId && !(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `Destination user is not allowed to receive crypto (user status invalid)` })
 
 		// check if requestId is already used
 		const { isAlreadyUsed } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
