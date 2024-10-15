@@ -155,7 +155,7 @@ UsdOfframpWireUSAccount:
     - country
 UsdOfframpWireNonUSAccount:
   type: object
-  title: "USD Offramp Wire to Non-US Bank Account"
+  title: "USD Offramp Wire to IBAN Bank Account"
   properties:
     accountType:
       type: string
