@@ -40,18 +40,18 @@ const railFunctionsMap = {
 			},
 		},
 		MXN: {
-			SPEI_BITSO: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.SPEI_BITSO, null, accountId)
+			SPEI: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.SPEI, null, accountId)
 			},
 		},
 		COP: {
-			ACH_COP_BITSO: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.ACH_COP_BITSO, null, accountId)
+			ACH_COP: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.ACH_COP, null, accountId)
 			},
 		},
 		ARS: {
-			TRANSFERS_BITSO: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.TRANSFERS_BITSO, null, accountId)
+			TRANSFERS: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.TRANSFERS, null, accountId)
 			}
 		},
 		HKD: {

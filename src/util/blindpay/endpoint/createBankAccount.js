@@ -4,13 +4,13 @@ const {
   CreateBankAccountErrorType,
   CreateBankAccountError,
 } = require("../errors");
-const { BlindpayBankAccountType } = require("../utils");
+const { BlindpayBankAccountType, BlindpayBankAccountTypeRequestParamMapping } = require("../utils");
 const { updateAccountInfoById } = require("../bankAccountService");
 
 const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
 
   const bankAccountRequestBody = {
-    type: bankAccountInfo.type,
+    type: BlindpayBankAccountTypeRequestParamMapping[bankAccountInfo.type],
     name: bankAccountInfo.name,
   };
 
@@ -38,7 +38,7 @@ const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
       postal_code: bankAccountInfo.postal_code,
     };
     Object.assign(bankAccountRequestBody, extraBody);
-  } else if (bankAccountInfo.type === BlindpayBankAccountType.SPEI_BITSO) {
+  } else if (bankAccountInfo.type === BlindpayBankAccountType.SPEI) {
     const extraBody = {
       spei_protocol: bankAccountInfo.spei_protocol,
       spei_institution_code: bankAccountInfo.spei_institution_code,
@@ -47,7 +47,7 @@ const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
     };
     Object.assign(bankAccountRequestBody, extraBody);
 
-  } else if (bankAccountInfo.type === BlindpayBankAccountType.TRANSFERS_BITSO) {
+  } else if (bankAccountInfo.type === BlindpayBankAccountType.TRANSFERS) {
     const extraBody = {
       transfers_type: bankAccountInfo.transfers_type,
       transfers_account: bankAccountInfo.transfers_account,
@@ -55,7 +55,7 @@ const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
     };
     Object.assign(bankAccountRequestBody, extraBody);
 
-  }else if (bankAccountInfo.type === BlindpayBankAccountType.ACH_COP_BITSO) {
+  }else if (bankAccountInfo.type === BlindpayBankAccountType.ACH_COP) {
     const extraBody = {
       account_type: bankAccountInfo.account_type,
       ach_cop_beneficiary_first_name: bankAccountInfo.ach_cop_beneficiary_first_name,

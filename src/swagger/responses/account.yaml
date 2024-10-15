@@ -52,24 +52,24 @@ BrlOfframpPixAccountResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/BrlOfframpPixAccountObject'
-CopOfframpAchCopBitsoAccountResponse:
+CopOfframpAchCopAccountResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CopOfframpAchCopBitsoAccountObject'
-MxnOfframpSpeiBitsoAccountResponse:
+        $ref: '#/components/schemas/CopOfframpAchCopAccountObject'
+MxnOfframpSpeiAccountResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/MxnOfframpSpeiBitsoAccountObject'
-ArsOfframpTransferBitsoAccountResponse:
+        $ref: '#/components/schemas/MxnOfframpSpeiAccountObject'
+ArsOfframpTransfersAccountResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/ArsOfframpTransferBitsoAccountObject'
+        $ref: '#/components/schemas/ArsOfframpTransfersAccountObject'
 GetAccountResponse:
   description: Success
   content:

@@ -26,7 +26,7 @@ PaymentRailParameter:
   in: query
   schema:
     type: string
-    enum: ["ach", "wire", "sepa", "pix", "spei_bitso", "transfers_bitso", "ach_cop_bitso"]
+    enum: ["ach", "wire", "sepa", "pix", "spei", "transfers", "ach_cop"]
   required: false
 RailParameter:
   name: rail
