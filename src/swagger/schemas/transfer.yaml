@@ -431,6 +431,86 @@ SWIFTCryptoToFiatTransfer:
     - sourceCurrency
     - destinationCurrency
     - paymentRail
+MOMO_MPESACryptoToFiatTransfer:
+  type: object
+  title: "Crypto to Fiat (MOMO MPESA)"
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+    destinationUserId:
+      type: string
+      description: If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender.
+    destinationAccountId:
+      type: string
+      description: Account Id of the destination bank account
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    sourceCurrency:
+      type: string
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
+    destinationCurrency:
+      type: string
+      enum: ["kes"]
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - destinationAccountId
+    - amount
+    - chain
+    - sourceCurrency
+    - destinationCurrency
+    - paymentRail
+NIBBS_BANKCryptoToFiatTransfer:
+  type: object
+  title: "Crypto to Fiat (NIBBS_BANK)"
+  properties:
+    requestId:
+      type: string
+      description: Unique identifier for the transfer request (recommend using uuid v4)
+    sourceUserId:
+      type: string
+    destinationUserId:
+      type: string
+      description: If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender.
+    destinationAccountId:
+      type: string
+      description: Account Id of the destination bank account
+    amount:
+      type: number
+      format: float
+      minimum: 0
+    chain:
+      type: string
+      description: Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.
+      enum: ["POLYGON_MAINNET", "POLYGON_AMOY"]
+    sourceCurrency:
+      type: string
+      enum: ["usdc", "usdHifi"]
+      description: "note: usdHifi is only available in sandbox to simulate token movement."
+    destinationCurrency:
+      type: string
+      enum: ["ngn"]
+  required:
+    - requestId
+    - sourceUserId
+    - destinationUserId
+    - destinationAccountId
+    - amount
+    - chain
+    - sourceCurrency
+    - destinationCurrency
+    - paymentRail
 FiatToCryptoTransfer:
   type: object
   properties:

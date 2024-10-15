@@ -18,6 +18,8 @@ CryptoToFiatTransferBody:
           - $ref: '#/components/schemas/SPEI_BITSOCryptoToFiatTransfer'
           - $ref: '#/components/schemas/TRANSFERS_BITSOCryptoToFiatTransfer'
           - $ref: '#/components/schemas/ACH_COP_BITSOCryptoToFiatTransfer'
+          - $ref: '#/components/schemas/MOMO_MPESACryptoToFiatTransfer'
+          - $ref: '#/components/schemas/NIBBS_BANKCryptoToFiatTransfer'
 FiatToCryptoTransferBody:
   required: true
   content:
