@@ -112,7 +112,7 @@ const validateYellowCardTransferParams = async (config) => {
 		validationRes.invalidFieldsAndMessages.push({
 			invalidFields: ["amount"],
 			errorMessage:
-				"Transfer amount must be greater tan 1.",
+				"Transfer amount must be greater than 1.",
 		});
 		validationRes.valid = false;
 	}
