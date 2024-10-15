@@ -30,7 +30,7 @@ const submitCircleUserAction = async(config) => {
     const mainStatusMapping = statusMapCircle[transferType]
     const mainTableStatus = mainStatusMapping[toUpdate.circle_status] || "UNKNOWN"
 
-    return {response, responseBody, mainTableStatus};
+    return {response, responseBody, mainTableStatus, providerStatus: toUpdate.circle_status};
 
 } 
 

@@ -2,7 +2,9 @@ const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastion
 const createLog = require("../../../src/util/logger/supabaseLogger")
 const { approveToTokenMessenger } = require("../../../src/util/smartContract/cctp/approve")
 const supabase = require("../../../src/util/supabaseClient")
+const { updateBridgingTransactionRecord } = require("../../../src/util/transfer/bridging/bridgingTransactionTableService")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
+const { getUserWallet } = require("../../../src/util/user/getUserWallet")
 
 const usdcDecimals = 6
 
@@ -16,55 +18,38 @@ const approveUsdc = async (userId, profileId, bridgingRecord) => {
         const bridgingRecordId = bridgingRecord.id
         
         // update bridging record status to in progress
-        const { data, error } = await supabase
-            .from('bridging_transactions')
-            .update({ 
-                stage_status: "PROCESSING", 
-                current_stage: "APPROVE_TO_TOKEN_MESSENGER",
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', bridgingRecordId)
-            .select()
-            .single()
+        let toUpdate = {
+            stage_status: "PROCESSING", 
+            current_stage: "APPROVE_TO_TOKEN_MESSENGER",
+            updated_at: new Date().toISOString()
+        }
+        const data = await updateBridgingTransactionRecord(bridgingRecordId, toUpdate)
         
         const stageRecords = data.stage_records
             
-        const { walletAddress, bastionUserId } = await getBastionWallet(userId, chain, walletType)
-        const { success, record, errorMessageForCustomer } = await approveToTokenMessenger(unitAmount, chain, userId, bastionUserId, walletAddress)
+        const { success, record, errorMessageForCustomer } = await approveToTokenMessenger(unitAmount, chain, userId, walletType)
 
         // update stage record
         stageRecords.APPROVE_TO_TOKEN_MESSENGER = record.id
 
         if (!success) {
-            // update bridging record status to failed
-            const { data: updatedRecord, error: updatedError } = await supabase
-                .from('bridging_transactions')
-                .update({ 
-                    stage_status: "FAILED",
-                    status: "FAILED",
-                    updated_at: new Date().toISOString(),
-                    stage_records: stageRecords,
-                    failed_reason: errorMessageForCustomer
-                })
-                .eq('id', bridgingRecordId)
-                .select()
-                .single()
-
-            if (updatedError)  throw updatedError
+            const toUpdate = {
+                stage_status: "FAILED",
+                status: "FAILED",
+                updated_at: new Date().toISOString(),
+                stage_records: stageRecords,
+                failed_reason: errorMessageForCustomer
+            }
+            await updateBridgingTransactionRecord(bridgingRecordId, toUpdate)
             return {success: false, shouldReschedule: false}
         }
 
-        const { data: updatedRecord, error: updatedError } = await supabase
-            .from('bridging_transactions')
-            .update({ 
-                updated_at: new Date().toISOString(),
-                stage_records: stageRecords
-            })
-            .eq('id', bridgingRecordId)
-            .select()
-            .single()
+        toUpdate = {
+            updated_at: new Date().toISOString(),
+            stage_records: stageRecords
+        }
+        await updateBridgingTransactionRecord(bridgingRecordId, toUpdate)
 
-        if (updatedError)  throw updatedError
         return {success: true, shouldReschedule: false}
 
     } catch (error) {

@@ -3,9 +3,10 @@ const { updateBastionTransactionRecord, getBastionTransactionRecord } = require(
 const { erc20Approve } = require("../../../bastion/utils/erc20FunctionMap")
 const { currencyContractAddress } = require("../../../common/blockchain")
 const { safeParseBody } = require("../../../utils/response")
+const { statusMapBastion } = require("./statusMap")
 
 const approveActionBastion = async(config) => {
-    const {senderBastionUserId, spender, unitsAmount, chain, currency, providerRecordId} = config
+    const {senderBastionUserId, spender, unitsAmount, chain, currency, providerRecordId, transferType} = config
     const currencyContract = currencyContractAddress[chain][currency]
     
     // insert record in provider table
@@ -36,9 +37,11 @@ const approveActionBastion = async(config) => {
         toUpdate.bastion_status = "NOT_INITIATED"
     }
 
+    const mainTableStatus = statusMapBastion[transferType][toUpdate.bastion_status]
+
     await updateBastionTransactionRecord(providerRecord.id, toUpdate)
 
-    return {response, responseBody}
+    return {response, responseBody, mainTableStatus, providerStatus: toUpdate.bastion_status}
 
 } 
 
