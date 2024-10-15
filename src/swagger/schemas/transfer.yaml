@@ -245,7 +245,7 @@ PIXCryptoToFiatTransfer:
     - paymentRail
 SPEI_BITSOCryptoToFiatTransfer:
   type: object
-  title: "Crypto to MXN (SPEI BITSO)"
+  title: "Crypto to MXN (SPEI)"
   properties:
     requestId:
       type: string
@@ -293,7 +293,7 @@ SPEI_BITSOCryptoToFiatTransfer:
     - paymentRail
 TRANSFERS_BITSOCryptoToFiatTransfer:
   type: object
-  title: "Crypto to ARS (TRANSFERS BITSO)"
+  title: "Crypto to ARS (TRANSFERS)"
   properties:
     requestId:
       type: string
@@ -341,7 +341,7 @@ TRANSFERS_BITSOCryptoToFiatTransfer:
     - paymentRail
 ACH_COP_BITSOCryptoToFiatTransfer:
   type: object
-  title: "Crypto to COP (ACH COP BITSO)"
+  title: "Crypto to COP (ACH_COP)"
   properties:
     requestId:
       type: string
