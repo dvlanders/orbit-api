@@ -928,12 +928,14 @@ exports.createBridgingRequest = async (req, res) => {
 		if (!destinationWalletType) fields.destinationWalletType = "INDIVIDUAL"
 
 		// check if source wallet is kyc passed
-		const {bastionUserId: sourceBastionUserId} = await getBastionWallet(sourceUserId, sourceChain, fields.sourceWalletType)
-		if (!(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		const { address: sourceWalletAddress, bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
+		if (!(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to transfer crypto (user status invalid)` })
 
 		// check if destination wallet is kyc passed
-		const {bastionUserId: destinationBastionUserId} = await getBastionWallet(destinationUserId, destinationChain, fields.destinationWalletType)
+		const { address: destinationWalletAddress, bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider, circleWalletId: destinationCircleWalletId } = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
 		if (!(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `User is not allowed to receive crypto (user status invalid)` })
+
+		if(sourceWalletProvider === "CIRCLE" || destinationWalletProvider === "CIRCLE") return res.status(400).json({ error: `Bridging is not supported for users with the current KYC IP address. Please contact support for more information.` })
 
 		// check if requestId is already used
 		const { isAlreadyUsed } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
