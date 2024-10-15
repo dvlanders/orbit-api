@@ -108,11 +108,11 @@ const validateYellowCardTransferParams = async (config) => {
 		});
 		validationRes.valid = false;
 	}
-	if (amount <= 1) {
+	if (amount < 5) {
 		validationRes.invalidFieldsAndMessages.push({
 			invalidFields: ["amount"],
 			errorMessage:
-				"Transfer amount must be greater than 1.",
+				"Transfer amount must be greater than or equal to 5.",
 		});
 		validationRes.valid = false;
 	}
