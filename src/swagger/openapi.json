@@ -533,6 +533,12 @@
                 },
                 {
                   "$ref": "#/components/schemas/ACH_COP_BITSOCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_MPESACryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/NIBBS_BANKCryptoToFiatTransfer"
                 }
               ]
             }
@@ -3668,6 +3674,124 @@
           "swiftReference": {
             "type": "string",
             "description": "A payment reference message or remittance information to be included in a SWIFT transaction. It can have at most 4 lines (separated by \"\\n\"), each line with a max length of 35 chars. The allowed characters are a-z, A-Z, 0-9, special characters (/ - ? : ( ) . , ' +), and spaces.\n"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "MOMO_MPESACryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to Fiat (MOMO MPESA)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "kes"
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "NIBBS_BANKCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to Fiat (NIBBS_BANK)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ngn"
+            ]
           }
         },
         "required": [
@@ -8109,7 +8233,7 @@
     "/transfer/crypto-to-fiat": {
       "post": {
         "summary": "Convert Stablecoin to Fiat",
-        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * South America offramp transfers\n",
+        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * South America offramp transfers\n  * Africa offramp transfers\n",
         "tags": [
           "Transfer"
         ],
