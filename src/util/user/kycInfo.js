@@ -121,7 +121,27 @@ const defaultKycInfo = (userId, kycLevel = KycLevel.ZERO) => {
                 sepa:{
                     ...createStatusStruct()
                 }
-            }
+            },
+            brl: {
+                pix: {
+                    ...createStatusStruct(CustomerStatus.ACTIVE)
+                }
+            },
+            mxn: {
+                spei: {
+                    ...createStatusStruct(CustomerStatus.ACTIVE)
+                }
+            },
+            cop: {
+                ach_cop: {
+                    ...createStatusStruct(CustomerStatus.ACTIVE)
+                }
+            },
+            ars: {
+                transfers: {
+                    ...createStatusStruct(CustomerStatus.INACTIVE, [], [], 'TRANSFERS offRamp will be available in near future')
+                }
+            }            
         },
         ...oldKycInfo()
     }

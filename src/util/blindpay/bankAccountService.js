@@ -7,14 +7,6 @@ const BankTypeToTableMappings = {
       table: "blindpay_pix_accounts",
       existConditions: ["pix_key"],
     },
-    [BlindpayBankAccountType.ACH]: {
-      table: "blindpay_ach_accounts",
-      existConditions: ["routing_number", "account_number"]
-    },
-    [BlindpayBankAccountType.WIRE]: {
-      table: "blindpay_wire_accounts",
-      existConditions: ["routing_number", "account_number"]
-    },
     [BlindpayBankAccountType.SPEI]: {
       table: "blindpay_spei_bitso_accounts",
       existConditions: ["spei_institution_code", "spei_clabe"]

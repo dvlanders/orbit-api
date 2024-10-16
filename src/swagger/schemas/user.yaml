@@ -760,6 +760,90 @@ UserObjectPending:
                         type: string
                 message:
                   type: string
+        brl:
+          type: object
+          properties:
+            pix:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        mxn:
+          type: object
+          properties:
+            spei:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        cop:
+          type: object
+          properties:
+            ach_cop:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        ars:
+          type: object
+          properties:
+            transfers:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
   example:
     user:
       id: "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa"
@@ -816,6 +900,34 @@ UserObjectPending:
             actions: []
             fieldsToResubmit: []
           message: "kyc aplication still under review"
+      brl:
+        pix:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      mxn:
+        spei:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      cop:
+        ach_cop:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      ars:
+        transfers:
+          status: "INACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: "ars TRANSFERS offRamp will be available in near future"
 UserObjectPending_dep:
   type: object
   properties:
@@ -1183,6 +1295,90 @@ UserObjectActive:
                         type: string
                 message:
                   type: string
+        brl:
+          type: object
+          properties:
+            pix:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        mxn:
+          type: object
+          properties:
+            spei:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        cop:
+          type: object
+          properties:
+            ach_cop:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        ars:
+          type: object
+          properties:
+            transfers:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
   example:
     user:
       id: "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa"
@@ -1239,6 +1435,34 @@ UserObjectActive:
             actions: []
             fieldsToResubmit: []
           message: ""
+      brl:
+        pix:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      mxn:
+        spei:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      cop:
+        ach_cop:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      ars:
+        transfers:
+          status: "INACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: "ars TRANSFERS offRamp will be available in near future"
 UserObjectActive_dep:
   type: object
   properties:
