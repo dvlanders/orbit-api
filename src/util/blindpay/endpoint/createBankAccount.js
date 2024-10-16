@@ -16,28 +16,6 @@ const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
 
   if (bankAccountInfo.type === BlindpayBankAccountType.PIX) {
     bankAccountRequestBody.pix_key = bankAccountInfo.pix_key;
-  } else if (bankAccountInfo.type === BlindpayBankAccountType.ACH) {
-    const extraBody = {
-      beneficiary_name: bankAccountInfo.beneficiary_name,
-      routing_number: bankAccountInfo.routing_number,
-      account_number: bankAccountInfo.account_number,
-      account_type: bankAccountInfo.account_type,
-      account_class: bankAccountInfo.account_class,
-    };
-    Object.assign(bankAccountRequestBody, extraBody);
-  } else if (bankAccountInfo.type === BlindpayBankAccountType.WIRE) {
-    const extraBody = {
-      beneficiary_name: bankAccountInfo.beneficiary_name,
-      routing_number: bankAccountInfo.routing_number,
-      account_number: bankAccountInfo.account_number,
-      address_line_1: bankAccountInfo.address_line_1,
-      address_line_2: bankAccountInfo.address_line_2,
-      city: bankAccountInfo.city,
-      state_province_region: bankAccountInfo.state_province_region,
-      country: bankAccountInfo.country,
-      postal_code: bankAccountInfo.postal_code,
-    };
-    Object.assign(bankAccountRequestBody, extraBody);
   } else if (bankAccountInfo.type === BlindpayBankAccountType.SPEI) {
     const extraBody = {
       spei_protocol: bankAccountInfo.spei_protocol,

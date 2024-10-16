@@ -475,12 +475,6 @@
                   "$ref": "#/components/schemas/BrlOfframpPixAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlOfframpAchAccount"
-                },
-                {
-                  "$ref": "#/components/schemas/BrlOfframpWireAccount"
-                },
-                {
                   "$ref": "#/components/schemas/CopOfframpAchCopAccount"
                 },
                 {
@@ -2088,126 +2082,6 @@
           "type",
           "name",
           "pix_key",
-          "currency"
-        ]
-      },
-      "BrlOfframpAchAccount": {
-        "type": "object",
-        "title": "BRL Offramp ACH Account",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "ach"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "beneficiary_name": {
-            "type": "string"
-          },
-          "routing_number": {
-            "type": "string"
-          },
-          "account_number": {
-            "type": "string"
-          },
-          "account_type": {
-            "type": "string"
-          },
-          "account_class": {
-            "type": "string",
-            "enum": [
-              "individual",
-              "business"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "brl"
-            ]
-          }
-        },
-        "required": [
-          "type",
-          "name",
-          "beneficiary_name",
-          "routing_number",
-          "account_number",
-          "account_type",
-          "account_class",
-          "currency"
-        ]
-      },
-      "BrlOfframpWireAccount": {
-        "type": "object",
-        "title": "BRL Offramp WIRE Account",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "wire"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "beneficiary_name": {
-            "type": "string"
-          },
-          "routing_number": {
-            "type": "string"
-          },
-          "account_number": {
-            "type": "string"
-          },
-          "address_line_1": {
-            "type": "string"
-          },
-          "address_line_2": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "state_province_region": {
-            "type": "string"
-          },
-          "country": {
-            "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\".",
-            "enum": [
-              "US",
-              "BR",
-              "MX",
-              "CO",
-              "AR"
-            ]
-          },
-          "postal_code": {
-            "type": "string"
-          },
-          "currency": {
-            "type": "string",
-            "enum": [
-              "brl"
-            ]
-          }
-        },
-        "required": [
-          "type",
-          "name",
-          "beneficiary_name",
-          "routing_number",
-          "account_number",
-          "address_line_1",
-          "address_line_2",
-          "city",
-          "state_province_region",
-          "country",
-          "postal_code",
           "currency"
         ]
       },
@@ -6557,6 +6431,138 @@
                     }
                   }
                 }
+              },
+              "brl": {
+                "type": "object",
+                "properties": {
+                  "pix": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "mxn": {
+                "type": "object",
+                "properties": {
+                  "spei": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "cop": {
+                "type": "object",
+                "properties": {
+                  "ach_cop": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "ars": {
+                "type": "object",
+                "properties": {
+                  "transfers": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -6638,6 +6644,46 @@
                   "fieldsToResubmit": []
                 },
                 "message": "kyc aplication still under review"
+              }
+            },
+            "brl": {
+              "pix": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "mxn": {
+              "spei": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "cop": {
+              "ach_cop": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "ars": {
+              "transfers": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "ars TRANSFERS offRamp will be available in near future"
               }
             }
           }
@@ -7207,6 +7253,138 @@
                     }
                   }
                 }
+              },
+              "brl": {
+                "type": "object",
+                "properties": {
+                  "pix": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "mxn": {
+                "type": "object",
+                "properties": {
+                  "spei": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "cop": {
+                "type": "object",
+                "properties": {
+                  "ach_cop": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "ars": {
+                "type": "object",
+                "properties": {
+                  "transfers": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -7288,6 +7466,46 @@
                   "fieldsToResubmit": []
                 },
                 "message": ""
+              }
+            },
+            "brl": {
+              "pix": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "mxn": {
+              "spei": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "cop": {
+              "ach_cop": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "ars": {
+              "transfers": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "ars TRANSFERS offRamp will be available in near future"
               }
             }
           }

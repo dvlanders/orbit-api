@@ -91,17 +91,6 @@ const uploadBankAccountInfo = async (fields) => {
     );
   }
 
-  if (receiverRecord && receiverRecord.kyc_type !== "standard" && (fields.type === "ach" || fields.type === "wire")) {
-    throw new BankAccountInfoUploadError(
-      BankAccountInfoUploadErrorType.KYC_TYPE_NOT_SUPPORTED,
-      400,
-      "",
-      {
-        error: `Your KYC type [${receiverRecord.kyc_type}] does not supported bank account type [${fields.type}]`,
-      }
-    );
-  }
-
   const bankAccountData = {
     user_id: fields.user_id,
     receiver_id: fields.receiver_id,
