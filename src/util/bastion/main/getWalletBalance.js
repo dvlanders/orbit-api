@@ -1,5 +1,6 @@
 const { currencyContractAddress, convertWeiToEthers } = require("../../common/blockchain");
 const { safeParseBody } = require("../../utils/response");
+const createLog = require("../../logger/supabaseLogger");
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
@@ -17,7 +18,7 @@ exports.getUserBalanceBastion = async(bastionUserId, chain, currency) => {
     const response = await fetch(url, options);
     const responseBody = await safeParseBody(response)
     if (!response.ok) {
-        createLog("user/getUserWalletBalance", userId, "Something went wrong when getting wallet balance", responseBody, null, res)
+        await createLog("user/getUserWalletBalance", null, "Something went wrong when getting wallet balance", responseBody, null)
         throw new Error("Something went wrong when getting wallet balance")
     }
 
