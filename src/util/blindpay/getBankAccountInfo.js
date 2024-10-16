@@ -37,7 +37,7 @@ const filterBankAccountInfo = (type, bankAccountInfo) => {
           postal_code: bankAccountInfo.postal_code,
         };
         Object.assign(filteredBankAccountInfo, extraBody);
-  } else if (type === BlindpayBankAccountType.SPEI_BITSO) {
+  } else if (type === BlindpayBankAccountType.SPEI) {
       const extraBody = {
         spei_protocol: bankAccountInfo.spei_protocol,
         spei_institution_code: bankAccountInfo.spei_institution_code,
@@ -46,7 +46,7 @@ const filterBankAccountInfo = (type, bankAccountInfo) => {
       };
       Object.assign(filteredBankAccountInfo, extraBody);
   
-    } else if (type === BlindpayBankAccountType.TRANSFERS_BITSO) {
+    } else if (type === BlindpayBankAccountType.TRANSFERS) {
       const extraBody = {
         transfers_type: bankAccountInfo.transfers_type,
         transfers_account: bankAccountInfo.transfers_account,
@@ -54,7 +54,7 @@ const filterBankAccountInfo = (type, bankAccountInfo) => {
       };
       Object.assign(filteredBankAccountInfo, extraBody);
   
-    } else if (type === BlindpayBankAccountType.ACH_COP_BITSO) {
+    } else if (type === BlindpayBankAccountType.ACH_COP) {
       const extraBody = {
         account_type: bankAccountInfo.account_type,
         ach_cop_beneficiary_first_name: bankAccountInfo.ach_cop_beneficiary_first_name,

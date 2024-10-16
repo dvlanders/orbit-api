@@ -843,13 +843,13 @@ BrlOfframpWireAccount:
     - country
     - postal_code
     - currency
-CopOfframpAchCopBitsoAccount:
+CopOfframpAchCopAccount:
   type: object
   title: "COP Offramp ACH_COP Account"
   properties:
     type:
       type: string
-      enum: [ach_cop_bitso]
+      enum: [ach_cop]
     name:
       type: string
     account_type:
@@ -885,13 +885,13 @@ CopOfframpAchCopBitsoAccount:
     - ach_cop_bank_code
     - ach_cop_bank_account
     - currency
-ArsOfframpTransferBitsoAccount:
+ArsOfframpTransfersAccount:
   type: object
   title: "ARS Offramp TRANSFERS Account"
   properties:
     type:
       type: string
-      enum: [transfers_bitso]
+      enum: [transfers]
     name:
       type: string
     transfers_type:
@@ -911,13 +911,13 @@ ArsOfframpTransferBitsoAccount:
     - transfers_account
     - beneficiary_name
     - currency
-MxnOfframpSpeiBitsoAccount:
+MxnOfframpSpeiAccount:
   type: object
   title: "MXN Offramp SPEI Account"
   properties:
     type:
       type: string
-      enum: [spei_bitso]
+      enum: [spei]
     name:
       type: string
     spei_protocol:
@@ -1117,7 +1117,7 @@ BrlOfframpPixAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
-CopOfframpAchCopBitsoAccountObject:
+CopOfframpAchCopAccountObject:
   type: object
   properties:
     status:
@@ -1135,7 +1135,7 @@ CopOfframpAchCopBitsoAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
-MxnOfframpSpeiBitsoAccountObject:
+MxnOfframpSpeiAccountObject:
   type: object
   properties:
     status:
@@ -1153,7 +1153,7 @@ MxnOfframpSpeiBitsoAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
-ArsOfframpTransferBitsoAccountObject:
+ArsOfframpTransfersAccountObject:
   type: object
   properties:
     status:

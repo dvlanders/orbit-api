@@ -95,9 +95,9 @@
             "wire",
             "sepa",
             "pix",
-            "spei_bitso",
-            "transfers_bitso",
-            "ach_cop_bitso"
+            "spei",
+            "transfers",
+            "ach_cop"
           ]
         },
         "required": false
@@ -481,13 +481,13 @@
                   "$ref": "#/components/schemas/BrlOfframpWireAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/CopOfframpAchCopBitsoAccount"
+                  "$ref": "#/components/schemas/CopOfframpAchCopAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/MxnOfframpSpeiBitsoAccount"
+                  "$ref": "#/components/schemas/MxnOfframpSpeiAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/ArsOfframpTransferBitsoAccount"
+                  "$ref": "#/components/schemas/ArsOfframpTransfersAccount"
                 }
               ]
             }
@@ -526,13 +526,13 @@
                   "$ref": "#/components/schemas/SWIFTCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/SPEI_BITSOCryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/SPEICryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/TRANSFERS_BITSOCryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/TRANSFERSCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/ACH_COP_BITSOCryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/ACH_COPCryptoToFiatTransfer"
                 },
                 {
                   "$ref": "#/components/schemas/MOMO_MPESACryptoToFiatTransfer"
@@ -707,32 +707,32 @@
           }
         }
       },
-      "CopOfframpAchCopBitsoAccountResponse": {
+      "CopOfframpAchCopAccountResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/CopOfframpAchCopBitsoAccountObject"
+              "$ref": "#/components/schemas/CopOfframpAchCopAccountObject"
             }
           }
         }
       },
-      "MxnOfframpSpeiBitsoAccountResponse": {
+      "MxnOfframpSpeiAccountResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/MxnOfframpSpeiBitsoAccountObject"
+              "$ref": "#/components/schemas/MxnOfframpSpeiAccountObject"
             }
           }
         }
       },
-      "ArsOfframpTransferBitsoAccountResponse": {
+      "ArsOfframpTransfersAccountResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ArsOfframpTransferBitsoAccountObject"
+              "$ref": "#/components/schemas/ArsOfframpTransfersAccountObject"
             }
           }
         }
@@ -2211,14 +2211,14 @@
           "currency"
         ]
       },
-      "CopOfframpAchCopBitsoAccount": {
+      "CopOfframpAchCopAccount": {
         "type": "object",
-        "title": "COP Offramp ACH Account",
+        "title": "COP Offramp ACH_COP Account",
         "properties": {
           "type": {
             "type": "string",
             "enum": [
-              "ach_cop_bitso"
+              "ach_cop"
             ]
           },
           "name": {
@@ -2280,14 +2280,14 @@
           "currency"
         ]
       },
-      "ArsOfframpTransferBitsoAccount": {
+      "ArsOfframpTransfersAccount": {
         "type": "object",
         "title": "ARS Offramp TRANSFERS Account",
         "properties": {
           "type": {
             "type": "string",
             "enum": [
-              "transfers_bitso"
+              "transfers"
             ]
           },
           "name": {
@@ -2323,14 +2323,14 @@
           "currency"
         ]
       },
-      "MxnOfframpSpeiBitsoAccount": {
+      "MxnOfframpSpeiAccount": {
         "type": "object",
         "title": "MXN Offramp SPEI Account",
         "properties": {
           "type": {
             "type": "string",
             "enum": [
-              "spei_bitso"
+              "spei"
             ]
           },
           "name": {
@@ -2630,7 +2630,7 @@
           "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
         }
       },
-      "CopOfframpAchCopBitsoAccountObject": {
+      "CopOfframpAchCopAccountObject": {
         "type": "object",
         "properties": {
           "status": {
@@ -2656,7 +2656,7 @@
           "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
         }
       },
-      "MxnOfframpSpeiBitsoAccountObject": {
+      "MxnOfframpSpeiAccountObject": {
         "type": "object",
         "properties": {
           "status": {
@@ -2682,7 +2682,7 @@
           "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
         }
       },
-      "ArsOfframpTransferBitsoAccountObject": {
+      "ArsOfframpTransfersAccountObject": {
         "type": "object",
         "properties": {
           "status": {
@@ -3404,7 +3404,7 @@
           "paymentRail"
         ]
       },
-      "SPEI_BITSOCryptoToFiatTransfer": {
+      "SPEICryptoToFiatTransfer": {
         "type": "object",
         "title": "Crypto to MXN (SPEI)",
         "properties": {
@@ -3476,7 +3476,7 @@
           "paymentRail"
         ]
       },
-      "TRANSFERS_BITSOCryptoToFiatTransfer": {
+      "TRANSFERSCryptoToFiatTransfer": {
         "type": "object",
         "title": "Crypto to ARS (TRANSFERS)",
         "properties": {
@@ -3548,9 +3548,9 @@
           "paymentRail"
         ]
       },
-      "ACH_COP_BITSOCryptoToFiatTransfer": {
+      "ACH_COPCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to COP (ACH)",
+        "title": "Crypto to COP (ACH_COP)",
         "properties": {
           "requestId": {
             "type": "string",

@@ -37,9 +37,9 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 			// get developer userId
 			const developerUserId = await getDeveloperUserId(profileId)
 			if (!developerUserId) throw new Error(`No developer user found for profile ${profileId}`)
-			const {bastionUserId, address, provider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
+			const {bastionUserId, address, walletProvider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
 			// FIX ME
-			if (provider !== "BASTION") throw new Error(`Gas station wallet only supported for provider BASTION`) 
+			if (walletProvider !== "BASTION") throw new Error(`Gas station wallet only supported for provider BASTION`) 
 			if (!bastionUserId || !address) throw new Error(`Gas station wallet not created for profile ${profileId}`) 
 			gasStation = bastionUserId
 			gasStationWalletAddress = address
