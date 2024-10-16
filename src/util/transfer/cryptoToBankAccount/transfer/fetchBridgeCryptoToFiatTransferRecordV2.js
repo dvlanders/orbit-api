@@ -33,6 +33,7 @@ const fetchBridgeCryptoToFiatTransferRecord = async(id, profileId) => {
             chain: record.chain,
             sourceCurrency: record.source_currency,
             amount: record.amount,
+            amountIncludeDeveloperFee: record.amount_include_developer_fee,
             destinationCurrency: record.destination_currency,
             liquidationAddress: record.to_wallet_address,
             destinationAccountId: record.destination_account_id,

@@ -26,7 +26,7 @@ const getFeeConfig = (feeType, feeValue, TrxAmount)=> {
     // round fee to at least 1 cent (usd)
     let feeAmount = Math.max(feeType == "PERCENT" ? parseFloat(TrxAmount) * feePercent : parseFloat(feeValue), 0.01)
     feeAmount = parseFloat(feeAmount.toFixed(2))
-    const clientReceivedAmount = Math.max(parseFloat(TrxAmount) - feeAmount, 0)
+    const clientReceivedAmount = TrxAmount
 
     return {feeType, feePercent, feeAmount, clientReceivedAmount}
 }

@@ -1,6 +1,15 @@
 const supabase = require("../../supabaseClient")
 
 const createPaymentBody = async(paymentConfig, accountId) => {
+    // get provider record requestId
+    const offrampRecordId = paymentConfig.offrampRecordId
+    const {data: offrampRecord, error: offrampRecordError} = await supabase
+        .from("offramp_transactions")
+        .select("reapTransaction: reap_transaction_record_id(request_id)")
+        .eq("id", offrampRecordId)
+        .single()
+    if (offrampRecordError) throw offrampRecordError
+
     // fetch account information
     const {data: accountProvider, error: accountProviderError} = await supabase
         .from("account_providers")
@@ -96,7 +105,12 @@ const createPaymentBody = async(paymentConfig, accountId) => {
             "receivingCurrency": paymentConfig.destinationCurrency,
             "senderCurrency": paymentConfig.sourceCurrency,
             "description": paymentConfig.description,
-            "purposeOfPayment": paymentConfig.purposeOfPayment
+            "purposeOfPayment": paymentConfig.purposeOfPayment,
+            // "requireApproval": true,
+            "metadata":{
+                offrampRecordId: paymentConfig.offrampRecordId,
+                requestId: offrampRecord.reapTransaction.request_id
+            }
         }
     }
 

@@ -9,9 +9,9 @@ const { statusMapCircle } = require("./statusMap")
 
 // transfer with payment processor
 const transferToAddressCircleWithPP = async(config) => {
-    const {referenceId, senderCircleWalletId, currency, unitsAmount, chain, destinationAddress, transferType, paymentProcessorContract, feeUnitsAmount, feeCollectionWalletAddress, providerRecordId} = config
+    const {referenceId, senderCircleWalletId, currency, unitsAmount, chain, destinationAddress, transferType, paymentProcessorContract, feeUnitsAmount, feeCollectionWalletAddress, providerRecordId, paymentProcessType} = config
     const tokenContractAddress = currencyContractAddress[chain][currency]
-    const processPaymentFunction = paymentProcessorProcessPaymentFunction(tokenContractAddress, destinationAddress, feeCollectionWalletAddress, unitsAmount, feeUnitsAmount)
+    const processPaymentFunction = paymentProcessorProcessPaymentFunction(tokenContractAddress, destinationAddress, feeCollectionWalletAddress, unitsAmount, feeUnitsAmount, paymentProcessType)
 
     // get provider record
     const providerRecord = await getCircleTransactionRecord(providerRecordId)
