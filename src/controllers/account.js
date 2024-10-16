@@ -485,7 +485,7 @@ exports.getAllAccounts = async (req, res) => {
 	const acceptedFields = {
 		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei_bitso", "transfers_bitso", "ach_cop_bitso"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),

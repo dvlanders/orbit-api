@@ -15,15 +15,15 @@ const BankTypeToTableMappings = {
       table: "blindpay_wire_accounts",
       existConditions: ["routing_number", "account_number"]
     },
-    [BlindpayBankAccountType.SPEI_BITSO]: {
+    [BlindpayBankAccountType.SPEI]: {
       table: "blindpay_spei_bitso_accounts",
       existConditions: ["spei_institution_code", "spei_clabe"]
     },
-    [BlindpayBankAccountType.TRANSFERS_BITSO]: {
+    [BlindpayBankAccountType.TRANSFERS]: {
       table: "blindpay_transfers_bitso_accounts",
       existConditions: ["transfers_type", "transfers_account"]
     },
-    [BlindpayBankAccountType.ACH_COP_BITSO]: {
+    [BlindpayBankAccountType.ACH_COP]: {
       table: "blindpay_ach_cop_bitso_accounts",
       existConditions: ["ach_cop_bank_code", "ach_cop_bank_account"]
     },
