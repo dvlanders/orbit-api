@@ -1,35 +1,35 @@
 const { isValidDate, isValidEmail, isValidState, isValidCountryCode, isValidUrl, isValidIPv4, inStringEnum } = require("../common/filedValidationCheckFunctions");
 
 const KycLevel = {
-    ONE: 1,
-    TWO: 2,
+	ONE: 1,
+	TWO: 2,
 }
 
 const individualKycOneRequiredFields = ["userType", "kycLevel", "legalFirstName", "legalLastName", "dateOfBirth", "ipAddress"]
 
 const individualKycOneAcceptedFields = {
-    "userType": "string",
-    "kycLevel": "number",
-    "legalFirstName": "string",
-    "legalLastName": "string",
-    "dateOfBirth": (value) => isValidDate(value),
-    "ipAddress": (value) => isValidIPv4(value)
+	"userType": "string",
+	"kycLevel": "number",
+	"legalFirstName": "string",
+	"legalLastName": "string",
+	"dateOfBirth": (value) => isValidDate(value),
+	"ipAddress": (value) => isValidIPv4(value)
 }
 
 const businessKycOneRequiredFields = ["userType", "kycLevel", "businessName", "ipAddress", "ultimateBeneficialOwners"]
 
 const businessKycOneAcceptedFields = {
-    "userType": "string",
-    "kycLevel": "number",
-    "businessName": "string",
-    "ipAddress": (value) => isValidIPv4(value),
+	"userType": "string",
+	"kycLevel": "number",
+	"businessName": "string",
+	"ipAddress": (value) => isValidIPv4(value),
 	"ultimateBeneficialOwners": (value) => Array.isArray(value) && value.length > 0
 }
 
 
 const individualKycTwoRequiredFields = [
 	"userType",
-    "kycLevel",
+	"kycLevel",
 	"legalFirstName",
 	"legalLastName",
 	"complianceEmail",
@@ -48,7 +48,7 @@ const individualKycTwoRequiredFields = [
 ];
 
 const individualKycTwoAcceptedFields = {
-    "kycLevel": "number",
+	"kycLevel": "number",
 	"legalFirstName": "string",
 	"legalLastName": "string",
 	"dateOfBirth": (value) => isValidDate(value),
@@ -57,7 +57,7 @@ const individualKycTwoAcceptedFields = {
 	"addressLine1": "string",
 	"addressLine2": "string",
 	"city": "string",
-	"stateProvinceRegion": (value) => isValidState(value),
+	"stateProvinceRegion": "string",
 	"postalCode": "string",
 	"country": (value) => isValidCountryCode(value),
 	"addressType": "string",
@@ -127,7 +127,7 @@ const UBOKycTwoAcceptedFields = {
 	"addressLine1": "string",
 	"addressLine2": "string",
 	"city": "string",
-	"stateProvinceRegion": (value) => isValidState(value),
+	"stateProvinceRegion": "string",
 	"postalCode": "string",
 	"country": (value) => isValidCountryCode(value),
 	"taxIdentificationNumber": "string",
@@ -144,7 +144,7 @@ const UBOKycTwoAcceptedFields = {
 };
 
 const businessKycTwoRequiredFields = [
-    "kycLevel",
+	"kycLevel",
 	"userType",
 	"businessName",
 	"businessType",
@@ -170,7 +170,7 @@ const businessKycTwoRequiredFields = [
 ];
 
 const businessKycTwoAcceptedFields = {
-    "kycLevel": "number",
+	"kycLevel": "number",
 	"legalFirstName": "string",
 	"legalLastName": "string",
 	"dateOfBirth": (value) => isValidDate(value),
@@ -179,7 +179,7 @@ const businessKycTwoAcceptedFields = {
 	"addressLine1": "string",
 	"addressLine2": "string",
 	"city": "string",
-	"stateProvinceRegion": (value) => isValidState(value),
+	"stateProvinceRegion": "string",
 	"postalCode": "string",
 	"country": (value) => isValidCountryCode(value),
 	"addressType": "string",
@@ -209,33 +209,33 @@ const businessKycTwoAcceptedFields = {
 
 
 const userRequiredFieldsMap = {
-    individual: {
-        1: individualKycOneRequiredFields,
-        2: individualKycTwoRequiredFields,
-    },
-    business: {
-        1: businessKycOneRequiredFields,
-        2: businessKycTwoRequiredFields,
-    },
-    ubo: {
-        1: UBOKycOneRequiredFields,
-        2: UBOKycTwoRequiredFields,
-    }
+	individual: {
+		1: individualKycOneRequiredFields,
+		2: individualKycTwoRequiredFields,
+	},
+	business: {
+		1: businessKycOneRequiredFields,
+		2: businessKycTwoRequiredFields,
+	},
+	ubo: {
+		1: UBOKycOneRequiredFields,
+		2: UBOKycTwoRequiredFields,
+	}
 };
 
 const userAcceptedFieldsMap = {
-    individual: {
-      1: individualKycOneAcceptedFields,
-      2: individualKycTwoAcceptedFields,
-    },
-    business: {
-      1: businessKycOneAcceptedFields,
-      2: businessKycTwoAcceptedFields,
-    },
-    ubo: {
-      1: UBOKycOneAcceptedFields,
-      2: UBOKycTwoAcceptedFields,
-    }
+	individual: {
+		1: individualKycOneAcceptedFields,
+		2: individualKycTwoAcceptedFields,
+	},
+	business: {
+		1: businessKycOneAcceptedFields,
+		2: businessKycTwoAcceptedFields,
+	},
+	ubo: {
+		1: UBOKycOneAcceptedFields,
+		2: UBOKycTwoAcceptedFields,
+	}
 };
 
 const userKycColumnsMap = {
@@ -276,12 +276,12 @@ const userKycColumnsMap = {
 	isSigner: "is_signer",
 	relationshipEstablishedAt: "relationship_established_at",
 	isWalletOwner: "is_wallet_owner",
-    kycLevel: "kyc_level",
+	kycLevel: "kyc_level",
 }
 
 module.exports = {
-    userRequiredFieldsMap,
-    userAcceptedFieldsMap,
-    userKycColumnsMap,
-    KycLevel
+	userRequiredFieldsMap,
+	userAcceptedFieldsMap,
+	userKycColumnsMap,
+	KycLevel
 }
