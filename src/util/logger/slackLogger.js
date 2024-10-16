@@ -449,6 +449,109 @@ const newTransferBalanceAlertBlockBuilder = async (profileId, feeRecordId, balan
   
 }
 
+const gasStationLowBalanceBlockBuilder = async (profileId, userId, walletAddress, chain, currency, balance) => {
+
+  return [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `🚨 Gas Station Wallet Low Balance`,
+        emoji: true,
+      },
+    },
+    {
+      type: "divider",
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: "👤 *Profile ID*",
+        },
+        {
+          type: "mrkdwn",
+          text: "👤 *User ID*",
+        },
+        {
+          type: "mrkdwn",
+          text: profileId || "N/A",
+        },
+        {
+          type: "mrkdwn",
+          text: userId || "N/A",
+        },
+      ],
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Wallet Address",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: `${walletAddress}`,
+        emoji: true,
+      },
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Chain",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: `${chain}`,
+        emoji: true,
+      },
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Currency",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: `${currency}`,
+        emoji: true,
+      },
+    },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Balance",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "plain_text",
+        text: `${balance}`,
+        emoji: true,
+      },
+    },
+  ];
+  
+}
+
 const sendSlackReqResMessage = async (request, response) => {
   try {
     if (process.env.NODE_ENV === "development" && !request.query.profileEmail)
@@ -554,10 +657,28 @@ const sendSlackTransferBalanceAlert = async (profileId, feeRecordId, balance, in
 
 }
 
+const sendSlackGasStationWalletBalanceAlert = async (profileId, userId, walletAddress, chain, currency, balance) => {
+
+  try {
+    await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: process.env.SLACK_CHANNEL_GAS_STATION_BALANCE_ALERT,
+      text: "Gas Station Low Balance Alert",
+      blocks: await gasStationLowBalanceBlockBuilder(
+        profileId, userId, walletAddress, chain, currency, balance
+      ),
+    });
+  } catch (error) {
+    // console.error(error);
+  }
+
+}
+
 module.exports = {
   sendSlackReqResMessage,
   sendSlackLogMessage,
   sendSlackTransactionMessage,
   sendSlackNewCustomerMessage,
-  sendSlackTransferBalanceAlert
+  sendSlackTransferBalanceAlert,
+  sendSlackGasStationWalletBalanceAlert
 };
