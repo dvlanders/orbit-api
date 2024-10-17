@@ -104,6 +104,38 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
+/transfer/bridge-asset:
+  post:
+    summary: Bridge Stablecoin
+    description: Bridge stablecoin across chains
+    tags:
+      - Transfer
+    requestBody:
+      $ref: "#/components/requestBodies/BridgeAssetTransferBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/BridgeAssetTransferResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+  get:
+    summary: Get a Bridge Asset Record
+    tags:
+      - Transfer
+    parameters:
+      - $ref: "#/components/parameters/BridgeAssetRecordIDParameter"
+    responses:
+      "200":
+        $ref: "#/components/responses/BridgeAssetRecordResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/crypto-to-crypto/all:
   get:
     summary: Get All Stablecoin-to-Stablecoin Transfer Records
