@@ -341,7 +341,7 @@ TRANSFERSCryptoToFiatTransfer:
     - paymentRail
 ACH_COPCryptoToFiatTransfer:
   type: object
-  title: "Crypto to COP (ACH_COP)"
+  title: "Crypto to COP (SPEI)"
   properties:
     requestId:
       type: string
@@ -433,7 +433,7 @@ SWIFTCryptoToFiatTransfer:
     - paymentRail
 MOMO_MPESACryptoToFiatTransfer:
   type: object
-  title: "Crypto to Fiat (MOMO MPESA)"
+  title: "Crypto to KES (MOMO MPESA)"
   properties:
     requestId:
       type: string
@@ -473,7 +473,7 @@ MOMO_MPESACryptoToFiatTransfer:
     - paymentRail
 NIBBS_BANKCryptoToFiatTransfer:
   type: object
-  title: "Crypto to Fiat (NIBBS_BANK)"
+  title: "Crypto to NGN (NIBSS BANK TRANSFER)"
   properties:
     requestId:
       type: string
