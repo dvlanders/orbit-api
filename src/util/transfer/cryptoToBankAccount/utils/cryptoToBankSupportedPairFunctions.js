@@ -165,7 +165,17 @@ const CryptoToBankSupportedPairFunctions = {
 				validationFunc: validateYellowCardTransferParams,
 			},
 		}
-	}
+	},
+    momo_mtn: {
+		usdc: {
+			xof: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
+		}
+	},
 }
 
 module.exports = CryptoToBankSupportedPairCheck

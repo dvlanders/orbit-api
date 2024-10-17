@@ -56,6 +56,12 @@ const BillingTagsForOfframp = {
                 failed: [],
             },
         },
+        momo_mtn:{
+            xof:{
+                success: ["base"],  
+                failed: [],
+            },
+        },
         fps:{
             hkd:{
                 success: ["base"],

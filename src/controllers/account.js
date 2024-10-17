@@ -1656,3 +1656,70 @@ exports.createNibssBankAccount = async (req, res) => {
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };
+
+exports.createMomoMtnAccount = async (req, res) => {
+	const { userId, profileId } = req.query;
+
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+
+	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
+	const requiredFields = [
+		'accountNumber',
+		'accountHolderName',
+        'currency'
+	];
+
+	const acceptedFields = {
+		'accountNumber': "string",
+		'accountHolderName': "string",
+        'currency': "string"
+	};
+
+	// Validate the account number format as an international phone number
+	if (!/^\+\d{11,15}$/.test(fields.accountNumber)) {
+		return res.status(400).json({ error: 'The accountNumber must be in international phone number format (e.g., +254711111111).' });
+	}
+
+
+	// Execute fields validation
+	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+	if (missingFields.length > 0 || invalidFields.length > 0) {
+		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+	}
+
+	try {
+
+		// add the momo_mtn_accounts record
+		const { data: momoMtnAccountData, error: momoMtnAccountError } = await supabase.from('yellowcard_momo_mtn_accounts').insert({
+			account_number: fields.accountNumber,
+			account_holder_name: fields.accountHolderName,
+            currency: fields.currency,
+			user_id: userId
+		})
+			.select();
+
+		if (momoMtnAccountError) {
+			createLog("account/createMomoMpesaAccount", userId, momoMtnAccountError.message, momoMtnAccountError);
+			return res.status(500).json({ error: 'Internal Server Error' });
+		}
+
+		const accountProviderRecord = await insertAccountProviders(momoMtnAccountData[0].id, fields.currency, "offramp", "momo_mtn", "YELLOWCARD", userId);
+
+		return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+
+	} catch (error) {
+		createLog("account/createMomoMtnAccount", userId, error.message, error);
+		console.error('Error in createMomoMtnAccount', error);
+		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
+	}
+};
