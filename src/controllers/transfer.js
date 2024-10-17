@@ -220,7 +220,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"amount": (value) => isValidAmount(value),
 			"chain": (value) => isHIFISupportedChain(value),
 			"sourceCurrency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]),
-			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "kes", "ngn", "xof"]),
+			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "kes", "ngn", "xof", "rwf", "zmw", "ugx", "tzs", "mwk", "xaf"]),
 			"paymentRail": "string",
 			"description": "string",
 			"purposeOfPayment": "string",

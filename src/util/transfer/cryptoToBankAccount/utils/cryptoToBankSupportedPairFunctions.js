@@ -147,7 +147,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
-	momo_mpesa: {
+	momo_transfer: {
 		usdc: {
 			kes: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
@@ -155,24 +155,52 @@ const CryptoToBankSupportedPairFunctions = {
 				validationFunc: validateYellowCardTransferParams,
 				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
 			},
+			xof: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
+			rwf: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
+			zmw: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
 		}
 	},
-	nibss: {
+	bank_transfer: {
 		usdc: {
 			ngn: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
 			},
-		}
-	},
-    momo_mtn: {
-		usdc: {
-			xof: {
+            ugx: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
-				// asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+			},
+            tzs: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+            mwk: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+            xaf: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
 			},
 		}
 	},

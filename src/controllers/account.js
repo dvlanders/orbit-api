@@ -1502,7 +1502,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	}
 }
 
-exports.createMomoMpesaAccount = async (req, res) => {
+exports.createAffricanMomoAccount = async (req, res) => {
 	const { userId, profileId } = req.query;
 	// const {
 	// 	accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
@@ -1520,17 +1520,22 @@ exports.createMomoMpesaAccount = async (req, res) => {
 
 	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
 	const requiredFields = [
-		'accountNumber',
-		'accountHolderName'
+		'accountHolderPhone',
+		'accountHolderName',
+        'kind',
+        'currency',
 	];
 
 	const acceptedFields = {
-		'accountNumber': "string",
-		'accountHolderName': "string"
+		'accountHolderPhone': "string",
+		'accountHolderName': "string",
+        'kind' : "string",
+        'currency': "string",
 	};
 
+    // TODO: Validate the accountHolderPhone for each currency-kind pair
 	// Validate the account number format as an international phone number
-	if (!/^\+\d{11,15}$/.test(fields.accountNumber)) {
+	if (!/^\+\d{11,15}$/.test(fields.accountHolderPhone)) {
 		return res.status(400).json({ error: 'The accountNumber must be in international phone number format (e.g., +254711111111).' });
 	}
 
@@ -1543,20 +1548,22 @@ exports.createMomoMpesaAccount = async (req, res) => {
 
 	try {
 
-		// add the momo_mpesa_accounts record
-		const { data: momoMpesaAccountData, error: momoMpesaAccountError } = await supabase.from('yellowcard_momo_mpesa_accounts').insert({
-			account_number: fields.accountNumber,
+		// add the momo_transfer_accounts record
+		const { data: momoAccountData, error: momoAccountError } = await supabase.from('yellowcard_momo_transfer_accounts').insert({
+			account_number: fields.accountHolderPhone,
 			account_holder_name: fields.accountHolderName,
+            currency: fields.currency,
+            kind: fields.kind,
 			user_id: userId
 		})
 			.select();
 
-		if (momoMpesaAccountError) {
-			createLog("account/createMomoMpesaAccount", userId, momoMpesaAccountError.message, momoMpesaAccountError);
+		if (momoAccountError) {
+			createLog("account/createMomoAccount", userId, momoAccountError.message, momoAccountError);
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
-		const accountProviderRecord = await insertAccountProviders(momoMpesaAccountData[0].id, "kes", "offramp", "momo_mpesa", "YELLOWCARD", userId);
+		const accountProviderRecord = await insertAccountProviders(momoAccountData[0].id, fields.currency, "offramp", "momo_transfer", "YELLOWCARD", userId);
 
 		return res.status(200).json({
 			status: "ACTIVE",
@@ -1566,13 +1573,13 @@ exports.createMomoMpesaAccount = async (req, res) => {
 		});
 
 	} catch (error) {
-		createLog("account/createMomoMpesaAccount", userId, error.message, error);
-		console.error('Error in createMomoMpesaAccount', error);
+		createLog("account/createMomoAccount", userId, error.message, error);
+		console.error('Error in createMomoAccount', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };
 
-exports.createNibssBankAccount = async (req, res) => {
+exports.createAffricanBankAccount = async (req, res) => {
 	const { userId, profileId } = req.query;
 	// const {
 	// 	accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
@@ -1591,17 +1598,19 @@ exports.createNibssBankAccount = async (req, res) => {
 	const requiredFields = [
 		'accountNumber',
 		'accountHolderName',
-		'kind'
-
+		'kind',
+        'currency',
 	];
 
 	const acceptedFields = {
 		'accountNumber': "string",
 		'accountHolderName': "string",
-		'kind': (value) => inStringEnum(value, ["BANK_Access Bank", "BANK_GT Bank", 'BANK_United Bank for Africa']),
+		'kind': (value) => inStringEnum(value, ["BANK_Access Bank", "BANK_Manul Entry", "BANK_GT Bank", "BANK_United Bank for Africa"]),
 		'accountHolderPhone': "string",
+        'currency': "string",
 	};
 
+    // TODO: check kind-crrency is supported by offerings
 
 	if (fields.kind === "BANK_Access Bank") {
 		if (!fields.accountHolderPhone) {
@@ -1610,9 +1619,14 @@ exports.createNibssBankAccount = async (req, res) => {
 			// Validates that the phone number starts with '+' followed by 11 to 15 digits
 			return res.status(400).json({ error: 'The accountHolderPhone must be in a valid international format (e.g., +2348111111111)' });
 		}
-	} else if (fields.kind !== "BANK_Access Bank" && fields.accountHolderPhone != null) {
+        if (fields.bankName)
+            return res.status(400).json({ error: 'The bankName field must be null or undefined when the kind is BANK_Access Bank' });
+	} else if (fields.kind === "BANK_Manul Entry") {
+        requiredFields.push("bankName");
+        acceptedFields["bankName"] = "string";
+    } else if (fields.accountHolderPhone || fields.bankName) {
 		// Ensures phone number is null or undefined for other bank kinds
-		return res.status(400).json({ error: 'The accountHolderPhone field must be null or undefined when the kind is not BANK_Access Bank' });
+		return res.status(400).json({ error: 'The accountHolderPhone and bankName fields must be null or undefined.' });
 	}
 
 
@@ -1624,24 +1638,26 @@ exports.createNibssBankAccount = async (req, res) => {
 
 	try {
 
-		// add the momo_mpesa_accounts record
-		const { data: nibssBankAccountData, error: nibssBankAccountError } = await supabase
-			.from('yellowcard_nibss_bank_accounts')
+		// add the momo_transfer_accounts record
+		const { data: BankAccountData, error: BankAccountError } = await supabase
+			.from('yellowcard_bank_transfer_accounts')
 			.insert({
 				account_number: fields.accountNumber,
 				account_holder_name: fields.accountHolderName,
 				user_id: userId,
 				kind: fields.kind,
-				account_holder_phone: fields.accountHolderPhone
+                currency: fields.currency,
+				account_holder_phone: fields.accountHolderPhone,
+                bank_name: fields.bankName,
 			})
 			.select();
 
-		if (nibssBankAccountError) {
-			createLog("account/createNibssBankAccount", userId, nibssBankAccountError.message, nibssBankAccountError);
+		if (BankAccountError) {
+			createLog("account/createAfricanBankAccount", userId, BankAccountError.message, BankAccountError);
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
-		const accountProviderRecord = await insertAccountProviders(nibssBankAccountData[0].id, "ngn", "offramp", "nibss", "YELLOWCARD", userId);
+		const accountProviderRecord = await insertAccountProviders(BankAccountData[0].id, fields.currency, "offramp", "bank_transfer", "YELLOWCARD", userId);
 
 		return res.status(200).json({
 			status: "ACTIVE",
@@ -1651,8 +1667,8 @@ exports.createNibssBankAccount = async (req, res) => {
 		});
 
 	} catch (error) {
-		createLog("account/createNibssBankAccount", userId, error.message, error);
-		console.error('Error in createNibssBankAccount', error);
+		createLog("account/createAfricanBankAccount", userId, error.message, error);
+		console.error('Error in createAfricanBankAccount', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };
@@ -1667,7 +1683,6 @@ exports.createMomoMtnAccount = async (req, res) => {
 	}
 
 
-	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
 	const requiredFields = [
 		'accountNumber',
 		'accountHolderName',
@@ -1680,9 +1695,10 @@ exports.createMomoMtnAccount = async (req, res) => {
         'currency': "string"
 	};
 
-	// Validate the account number format as an international phone number
-	if (!/^\+\d{11,15}$/.test(fields.accountNumber)) {
-		return res.status(400).json({ error: 'The accountNumber must be in international phone number format (e.g., +254711111111).' });
+    console.log(fields.accountNumber)
+    console.log(/^2332[0-9]{10}$/.test("23329876543210"))
+	if (!/^2332[0-9]{10}$/.test(fields.accountNumber)) {
+		return res.status(400).json({ error: 'The accountNumber must have 12 numbers follow the format of /^2332[0-9]{10}$/ (e.g., 233298743210).' });
 	}
 
 

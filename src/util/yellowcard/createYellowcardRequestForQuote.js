@@ -76,6 +76,10 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		rfqData.payout.paymentDetails.phoneNumber = payoutAccountDetails.account_holder_phone;
 	}
 
+    if (payoutAccountDetails.bank_name) {
+        rfqData.payout.paymentDetails.bankName = payoutAccountDetails.bank_name;
+    }
+
 	const rfqMetadata = {
 		to: selectedOffering.metadata.from,
 		from: process.env.HIFI_DECENTRALIZED_ID,
