@@ -1572,14 +1572,13 @@ exports.createMomoMpesaAccount = async (req, res) => {
 	}
 };
 
-exports.createNibbsBankAccount = async (req, res) => {
+exports.createNibssBankAccount = async (req, res) => {
 	const { userId, profileId } = req.query;
-	const {
-		accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-		businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
-		accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
-	} = req.body;
-
+	// const {
+	// 	accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
+	// 	businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
+	// 	accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
+	// } = req.body;
 
 	const fields = req.body;
 
@@ -1626,8 +1625,8 @@ exports.createNibbsBankAccount = async (req, res) => {
 	try {
 
 		// add the momo_mpesa_accounts record
-		const { data: nibbsBankAccountData, error: nibbsBankAccountError } = await supabase
-			.from('yellowcard_nibbs_bank_accounts')
+		const { data: nibssBankAccountData, error: nibssBankAccountError } = await supabase
+			.from('yellowcard_nibss_bank_accounts')
 			.insert({
 				account_number: fields.accountNumber,
 				account_holder_name: fields.accountHolderName,
@@ -1637,12 +1636,12 @@ exports.createNibbsBankAccount = async (req, res) => {
 			})
 			.select();
 
-		if (nibbsBankAccountError) {
-			createLog("account/createNibbsBankAccount", userId, nibbsBankAccountError.message, nibbsBankAccountError);
+		if (nibssBankAccountError) {
+			createLog("account/createNibssBankAccount", userId, nibssBankAccountError.message, nibssBankAccountError);
 			return res.status(500).json({ error: 'Internal Server Error' });
 		}
 
-		const accountProviderRecord = await insertAccountProviders(nibbsBankAccountData[0].id, "ngn", "offramp", "nibbs", "YELLOWCARD", userId);
+		const accountProviderRecord = await insertAccountProviders(nibssBankAccountData[0].id, "ngn", "offramp", "nibss", "YELLOWCARD", userId);
 
 		return res.status(200).json({
 			status: "ACTIVE",
@@ -1652,8 +1651,8 @@ exports.createNibbsBankAccount = async (req, res) => {
 		});
 
 	} catch (error) {
-		createLog("account/createNibbsBankAccount", userId, error.message, error);
-		console.error('Error in createNibbsBankAccount', error);
+		createLog("account/createNibssBankAccount", userId, error.message, error);
+		console.error('Error in createNibssBankAccount', error);
 		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
 	}
 };

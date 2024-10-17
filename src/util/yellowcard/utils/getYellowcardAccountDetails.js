@@ -36,9 +36,9 @@ const getYellowcardAccountDetails = async (destinationAccountId) => {
 			throw new Error('Error fetching account provider details')
 		}
 		return { payoutAccountDetails: momoMpesaAccountRecord }
-	} else if (accountProviderRecord.payment_rail === 'nibbs') {
+	} else if (accountProviderRecord.payment_rail === 'nibss') {
 		const { data: bankAccountRecord, error: bankAccountRecordError } = await supabaseCall(() => supabase
-			.from('yellowcard_nibbs_bank_accounts')
+			.from('yellowcard_nibss_bank_accounts')
 			.select('*')
 			.eq('id', accountProviderRecord.account_id)
 			.maybeSingle()

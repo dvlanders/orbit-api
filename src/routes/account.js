@@ -19,6 +19,5 @@ module.exports = (router) => {
 	router.get("/account/south-america/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
 	router.put("/account/south-america/receiver", authorize, logRequestResponse, account.updateBlindpayReceiver);
 	router.post("/account/kes/momompesa/offramp", authorize, logRequestResponse, account.createMomoMpesaAccount);
-	router.post("/account/ngn/nibbs/offramp", authorize, logRequestResponse, account.createNibbsBankAccount);
-
+	router.post("/account/ngn/nibss/offramp", authorize, logRequestResponse, account.createNibssBankAccount);
 };

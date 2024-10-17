@@ -157,7 +157,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
-	nibbs: {
+	nibss: {
 		usdc: {
 			ngn: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
