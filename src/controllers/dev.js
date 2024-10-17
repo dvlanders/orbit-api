@@ -222,9 +222,17 @@ exports.registerFeeWallet = async(req, res) => {
     }
     try{
         const chain = Chain.POLYGON_MAINNET
-        const userId = "80fdf48c-42b2-4bf8-b4a9-d00817bae912"
-        const {walletAddress} = await getBastionWallet(userId, chain, "FEE_COLLECTION")
-        await regsiterFeeWallet(userId, walletAddress, chain)
+        const {data, error} = await supabase
+            .from("user_wallets")
+            .select("*")
+            .eq("wallet_type", "FEE_COLLECTION")
+            .eq("chain", chain)
+        if (error) throw error
+        
+        await Promise.all(data.map(async(wallet) => {
+            await regsiterFeeWallet(wallet.user_id, wallet.address, chain)
+        }))
+
         return res.status(200).json({message: "success"})
     }catch(error){
         console.error(error)
@@ -744,3 +752,5 @@ exports.testSubmitTransactionCircle = async(req, res) => {
         return res.status(500).json({error: "Internal server error"})
     }
 }
+
+

@@ -53,14 +53,14 @@ const validateReapTransferParams = async (config) => {
         });
         validationRes.valid = false;
     }
-    if (feeType || feeValue > 0) {
-        validationRes.invalidFieldsAndMessages.push({
-            invalidFields: ["feeType", "feeValue"],
-            errorMessage:
-                "Fee collection feature is not yet available for this route",
-        });
-        validationRes.valid = false;
-    }
+    // if (feeType || feeValue > 0) {
+    //     validationRes.invalidFieldsAndMessages.push({
+    //         invalidFields: ["feeType", "feeValue"],
+    //         errorMessage:
+    //             "Fee collection feature is not yet available for this route",
+    //     });
+    //     validationRes.valid = false;
+    // }
 
     return validationRes;
 };

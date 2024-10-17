@@ -4,65 +4,67 @@ const createLog = require("../../logger/supabaseLogger");
 const { insertContractActionRecord } = require("../insertContractActionRecord");
 const { updateContractActionRecord } = require("../updateContractActionRecord");
 const { submitUserAction } = require("../../bastion/endpoints/submitUserAction");
+const { insertWalletTransactionRecord, submitWalletUserAction } = require("../../transfer/walletOperations/utils");
+const { insertSingleContractActionRecord } = require("../../transfer/contractAction/contractActionTableService");
+const { transferType } = require("../../transfer/utils/transfer");
 
 
 exports.regsiterFeeWallet = async(userId, walletAddress, chain) => {
     try{
 
         const requestId = v4()
-        const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][chain]
         const paymentProcessorContractOwner = paymentProcessorContractOwnerMap[process.env.NODE_ENV][chain]
+        const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][chain]
         if (!paymentProcessorContractAddress) throw new Error(`No payment processor contract found on ${chain}`)
         if (!paymentProcessorContractOwner) throw new Error(`No payment processor contract owner found on ${chain}`)
 
-        const bodyObject = {
-            requestId,
-            userId: paymentProcessorContractOwner,
-            contractAddress: paymentProcessorContractAddress,
-            actionName: "registerFeeWallet",
-            chain: chain,
-            actionParams: [
-                {name: "feeWallet", value: walletAddress},
-            ]
-        };
+        // insert provider record
+        const toInsertProviderRecord = {
+            user_id: userId,
+            request_id: requestId,
+            bastion_user_id: paymentProcessorContractOwner
+        }
 
+        const providerRecord = await insertWalletTransactionRecord("BASTION", toInsertProviderRecord)
+        const actionInput = [
+            {name: "feeWallet", value: walletAddress},
+        ]
         // insert record
         const requestInfo = {
-            bastionRequestId: requestId,
-            userId,
-            walletAddress: walletAddress,
-            contractAddress: paymentProcessorContractAddress,
-            provider: "BASTION",
+            user_id: userId,
+            wallet_address: walletAddress,
+            contract_address: paymentProcessorContractAddress,
+            wallet_provider: "BASTION",
             chain,
-            actionInput: bodyObject,
+            action_input: actionInput,
             tag: "REGISTER_FEE_WALLET_ON_PAYMENT_PROCESSOR_CONTRACT",
-            bastionUserId: paymentProcessorContractOwner
+            bastion_transaction_record_id: providerRecord.id
         }
-        const record = await insertContractActionRecord(requestInfo)
+        const record = await insertSingleContractActionRecord(requestInfo)
 
-        const response = await submitUserAction(bodyObject)
-        const responseBody = await response.json()
-        let toUpdate
+        const actionConfig = {
+            senderBastionUserId: paymentProcessorContractOwner, 
+            senderUserId: userId, 
+            contractAddress: paymentProcessorContractAddress, 
+            actionName: "registerFeeWallet", 
+            chain, 
+            actionParams: actionInput, 
+            transferType: transferType.CONTRACT_ACTION, 
+            providerRecordId: providerRecord.id
+        }
 
-        if (response.ok){
-            toUpdate = {
-                bastion_response: responseBody,
-                status: responseBody.status,
-                bastion_status: responseBody.status,
-                transaction_hash: responseBody.transactionHash,
-                updated_at: new Date().toISOString()
-            }
-        }else{
+        const {response, responseBody, mainTableStatus} = await submitWalletUserAction("BASTION", actionConfig)
+
+        let toUpdateContractActionRecord = {
+            updated_at: new Date().toISOString(),
+            status: mainTableStatus,
+        }
+
+        if (!response.ok){
             await createLog("regsiterFeeWallet", userId, responseBody.message, responseBody)
-            toUpdate = {
-                bastion_response: responseBody,
-                status: "FAILED",
-                bastion_status: "FAILED",
-                updated_at: new Date().toISOString()
-            }
         }
 
-        await updateContractActionRecord(record.id, toUpdate)
+        await updateContractActionRecord(record.id, toUpdateContractActionRecord)
 
     }catch(error){
         await createLog("regsiterFeeWallet", userId, error.message, error)

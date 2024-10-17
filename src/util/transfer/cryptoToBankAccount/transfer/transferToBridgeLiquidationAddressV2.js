@@ -65,6 +65,7 @@ const initTransferData = async (config) => {
 		user_id: sourceUserId,
 		destination_user_id: destinationUserId,
 		amount: amount,
+		amount_include_developer_fee: amount,
 		chain: chain,
 		from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
 		transaction_status: 'CREATED',
@@ -127,7 +128,8 @@ const initTransferData = async (config) => {
 	}
 
 	// update into crypto to crypto table
-	const result = await updateOfframpTransactionRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
+	const amountIncludeDeveloperFee = parseFloat((amount + feeAmount).toFixed(2))
+	const result = await updateOfframpTransactionRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress, amount_include_developer_fee: amountIncludeDeveloperFee })
 	return result
 }
 
@@ -159,8 +161,12 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
 	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
 
-	// create a bridge transfer
+	// Amount for ExactIn
 	const clientReceivedAmount = (amount - feeRecord.fee_amount).toFixed(2)
+	// Amount for ExactOut
+	// const clientReceivedAmount = amount.toFixed(2)
+
+	// create a bridge transfer
 	const source = {
 		currency: sourceCurrency,
 		payment_rail: chainToVirtualAccountPaymentRail[chain],
@@ -234,7 +240,8 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         paymentProcessorContract: paymentProcessorContractAddress,
         feeUnitsAmount,
         feeCollectionWalletAddress,
-        providerRecordId
+        providerRecordId,
+        paymentProcessType: "EXACT_IN"
     }
 
     const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(walletProvider, transferConfig)
@@ -249,7 +256,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         updated_at: new Date().toISOString(),
     }
     if (!response.ok) {
-        await createLog("transfer/createTransferToBridgeLiquidationAddress", record.sender_user_id, responseBody.message, responseBody)
+        await createLog("transfer/createTransferToBridgeLiquidationAddress", sourceUserId, responseBody.message, responseBody)
         toUpdateOfframpRecord.failed_reason = failedReason
         toUpdateFeeRecord.failed_reason = failedReason
     }
