@@ -1,5 +1,5 @@
-const { insertSingleBastionTransactionRecord, updateBastionTransactionRecord } = require("../../bastion/main/bastionTransactionTableService")
-const { insertSingleCircleTransactionRecord, updateCircleTransactionRecord } = require("../../circle/main/circleTransactionTableService")
+const { insertSingleBastionTransactionRecord, updateBastionTransactionRecord, getBastionTransactionRecord } = require("../../bastion/main/bastionTransactionTableService")
+const { insertSingleCircleTransactionRecord, updateCircleTransactionRecord, getCircleTransactionRecord } = require("../../circle/main/circleTransactionTableService")
 const { transferToAddressBastion } = require("./bastion/transferToAddress")
 const { transferToAddressBastionWithPP } = require("./bastion/transferToAddressWithPP")
 const { transferToAddressCircle } = require("./circle/transferToAddress")
@@ -36,6 +36,11 @@ const providerRecordInsertFunctionMap = {
 const providerRecordUpdateFunctionMap = {
     BASTION: updateBastionTransactionRecord,
     CIRCLE: updateCircleTransactionRecord
+}
+
+const providerRecordGetFunctionMap = {
+    BASTION: getBastionTransactionRecord,
+    CIRCLE: getCircleTransactionRecord
 }
 
 const providerRecordColumnMap = {
@@ -86,6 +91,12 @@ const updateWalletTransactionRecord = async(provider, providerRecordId, toUpdate
     return updatedProviderRecord;
 }
 
+const getWalletTransactionRecord = async(provider, providerRecordId) => {
+    const providerGetFunction = providerRecordGetFunctionMap[provider];
+    const providerRecord = await providerGetFunction(providerRecordId);
+    return providerRecord;
+}
+
 module.exports = {
     walletTransferFunctionMap,
     providerRecordInsertFunctionMap,
@@ -97,5 +108,6 @@ module.exports = {
     getUserAction,
     insertWalletTransactionRecord,
     approveAction,
-    updateWalletTransactionRecord
+    updateWalletTransactionRecord,
+    getWalletTransactionRecord
 }

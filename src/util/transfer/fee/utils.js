@@ -4,7 +4,7 @@ const supabase = require("../../supabaseClient")
 const acceptedFeeType = new Set(["PERCENT", "FIX"])
 
 const canChargeFee = async(profileId, feeType, feeValue) => {
-    // if (process.env.NODE_ENV != "production") return {valid: false, error: "Fee is only available in Production environment"}
+    if (process.env.NODE_ENV != "production") return {valid: false, error: "Fee is only available in Production environment"}
 
     const {data, error} = await supabase
         .from("profiles")

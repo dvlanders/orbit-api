@@ -161,8 +161,12 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	// if initialTransferRecord.same_day_ach is true, use ach_same_day payment rail
 	const paymentRail = initialTransferRecord.same_day_ach ? "ach_same_day" : accountInfo.payment_rail
 
-	// create a bridge transfer
+	// Amount for ExactIn
 	const clientReceivedAmount = (amount - feeRecord.fee_amount).toFixed(2)
+	// Amount for ExactOut
+	// const clientReceivedAmount = amount.toFixed(2)
+
+	// create a bridge transfer
 	const source = {
 		currency: sourceCurrency,
 		payment_rail: chainToVirtualAccountPaymentRail[chain],
@@ -237,7 +241,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         feeUnitsAmount,
         feeCollectionWalletAddress,
         providerRecordId,
-        paymentProcessType: "EXACT_OUT"
+        paymentProcessType: "EXACT_IN"
     }
 
     const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(walletProvider, transferConfig)

@@ -221,7 +221,7 @@ exports.registerFeeWallet = async(req, res) => {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     try{
-        const chain = Chain.POLYGON_AMOY
+        const chain = Chain.POLYGON_MAINNET
         const {data, error} = await supabase
             .from("user_wallets")
             .select("*")

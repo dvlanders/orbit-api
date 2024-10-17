@@ -1,29 +1,16 @@
 const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
 const supabase = require("../../../supabaseClient");
-const bridgeRailCheck = require("../railCheck/bridgeRailCheckV2");
 const { getAddress, isAddress } = require("ethers");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
 const createLog = require("../../../logger/supabaseLogger");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
-const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken");
-const { updateRequestRecord } = require("../utils/updateRequestRecord");
-const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
-const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
-const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken");
 const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
-const { getMappedError } = require("../../../bastion/utils/errorMappings");
-const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
-const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCoversionRate");
 const { v4 } = require("uuid");
-const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiatTransferRecordV2");
-const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
-const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
-const { safeStringToFloat } = require("../../../utils/number");
 const createPaymentQuote = require("../../../reap/main/createPayment");
 const fetchReapCryptoToFiatTransferRecord = require("./fetchReapCryptoToFiatTransferRecord");
 const getUserReapWalletAddress = require("../../../reap/main/getUserWallet");
@@ -34,12 +21,13 @@ const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simul
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertWalletTransactionRecord, getWalletColumnNameFromProvider, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils");
-const { insertSingleOfframpTransactionRecord, updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
+const { updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
 const { safeParseBody } = require("../../../utils/response");
 const { insertSingleReapTransactionRecord, updateReapTransactionRecord } = require("../../../reap/utils/reapTransactionTableService");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getUserWallet } = require("../../../user/getUserWallet");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
+const { reapApproveFundsScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/reap/scheduleCheck");
 
 const initTransferData = async (config) => {
 	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description, accountInfo, feeTransactionId, sourceWalletProvider, newRecord } = config
@@ -132,9 +120,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 	const amount = initialTransferRecord.amount
 	const walletType = initialTransferRecord.transfer_from_wallet_type
 	const feeRecord = initialTransferRecord.feeRecord
-	// const destinationWalletAddress = initialTransferRecord.to_wallet_address 
-	// TEST
-	const destinationWalletAddress = initialTransferRecord.from_wallet_address
+	const destinationWalletAddress = initialTransferRecord.to_wallet_address 
 	const { bastionUserId, circleWalletId, walletProvider } = await getUserWallet(sourceUserId, chain, walletType)
 
 	//get payment rail
@@ -181,6 +167,16 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframpRecord),
         updateFeeRecord(feeRecord.id, toUpdateFeeRecord)
     ])
+
+	if (mainTableStatus == "SUBMITTED_ONCHAIN"){
+		const jobConfig = {
+			offrampRecordId: updatedOfframpRecord.id
+		}
+		console.log("jobConfig", jobConfig)
+		if (await reapApproveFundsScheduleCheck("reapApproveFunds", jobConfig, sourceUserId, profileId)){
+			await createJob("reapApproveFunds", jobConfig, sourceUserId, profileId)
+		}
+	}
 
 	const result = await fetchReapCryptoToFiatTransferRecord(updatedOfframpRecord.id, profileId)
 	return result
@@ -230,7 +226,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const {response: walletResponse, responseBody: walletResponseBody, failedReason, providerStatus: walletProviderStatus, mainTableStatus} = await transferToWallet(walletProvider, transferConfig)
 
 	// map status
-	toUpdateOfframpRecord = {
+	consttoUpdateOfframpRecord = {
 		updated_at: new Date().toISOString(),
 		transaction_status: mainTableStatus
 	}
@@ -239,7 +235,17 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		await createLog("transfer/reap/transferWithoutFee", sourceUserId, walletResponseBody.message, walletResponseBody)
 		toUpdateOfframpRecord.failed_reason = failedReason
 	}
-	await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframpRecord)
+	const updatedRecord = await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframpRecord)
+
+	// create job
+	if (mainTableStatus == "SUBMITTED_ONCHAIN"){
+		const jobConfig = {
+			offrampRecordId: updatedRecord.id
+		}
+		if (await reapApproveFundsScheduleCheck("reapApproveFunds", jobConfig, sourceUserId, profileId)){
+			await createJob("reapApproveFunds", jobConfig, sourceUserId, profileId)
+		}
+	}
 
 	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return result
@@ -384,7 +390,7 @@ const acceptReapCryptoToFiatTransfer = async(config) => {
 	const updatedPaymentresponseBody = await safeParseBody(updatedPaymentresponse)
 
 	toUpdateReapTransactionRecord = {
-		reap_response: responseBody,
+		reap_response: updatedPaymentresponseBody,
 		updated_at: new Date().toISOString()
 	}
 

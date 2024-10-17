@@ -106,7 +106,7 @@ const createPaymentBody = async(paymentConfig, accountId) => {
             "senderCurrency": paymentConfig.sourceCurrency,
             "description": paymentConfig.description,
             "purposeOfPayment": paymentConfig.purposeOfPayment,
-            // "requireApproval": true,
+            "requireApproval": true,
             "metadata":{
                 offrampRecordId: paymentConfig.offrampRecordId,
                 requestId: offrampRecord.reapTransaction.request_id
