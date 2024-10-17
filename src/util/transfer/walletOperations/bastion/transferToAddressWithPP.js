@@ -8,18 +8,19 @@ const { statusMapBastion } = require("./statusMap")
 
 // transfer with payment processor
 const transferToAddressBastionWithPP = async(config) => {
-    const {senderBastionUserId, currency, unitsAmount, chain, destinationAddress, transferType, paymentProcessorContract, feeUnitsAmount, feeCollectionWalletAddress, providerRecordId} = config
+    const {senderBastionUserId, currency, unitsAmount, chain, destinationAddress, transferType, paymentProcessorContract, feeUnitsAmount, feeCollectionWalletAddress, providerRecordId, paymentProcessType} = config
     const tokenContractAddress = currencyContractAddress[chain][currency]
 
     // get provider record
     const providerRecord = await getBastionTransactionRecord(providerRecordId)
     const requestId = providerRecord.request_id
+    const actionName = paymentProcessType == "EXACT_IN" ? "processPaymentExactIn" : "processPaymentExactOut"
 
     const bodyObject = {
         requestId: requestId,
         userId: senderBastionUserId,
         contractAddress: paymentProcessorContract,
-        actionName: "processPayment",
+        actionName: actionName,
         chain,
         actionParams: [
             {name: "token", value: tokenContractAddress},

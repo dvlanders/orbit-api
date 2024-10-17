@@ -54,7 +54,8 @@ const insertRecord = async(fields) => {
     }
     const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, null, {[walletColName]: walletTxRecord.id})
     // update into crypto to crypto table
-    const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
+    const amountIncludeDeveloperFee = parseFloat((fields.amount + feeAmount).toFixed(2))
+    const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress, amount_include_developer_fee: amountIncludeDeveloperFee})
     return {validTransfer: true, record}
 }
 
@@ -82,8 +83,9 @@ const createDirectCryptoTransfer = async(fields) => {
         return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
     }
 
+    const amountToCheck = Math.max(record.amount, record.amount_include_developer_fee)
     // check if the user has enough balance for the transaction amount
-    if(!await checkBalanceForTransactionAmount(senderUserId, amount, chain, currency, senderWalletType)){
+    if(!await checkBalanceForTransactionAmount(senderUserId, amountToCheck, chain, currency, senderWalletType)){
         const toUpdate = {
             status: "NOT_INITIATED",
             failed_reason: "Transfer amount exceeds wallet balance"
@@ -136,7 +138,8 @@ const transferWithFee = async(record, profileId) => {
         paymentProcessorContract: paymentProcessorContractAddress,
         feeUnitsAmount: feeUnitsAmount,
         feeCollectionWalletAddress: feeCollectionWalletAddress,
-        providerRecordId
+        providerRecordId,
+        paymentProcessType: "EXACT_IN"
     }
 
     const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(record.provider, transferConfig);

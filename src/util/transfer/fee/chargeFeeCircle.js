@@ -25,7 +25,7 @@ const chargeFeeCircle = async(requestRecord, feeRecord, paymentProcessorContract
         const feeUnitAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
         const tokenContractAddress = currencyContractAddress[feeRecord.fee_collection_chain][feeRecord.fee_collection_currency]
         // transfer
-        const processPaymentFunction = paymentProcessorProcessPaymentFunction(tokenContractAddress, destinationWalletAddress, feeRecord.fee_collection_wallet_address, transferUnitAmount, feeUnitAmount)
+        const processPaymentFunction = paymentProcessorProcessPaymentFunction(tokenContractAddress, destinationWalletAddress, feeRecord.fee_collection_wallet_address, transferUnitAmount, feeUnitAmount, "EXACT_IN")
 
         
         const response = await submitTransactionCircle(feeRecord.id, feeRecord.request_id, circleWalletId, paymentProcessorContractAddress, processPaymentFunction.functionName, processPaymentFunction.params)

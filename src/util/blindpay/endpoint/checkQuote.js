@@ -11,7 +11,8 @@ const checkQuote = async (sourceCurrency, destinationCurrency, requestAmount = 1
     source_currency: sourceCurrency,
     destination_currency: destinationCurrency,
     request_amount: requestAmount,
-    cover_fees: coverFees
+    cover_fees: coverFees,
+    currency_type: "sender"
   };
 
   const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/quotes/check`;
