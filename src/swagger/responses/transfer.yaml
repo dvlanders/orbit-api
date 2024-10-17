@@ -70,3 +70,9 @@ AcceptFiatToCryptoQuoteResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/AcceptFiatToCryptoQuoteObject'
+BridgeAssetTransferResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/BridgeAssetTransferObject'
