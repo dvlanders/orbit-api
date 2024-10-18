@@ -22,8 +22,8 @@ async function fetchSelectedOffering(sourceCurrency, destinationCurrency) {
 			return {
 				foundOfferings: false,
 				selectedOffering: null,
-				payinKind: null,
-				payoutKind: null
+				payin: null,
+				payout: null
 			}
 		}
 
@@ -37,8 +37,8 @@ async function fetchSelectedOffering(sourceCurrency, destinationCurrency) {
 			return {
 				foundOfferings: true,
 				selectedOffering: null,
-				payinKind: null,
-				payoutKind: null
+				payin: null,
+				payout: null
 			}
 		}
 		return {

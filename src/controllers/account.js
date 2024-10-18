@@ -31,6 +31,7 @@ const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
 const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
+const { fetchSelectedOffering } = require('../util/yellowcard/utils/fetchSelectedOffering');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -1518,7 +1519,6 @@ exports.createAffricanMomoAccount = async (req, res) => {
 	}
 
 
-	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
 	const requiredFields = [
 		'accountHolderPhone',
 		'accountHolderName',
@@ -1533,7 +1533,8 @@ exports.createAffricanMomoAccount = async (req, res) => {
         'currency': "string",
 	};
 
-    // TODO: Validate the accountHolderPhone for each currency-kind pair
+    // TODO: Validate the body based on offerings.json
+
 	// Validate the account number format as an international phone number
 	if (!/^\+\d{11,15}$/.test(fields.accountHolderPhone)) {
 		return res.status(400).json({ error: 'The accountNumber must be in international phone number format (e.g., +254711111111).' });
@@ -1545,6 +1546,21 @@ exports.createAffricanMomoAccount = async (req, res) => {
 	if (missingFields.length > 0 || invalidFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
+
+    // Validate currency-kind pair is available
+    const { selectedOffering } = await fetchSelectedOffering("usdc", fields.currency);
+    if (!selectedOffering) {
+        await createLog("account/createMomoAccount", null, `usdc-${fields.currency} is not existing in offerings.`, null, profileId)
+        return res.status(400).json({ error: `${fields.currency} is not available for offramps.` });
+    }
+
+    const method = selectedOffering.data.payout.methods.find(method => method.kind === fields.kind);
+    if (!method) {
+        const availableKinds = selectedOffering.data.payout.methods.map(method => method.kind);
+        await createLog("account/createMomoAccount", null, `${fields.kind} is not available for usdc-${fields.currency}.`, null, profileId)
+        return res.status(400).json({ error: `${fields.kind} is not available for ${fields.currency} offramps. Available kinds for ${fields.currency} offramps are ${availableKinds}.` });
+    }
+
 
 	try {
 
@@ -1594,7 +1610,7 @@ exports.createAffricanBankAccount = async (req, res) => {
 	}
 
 
-	// TODO: account number for momo mpesa must be in internation phone number format i.e. +254711111111
+	// TODO: Validate the body based on offerings.json
 	const requiredFields = [
 		'accountNumber',
 		'accountHolderName',
@@ -1609,8 +1625,6 @@ exports.createAffricanBankAccount = async (req, res) => {
 		'accountHolderPhone': "string",
         'currency': "string",
 	};
-
-    // TODO: check kind-crrency is supported by offerings
 
 	if (fields.kind === "BANK_Access Bank") {
 		if (!fields.accountHolderPhone) {
@@ -1635,6 +1649,22 @@ exports.createAffricanBankAccount = async (req, res) => {
 	if (missingFields.length > 0 || invalidFields.length > 0) {
 		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
+
+    // Validate currency-kind pair is available
+    const { selectedOffering } = await fetchSelectedOffering("usdc", fields.currency);
+    if (!selectedOffering) {
+        await createLog("account/createMomoAccount", null, `usdc-${fields.currency} is not existing in offerings.`, null, profileId)
+        return res.status(400).json({ error: `${fields.currency} is not available for offramps.` });
+    }
+
+    const method = selectedOffering.data.payout.methods.find(method => method.kind === fields.kind);
+    if (!method) {
+        const availableKinds = selectedOffering.data.payout.methods.map(method => method.kind);
+        await createLog("account/createMomoAccount", null, `${fields.kind} is not available for usdc-${fields.currency}.`, null, profileId)
+        return res.status(400).json({ error: `${fields.kind} is not available for ${fields.currency} offramps. Available kinds for ${fields.currency} offramps are ${availableKinds}.` });
+    }
+
+    
 
 	try {
 

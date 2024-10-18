@@ -27,7 +27,7 @@ const getYellowcardConversionRate = async(fromCurrency, toCurrency, profileId) =
                 conversionRate: null,
                 validFrom,
                 validUntil,
-                message: `Not available`
+                message: "Not available"
             }
         }
         
