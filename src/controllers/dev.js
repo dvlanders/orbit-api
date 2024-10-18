@@ -35,6 +35,9 @@ const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
 const forge = require('node-forge');
 const { generateCypherText } = require("../util/circle/utils/generateCypherText");
 const sandboxUSDHIFIAbi = require("../util/smartContract/sandboxUSDHIFI/abi.json")
+const { insertSingleBridgeTransactionRecord } = require("../util/bridge/bridgeTransactionTableService");
+const { insertCheckbookTransactionRecord } = require("../util/checkbook/checkbookTransactionTableService");
+const { updateOnrampTransactionRecord } = require("../util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
 
 const uploadFile = async (file, path) => {
     
@@ -753,4 +756,69 @@ exports.testSubmitTransactionCircle = async(req, res) => {
     }
 }
 
+exports.migrateOnrampProviders = async(req, res) => {
+    try{
 
+        const {data, error} = await supabase
+            .from("onramp_transactions")
+            .select()
+            .not("user_id", "is", null)
+            .is("bridge_transaction_record_id", null)
+            .is("checkbook_transaction_record_id", null)
+
+        if (error) throw error
+
+        await Promise.all(data.map(async(record) => {
+
+            const { data: bridgeUser, error: bridgeUserError } = await supabase
+                .from("bridge_customers")
+                .select("bridge_id")
+                .eq("user_id", record.destination_user_id)
+                .single()
+
+            if (bridgeUserError) throw bridgeUserError
+
+            let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
+                .from('bridge_virtual_accounts')
+                .select('id')
+                .eq("virtual_account_id", record.bridge_virtual_account_id)
+                .maybeSingle()
+            
+            if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
+
+            const toInsertBridge = {
+                user_id: record.user_id,
+                request_id: v4(),
+                last_bridge_virtual_account_event_id: record.last_bridge_virtual_account_event_id,
+                virtual_account_id: bridgeVirtualAccount.id,
+                bridge_virtual_account_id: record.bridge_virtual_account_id,
+                bridge_user_id: bridgeUser.bridge_id,
+                bridge_status: record.bridge_status,
+                bridge_response: record.bridge_response,
+                bridge_deposit_id: record.bridge_deposit_id,
+            }
+
+            const bridgeRecord = await insertSingleBridgeTransactionRecord(toInsertBridge);
+
+            const toInsertCheckbook = {
+                user_id: record.user_id,
+                plaid_checkbook_id: record.plaid_checkbook_id,
+                destination_checkbook_user_id: record.destination_checkbook_user_id,
+                checkbook_status: record.checkbook_status,
+                checkbook_response: record.checkbook_response,
+                checkbook_payment_id: record.checkbook_payment_id,
+                destination_checkbook_user_id: record.destination_checkbook_user_id,
+            }
+
+            const checkbookRecord = await insertCheckbookTransactionRecord(toInsertCheckbook);
+
+            await updateOnrampTransactionRecord(record.id, {bridge_transaction_record_id: bridgeRecord.id, checkbook_transaction_record_id: checkbookRecord.id})
+
+        }))
+
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
