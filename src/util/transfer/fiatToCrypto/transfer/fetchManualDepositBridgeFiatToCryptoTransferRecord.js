@@ -13,7 +13,7 @@ const fetchManualDepositBridgeFiatToCryptoTransferRecord = async(id, profileId) 
     let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
         .from('bridge_virtual_accounts')
         .select('*')
-        .eq("virtual_account_id", record.bridge_virtual_account_id)
+        .eq("id", record.bridge_transfer_info?.virtual_account_id)
         .single())
 
     if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
