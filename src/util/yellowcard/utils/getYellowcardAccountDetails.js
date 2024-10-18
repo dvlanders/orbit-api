@@ -3,9 +3,15 @@ const { supabaseCall } = require('../../../util/supabaseWithRetry');
 const supabase = require('../../../util/supabaseClient');
 
 const paymentRailTableMap = {
-  momo_transfer: 'yellowcard_momo_transfer_accounts',
-  bank_transfer: 'yellowcard_bank_transfer_accounts',
-  momo_mtn: 'yellowcard_momo_mtn_accounts',
+  momo_kes: 'yellowcard_momo_kes_accounts',
+  momo_xof: 'yellowcard_momo_xof_accounts',
+  momo_rwf: 'yellowcard_momo_rwf_accounts',
+  momo_zmw: 'yellowcard_momo_zmw_accounts',
+  bank_ngn: 'yellowcard_bank_ngn_accounts',
+  bank_ugx: 'yellowcard_bank_ugx_accounts',
+  bank_tzs: 'yellowcard_bank_tzs_accounts',
+  bank_mwk: 'yellowcard_bank_mwk_accounts',
+  bank_xaf: 'yellowcard_bank_xaf_accounts',
 }
 
 const getYellowcardAccountDetails = async (destinationAccountId) => {
