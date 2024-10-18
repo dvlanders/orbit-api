@@ -31,7 +31,8 @@ const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
 const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
-const { fetchSelectedOffering } = require('../util/yellowcard/utils/fetchSelectedOffering');
+const { createYellowcardAccount } = require('../util/yellowcard/createYellowcardAccount');
+const { YcAccountInfoError, YcAccountInfoErrorType } = require('../util/yellowcard/utils/errors');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -1503,269 +1504,272 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	}
 }
 
-exports.createAffricanMomoAccount = async (req, res) => {
-	const { userId, profileId } = req.query;
-	// const {
-	// 	accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-	// 	businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
-	// 	accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
-	// } = req.body;
-
-
+exports.createKesMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
 	const fields = req.body;
 
 	if (!(await verifyUser(userId, profileId))) {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
+    fields.user_id = userId;
 
-	const requiredFields = [
-		'accountHolderPhone',
-		'accountHolderName',
-        'kind',
-        'currency',
-	];
-
-	const acceptedFields = {
-		'accountHolderPhone': "string",
-		'accountHolderName': "string",
-        'kind' : "string",
-        'currency': "string",
-	};
-
-    // TODO: Validate the body based on offerings.json
-
-	// Validate the account number format as an international phone number
-	if (!/^\+\d{11,15}$/.test(fields.accountHolderPhone)) {
-		return res.status(400).json({ error: 'The accountNumber must be in international phone number format (e.g., +254711111111).' });
-	}
-
-
-	// Execute fields validation
-	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0 || invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
-	}
-
-    // Validate currency-kind pair is available
-    const { selectedOffering } = await fetchSelectedOffering("usdc", fields.currency);
-    if (!selectedOffering) {
-        await createLog("account/createMomoAccount", null, `usdc-${fields.currency} is not existing in offerings.`, null, profileId)
-        return res.status(400).json({ error: `${fields.currency} is not available for offramps.` });
-    }
-
-    const method = selectedOffering.data.payout.methods.find(method => method.kind === fields.kind);
-    if (!method) {
-        const availableKinds = selectedOffering.data.payout.methods.map(method => method.kind);
-        await createLog("account/createMomoAccount", null, `${fields.kind} is not available for usdc-${fields.currency}.`, null, profileId)
-        return res.status(400).json({ error: `${fields.kind} is not available for ${fields.currency} offramps. Available kinds for ${fields.currency} offramps are ${availableKinds}.` });
-    }
-
-
-	try {
-
-		// add the momo_transfer_accounts record
-		const { data: momoAccountData, error: momoAccountError } = await supabase.from('yellowcard_momo_transfer_accounts').insert({
-			account_number: fields.accountHolderPhone,
-			account_holder_name: fields.accountHolderName,
-            currency: fields.currency,
-            kind: fields.kind,
-			user_id: userId
-		})
-			.select();
-
-		if (momoAccountError) {
-			createLog("account/createMomoAccount", userId, momoAccountError.message, momoAccountError);
-			return res.status(500).json({ error: 'Internal Server Error' });
-		}
-
-		const accountProviderRecord = await insertAccountProviders(momoAccountData[0].id, fields.currency, "offramp", "momo_transfer", "YELLOWCARD", userId);
-
-		return res.status(200).json({
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_kes", currency: "kes" });
+        
+        return res.status(200).json({
 			status: "ACTIVE",
 			invalidFields: [],
 			message: "Account created successfully",
 			id: accountProviderRecord.id
 		});
+        
+    } catch (error) {
+        await createLog("account/createKesMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
 
-	} catch (error) {
-		createLog("account/createMomoAccount", userId, error.message, error);
-		console.error('Error in createMomoAccount', error);
-		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
-	}
-};
-
-exports.createAffricanBankAccount = async (req, res) => {
-	const { userId, profileId } = req.query;
-	// const {
-	// 	accountType, currency, bankName, accountOwnerName, ibanAccountNumber, firstName, lastName,
-	// 	businessName, accountOwnerType, businessIdentifierCode, ibanCountryCode,
-	// 	accountNumber, routingNumber, streetLine1, streetLine2, city, state, postalCode, country
-	// } = req.body;
-
+exports.createXofMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
 	const fields = req.body;
 
 	if (!(await verifyUser(userId, profileId))) {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
+    fields.user_id = userId;
 
-	// TODO: Validate the body based on offerings.json
-	const requiredFields = [
-		'accountNumber',
-		'accountHolderName',
-		'kind',
-        'currency',
-	];
-
-	const acceptedFields = {
-		'accountNumber': "string",
-		'accountHolderName': "string",
-		'kind': (value) => inStringEnum(value, ["BANK_Access Bank", "BANK_Manul Entry", "BANK_GT Bank", "BANK_United Bank for Africa"]),
-		'accountHolderPhone': "string",
-        'currency': "string",
-	};
-
-	if (fields.kind === "BANK_Access Bank") {
-		if (!fields.accountHolderPhone) {
-			return res.status(400).json({ error: 'The accountHolderPhone field is required when the kind is BANK_Access Bank' });
-		} else if (!/^\+\d{11,15}$/.test(fields.accountHolderPhone)) {
-			// Validates that the phone number starts with '+' followed by 11 to 15 digits
-			return res.status(400).json({ error: 'The accountHolderPhone must be in a valid international format (e.g., +2348111111111)' });
-		}
-        if (fields.bankName)
-            return res.status(400).json({ error: 'The bankName field must be null or undefined when the kind is BANK_Access Bank' });
-	} else if (fields.kind === "BANK_Manul Entry") {
-        requiredFields.push("bankName");
-        acceptedFields["bankName"] = "string";
-    } else if (fields.accountHolderPhone || fields.bankName) {
-		// Ensures phone number is null or undefined for other bank kinds
-		return res.status(400).json({ error: 'The accountHolderPhone and bankName fields must be null or undefined.' });
-	}
-
-
-	// Execute fields validation
-	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0 || invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
-	}
-
-    // Validate currency-kind pair is available
-    const { selectedOffering } = await fetchSelectedOffering("usdc", fields.currency);
-    if (!selectedOffering) {
-        await createLog("account/createMomoAccount", null, `usdc-${fields.currency} is not existing in offerings.`, null, profileId)
-        return res.status(400).json({ error: `${fields.currency} is not available for offramps.` });
-    }
-
-    const method = selectedOffering.data.payout.methods.find(method => method.kind === fields.kind);
-    if (!method) {
-        const availableKinds = selectedOffering.data.payout.methods.map(method => method.kind);
-        await createLog("account/createMomoAccount", null, `${fields.kind} is not available for usdc-${fields.currency}.`, null, profileId)
-        return res.status(400).json({ error: `${fields.kind} is not available for ${fields.currency} offramps. Available kinds for ${fields.currency} offramps are ${availableKinds}.` });
-    }
-
-    
-
-	try {
-
-		// add the momo_transfer_accounts record
-		const { data: BankAccountData, error: BankAccountError } = await supabase
-			.from('yellowcard_bank_transfer_accounts')
-			.insert({
-				account_number: fields.accountNumber,
-				account_holder_name: fields.accountHolderName,
-				user_id: userId,
-				kind: fields.kind,
-                currency: fields.currency,
-				account_holder_phone: fields.accountHolderPhone,
-                bank_name: fields.bankName,
-			})
-			.select();
-
-		if (BankAccountError) {
-			createLog("account/createAfricanBankAccount", userId, BankAccountError.message, BankAccountError);
-			return res.status(500).json({ error: 'Internal Server Error' });
-		}
-
-		const accountProviderRecord = await insertAccountProviders(BankAccountData[0].id, fields.currency, "offramp", "bank_transfer", "YELLOWCARD", userId);
-
-		return res.status(200).json({
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_xof", currency: "xof" });
+        
+        return res.status(200).json({
 			status: "ACTIVE",
 			invalidFields: [],
 			message: "Account created successfully",
 			id: accountProviderRecord.id
 		});
+        
+    } catch (error) {
+        await createLog("account/createXofMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
 
-	} catch (error) {
-		createLog("account/createAfricanBankAccount", userId, error.message, error);
-		console.error('Error in createAfricanBankAccount', error);
-		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
-	}
-};
-
-exports.createMomoMtnAccount = async (req, res) => {
-	const { userId, profileId } = req.query;
-
+exports.createRwfMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
 	const fields = req.body;
 
 	if (!(await verifyUser(userId, profileId))) {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
+    fields.user_id = userId;
 
-	const requiredFields = [
-		'accountNumber',
-		'accountHolderName',
-        'currency'
-	];
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_rwf", currency: "rwf" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createRwfMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
 
-	const acceptedFields = {
-		'accountNumber': "string",
-		'accountHolderName': "string",
-        'currency': "string"
-	};
+exports.createZmwMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
 
-    console.log(fields.accountNumber)
-    console.log(/^2332[0-9]{10}$/.test("23329876543210"))
-	if (!/^2332[0-9]{10}$/.test(fields.accountNumber)) {
-		return res.status(400).json({ error: 'The accountNumber must have 12 numbers follow the format of /^2332[0-9]{10}$/ (e.g., 233298743210).' });
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
 	}
 
+    fields.user_id = userId;
 
-	// Execute fields validation
-	const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
-	if (missingFields.length > 0 || invalidFields.length > 0) {
-		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_zmw", currency: "zmw" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createZmwMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createNgnBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
 	}
 
-	try {
+    fields.user_id = userId;
 
-		// add the momo_mtn_accounts record
-		const { data: momoMtnAccountData, error: momoMtnAccountError } = await supabase.from('yellowcard_momo_mtn_accounts').insert({
-			account_number: fields.accountNumber,
-			account_holder_name: fields.accountHolderName,
-            currency: fields.currency,
-			user_id: userId
-		})
-			.select();
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_ngn", currency: "ngn" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createNgnBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
 
-		if (momoMtnAccountError) {
-			createLog("account/createMomoMpesaAccount", userId, momoMtnAccountError.message, momoMtnAccountError);
-			return res.status(500).json({ error: 'Internal Server Error' });
-		}
+exports.createUgxBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
 
-		const accountProviderRecord = await insertAccountProviders(momoMtnAccountData[0].id, fields.currency, "offramp", "momo_mtn", "YELLOWCARD", userId);
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
 
-		return res.status(200).json({
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_ugx", currency: "ugx" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createUgxBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createTzsBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_tzs", currency: "tzs" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createTzsBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createMwkBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_mwk", currency: "mwk" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createMwkBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createXafBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_xaf", currency: "xaf" });
+
+        return res.status(200).json({
 			status: "ACTIVE",
 			invalidFields: [],
 			message: "Account created successfully",
 			id: accountProviderRecord.id
 		});
 
-	} catch (error) {
-		createLog("account/createMomoMtnAccount", userId, error.message, error);
-		console.error('Error in createMomoMtnAccount', error);
-		return res.status(500).json({ error: 'Internal Server Error', message: error.message || "An unexpected error occurred" });
-	}
-};
+    } catch (error) {
+        await createLog("account/createXafBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
