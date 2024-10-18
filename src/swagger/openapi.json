@@ -246,6 +246,15 @@
         "description": "Bridge asset record ID.",
         "required": true
       },
+      "BridgeAssetRecordIDParameter": {
+        "name": "id",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Bridge asset record ID.",
+        "required": true
+      },
       "FromCurrencyParameter": {
         "name": "fromCurrency",
         "in": "query",
