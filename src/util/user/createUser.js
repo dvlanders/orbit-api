@@ -362,7 +362,11 @@ const informationUploadForUpdateUser = async (userId, fields) => {
 		await updateUserRecord(userId, { kyc_level: fields.kycLevel });
 	}
 
-	await updateUserKycRecord(userId, fieldsToColumnsMap(fields, userKycColumnsMap));
+	const toUpdateKyc = fieldsToColumnsMap(fields, userKycColumnsMap);
+	if (toUpdateKyc && Object.keys(toUpdateKyc).length > 0){
+		await updateUserKycRecord(userId, toUpdateKyc);
+	}
+	
 
 	await updateUboData(userId, fields.ultimateBeneficialOwners);
 
