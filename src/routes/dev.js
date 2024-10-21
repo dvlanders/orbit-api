@@ -38,4 +38,5 @@ module.exports = (router) => {
 	router.get("/dev/testGetContractFromCircle", dev.testGetContractFromCircle)
 	router.post("/dev/testSubmitTransactionCircle", dev.testSubmitTransactionCircle)
 	router.post("/dev/migrateOnrampProviders", dev.migrateOnrampProviders)
+	router.post("/dev/migrateOfframpProviders", dev.migrateOfframpBridgeProviders)
 };

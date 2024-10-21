@@ -38,6 +38,7 @@ const sandboxUSDHIFIAbi = require("../util/smartContract/sandboxUSDHIFI/abi.json
 const { insertSingleBridgeTransactionRecord } = require("../util/bridge/bridgeTransactionTableService");
 const { insertCheckbookTransactionRecord } = require("../util/checkbook/checkbookTransactionTableService");
 const { updateOnrampTransactionRecord } = require("../util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
+const { updateOfframpTransactionRecord } = require("../util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService");
 
 const uploadFile = async (file, path) => {
     
@@ -750,6 +751,50 @@ exports.testSubmitTransactionCircle = async(req, res) => {
         const response = await fetch(url, options)
         const responseBody = await response.json()
         return res.status(200).json(responseBody)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.migrateOfframpBridgeProviders = async(req, res) => {
+    try{
+
+        const {data, error} = await supabase
+            .from("offramp_transactions")
+            .select()
+            .not("user_id", "is", null)
+            .is("bridge_transaction_record_id", null)
+            .eq("fiat_provider", "BRIDGE")
+
+        if (error) throw error
+
+        await Promise.all(data.map(async(record) => {
+
+            const { data: bridgeUser, error: bridgeUserError } = await supabase
+                .from("bridge_customers")
+                .select("bridge_id")
+                .eq("user_id", record.destination_user_id)
+                .single()
+
+            if (bridgeUserError) throw bridgeUserError
+
+            const toInsertBridge = {
+                user_id: record.user_id,
+                request_id: v4(),
+                bridge_user_id: bridgeUser.bridge_id,
+                bridge_status: record.bridge_status,
+                bridge_response: record.bridge_response,
+                bridge_transfer_id: record.bridge_transfer_id,
+            }
+
+            const bridgeRecord = await insertSingleBridgeTransactionRecord(toInsertBridge);
+
+            await updateOfframpTransactionRecord(record.id, {bridge_transaction_record_id: bridgeRecord.id})
+
+        }))
+
+        return res.status(200).json({message: "success"})
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "Internal server error"})
