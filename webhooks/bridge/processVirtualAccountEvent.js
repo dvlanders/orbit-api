@@ -1,7 +1,7 @@
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
-const { BridgeTransactionStatusMap, virtualAccountPaymentRailToChain } = require("../../src/util/bridge/utils");
+const { HifiOnrampTransactionBridgeStatusMap, virtualAccountPaymentRailToChain } = require("../../src/util/bridge/utils");
 const { v4: uuidv4 } = require("uuid");
 const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
 const { createTransactionFeeRecord } = require("../../src/util/billing/fee/transactionFeeBilling");
@@ -19,10 +19,13 @@ const processExistingOnrampTransaction = async (existingRecord, event) => {
   const { id, type, deposit_id, destination_tx_hash } = event;
 
   const currentBridgeStatus = existingRecord.bridge_transaction_info?.bridge_status;
-  if(!isValidBridgeStateTransition(currentBridgeStatus, type)) return { originalOnrampRecord: existingRecord, updatedOnrampRecord: null };
+  if(!isValidBridgeStateTransition(currentBridgeStatus, type)){
+    console.log("Process out of order events, so nothing to do here");
+    return { originalOnrampRecord: existingRecord, updatedOnrampRecord: null };
+  }
   
   const toUpdate = {
-    status: type in BridgeTransactionStatusMap ? BridgeTransactionStatusMap[type] : "UNKNOWN",
+    status: HifiOnrampTransactionBridgeStatusMap[type] || "UNKNOWN",
     transaction_hash: destination_tx_hash
   }
   const updatedOnrampRecord = await updateOnrampTransactionRecord(existingRecord.id, toUpdate);
@@ -63,7 +66,7 @@ const processManualOnrampTransaction = async (event) => {
     user_id: userId,
     amount: amount,
     destination_user_id: userId,
-    status: type in BridgeTransactionStatusMap ? BridgeTransactionStatusMap[type]: "UNKNOWN",
+    status: HifiOnrampTransactionBridgeStatusMap[type] || "UNKNOWN",
     transaction_hash: destination_tx_hash,
     fiat_provider: "MANUAL_DEPOSIT",
     crypto_provider: "BRIDGE",
@@ -173,10 +176,7 @@ const processVirtualAccountEvent = async (event) => {
 
     }
 
-    if(!updatedOnrampRecord){
-      console.log("Process out of order events, so nothing to do here");
-      return; // no updates are done, so nothing to do here
-    }
+    if(!updatedOnrampRecord) return; // no updates are done, so nothing to do here
 
     const { data: onrampRecord, error: onrampRecordError} = await supabaseCall(() => supabase
       .from('onramp_transactions')
@@ -198,18 +198,18 @@ const processVirtualAccountEvent = async (event) => {
     }
 
     if (onrampRecord.status === "REFUNDED") {
-      notifyTransaction(
-          onrampRecord.user_id,
-          rampTypes.ONRAMP,
-          onrampRecord.id,
-          {
-              prevTransactionStatus: originalOnrampRecord?.status,
-              updatedTransactionStatus: onrampRecord.status,
-              checkbookStatus: checkbookTransactionInfo.checkbook_status,
-              bridgeStatus: bridgeTransactionInfo.bridge_status,
-              failedReason: onrampRecord.failed_reason,
-          }
-      );
+      await notifyTransaction(
+              onrampRecord.user_id,
+              rampTypes.ONRAMP,
+              onrampRecord.id,
+              {
+                  prevTransactionStatus: originalOnrampRecord?.status,
+                  updatedTransactionStatus: onrampRecord.status,
+                  checkbookStatus: checkbookTransactionInfo.checkbook_status,
+                  bridgeStatus: bridgeTransactionInfo.bridge_status,
+                  failedReason: onrampRecord.failed_reason,
+              }
+            );
   }
 
     await notifyFiatToCryptoTransfer(onrampRecord);
