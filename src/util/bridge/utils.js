@@ -66,6 +66,35 @@ const BridgeCustomerStatus = {
 	AWAITING_UBO: "awaiting_ubo",
 }
 
+const BridgeTransactionStatus = {
+	awaiting_funds: "awaiting_funds",
+	in_review: "in_review",
+	funds_received: "funds_received",
+	payment_submitted: "payment_submitted",
+	payment_processed: "payment_processed",
+	returned: "returned",
+	refunded: "refunded",
+	canceled: "canceled",
+	error: "error",
+}
+
+// once in one of these states, the transaction is considered final and no further state transitions are allowed
+const BridgeFinalStates = [BridgeTransactionStatus.payment_processed, BridgeTransactionStatus.refunded, BridgeTransactionStatus.canceled, BridgeTransactionStatus.error]
+
+const BridgeInvalidPrevStates = {
+	[BridgeTransactionStatus.awaiting_funds]: [BridgeTransactionStatus.funds_received, BridgeTransactionStatus.payment_submitted, ...BridgeFinalStates],
+	[BridgeTransactionStatus.funds_received]: [BridgeTransactionStatus.payment_submitted, ...BridgeFinalStates],
+	[BridgeTransactionStatus.payment_submitted]: [...BridgeFinalStates],
+}
+
+const isValidBridgeStateTransition = (currentState, nextState) => {
+	if(currentState === nextState) return true;
+	if(BridgeFinalStates.includes(currentState)) return false;
+	const invalidPrevStates = BridgeInvalidPrevStates[nextState];
+	if (!invalidPrevStates) return true;
+	return !invalidPrevStates.includes(currentState);
+}
+
 const BridgeTransactionStatusMap = {
 	in_review: "CRYPTO_IN_REVIEW",
 	payment_submitted: "CRYPTO_SUBMITTED",
@@ -276,5 +305,6 @@ module.exports = {
 	extractActionsAndFields,
 	chainToVirtualAccountPaymentRail,
 	getBridgeUserId,
-	pendingResult
+	pendingResult,
+	isValidBridgeStateTransition
 }

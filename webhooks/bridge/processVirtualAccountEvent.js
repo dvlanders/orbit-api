@@ -11,11 +11,15 @@ const { transferType } = require("../../src/util/transfer/utils/transfer");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
+const { isValidBridgeStateTransition } = require("../../src/util/bridge/utils");
 const createJob = require("../../asyncJobs/createJob");
 
 // This will process the onramp transaction that has a reference_id, but no deposit id.
 const processExistingOnrampTransaction = async (existingRecord, event) => {
   const { id, type, deposit_id, destination_tx_hash } = event;
+
+  const currentBridgeStatus = existingRecord.bridge_transaction_info?.bridge_status;
+  if(!isValidBridgeStateTransition(currentBridgeStatus, type)) return { originalOnrampRecord: existingRecord, updatedOnrampRecord: null };
   
   const toUpdate = {
     status: type in BridgeTransactionStatusMap ? BridgeTransactionStatusMap[type] : "UNKNOWN",
@@ -132,7 +136,7 @@ const processVirtualAccountEvent = async (event) => {
 
       const { data: onrampRecord, error: onrampRecordError } = await supabaseCall(() => supabase
         .from("onramp_transactions")
-        .select("id")
+        .select("id, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
         .eq("bridge_transaction_record_id", existingBridgeRecord.id)
         .single());
 
@@ -149,7 +153,7 @@ const processVirtualAccountEvent = async (event) => {
         // Check if we have existing onramp records with this referenceId, either fully match or partially match
         const { data: matchingRecords, error: matchingRecordsError } = await supabaseCall(() => supabase
           .from("onramp_transactions")
-          .select("id")
+          .select("id, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
           .like("reference_id", `%${referenceId}%`));
 
         if(matchingRecordsError) throw matchingRecordsError;
@@ -169,9 +173,14 @@ const processVirtualAccountEvent = async (event) => {
 
     }
 
+    if(!updatedOnrampRecord){
+      console.log("Process out of order events, so nothing to do here");
+      return; // no updates are done, so nothing to do here
+    }
+
     const { data: onrampRecord, error: onrampRecordError} = await supabaseCall(() => supabase
       .from('onramp_transactions')
-      .select('id, user_id, destination_user_id, developer_fee_id, status, destination_user: destination_user_id(profile_id), checkbook_transaction_record_id, bridge_transaction_record_id, checkbook_transaction_info:checkbook_transaction_record_id(*), bridge_transaction_info:bridge_transaction_record_id(*)')
+      .select('id, user_id, fiat_provider, crypto_provider, destination_user_id, developer_fee_id, status, destination_user: destination_user_id(profile_id), checkbook_transaction_record_id, bridge_transaction_record_id, checkbook_transaction_info:checkbook_transaction_record_id(*), bridge_transaction_info:bridge_transaction_record_id(*)')
       .eq('id', updatedOnrampRecord.id)
       .single());
 
