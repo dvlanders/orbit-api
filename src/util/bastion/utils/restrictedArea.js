@@ -8,7 +8,7 @@ const sanctionedCountries = [
 	"UA",  // Ukraine
 	"BY",  // Belarus
 	"MM",  // Myanmar (Burma)
-	"SY"   // Syria
+	"SY",  // Syria
 ]
 
 const allowedUsState = [
