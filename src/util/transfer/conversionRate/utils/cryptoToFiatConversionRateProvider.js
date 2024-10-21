@@ -1,5 +1,6 @@
 const getBridgeConversionRate = require("../main/getBridgeCoversionRate")
 const getBlindpayConversionRate = require("../main/getBlindpayConversionRate")
+const getYellowcardConversionRate = require("../main/getYellowcardConversionRate")
 
 const getCryptoToFiatConversionRateFunction = (fromCurrency, toCurrency) => {
     try{
@@ -17,6 +18,15 @@ const cryptoTOFiatConversionRateProviderMap = {
         mxn: getBlindpayConversionRate,
         cop: getBlindpayConversionRate,
         ars: getBlindpayConversionRate,
+        ugx: getYellowcardConversionRate,
+        ngn: getYellowcardConversionRate,
+        kes: getYellowcardConversionRate,
+        xof: getYellowcardConversionRate,
+        rwf: getYellowcardConversionRate,
+        tzs: getYellowcardConversionRate,
+        zmw: getYellowcardConversionRate,
+        mwk: getYellowcardConversionRate,
+        xaf: getYellowcardConversionRate,
     }
 }
 

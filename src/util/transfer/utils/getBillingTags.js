@@ -44,14 +44,42 @@ const BillingTagsForOfframp = {
                 failed: [],
             },
         },
-        momo_mpesa:{
+        momo_transfer: {
             kes:{
                 success: ["base"],  
                 failed: [],
             },
+            xof:{
+                success: ["base"],  
+                failed: [],
+            },
+            rwf:{
+                success: ["base"],  
+                failed: [],
+            },
+            zmw:{
+                success: ["base"],  
+                failed: [],
+            },
         },
-        nibbs:{
+        bank_transfer: {
             ngn:{
+                success: ["base"],  
+                failed: [],
+            },
+            ugx:{
+                success: ["base"],  
+                failed: [],
+            },
+            TZS:{
+                success: ["base"],  
+                failed: [],
+            },
+            MWK:{
+                success: ["base"],  
+                failed: [],
+            },
+            XAF:{
                 success: ["base"],  
                 failed: [],
             },
