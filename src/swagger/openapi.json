@@ -5610,6 +5610,9 @@
               "id": {
                 "type": "string"
               },
+              "requestId": {
+                "type": "string"
+              },
               "sourceUserId": {
                 "type": "string"
               },
@@ -5674,6 +5677,7 @@
           "transferType": "BRIDGE_ASSET",
           "transferDetails": {
             "id": "5e87372e-b5dc-4735-9bc3-b4fde3a0a398",
+            "requestId": "3da09d1a-13f2-40a0-9cb3-2628da485g93",
             "sourceUserId": "8f766843-5a41-4799-8c20-29906a212f66",
             "destinationUserId": "b7f624a9-b960-421f-a64f-d253a5210ae5",
             "sourceChain": "ETHEREUM_MAINNET",
