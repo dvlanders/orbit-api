@@ -1,3 +1,4 @@
+const { bridgeRestrictedCountryCodes } = require("../bridge/utils/restrictedCountries");
 const { checkIsSignedAgreementIdSigned } = require("../user/signedAgreement");
 const { hifiSupportedChain } = require("./blockchain");
 
@@ -60,7 +61,7 @@ const isValidState = (stateCode) => {
 
 const isValidCountryCode = (countryCode) => {
 	// List of restricted country codes
-	const restrictedCountries = ["CUB", "IRN", "SDN", "PRK", "VEN", "RUS", "UKR", "BLR", "MMR", "SYR"];
+	const restrictedCountries = bridgeRestrictedCountryCodes;
 
 	// Check if countryCode is a string
 	if (typeof countryCode !== 'string' || countryCode.length !== 3) {

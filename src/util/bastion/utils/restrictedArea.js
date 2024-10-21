@@ -8,40 +8,7 @@ const sanctionedCountries = [
 	"UA",  // Ukraine
 	"BY",  // Belarus
 	"MM",  // Myanmar (Burma)
-	"SY",   // Syria
-	"AF",   // Afghanistan
-	"AL",   // Albania
-	"BD", 
-	"BY",
-	"CF",
-	"CN",
-	"CD",
-	"ER",
-	"ET",
-	"PS",
-	"IQ",
-	"KE",  // KEN
-	"XK",  // XKX (Kosovo)
-	"LB",  // LBN
-	"LY",  // LBY
-	"ML",  // MLI
-	"MA",  // MAR
-	"NP",  // NPL
-	"NI",  // NIC
-	"NE",  // NER
-	"MK",  // MKD
-	"PK",  // PAK
-	"QA",  // QAT
-	"RU",  // RUS
-	"SI",  // SVN
-	"SO",  // SOM
-	"SS",  // SSD
-	"SD",  // SDN
-	"UA",  // UKR
-	"VE",  // VEN
-	"PS",  // PSE
-	"YE",  // YEM
-	"ZW"   // ZWE
+	"SY",  // Syria
 ]
 
 const allowedUsState = [
