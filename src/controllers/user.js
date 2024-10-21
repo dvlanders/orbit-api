@@ -424,7 +424,7 @@ exports.getUserKycInformation = async (req, res) => {
 
 		const { data: user, error: userError } = await supabase
 			.from("users")
-			.select("user_type, user_kyc(*), ultimate_beneficial_owners(*)")
+			.select("user_type, kyc_level, user_kyc(*), ultimate_beneficial_owners(*)")
 			.eq("id", userId)
 			.maybeSingle()
 		if (userError) console.error(userError)
@@ -432,7 +432,8 @@ exports.getUserKycInformation = async (req, res) => {
 
 		const result = {
 			user: {
-				user_type: user.user_type
+				user_type: user.user_type,
+				kyc_level: user.kyc_level
 			},
 			...user.user_kyc,
 			ultimate_beneficial_owners: user.ultimate_beneficial_owners
