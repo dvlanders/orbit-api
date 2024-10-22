@@ -22,10 +22,10 @@ exports.getRawUserObject = async(userId, profileId, isDeveloperUser = false) => 
 		const getHifiUserResponse = defaultKycInfo(userId, user.kyc_level);
 
 		// check if the userCreation is in the job queue, if yes return pending response
-		const canScheduled = isDeveloperUser ? await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.userType}, userId, profileId) : await createUserAsyncCheck("createUser", {userId, userType: user.userType}, userId, profileId)
+		const canScheduled = isDeveloperUser ? await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.user_type}, userId, profileId) : await createUserAsyncCheck("createUser", {userId, userType: user.user_type}, userId, profileId)
 		if (!canScheduled) {
 			// pending
-			getHifiUserResponse.user_kyc.status = CustomerStatus.PENDING
+			getHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 			return {status: 200 , getHifiUserResponse}
 		}
         

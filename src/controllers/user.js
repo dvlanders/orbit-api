@@ -349,11 +349,13 @@ exports.createHifiUserAsync = async (req, res) => {
 		}
 
 		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
+		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
 		const canSchedule = await createUserAsyncCheck("createUser", { userId, userType: fields.userType }, userId, profileId)
 		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
+
 
 		return res.status(200).json(createHifiUserResponse)
 
@@ -477,20 +479,23 @@ exports.createDeveloperUser = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
-		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 		// update developer user id into profile
 		const { data, error } = await supabaseCall(() => supabase
-			.from("profiles")
-			.update({
-				developer_user_id: userId,
-				fee_collection_enabled: true
-			})
-			.eq("id", profileId)
+		.from("profiles")
+		.update({
+			developer_user_id: userId,
+			fee_collection_enabled: true
+		})
+		.eq("id", profileId)
 		)
-
+		
 		if (error) throw error
-
+		
 		await updateUserRecord(userId, { is_developer: true});
+		
+		// userObject
+		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
+		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
 		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)

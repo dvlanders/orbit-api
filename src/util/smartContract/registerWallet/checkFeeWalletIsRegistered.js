@@ -9,7 +9,8 @@ const abi = [
 exports.isFeeWalletRegistered = async(chain, walletAddress) => {
     const url = urlMap[chain]
     const provider = new JsonRpcProvider(url)
-    const paymentProcessorContractAddress = paymentProcessorContractMap["production"][chain]
+    const paymentProcessorContractAddress = paymentProcessorContractMap[process.env.NODE_ENV][chain]
+    if (!paymentProcessorContractAddress) return true
     const contract = new Contract(paymentProcessorContractAddress, abi, provider)
 
     const isRegistered = await contract.isFeeWalletRegistered(walletAddress)
