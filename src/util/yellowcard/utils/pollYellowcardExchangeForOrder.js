@@ -12,13 +12,6 @@ const { updateOfframpAndYellowcardRecords } = require('./updateOfframpAndYellowc
 const { currencyDecimal } = require("../../common/blockchain");
 const { toUnitsString } = require("../../../util/transfer/cryptoToCrypto/utils/toUnits");
 
-const yellowcardNetworkMap = {
-    POLYGON_AMOY: "POLYGON",
-    POLYGON_MAINNET: "POLYGON",
-    ETHEREUM_MAINNET: "ERC20",
-    ETHEREUM_TESTNET: "ERC20",
-}
-
 async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, bearerDid) {
 	const { TbdexHttpClient } = await import('@tbdex/http-client');
 	let orderClose;
@@ -62,7 +55,7 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 
                 const network = urlParams.get('network');
                 // occurs error if network doesn't match
-                if (network !== yellowcardNetworkMap[offrampTransactionRecord.chain]) {
+                if ((offrampTransactionRecord.chain.startsWith("POLYGON") && network !== "POLYGON") || (offrampTransactionRecord.chain.startsWith("ETHEREUM") && network !== "ERC20")) {
                     await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, "Network type doesn't match", orderInstructions);
                     const offrampTransactionRecordToUpdate = {
 						transaction_status: "NOT_INITIATED",
