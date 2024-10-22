@@ -35,10 +35,10 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
 
     const close = exchange.find(message => message.kind === 'close');
 
-    let closed_reason, hifiOfframpTransactionStatus;
+    let closedReason, hifiOfframpTransactionStatus;
     if (close) {
-        hifiOfframpTransactionStatus = close.data.success ? "COMPLETED" : "FAILED_FIAT_RETURNED";
-        closed_reason = close.data.reason;
+        closedReason = close.data.reason;
+        hifiOfframpTransactionStatus = closedReason === "complete" ? "COMPLETED" : "FAILED_FIAT_RETURNED";
     } else {
         const latestMessage = exchange[exchange.length - 1];
         if (latestMessage instanceof OrderStatus) {
@@ -54,7 +54,7 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
         .update({
             transaction_status: hifiOfframpTransactionStatus,
             updated_at: new Date().toISOString(),
-            failed_reason: hifiOfframpTransactionStatus === "FAILED_FIAT_RETURNED" ? undefined : closed_reason,
+            failed_reason: hifiOfframpTransactionStatus === "FAILED_FIAT_RETURNED" ? undefined : closedReason,
         })
         .eq('id', transaction.id)
         .select()
@@ -75,7 +75,7 @@ async function pollOfframpTransactionsYellowcardStatus() {
 		.from('offramp_transactions')
 		.update({ updated_at: new Date().toISOString() })
 		.eq("fiat_provider", "YELLOWCARD")
-		.eq("transaction_status", "COMPLETED_ONCHAIN")
+		.or("transaction_status.eq.COMPLETED_ONCHAIN, transaction_status.eq.IN_PROGRESS_FIAT")
 		.order('updated_at', { ascending: true })
 		.select('*')
 
