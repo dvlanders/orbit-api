@@ -485,7 +485,7 @@ exports.getAllAccounts = async (req, res) => {
 	const acceptedFields = {
 		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei_bitso", "transfers_bitso", "ach_cop_bitso"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
@@ -1175,7 +1175,7 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'firstName': "string",
 		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': "string"
+		'accountType': (value) => inStringEnum(value, ["us", "iban"])
 	};
 
 	// Execute fields validation

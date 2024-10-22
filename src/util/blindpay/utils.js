@@ -2,12 +2,17 @@ const { inStringEnum } = require("../common/filedValidationCheckFunctions");
 
 const BlindpayBankAccountType = {
   PIX : "pix",
-  ACH : "ach",
-  WIRE : "wire",
-  SPEI_BITSO: "spei_bitso",
-  TRANSFERS_BITSO: "transfers_bitso",
-  ACH_COP_BITSO: "ach_cop_bitso"
+  SPEI: "spei",
+  TRANSFERS: "transfers",
+  ACH_COP: "ach_cop"
 }
+
+const BlindpayBankAccountTypeRequestParamMapping = {
+  [BlindpayBankAccountType.PIX]: "pix",
+  [BlindpayBankAccountType.SPEI]: "spei_bitso",
+  [BlindpayBankAccountType.TRANSFERS]: "transfers_bitso",
+  [BlindpayBankAccountType.ACH_COP]: "ach_cop_bitso",
+};
 
 const lightKYC = {
   requiredFields: [
@@ -226,78 +231,20 @@ const pixAccountAcceptedFields = {
   pix_key: "string",
   currency: (value) => value === "brl",
 };
-const achAccountRequiredFields = [
-  "user_id",
-  "receiver_id",
-  "type",
-  "name",
-  "beneficiary_name",
-  "routing_number",
-  "account_number",
-  "account_type",
-  "account_class",
-  "currency"
-];
 
-const achAccountAcceptedFields = {
-  type: "string",
-  user_id: "string",
-  receiver_id: "string",
-  name: "string",
-  beneficiary_name: "string",
-  routing_number: "string",
-  account_number: "string",
-  account_type: "string",
-  account_class: "string",
-  currency: (value) => value === "brl",
-};
-
-const wireAccountRequiredFields = [
-  "user_id",
-  "receiver_id",
-  "type",
-  "name",
-  "beneficiary_name",
-  "routing_number",
-  "account_number",
-  "address_line_1",
-  "address_line_2",
-  "city",
-  "state_province_region",
-  "country",
-  "postal_code",
-  "currency"
-];
-
-const wireAccountAcceptedFields = {
-  type: "string",
-  user_id: "string",
-  receiver_id: "string",
-  name: "string",
-  beneficiary_name: "string",
-  routing_number: "string",
-  account_number: "string",
-  address_line_1: "string",
-  address_line_2: "string",
-  city: "string",
-  state_province_region: "string",
-  country: "string",
-  postal_code: "string",
-  currency: (value) => value === "brl",
-};
-
-const speiBitsoAccountRequiredFields = [
+const speiAccountRequiredFields = [
   "user_id",
   "receiver_id",
   "type",
   "name",
   "spei_protocol",
+  "spei_clabe",
   "spei_institution_code",
   "beneficiary_name",
   "currency"
 ];
 
-const speiBitsoAccountAcceptedFields = {
+const speiAccountAcceptedFields = {
   type: "string",
   user_id: "string",
   receiver_id: "string",
@@ -309,7 +256,7 @@ const speiBitsoAccountAcceptedFields = {
   currency: (value) => value === "mxn",
 };
 
-const transferBitsoAccountRequiredFields = [
+const transfersAccountRequiredFields = [
   "user_id",
   "receiver_id",
   "type",
@@ -320,7 +267,7 @@ const transferBitsoAccountRequiredFields = [
   "currency"
 ];
 
-const transferBitsoAccountAcceptedFields = {
+const transfersAccountAcceptedFields = {
   type: "string",
   user_id: "string",
   receiver_id: "string",
@@ -331,7 +278,7 @@ const transferBitsoAccountAcceptedFields = {
   currency: (value) => value === "ars",
 };
 
-const achCopBitsoAccountRequiredFields = [
+const achCopAccountRequiredFields = [
   "user_id",
   "receiver_id",
   "type",
@@ -347,7 +294,7 @@ const achCopBitsoAccountRequiredFields = [
   "currency"
 ];
 
-const achCopBitsoAccountAcceptedFields = {
+const achCopAccountAcceptedFields = {
   type: "string",
   user_id: "string",
   receiver_id: "string",
@@ -365,20 +312,16 @@ const achCopBitsoAccountAcceptedFields = {
 
 const bankAccountAcceptedFieldsMap = {
   pix: pixAccountAcceptedFields,
-  ach: achAccountAcceptedFields,
-  wire: wireAccountAcceptedFields,
-  spei_bitso: speiBitsoAccountAcceptedFields,
-  transfers_bitso: transferBitsoAccountAcceptedFields,
-  ach_cop_bitso: achCopBitsoAccountAcceptedFields,
+  spei: speiAccountAcceptedFields,
+  transfers: transfersAccountAcceptedFields,
+  ach_cop: achCopAccountAcceptedFields,
 };
 
 const bankAccountRequiredFieldsMap = {
   pix: pixAccountRequiredFields,
-  ach: achAccountRequiredFields,
-  wire: wireAccountRequiredFields,
-  spei_bitso: speiBitsoAccountRequiredFields,
-  transfers_bitso: transferBitsoAccountRequiredFields,
-  ach_cop_bitso: achCopBitsoAccountRequiredFields,
+  spei: speiAccountRequiredFields,
+  transfers: transfersAccountRequiredFields,
+  ach_cop: achCopAccountRequiredFields,
 };
 
 const bankAccountFieldsNameMap = {
@@ -387,10 +330,7 @@ const bankAccountFieldsNameMap = {
   name: "name",
   pix_key: "pix_key",
   beneficiary_name: "beneficiary_name",
-  routing_number: "routing_number",
-  account_number: "account_number",
   account_type: "account_type",
-  account_class: "account_class",
   address_line_1: "address_line_1",
   address_line_2: "address_line_2",
   city: "city",
@@ -421,5 +361,6 @@ module.exports = {
   bankAccountAcceptedFieldsMap,
   bankAccountRequiredFieldsMap,
   bankAccountFieldsNameMap,
-  BlindpayBankAccountType
+  BlindpayBankAccountType,
+  BlindpayBankAccountTypeRequestParamMapping
 };

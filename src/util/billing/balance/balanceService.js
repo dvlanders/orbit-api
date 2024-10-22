@@ -1,6 +1,7 @@
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { convertKeysToCamelCase } = require("../../utils/object");
+const { BalanceTopupStatus, validTransitions } = require("./utils");
 
 const getBalance = async (profileId) => {
 
@@ -82,11 +83,18 @@ const insertBalanceTopupRecord = async (record) => {
 }
 
 const updateBalanceTopupRecord = async (id, toUpdate) => {
+    const { status: newStatus } = toUpdate;
 
-    const { error } = await supabaseCall(() => supabase
+    let query = supabase
         .from("balance_topups")
         .update({updated_at: new Date(), ...toUpdate})
-        .eq("id", id));
+        .eq("id", id);
+
+    if (newStatus) {
+        query = query.in("status", validTransitions[newStatus]);
+    }
+
+    const { error } = await supabaseCall(() => query);
 
     if(error){
         throw error;

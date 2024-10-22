@@ -64,14 +64,13 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
-/account/wire/international/offramp:
+/account/wire/us/offramp:
   post:
     summary: Add USD Offramp Bank Account (Wire)
     tags:
       - Account
     parameters:
       - $ref: "#/components/parameters/UserIdParameter"
-      # - $ref: "#/components/parameters/AccountTypeParameter"
     requestBody:
       $ref: "#/components/requestBodies/UsdOfframpWireAccountBody"
     responses:

@@ -155,7 +155,7 @@ UsdOfframpWireUSAccount:
     - country
 UsdOfframpWireNonUSAccount:
   type: object
-  title: "USD Offramp Wire to Non-US Bank Account"
+  title: "USD Offramp Wire to IBAN Bank Account"
   properties:
     accountType:
       type: string
@@ -766,90 +766,13 @@ BrlOfframpPixAccount:
     - name
     - pix_key
     - currency
-BrlOfframpAchAccount:
+CopOfframpAchCopAccount:
   type: object
-  title: "BRL Offramp ACH Account"
+  title: "COP Offramp ACH_COP Account"
   properties:
     type:
       type: string
-      enum: [ach]
-    name:
-      type: string
-    beneficiary_name:
-      type: string
-    routing_number:
-      type: string
-    account_number:
-      type: string
-    account_type:
-      type: string
-    account_class:
-      type: string
-      enum: [individual, business]
-    currency:
-      type: string
-      enum: [brl]
-  required:
-    - type
-    - name
-    - beneficiary_name
-    - routing_number
-    - account_number
-    - account_type
-    - account_class
-    - currency
-BrlOfframpWireAccount:
-  type: object
-  title: "BRL Offramp WIRE Account"
-  properties:
-    type:
-      type: string
-      enum: [wire]
-    name:
-      type: string
-    beneficiary_name:
-      type: string
-    routing_number:
-      type: string
-    account_number:
-      type: string
-    address_line_1:
-      type: string
-    address_line_2:
-      type: string
-    city:
-      type: string
-    state_province_region:
-      type: string
-    country:
-      type: string
-      description: Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. "US".
-      enum: [US, BR, MX, CO, AR]
-    postal_code:
-      type: string
-    currency:
-      type: string
-      enum: [brl]
-  required:
-    - type
-    - name
-    - beneficiary_name
-    - routing_number
-    - account_number
-    - address_line_1
-    - address_line_2
-    - city
-    - state_province_region
-    - country
-    - postal_code
-    - currency
-CopOfframpAchCopBitsoAccount:
-  type: object
-  title: "COP Offramp ACH_COP_BITSO Account"
-  properties:
-    type:
-      type: string
-      enum: [ach_cop_bitso]
+      enum: [ach_cop]
     name:
       type: string
     account_type:
@@ -885,13 +808,13 @@ CopOfframpAchCopBitsoAccount:
     - ach_cop_bank_code
     - ach_cop_bank_account
     - currency
-ArsOfframpTransferBitsoAccount:
+ArsOfframpTransfersAccount:
   type: object
-  title: "ARS Offramp TRANSFERS_BITSO Account"
+  title: "ARS Offramp TRANSFERS Account"
   properties:
     type:
       type: string
-      enum: [transfers_bitso]
+      enum: [transfers]
     name:
       type: string
     transfers_type:
@@ -911,13 +834,13 @@ ArsOfframpTransferBitsoAccount:
     - transfers_account
     - beneficiary_name
     - currency
-MxnOfframpSpeiBitsoAccount:
+MxnOfframpSpeiAccount:
   type: object
-  title: "MXN Offramp SPEI_BITSO Account"
+  title: "MXN Offramp SPEI Account"
   properties:
     type:
       type: string
-      enum: [spei_bitso]
+      enum: [spei]
     name:
       type: string
     spei_protocol:
@@ -1117,7 +1040,7 @@ BrlOfframpPixAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
-CopOfframpAchCopBitsoAccountObject:
+CopOfframpAchCopAccountObject:
   type: object
   properties:
     status:
@@ -1135,7 +1058,7 @@ CopOfframpAchCopBitsoAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
-MxnOfframpSpeiBitsoAccountObject:
+MxnOfframpSpeiAccountObject:
   type: object
   properties:
     status:
@@ -1153,7 +1076,7 @@ MxnOfframpSpeiBitsoAccountObject:
     invalidFields: []
     message: "Account created successfully"
     id: "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
-ArsOfframpTransferBitsoAccountObject:
+ArsOfframpTransfersAccountObject:
   type: object
   properties:
     status:

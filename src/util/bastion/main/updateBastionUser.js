@@ -2,7 +2,7 @@ const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const createAndFundBastionUser = require("./createAndFundBastionUser");
-const getBastionUser = require("./getBastionUser");
+const {getBastionUser} = require("./getBastionUser");
 const submitBastionKyc = require("./submitBastionKyc");
 
 const UpdateBastionUserErrorType = {

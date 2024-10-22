@@ -54,11 +54,11 @@ const updateDeveloperUserWallet = async (userId, walletTypes=["FEE_COLLECTION", 
     try {
         // get user Ip address
         const { data: userKyc, error: userKycError } = await supabaseCall(() => supabase
-            .from('user_kyc')
-            .select('ip_address')
-            .eq('user_id', userId)
-                    .single()
-            )
+                .from('user_kyc')
+                .select('ip_address')
+                .eq('user_id', userId)
+                .single()
+        )
 
         if (userKycError) throw new Error(userKycError.message)
 

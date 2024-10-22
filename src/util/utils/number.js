@@ -10,6 +10,19 @@ function safeStringToFloat(str) {
     return floatVal
   }
 
+function safeSum(values) {
+  return values.reduce((sum, value) => {
+    const num = parseFloat(value); 
+    if (!isNaN(num)) {            
+      return sum + num;
+    }else{
+      throw new Error("Number string provided is invalid")
+    }
+    return sum;
+  }, 0);
+}
+
 module.exports = {
-    safeStringToFloat
+    safeStringToFloat,
+    safeSum
 }

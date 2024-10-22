@@ -2,7 +2,7 @@ IndividualUserKycOneCreate:
   type: object
   title: "Create Individual User (KYC Level 1)"
   properties:
-    kycLevel: 
+    kycLevel:
       type: number
       description: The KYC level of the user. Possible values are 1 and 2.
       enum: [1]
@@ -30,12 +30,11 @@ IndividualUserKycOneCreate:
     - legalFirstName
     - legalLastName
     - dateOfBirth
-    - ipAddress
 IndividualUserKycTwoCreate:
   type: object
   title: "Create Individual User (KYC Level 2)"
   properties:
-    kycLevel: 
+    kycLevel:
       type: number
       description: The KYC level of the user. Possible values are 1 and 2.
       enum: [2]
@@ -111,8 +110,7 @@ IndividualUserKycTwoCreate:
       type: string
       description: |
         URL of the file of the proof of residency.
-        Required for users based in the EU or withdrawing into EU bank accounts.
-        Required for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.
+        Utility bills and bank statements are recommended for proof of address.
 
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
@@ -137,11 +135,12 @@ IndividualUserKycTwoCreate:
     - stateProvinceRegion
     - signedAgreementId
     - ipAddress
+    - proofOfResidency
 BusinessUserKycOneCreate:
   type: object
   title: "Create Business User (KYC Level 1)"
   properties:
-    kycLevel: 
+    kycLevel:
       type: number
       description: The KYC level of the user. Possible values are 1 and 2.
       enum: [1]
@@ -171,7 +170,7 @@ BusinessUserKycTwoCreate:
   type: object
   title: "Create Business User (KYC Level 2)"
   properties:
-    kycLevel: 
+    kycLevel:
       type: number
       description: The KYC level of the user. Possible values are 1 and 2.
       enum: [2]
@@ -261,7 +260,7 @@ BusinessUserKycTwoCreate:
       description: |
         URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.
         Required for businesses registered or operating in the EEA (European Economic Area).
-        Required for businesses who require access to SEPA (Single Euro Payments Area).
+        Utility bills and bank statements are recommended for proof of address.
 
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
@@ -290,11 +289,12 @@ BusinessUserKycTwoCreate:
     - website
     - businessDescription
     - isDao
+    - proofOfResidency
 IndividualUserUpdate:
   type: object
   title: "Update Individual User"
   properties:
-    kycLevel: 
+    kycLevel:
       type: number
       description: |
         If provided, the KYC level of the user will be upgraded to the provided level and the user will be required to submit all the fields required for the new KYC level. 
@@ -371,7 +371,7 @@ IndividualUserUpdate:
       type: string
       description: |
         URL of the file of the proof of residency.
-        Required for users based in the EU or withdrawing into EU bank accounts.
+        Utility bills and bank statements are recommended for proof of address.
         Required for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.
 
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
@@ -383,7 +383,7 @@ BusinessUserUpdate:
   type: object
   title: "Update Business User"
   properties:
-    kycLevel: 
+    kycLevel:
       type: number
       description: |
         If provided, the KYC level of the user will be upgraded to the provided level and the user will be required to submit all the fields required for the new KYC level. 
@@ -474,7 +474,7 @@ BusinessUserUpdate:
       description: |
         URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.
         Required for businesses registered or operating in the EEA (European Economic Area).
-        Required for businesses who require access to SEPA (Single Euro Payments Area).
+        Utility bills and bank statements are recommended for proof of address.
 
         (See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)
 
@@ -760,6 +760,90 @@ UserObjectPending:
                         type: string
                 message:
                   type: string
+        brl:
+          type: object
+          properties:
+            pix:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        mxn:
+          type: object
+          properties:
+            spei:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        cop:
+          type: object
+          properties:
+            ach_cop:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        ars:
+          type: object
+          properties:
+            transfers:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
   example:
     user:
       id: "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa"
@@ -816,6 +900,34 @@ UserObjectPending:
             actions: []
             fieldsToResubmit: []
           message: "kyc aplication still under review"
+      brl:
+        pix:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      mxn:
+        spei:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      cop:
+        ach_cop:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      ars:
+        transfers:
+          status: "INACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: "ars TRANSFERS offRamp will be available in near future"
 UserObjectPending_dep:
   type: object
   properties:
@@ -1183,6 +1295,90 @@ UserObjectActive:
                         type: string
                 message:
                   type: string
+        brl:
+          type: object
+          properties:
+            pix:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        mxn:
+          type: object
+          properties:
+            spei:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        cop:
+          type: object
+          properties:
+            ach_cop:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
+        ars:
+          type: object
+          properties:
+            transfers:
+              type: object
+              properties:
+                status:
+                  type: string
+                actionNeeded:
+                  type: object
+                  properties:
+                    actions:
+                      type: array
+                      items:
+                        type: string
+                    fieldsToResubmit:
+                      type: array
+                      items:
+                        type: string
+                message:
+                  type: string
   example:
     user:
       id: "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa"
@@ -1239,6 +1435,34 @@ UserObjectActive:
             actions: []
             fieldsToResubmit: []
           message: ""
+      brl:
+        pix:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      mxn:
+        spei:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      cop:
+        ach_cop:
+          status: "ACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: ""
+      ars:
+        transfers:
+          status: "INACTIVE"
+          actionNeeded:
+            actions: []
+            fieldsToResubmit: []
+          message: "ars TRANSFERS offRamp will be available in near future"
 UserObjectActive_dep:
   type: object
   properties:

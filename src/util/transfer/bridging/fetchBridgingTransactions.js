@@ -32,6 +32,7 @@ const fetchBridgingTransactions = async (recordId, profileId) => {
         transferType: transferType.BRIDGE_ASSET,
         transferDetails: {
             id: data.id,
+            requestId: data.request_id,
             sourceUserId: data.source_user_id,
             destinationUserId: data.destination_user_id,
             sourceChain: data.source_chain,
