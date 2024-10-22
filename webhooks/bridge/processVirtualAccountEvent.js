@@ -12,6 +12,7 @@ const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
 const { isValidBridgeStateTransition } = require("../../src/util/bridge/utils");
+const { isUUID } = require("../../src/util/common/fieldsValidation");
 const createJob = require("../../asyncJobs/createJob");
 
 // This will process the onramp transaction that has a reference_id, but no deposit id.
@@ -151,8 +152,21 @@ const processVirtualAccountEvent = async (event) => {
 
       const referenceId = description?.split(" ")?.slice(-5)?.join("-")?.toLowerCase();
 
-      if(referenceId){
+      if(isUUID(referenceId)){
 
+        const { data: existingRecord, error: existingRecordError } = await supabaseCall(() => supabase
+          .from("onramp_transactions")
+          .select("id, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+          .eq("id", referenceId)
+          .maybeSingle());
+
+        if(existingRecordError) throw existingRecordError;
+
+        if(existingRecord){
+          ({ originalOnrampRecord, updatedOnrampRecord } = await processExistingOnrampTransaction(existingRecord, event));
+        }
+  
+      }else if(referenceId){
         // Check if we have existing onramp records with this referenceId, either fully match or partially match
         const { data: matchingRecords, error: matchingRecordsError } = await supabaseCall(() => supabase
           .from("onramp_transactions")
