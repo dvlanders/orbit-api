@@ -20,12 +20,14 @@ const { v4 } = require("uuid")
 const { getUserWallet } = require("../../../user/getUserWallet")
 const { updateFeeRecord } = require("../../fee/updateFeeRecord")
 const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils")
+const { safeSum } = require("../../../utils/number")
 
 const insertRecord = async(fields) => {
     // insert record in provider table
     const toInsert = {user_id: fields.senderUserId, request_id: v4()};
     const walletTxRecord = await insertWalletTransactionRecord(fields.senderWalletProvider, toInsert);
     const walletColName = getWalletColumnNameFromProvider(fields.senderWalletProvider);
+    const amount = parseFloat(fields.amount)
     fields[walletColName] = walletTxRecord.id;
     // insert record
     const requestRecord = await insertRequestRecord(fields)
@@ -43,7 +45,7 @@ const insertRecord = async(fields) => {
         const record = await updateRequestRecord(requestRecord.id, toUpdate)
         return {validTransfer: false, record}
     }
-    const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, fields.amount)
+    const {feeType, feePercent, feeAmount} = getFeeConfig(fields.feeType, fields.feeValue, amount)
 
     // create new fee record
     const info = {
@@ -54,7 +56,7 @@ const insertRecord = async(fields) => {
     }
     const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, null, {[walletColName]: walletTxRecord.id})
     // update into crypto to crypto table
-    const amountIncludeDeveloperFee = parseFloat((fields.amount + feeAmount).toFixed(2))
+    const amountIncludeDeveloperFee = parseFloat(safeSum([amount, feeAmount]).toFixed(2))
     const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress, amount_include_developer_fee: amountIncludeDeveloperFee})
     return {validTransfer: true, record}
 }
