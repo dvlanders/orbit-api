@@ -10,8 +10,7 @@ const { updateRequestRecord } = require("../../transfer/cryptoToBankAccount/util
 const { erc20Transfer } = require("../../bastion/utils/erc20FunctionMap");
 const { updateOfframpAndYellowcardRecords } = require('./updateOfframpAndYellowcardRecords');
 const { currencyDecimal } = require("../../common/blockchain");
-const { toUnitsString } = require("../../../util/transfer/cryptoToCrypto/utils/toUnits")
-
+const { toUnitsString } = require("../../../util/transfer/cryptoToCrypto/utils/toUnits");
 
 async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, bearerDid) {
 	const { TbdexHttpClient } = await import('@tbdex/http-client');
@@ -53,7 +52,25 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 				const requestId = uuidv4();
 				const payinLink = orderInstructions.data.payin.link;
 				const urlParams = new URLSearchParams(new URL(payinLink).search);
-				const yellowcardLiquidationWalletAddress = urlParams.get('walletAddress');
+
+                const network = urlParams.get('network');
+                // occurs error if network doesn't match
+                if ((offrampTransactionRecord.chain.startsWith("POLYGON") && network !== "POLYGON") || (offrampTransactionRecord.chain.startsWith("ETHEREUM") && network !== "ERC20")) {
+                    await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, "Network type doesn't match", orderInstructions);
+                    const offrampTransactionRecordToUpdate = {
+						transaction_status: "NOT_INITIATED",
+						failed_reason: "Network type doesn't match",
+					}
+
+					const yellowcardTransactionRecordToUpdate = {
+						order_instructions_message: orderInstructions,
+					}
+
+					const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await updateOfframpAndYellowcardRecords(offrampTransactionRecord.id, offrampTransactionRecord.yellowcard_transaction_id, offrampTransactionRecordToUpdate, yellowcardTransactionRecordToUpdate)
+
+					return { updatedOfframpTransactionRecord: updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord: updatedYellowcardTransactionRecord };
+                }
+				const yellowcardLiquidationWalletAddress = urlParams.get('walletAddress') 
 
 				// prepare the "amount" for the bastion submit user action call format
 				const decimals = currencyDecimal[offrampTransactionRecord.source_currency]
