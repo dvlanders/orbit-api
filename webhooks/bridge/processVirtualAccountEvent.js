@@ -83,7 +83,7 @@ const processManualOnrampTransaction = async (event) => {
 
   const toInsertBridgeRecord = {
     user_id: userId,
-    request_id: v4(),
+    request_id: uuidv4(),
     virtual_account_id: virtualAccount.id,
     bridge_virtual_account_id: virtual_account_id,
     last_bridge_virtual_account_event_id: id,
@@ -219,8 +219,8 @@ const processVirtualAccountEvent = async (event) => {
               {
                   prevTransactionStatus: originalOnrampRecord?.status,
                   updatedTransactionStatus: onrampRecord.status,
-                  checkbookStatus: checkbookTransactionInfo.checkbook_status,
-                  bridgeStatus: bridgeTransactionInfo.bridge_status,
+                  checkbookStatus: checkbookTransactionInfo?.checkbook_status,
+                  bridgeStatus: bridgeTransactionInfo?.bridge_status,
                   failedReason: onrampRecord.failed_reason,
               }
             );
