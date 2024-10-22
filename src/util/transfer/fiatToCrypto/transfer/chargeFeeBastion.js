@@ -14,7 +14,7 @@ const chargedStatusMap = {
     PENDING: "PENDING"
 }
 
-exports.chargeFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, fields) => {
+exports.chargeFeeBastion = async(requestRecord, feeRecord, paymentProcessorContractAddress, destinationWalletAddress, transferUnitAmount) => {
     try{    
         const feeUnitAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
         const tokenContractAddress = currencyContractAddress[feeRecord.fee_collection_chain][feeRecord.fee_collection_currency]
@@ -27,9 +27,9 @@ exports.chargeFeeBastion = async(requestRecord, feeRecord, paymentProcessorContr
             chain: feeRecord.fee_collection_chain,
             actionParams: [
                 {name: "token", value: tokenContractAddress},
-                {name: "to", value: fields.destinationWalletAddress},
+                {name: "to", value: destinationWalletAddress},
                 {name: "feeWallet", value: feeRecord.fee_collection_wallet_address},
-                {name: "amount", value: fields.transferAmount},
+                {name: "amount", value: transferUnitAmount},
                 {name: "fee", value: feeUnitAmount},
             ]
         };

@@ -2,7 +2,7 @@ const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
 const { supabaseCall } = require("../src/util/supabaseWithRetry");
 
-const insertJobHistory = async(job, config, userId, profileId, success, jobError) => {
+const insertJobHistory = async(job, config, userId, profileId, success, jobError, isRetry = false, retryReason = "") => {
     try{
         // insert job
         const {data, error} = await supabaseCall(() => supabase
@@ -14,6 +14,8 @@ const insertJobHistory = async(job, config, userId, profileId, success, jobError
                 profile_id: profileId,
                 success,
                 error: jobError,
+                is_retry: isRetry,
+                retry_reason: retryReason
             }))
         
         if (error) throw error

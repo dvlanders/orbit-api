@@ -4,7 +4,7 @@ const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const { isValidAmount } = require("../../../common/transferValidation")
 const createLog = require("../../../logger/supabaseLogger")
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion")
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken")
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
 const { CryptoToCryptoWithFeeBastion } = require("../../fee/CryptoToCryptoWithFeeBastion")
 const { getFeeConfig } = require("../../fee/utils")
@@ -23,10 +23,13 @@ const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
 const notifyCryptoToCryptoTransfer = require("../../../../../webhooks/transfer/notifyCryptoToCryptoTransfer")
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling")
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck")
+const { isBastionKycPassed } = require("../../../common/privilegeCheck")
+const { v4 } = require("uuid")
 
 
 const insertRecord = async(fields) => {
     // insert record
+    fields.bastionRequestId = v4()
     const requestRecord = await insertRequestRecord(fields)
     if (!fields.feeType || parseFloat(fields.feeValue) <= 0) return {validTransfer: true, record: requestRecord}
 
@@ -51,14 +54,18 @@ const insertRecord = async(fields) => {
         currency: fields.currency,
         chargedWalletAddress: fields.senderAddress
     }
-    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, "BASTION", requestRecord.bastion_request_id)
+    const feeRecord = await createNewFeeRecord(requestRecord.id, feeType, feePercent, feeAmount, fields.profileId, info, transferType.CRYPTO_TO_CRYPTO, fields.senderWalletProvider, requestRecord.bastion_request_id)
     // update into crypto to crypto table
     const record = await updateRequestRecord(requestRecord.id, {developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress})
     return {validTransfer: true, record}
 }
 
 const createBastionCryptoTransfer = async(fields) => {
-    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionuserId, profileId, feeTransactionId } = fields
+    const { senderUserId, amount, requestId, recipientUserId, recipientAddress, chain, currency, feeType, feeValue, senderWalletType, recipientWalletType, senderAddress, senderBastionUserId, recipientBastionUserId, profileId, feeTransactionId } = fields
+    // check privilege
+    if (!(await isBastionKycPassed(senderBastionUserId))) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Sender wallet is not kyc passed")
+    if (senderBastionUserId && !(await isBastionKycPassed(recipientBastionUserId))) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Recipient wallet is not kyc passed")
+    // check amount
     if (!isValidAmount(amount, 0.01)) throw new CreateCryptoToCryptoTransferError(CreateCryptoToCryptoTransferErrorType.CLIENT_ERROR, "Transfer amount must be greater than or equal to 0.01.")
     // convert to actual crypto amount
     const decimal = currencyDecimal[currency]
@@ -66,7 +73,6 @@ const createBastionCryptoTransfer = async(fields) => {
     fields.unitsAmount = unitsAmount
     const contractAddress = currencyContractAddress[chain][currency]
     fields.contractAddress = contractAddress
-    fields.provider = "BASTION"
     // insert record
     let {validTransfer, record} = await insertRecord(fields)
     const receipt = await fetchCryptoToCryptoTransferRecord(record.id, profileId)
@@ -82,7 +88,8 @@ const createBastionCryptoTransfer = async(fields) => {
         return await fetchCryptoToCryptoTransferRecord(record.id, profileId)
     }
 
-    if(!await checkBalanceForTransactionAmount(senderBastionUserId, amount, chain, currency)){
+    // check if the user has enough balance for the transaction amount
+    if(!await checkBalanceForTransactionAmount(senderUserId, amount, chain, currency, senderWalletType)){
         const toUpdate = {
             status: "NOT_INITIATED",
             failed_reason: "Transfer amount exceeds wallet balance"
@@ -193,6 +200,4 @@ const executeAsyncBastionCryptoTransfer = async(config) => {
 module.exports = {
     CreateCryptoToCryptoTransferError,
     CreateCryptoToCryptoTransferErrorType,
-    createBastionCryptoTransfer,
-    executeAsyncBastionCryptoTransfer
 }

@@ -48,6 +48,7 @@ const { transferType } = require("../util/transfer/utils/transfer");
 const { createUsdcBridgingRequest } = require("../util/transfer/bridging/createUsdcBridingRequest");
 const { checkIsBridgingRequestIdAlreadyUsed } = require("../util/transfer/bridging/fetchRequestInformation");
 const fetchBridgingTransactions = require("../util/transfer/bridging/fetchBridgingTransactions");
+const { getUserWallet } = require("../util/user/getUserWallet");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -90,27 +91,24 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_CRYPTO, status: "CREATED" });
 
 		// fetch sender wallet address information
-		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-		if (senderWalletType && !allowedWalletTypes.includes(senderWalletType)) return res.status(400).json({ error: `wallet type ${senderWalletType} is not supported` })
 		const _senderWalletType = senderWalletType || "INDIVIDUAL"
-		const { walletAddress: senderAddress, bastionUserId: senderBastionUserId } = await getBastionWallet(senderUserId, chain, _senderWalletType)
-		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+		const { address: senderAddress, bastionUserId: senderBastionUserId, walletProvider: senderWalletProvider, circleWalletId: senderCircleWalletId } = await getUserWallet(senderUserId, chain, _senderWalletType)
+		if (!senderAddress) return res.status(400).json({ error: `Sender is not allowed to trasnfer crypto (user wallet record not found)` })
 		fields.senderAddress = senderAddress
 		fields.senderBastionUserId = senderBastionUserId
 		fields.feeTransactionId = feeTransaction.id
-		// check privilege
-		if (!(await isBastionKycPassed(senderBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
-
+		fields.senderWalletProvider = senderWalletProvider
+		fields.senderCircleWalletId = senderCircleWalletId
+		fields.senderWalletType = _senderWalletType
 		// check recipient wallet address if using recipientUserId
 		if (recipientUserId) {
-			if (recipientWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-			if (recipientWalletType && !allowedWalletTypes.includes(recipientWalletType)) return res.status(400).json({ error: `wallet type ${recipientWalletType} is not supported` })
 			const _recipientWalletType = recipientWalletType || "INDIVIDUAL"
-			const { walletAddress: recipientAddress, bastionUserId: recipientBastionUserId } = await getBastionWallet(recipientUserId, chain, _recipientWalletType)
-			if (!recipientAddress || !recipientBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+			const { address: recipientAddress, bastionUserId: recipientBastionUserId, walletProvider: recipientWalletProvider } = await getUserWallet(recipientUserId, chain, _recipientWalletType)
+			if (!recipientAddress) return res.status(400).json({ error: `Recipient is not allowed to trasnfer crypto (user wallet record not found)` })
 			fields.recipientAddress = recipientAddress
 			fields.recipientBastionUserId = recipientBastionUserId
-			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
+			fields.recipientWalletProvider = recipientWalletProvider
+			fields.recipientWalletType = _recipientWalletType
 		}
 
 
@@ -120,7 +118,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// get transfer function
-		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const {transferFunc} = cryptoToCryptoSupportedFunctions[chain][currency]
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported transfer` })
 		// transfer
 		const receipt = await transferFunc(fields)
 
@@ -224,7 +223,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"paymentRail": "string",
 			"description": "string",
 			"purposeOfPayment": "string",
-			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
+			"sourceWalletType": (value) => inStringEnum(value, allowedWalletTypes),
 			"sameDayAch": "boolean",
 			"achReference": "string",
 			"sepaReference": "string",
@@ -245,8 +244,6 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_FIAT, status: "CREATED" });
 
 		// FIX ME SHOULD put it in the field validation 
-		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
-		if (receivedAmount && !isNumberOrNumericString(receivedAmount)) return res.status(400).json({ error: "Invalid receivedAmount" })
 		if (amount && !cryptoToFiatAmountCheck(amount, sourceCurrency, chain)) return res.status(400).json({ error: "Invalid amount for sourceCurrency" })
 
 		// check if fee config is correct
@@ -275,17 +272,16 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 		// get user wallet
 		// fetch sender wallet address information
-		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-		if (sourceWalletType && !allowedWalletTypes.includes(sourceWalletType)) return res.status(400).json({ error: `wallet type ${sourceWalletType} is not supported` })
 		const _sourceWalletType = sourceWalletType || "INDIVIDUAL"
-		const { walletAddress: sourceWalletAddress, bastionUserId: sourceBastionUserId } = await getBastionWallet(sourceUserId, chain, _sourceWalletType)
-		if (!sourceWalletAddress || !sourceBastionUserId) {
-			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
-		}
+		const { address: sourceWalletAddress, bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, chain, _sourceWalletType)
+		if (!sourceWalletAddress) return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
 
-		if (!(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		if(sourceWalletProvider === "CIRCLE" && accountInfo.provider === "REAP") return res.status(400).json({ error: `User wallet type if not supported for the offramp rail` });
+
+		// sandbox transfer
 		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && sourceCurrency == "usdHifi") {
-			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, feeTransactionId: feeTransaction.id })
+			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceCircleWalletId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, feeTransactionId: feeTransaction.id, sourceWalletProvider, newRecord, accountInfo })
 			if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 			const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
 			return res.status(200).json(receipt);
@@ -297,10 +293,10 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		const { transferFunc, validationFunc } = funcs
 		if (!transferFunc || !validationFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
-		const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch });
-		if (!validationRes.valid) return res.status(400).json({ error: `fields provided are invalid`, invalidFieldsAndMessages: validationRes.invalidFieldsAndMessages })
-
-		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, accountInfo, feeTransactionId: feeTransaction.id })
+        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch, wireMessage });
+        if (!validationRes.valid) return res.status(400).json({ error: `fields provided are invalid`, invalidFieldsAndMessages: validationRes.invalidFieldsAndMessages })
+        
+        const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, accountInfo, feeTransactionId: feeTransaction.id, sourceWalletProvider, newRecord })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 		const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
 
@@ -1422,20 +1418,20 @@ exports.createBridgingRequest = async (req, res) => {
 		if (!destinationWalletType) fields.destinationWalletType = "INDIVIDUAL"
 
 		// check if source wallet is kyc passed
-		const { bastionUserId: sourceBastionUserId } = await getBastionWallet(sourceUserId, sourceChain, fields.sourceWalletType)
-		if (!(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		const {bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
+		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `Source user is not allowed to transfer crypto (user status invalid)` })
 
 		// check if destination wallet is kyc passed
-		const { bastionUserId: destinationBastionUserId } = await getBastionWallet(destinationUserId, destinationChain, fields.destinationWalletType)
-		if (!(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `User is not allowed to receive crypto (user status invalid)` })
+		const {bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider, circleWalletId: destinationCircleWalletId } = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
+		if (destinationBastionUserId && !(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `Destination user is not allowed to receive crypto (user status invalid)` })
 
 		// check if requestId is already used
-		const { isAlreadyUsed } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
+		const { isAlreadyUsed, newRecord } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
 
 		// TODO: create function map for different currency
 		// right now only usdc bridging is supported
-		const result = await createUsdcBridgingRequest(fields);
+		const result = await createUsdcBridgingRequest({...fields, newRecord});
 		return res.status(200).json(result);
 	} catch (error) {
 		await createLog("transfer/createBridgingRequest", sourceUserId, error.message, error, profileId, res)

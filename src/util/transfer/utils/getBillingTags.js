@@ -32,13 +32,13 @@ const BillingTagsForOfframp = {
                 failed: [],
             }
         },
-        spei_bitso:{
+        spei:{
             mxn:{
                 success: ["base"],
                 failed: [],
             },
         },
-        ach_cop_bitso:{
+        ach_cop:{
             cop:{
                 success: ["base"],
                 failed: [],

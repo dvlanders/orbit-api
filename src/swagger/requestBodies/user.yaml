@@ -4,8 +4,10 @@ UserCreateBody:
     application/json:
       schema:
         oneOf:
-          - $ref: '#/components/schemas/IndividualUserCreate'
-          - $ref: '#/components/schemas/BusinessUserCreate'
+          - $ref: '#/components/schemas/IndividualUserKycOneCreate'
+          - $ref: '#/components/schemas/IndividualUserKycTwoCreate'
+          - $ref: '#/components/schemas/BusinessUserKycOneCreate'
+          - $ref: '#/components/schemas/BusinessUserKycTwoCreate'
 UserUpdateBody:
   required: true
   content:

@@ -32,14 +32,17 @@ const updateStatus = async (receiver) => {
 
     const kyc_status = responseBody.kyc_status;
     if (receiver.kyc_status != kyc_status) {
+      const toUpdate = {
+        kyc_status: kyc_status,
+        kyc_failed_reasons: responseBody.kyc_warnings ? responseBody.kyc_warnings : null,
+        blindpay_response: responseBody,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error: updateError } = await supabaseCall(() =>
         supabase
           .from("blindpay_receivers_kyc")
-          .update({
-            kyc_status: kyc_status,
-            blindpay_response: responseBody,
-            updated_at: new Date().toISOString(),
-          })
+          .update(toUpdate)
           .eq("id", receiver.id)
       );
 

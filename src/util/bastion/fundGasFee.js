@@ -5,11 +5,19 @@ const { Chain } = require('../common/blockchain');
 const createLog = require('../logger/supabaseLogger');
 const { getBastionWallet } = require('./utils/getBastionWallet');
 const { getDeveloperUserId } = require('../user/getDeveloperUser');
+const { getUserWallet } = require('../user/getUserWallet');
+const { getUserBalanceBastion } = require('./main/getWalletBalance');
+const { sendSlackGasStationWalletBalanceAlert } = require('../logger/slackLogger');		
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 const HIFIgasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with ETH to serve as gas station wallet
 const HIFIgasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
+
+const gasStationNotificationThreshold = {
+	"ETHEREUM_MAINNET": 0.1,
+	"POLYGON_MAINNET": 1
+}
 
 const currencySymbolMap = {
 	"ETHEREUM_MAINNET": "ETH",
@@ -20,7 +28,7 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 	let shouldReschedule = true
 	try {
 		// get user wallet
-		const {walletAddress} = await getBastionWallet(userId, chain, type)
+		const {address: walletAddress} = await getUserWallet(userId, chain, type)
 		if (!walletAddress) throw new Error(`No user wallet found`)
 		
 		const currencySymbol = currencySymbolMap[chain]
@@ -36,10 +44,12 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 			// get developer userId
 			const developerUserId = await getDeveloperUserId(profileId)
 			if (!developerUserId) throw new Error(`No developer user found for profile ${profileId}`)
-			const walletInfo = await getBastionWallet(developerUserId, chain, "GAS_STATION")
-			if (!walletInfo.bastionUserId || !walletInfo.walletAddress) throw new Error(`Gastion wallet not created for profile ${profileId}`) 
-			gasStation = walletInfo.bastionUserId
-			gasStationWalletAddress = walletInfo.walletAddress
+			const {bastionUserId, address, walletProvider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
+			// FIX ME
+			if (walletProvider !== "BASTION") throw new Error(`Gas station wallet only supported for provider BASTION`) 
+			if (!bastionUserId || !address) throw new Error(`Gas station wallet not created for profile ${profileId}`) 
+			gasStation = bastionUserId
+			gasStationWalletAddress = address
 		}
 			
 		const requestId = uuidv4();
@@ -88,6 +98,13 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 		if (gasError) {
 			console.error("Error inserting gas transaction into database:", gasError);
 			throw gasError;
+		}
+
+		const gasStationWalletBalance = await getUserBalanceBastion(gasStation, chain, "gas");
+		const gasStationWalletThreshold = gasStationNotificationThreshold[chain];
+		const gasStationBalance = parseFloat(gasStationWalletBalance.displayBalance);
+		if(gasStationBalance < gasStationWalletThreshold) {
+			await sendSlackGasStationWalletBalanceAlert(profileId, userId, gasStationWalletAddress, chain, currencySymbol, gasStationBalance);
 		}
 
 		return {success: true};
