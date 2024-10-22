@@ -21,7 +21,6 @@ const processExistingOnrampTransaction = async (existingRecord, event) => {
 
   const currentBridgeStatus = existingRecord.bridge_transaction_info?.bridge_status;
   if(!isValidBridgeStateTransition(currentBridgeStatus, type)){
-    console.log("Process out of order events, so nothing to do here");
     return { originalOnrampRecord: existingRecord, updatedOnrampRecord: null };
   }
   

@@ -43,7 +43,6 @@ const processTransferEvent = async (event) => {
 
     // check whether the state transition is valid since we can process webhook events out of order
     if(!isValidBridgeStateTransition(offrampRecord.bridge_transaction_info?.bridge_status, state)){
-      console.log("Process out of order events, so nothing to do here");
       return;
     }
 
