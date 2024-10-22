@@ -28,6 +28,7 @@ const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/bal
 const { getUserWallet } = require("../../../user/getUserWallet");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
 const { reapApproveFundsScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/reap/scheduleCheck");
+const { safeSum } = require("../../../utils/number");
 
 const initTransferData = async (config) => {
 	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, receivedAmount, description, accountInfo, feeTransactionId, sourceWalletProvider, newRecord } = config
@@ -305,7 +306,7 @@ const createReapCryptoToFiatTransfer = async (config) => {
         toUpdateOfframpTransactionRecord.conversion_rate = conversionRate
         toUpdateOfframpTransactionRecord.provider_fee = reapQuoteResponseBody.feeInfo.totalFee
         toUpdateOfframpTransactionRecord.amount = reapQuoteResponseBody.paymentInfo.senderAmount
-		toUpdateOfframpTransactionRecord.amount_include_developer_fee = parseFloat((reapQuoteResponseBody.paymentInfo.senderAmount + developerFeeAmount).toFixed(2))
+		toUpdateOfframpTransactionRecord.amount_include_developer_fee = parseFloat(safeSum([reapQuoteResponseBody.paymentInfo.senderAmount, developerFeeAmount]).toFixed(2))
         toUpdateOfframpTransactionRecord.destination_currency_amount = reapQuoteResponseBody.paymentInfo.receivingAmount
 		toUpdateOfframpTransactionRecord.transaction_status = "OPEN_QUOTE"
     }
