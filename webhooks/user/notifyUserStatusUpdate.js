@@ -1,4 +1,4 @@
-const getBastionUser = require("../../src/util/bastion/main/getBastionUser");
+
 const getBridgeCustomer = require("../../src/util/bridge/endpoint/getBridgeCustomer");
 const getCheckbookUser = require("../../src/util/checkbook/endpoint/getCheckbookUser");
 const createLog = require("../../src/util/logger/supabaseLogger");

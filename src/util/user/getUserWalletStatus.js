@@ -1,4 +1,4 @@
-const getBastionUser = require("../bastion/main/getBastionUser")
+const {getBastionUser, getBastionUserWithWalletType} = require("../bastion/main/getBastionUser")
 const { getAllUserWallets, getAllUserWalletsWithProvider } = require("../bastion/utils/getAllUserWallets")
 const supabase = require("../supabaseClient")
 const { supabaseCall } = require("../supabaseWithRetry")
@@ -46,7 +46,7 @@ const getUserWalletStatus = async (userId, walletType="INDIVIDUAL") => {
     }
     else{
         // get bastion wallet status
-        const bastionWalletStatus = await getBastionUser(userId)
+        const bastionWalletStatus = await getBastionUserWithWalletType(userId, walletType)
         return {...bastionWalletStatus, walletProvider: "BASTION"}
     }
 }

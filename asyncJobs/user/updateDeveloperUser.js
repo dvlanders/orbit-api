@@ -14,7 +14,7 @@ const { updateDeveloperUserWallet } = require("../../src/util/user/updateUserWal
 const { JobError, JobErrorType } = require("../error");
 
 const chainToRegister = [
-    Chain.POLYGON_MAINNET
+    Chain.POLYGON_MAINNET,
 ]
 
 const updateDeveloperUserAsyncCheck = async(job, config, userId, profileId) => {
@@ -50,8 +50,8 @@ const updateDeveloperUserAsync = async(config) => {
         // register fee wallet on payment processor contract
         await Promise.all(chainToRegister.map(async(chain) => {
             const {address} = await getUserWallet(userId, chain, "FEE_COLLECTION")
+            if (!address) return
             if (await isFeeWalletRegistered(chain, address)) return
-
             // register the fee wallet
             await regsiterFeeWallet(userId, walletAddress, chain)
         }))

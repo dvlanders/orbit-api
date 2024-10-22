@@ -11,7 +11,6 @@ const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckb
 const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided, informationUploadForUpdateUser, informationUploadForCreateUser, ipCheck } = require("../util/user/createUser");
 const { InformationUploadError } = require('../util/user/errors');
 const { uploadFileFromUrl, fileUploadErrorType } = require('../util/supabase/fileUpload');
-const getBastionUser = require('../util/bastion/main/getBastionUser');
 const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
 const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID, fieldsValidation } = require('../util/common/fieldsValidation');
@@ -350,11 +349,13 @@ exports.createHifiUserAsync = async (req, res) => {
 		}
 
 		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
+		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
 		const canSchedule = await createUserAsyncCheck("createUser", { userId, userType: fields.userType }, userId, profileId)
 		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
+
 
 		return res.status(200).json(createHifiUserResponse)
 
@@ -478,20 +479,23 @@ exports.createDeveloperUser = async (req, res) => {
 			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
 		}
 
-		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 		// update developer user id into profile
 		const { data, error } = await supabaseCall(() => supabase
-			.from("profiles")
-			.update({
-				developer_user_id: userId,
-				fee_collection_enabled: true
-			})
-			.eq("id", profileId)
+		.from("profiles")
+		.update({
+			developer_user_id: userId,
+			fee_collection_enabled: true
+		})
+		.eq("id", profileId)
 		)
-
+		
 		if (error) throw error
-
+		
 		await updateUserRecord(userId, { is_developer: true});
+		
+		// userObject
+		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
+		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
 		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
@@ -528,65 +532,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use GET user" })
 		// check if the developeruserCreation is in the job queue, if yes return pending response
-		const canScheduled = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: user.userType }, userId, profileId)
-		let status
-		let basicKycStatus
-		if (!canScheduled) {
-			status = "PENDING"
-		} else {
-			// get bridge kyc status
-			// check if the application is submitted
-			const { data: bridgeCustomer, error: bridgeCustomerError } = await supabaseCall(() => supabase
-				.from('bridge_customers')
-				.select('*')
-				.eq('user_id', userId)
-				.maybeSingle()
-			)
-			if (bridgeCustomerError) throw bridgeCustomerError
-			if (!bridgeCustomer) return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-			const bridgeKycPassed = bridgeCustomer.status == "active"
-
-			if (bridgeCustomer.status == "rejected") {
-				basicKycStatus = await getBridgeCustomer(userId, user.kyc_level)
-			}
-
-			// get user wallet provider using POLYGON_AMOY or POLYGON _MAINNET
-			const defaultChain = process.env.NODE_ENV === "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
-			const {walletProvider} = await getUserWallet(userId, defaultChain, "FEE_COLLECTION")
-			if (!walletProvider) return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-
-			// get wallet kyc status
-			let walletKycPassed = false
-			if (walletProvider === "BASTION") {
-				// get bastion kyc status
-				let { data: bastionUser, error: bastionUserError } = await supabaseCall(() => supabase
-				.from('bastion_users')
-				.select('kyc_passed, jurisdiction_check_passed, kyc_level')
-				.eq("bastion_user_id", `${userId}-FEE_COLLECTION`)
-				.maybeSingle())
-
-				if (bastionUserError) throw bastionUserError
-				if (!bastionUser) return res.status(200).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-				walletKycPassed = bastionUser.kyc_passed && bastionUser.jurisdiction_check_passed	
-			} else if (walletProvider === "CIRCLE") {
-				// get circle kyc status, should always be true
-				walletKycPassed = true
-			} else {
-				// unknown wallet provider
-				return res.status(500).json({ status: "INACTIVE", message: "Please contact HIFI for more information" })
-			}
-
-			// get status
-			if (bridgeKycPassed && walletKycPassed) {
-				status = "ACTIVE"
-			} else if (!walletKycPassed) {
-				status = "INACTIVE"
-			} else if (bridgeCustomer.status == "not_started") {
-				status = "PENDING"
-			} else {
-				status = "INACTIVE"
-			}
-		}
+		const {status: userStatus, getHifiUserResponse} = await getRawUserObject(userId, profileId, true)
 
 		// get user kyc_information
 		const { data: kycInformation, error: kycInformationError } = await supabase
@@ -606,6 +552,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 			legalLastName: kycInformation.legal_last_name,
 			phone: kycInformation.compliance_phone,
 			email: kycInformation.compliance_email,
+			...getHifiUserResponse,
 			wallet: {
 				FEE_COLLECTION: {
 					POLYGON_MAINNET: feeCollectionWalletAddress
@@ -616,10 +563,10 @@ exports.getDeveloperUserStatus = async (req, res) => {
 				GAS_STATION: gasStationWalletAddress ? {
 					ETHEREUM_MAINNET: gasStationWalletAddress
 				} : null
-			}
+			},
 		}
 
-		return res.status(200).json({ status, user: userInformation, basicKycStatus })
+		return res.status(200).json({ user: userInformation, status: getHifiUserResponse.user.kyc.status })
 
 	} catch (error) {
 		createLog("user/getDeveloperUser", userId, error.message, null, res)

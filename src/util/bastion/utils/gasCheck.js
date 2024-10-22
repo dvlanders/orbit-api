@@ -3,7 +3,6 @@ const { fundGasScheduleCheck } = require("../../../../asyncJobs/wallets/fundGas"
 const createLog = require("../../logger/supabaseLogger");
 const { Chain } = require("../../common/blockchain");
 const { getBastionWallet } = require("./getBastionWallet");
-const getBastionUser = require("../main/getBastionUser");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
