@@ -3,6 +3,7 @@ const { checkIsSignedAgreementIdSigned } = require("../user/signedAgreement");
 const { hifiSupportedChain } = require("./blockchain");
 
 const isValidDate = (input, type = "YYYY-MM-DD") => {
+
 	if (type === "ISO") {
 		const date = new Date(input);
 		return !isNaN(date.getTime());
@@ -25,12 +26,11 @@ const isValidDate = (input, type = "YYYY-MM-DD") => {
 
 	// Check if the date is valid
 	const date = new Date(`${year}-${month}-${day}`);
-
 	// Date object automatically rolls over invalid dates, so we need to verify the input matches
 	return (
-		date.getFullYear() === year &&
-		date.getMonth() + 1 === month && // getMonth() returns 0-based month
-		date.getDate() === day
+		date.getUTCFullYear() === year &&
+		date.getUTCMonth() + 1 === month && // getMonth() returns 0-based month
+		date.getUTCDate() === day
 	);
 };
 

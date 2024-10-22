@@ -2,7 +2,7 @@ const { Chain } = require("../../common/blockchain")
 const { getUserWallet } = require("../../user/getUserWallet")
 const { createCircleWallet } = require("./createCircleWallet")
 
-const defaultChain = process.env.NODE_ENV === "development" ? Chain.POLYGON_AMOLY : Chain.POLYGON_MAINNET
+const defaultChain = process.env.NODE_ENV === "development" ? Chain.POLYGON_AMOY : Chain.POLYGON_MAINNET
 
 
 const checkAndUpdateCircleWallet = async (userId, walletTypes) => {
