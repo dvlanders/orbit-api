@@ -60,6 +60,19 @@ async function createBastionDeveloperWallet(userId, type) {
 				} else if (!(insertData && insertData.length > 0)) {
 					logger.warn('Supabase insert resulted in no data or an empty response.');
 				}
+				// insert in user_wallets table
+				const { data: insertUserWalletData, error: insertUserWalletError } = await supabase
+					.from('user_wallets')
+					.insert({
+						user_id: userId,
+						chain: chain,
+						address: insertData.address,
+						wallet_provider: "BASTION",
+						wallet_type: walletType,
+						bastion_wallet_id: insertData.id
+					})
+				
+				if (insertUserWalletError) throw insertUserWalletError
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET) {
 					await fundUserGasFee(userId, preFundAmount, Chain.POLYGON_MAINNET, type);
