@@ -46,7 +46,6 @@ const updateDeveloperUserAsync = async(config) => {
 			bridgeFunction(userId), 
 			updateCheckbookUser(userId) 
 		])
-        console.log("passed")
 
         // register fee wallet on payment processor contract
         await Promise.all(chainToRegister.map(async(chain) => {
