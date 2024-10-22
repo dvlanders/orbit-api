@@ -8,25 +8,32 @@ const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
 const { defaultKycInfo, updateKycInfo } = require("./kycInfo");
 const { getUserRecord } = require("./userService");
+const { createDeveloperUserAsyncCheck } = require("../../../asyncJobs/user/createDeveloperUser")
 
-exports.getRawUserObject = async(userId, profileId) => {
+exports.getRawUserObject = async(userId, profileId, isDeveloperUser = false) => {
     try{
 
 		const user = await getUserRecord(userId);
 		if (!user) return {status: 404, getHifiUserResponse: { error: "User not found for provided userId" }};
 		// check is developer user
-		if (user.is_developer) return {status: 400, getHifiUserResponse: { error: "This is a developer user account, please use GET user/developer" }};
+		if (user.is_developer && !isDeveloperUser) return {status: 400, getHifiUserResponse: { error: "This is a developer user account, please use GET user/developer" }};
 
         // base response
 		const getHifiUserResponse = defaultKycInfo(userId, user.kyc_level);
 
 		// check if the userCreation is in the job queue, if yes return pending response
-		const canScheduled = await createUserAsyncCheck("createUser", {}, userId, profileId)
-		if (!canScheduled) return {status: 200 , getHifiUserResponse}
+		const canScheduled = isDeveloperUser ? await createDeveloperUserAsyncCheck("createDeveloperUser", {userId, userType: user.userType}, userId, profileId) : await createUserAsyncCheck("createUser", {userId, userType: user.userType}, userId, profileId)
+		if (!canScheduled) {
+			// pending
+			getHifiUserResponse.user_kyc.status = CustomerStatus.PENDING
+			return {status: 200 , getHifiUserResponse}
+		}
         
+
         // get status
+		const walletTypeToCheck = isDeveloperUser ? "FEE_COLLECTION" : "INDIVIDUAL"
 		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
-			getUserWalletStatus(userId),
+			getUserWalletStatus(userId, walletTypeToCheck),
 			getBridgeCustomer(userId, user.kyc_level),
 			getCheckbookUser(userId)
 		])
