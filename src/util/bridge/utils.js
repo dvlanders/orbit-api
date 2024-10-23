@@ -66,13 +66,57 @@ const BridgeCustomerStatus = {
 	AWAITING_UBO: "awaiting_ubo",
 }
 
-const BridgeTransactionStatusMap = {
-	in_review: "CRYPTO_IN_REVIEW",
-	payment_submitted: "CRYPTO_SUBMITTED",
-	funds_received: "FIAT_CONFIRMED",
-	payment_processed: "CONFIRMED",
-	refunded: "REFUNDED",
+const BridgeTransactionStatus = {
+	awaiting_funds: "awaiting_funds",
+	in_review: "in_review",
+	funds_received: "funds_received",
+	payment_submitted: "payment_submitted",
+	payment_processed: "payment_processed",
+	returned: "returned",
+	refunded: "refunded",
+	canceled: "canceled",
+	error: "error",
 }
+
+// once in one of these states, the transaction is considered final and no further state transitions are allowed
+const BridgeFinalStates = [BridgeTransactionStatus.payment_processed, BridgeTransactionStatus.refunded, BridgeTransactionStatus.canceled, BridgeTransactionStatus.error]
+
+// following Bridge's api doc transfer transitions guarantee: https://apidocs.bridge.xyz/docs/transfers-1
+const BridgeInvalidPrevStates = {
+	[BridgeTransactionStatus.awaiting_funds]: [BridgeTransactionStatus.funds_received, BridgeTransactionStatus.payment_submitted, ...BridgeFinalStates],
+	[BridgeTransactionStatus.funds_received]: [BridgeTransactionStatus.payment_submitted, ...BridgeFinalStates],
+	[BridgeTransactionStatus.payment_submitted]: [...BridgeFinalStates],
+}
+
+const isValidBridgeStateTransition = (currentState, nextState) => {
+	if(currentState === nextState) return true; // it's ok to stay in the same state
+	if(BridgeFinalStates.includes(currentState)) return false; // once in a final state, no further state transitions are allowed
+	const invalidPrevStates = BridgeInvalidPrevStates[nextState];
+	if (!invalidPrevStates) return true;
+	return !invalidPrevStates.includes(currentState);
+}
+
+const HifiOnrampTransactionBridgeStatusMap = {
+	[BridgeTransactionStatus.in_review]: "CRYPTO_IN_REVIEW",
+	[BridgeTransactionStatus.payment_submitted]: "CRYPTO_SUBMITTED",
+	[BridgeTransactionStatus.funds_received]: "FIAT_CONFIRMED",
+	[BridgeTransactionStatus.payment_processed]: "CONFIRMED",
+	[BridgeTransactionStatus.refunded]: "REFUNDED",
+}
+
+const HifiOfframpTransactionBridgeStatusMap = {
+	[BridgeTransactionStatus.awaiting_funds]: "COMPLETED_ONCHAIN",
+	[BridgeTransactionStatus.in_review]: "IN_PROGRESS_FIAT",
+	[BridgeTransactionStatus.funds_received]: "IN_PROGRESS_FIAT",
+	[BridgeTransactionStatus.payment_submitted]: 'INITIATED_FIAT',
+	[BridgeTransactionStatus.payment_processed]: 'COMPLETED',
+	[BridgeTransactionStatus.returned]: 'FAILED_FIAT_RETURNED',
+	[BridgeTransactionStatus.refunded]: 'FAILED_FIAT_REFUNDED',
+	[BridgeTransactionStatus.error]: 'FAILED_UNKNOWN',
+	[BridgeTransactionStatus.canceled]: "CANCELLED"
+}
+
+const HifiOfframpTransactionFailedStatuses = ["FAILED_FIAT_RETURNED", "FAILED_FIAT_REFUNDED", "FAILED_UNKNOWN", "UNKNOWN"]
 
 const virtualAccountPaymentRailToChain = NODE_ENV == "development" ?
 	{
@@ -267,7 +311,6 @@ const getBridgeUserId = async(userId) => {
 
 module.exports = {
 	bridgeFieldsToRequestFields,
-	BridgeTransactionStatusMap,
 	getEndorsementStatus,
 	AccountActions,
 	RejectionReasons,
@@ -276,5 +319,9 @@ module.exports = {
 	extractActionsAndFields,
 	chainToVirtualAccountPaymentRail,
 	getBridgeUserId,
-	pendingResult
+	pendingResult,
+	isValidBridgeStateTransition,
+	HifiOnrampTransactionBridgeStatusMap,
+	HifiOfframpTransactionBridgeStatusMap,
+	HifiOfframpTransactionFailedStatuses
 }

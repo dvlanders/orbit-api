@@ -18,6 +18,8 @@ const { mintScheduleCheck } = require("../../../../../asyncJobs/sandbox/mint/sch
 const createJob = require("../../../../../asyncJobs/createJob");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
+const { insertSingleBridgeTransactionRecord } = require("../../../bridge/bridgeTransactionTableService");
+const { insertCheckbookTransactionRecord, updateCheckbookTransactionRecord } = require("../../../checkbook/checkbookTransactionTableService");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -32,6 +34,21 @@ const sandboxMintUSDHIFI = async(config) => {
         //get billing tags
         const billingTags = await getBillingTagsFromAccount(requestId, transferType.FIAT_TO_CRYPTO, sourceUserId, accountInfo)
 
+        const toInsertBridgeRecord = {
+            user_id: sourceUserId,
+            request_id: v4(),
+            virtual_account_id: transferInfo.virtual_account_id,
+            bridge_virtual_account_id: transferInfo.bridge_virtual_account_id,
+            bridge_user_id: transferInfo.bridge_id
+        }
+        const bridgeRecord = await insertSingleBridgeTransactionRecord(toInsertBridgeRecord)
+
+        const toInsertCheckbookRecord = {
+            user_id: sourceUserId,
+            plaid_checkbook_id: transferInfo.plaid_checkbook_id,
+            destination_checkbook_user_id: transferInfo.recipient_checkbook_user_id,
+        }
+        const checkbookRecord = await insertCheckbookTransactionRecord(toInsertCheckbookRecord)
 
         // insert record
         const {data: initialRecord, error: initialRecordError} = await supabaseCall(() => supabase
@@ -40,9 +57,6 @@ const sandboxMintUSDHIFI = async(config) => {
                 user_id: sourceUserId,
                 destination_user_id: destinationUserId,
                 amount: amount,
-                plaid_checkbook_id: transferInfo.plaid_checkbook_id,
-                bridge_virtual_account_id: transferInfo.bridge_virtual_account_id,
-                destination_checkbook_user_id: transferInfo.recipient_checkbook_user_id,
                 status: "CREATED",
                 fiat_provider: "CHECKBOOK",
                 crypto_provider: "BRIDGE",
@@ -51,7 +65,9 @@ const sandboxMintUSDHIFI = async(config) => {
                 chain: chain,
                 billing_tags_success: billingTags.success,
                 billing_tags_failed: billingTags.failed,
-                fee_transaction_id: feeTransactionId
+                fee_transaction_id: feeTransactionId,
+                bridge_transaction_record_id: bridgeRecord.id,
+                checkbook_transaction_record_id: checkbookRecord.id
             })
             .eq("request_id", requestId)
             .select()
