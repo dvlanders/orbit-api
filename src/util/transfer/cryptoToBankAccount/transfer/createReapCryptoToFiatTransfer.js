@@ -26,7 +26,6 @@ const { insertSingleReapTransactionRecord, updateReapTransactionRecord } = requi
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getUserWallet } = require("../../../user/getUserWallet");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
-const { reapApproveFundsScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/reap/scheduleCheck");
 const { safeSum } = require("../../../utils/number");
 
 const initTransferData = async (config) => {
