@@ -9,6 +9,7 @@ const { chargeFeeBastion } = require("../../../src/util/transfer/fiatToCrypto/tr
 const { chargeFeeCircle } = require("../../../src/util/transfer/fee/chargeFeeCircle")
 const { getUserWallet } = require("../../../src/util/user/getUserWallet")
 const { JobError, JobErrorType } = require("../../error")
+const { getRetryConfig } = require("../../retryJob")
 
 exports.chargeFeeOnFundReceivedAsync = async(config) => {
     try{
@@ -43,7 +44,9 @@ exports.chargeFeeOnFundReceivedAsync = async(config) => {
         if (allowance < BigInt(transferAmount)){
             // not enough allowance, perform a token allowance job and then schedule a token transfer job
             await approveMaxTokenToPaymentProcessor(onrampRecord.destination_user_id, chain, bridgeVirtualAccount.destination_currency)
-            throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true)
+            return {
+                retryDetails: getRetryConfig(true, 60000, "Token approve amount not enough")
+            }
         }
 
         // get user wallet and map to charge fee function
@@ -57,11 +60,10 @@ exports.chargeFeeOnFundReceivedAsync = async(config) => {
         }
 
     }catch (error){
-        console.error(error)
         if (error instanceof JobError) throw error
         await createLog("job/transfer/chargeFeeOnFundReceivedAsync", config.userId, error.message, error)
         // don't reSchedule
-        throw new JobError(JobErrorType.RESCHEDULE, error.message, null, error.message, false)
+        throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, null, error.message, false)
     }
 
 }

@@ -12,6 +12,7 @@ const CryptoToBankSupportedPairCheck = require("../../../src/util/transfer/crypt
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const { JobError, JobErrorType } = require("../../error")
+const { getRetryConfig } = require("../../retryJob")
 
 exports.cryptoToFiatTransferAsync = async (config) => {
 	try {
@@ -27,7 +28,9 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		// gas check
 		const { needFund, fundSubmitted } = await gasCheck(record.user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
 		if (needFund) {
-            throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
+			return {
+				retryDetails: getRetryConfig(true, 60000, "wallet gas not enough")
+			}
 		}
 
 		// check allowance if not enough perform a token approve job and reschedule transfer
@@ -37,7 +40,9 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 			const allowance = await getTokenAllowance(record.chain, record.source_currency, record.from_wallet_address, paymentProcessorContractAddress)
 			if (allowance < BigInt(unitsAmount)) {
                 await approveMaxTokenToPaymentProcessor(record.user_id, record.chain, record.source_currency)
-				throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)
+				return {
+					retryDetails: getRetryConfig(true, 60000, "Token approve amount not enough")
+				}
 			}
 		}
 
@@ -63,11 +68,10 @@ exports.cryptoToFiatTransferAsync = async (config) => {
 		await asyncTransferExecuteFunc(transferConfig)
 
 	} catch (error) {
-		console.error(error)
 		if (error instanceof JobError) throw error
 		await createLog("job/transfer/cryptoToFiatTransferAsync", config.userId, error.message, error)
 		// don't reSchedule
-		throw new JobError(JobErrorType.RESCHEDULE, error.message, null, error.message, false)
+		throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, null, error.message, false)
 	}
 
 }
