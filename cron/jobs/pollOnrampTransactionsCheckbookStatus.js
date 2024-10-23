@@ -4,16 +4,22 @@ const createLog = require('../../src/util/logger/supabaseLogger');
 const fetch = require('node-fetch'); // Ensure node-fetch is installed and imported
 const notifyFiatToCryptoTransfer = require("../../webhooks/transfer/notifyFiatToCryptoTransfer");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
+const { getCheckbookPayment } = require("../../src/util/checkbook/endpoint/getCheckbookPayment");
+const { updateOnrampTransactionRecord } = require("../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
+const { updateCheckbookTransactionRecord } = require("../../src/util/checkbook/checkbookTransactionTableService");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const updateStatus = async (onrampTransaction) => {
+    const checkbookTransactionInfo = onrampTransaction.checkbook_transaction_info;
+    const bridgeTransactionInfo = onrampTransaction.bridge_transaction_info;
+    if(!checkbookTransactionInfo) return;
 	// get user api key
 	let { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
 		.from('checkbook_users')
 		.select('api_key, api_secret')
-		.eq("checkbook_user_id", onrampTransaction.destination_checkbook_user_id)
+		.eq("checkbook_user_id", checkbookTransactionInfo.destination_checkbook_user_id)
 		.maybeSingle())
 
     if (checkbookUserError) {
@@ -24,19 +30,8 @@ const updateStatus = async (onrampTransaction) => {
         await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `No checkbook user found for onRamp record:  ${onrampTransaction.id}`)
         return
     }
-    
-    // pull up-to-date status
-    const url = `${CHECKBOOK_URL}/check/${onrampTransaction.checkbook_payment_id}`;
-    const options = {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`, // use the api key of the checkbook user that received the payment
-        },
-    };
 
-    const response = await fetch(url, options)
-    const responseBody = await response.json()
+    const {response, responseBody} = await getCheckbookPayment(checkbookTransactionInfo.checkbook_payment_id, checkbookUser.api_key, checkbookUser.api_secret);
     if (!response.ok) {
         await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, responseBody.message, responseBody)
         return
@@ -54,23 +49,13 @@ const updateStatus = async (onrampTransaction) => {
         await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, `Unable to processed status: ${responseBody.status}`, responseBody)
     }
 
-	//update status
-	const { data: update, error: updateError } = await supabaseCall(() => supabase
-		.from('onramp_transactions')
-		.update({
-			status,
-			checkbook_status: responseBody.status,
-			checkbook_response: responseBody,
-			updated_at: new Date().toISOString()
-		})
-		.eq('id', onrampTransaction.id)
-		.select("id, request_id, user_id, destination_user_id, bridge_virtual_account_id, amount, created_at, updated_at, status, checkbook_status, bridge_status, failed_reason, plaid_checkbook_id, fiat_provider, crypto_provider")
-		.single())
+    const updatedRecord = await updateOnrampTransactionRecord(onrampTransaction.id, {status});
 
-	if (updateError) {
-		await createLog("pollOnrampTransactionsCheckbookStatus", onrampTransaction.user_id, updateError.message)
-		return
-	}
+    const toUpdateCheckbook = {
+        checkbook_status: responseBody.status,
+        checkbook_response: responseBody,
+    }
+    const updatedCheckbook = await updateCheckbookTransactionRecord(checkbookTransactionInfo.id, toUpdateCheckbook);
 
     if (status != onrampTransaction.status){
         // send slack notification if failed
@@ -81,29 +66,28 @@ const updateStatus = async (onrampTransaction) => {
                 onrampTransaction.id,
                 {
                     prevTransactionStatus: onrampTransaction.status,
-                    updatedTransactionStatus: update.status,
-                    checkbookStatus: update.checkbook_status,
-                    bridgeStatus: update.bridge_status,
-                    failedReason: update.failed_reason,
+                    updatedTransactionStatus: updatedRecord.status,
+                    checkbookStatus: updatedCheckbook.checkbook_status,
+                    bridgeStatus: bridgeTransactionInfo.bridge_status,
+                    failedReason: updatedRecord.failed_reason,
                 }
             );
         }
 
-        await notifyFiatToCryptoTransfer(update)
+        await notifyFiatToCryptoTransfer(updatedRecord)
     }
 
 }
-
 
 async function pollOnrampTransactionsCheckbookStatus() {
 
 	// Get all records where the bridge_transaction_status is not 
 	const { data: onRampTransactionStatus, error: onRampTransactionStatusError } = await supabaseCall(() => supabase
 		.from('onramp_transactions')
-		.select('id, checkbook_payment_id, user_id, destination_checkbook_user_id, status')
+		.select('id, user_id, status, checkbook_transaction_record_id, bridge_transaction_record_id, checkbook_transaction_info:checkbook_transaction_record_id(*), bridge_transaction_info:bridge_transaction_record_id(*)')
         .eq('fiat_provider', "CHECKBOOK")
-        .not('checkbook_payment_id', 'is', null)
-        .or('status.eq.FIAT_SUBMITTED, checkbook_status.eq.IN_PROCESS')
+        .not('checkbook_transaction_info.checkbook_payment_id', 'is', null)
+        .eq('status', 'FIAT_SUBMITTED')
         .order('updated_at', {ascending: true})
     )
 
@@ -112,7 +96,11 @@ async function pollOnrampTransactionsCheckbookStatus() {
 		await createLog('pollOnrampTransactionsCheckbookStatus', null, onRampTransactionStatusError.message, onRampTransactionStatusError);
 		return;
 	}
-	await Promise.all(onRampTransactionStatus.map(async (onrampTransaction) => await updateStatus(onrampTransaction)))
+	await Promise.all(onRampTransactionStatus.map(async (onrampTransaction) => {
+        if (onrampTransaction.checkbook_transaction_record_id && onrampTransaction.bridge_transaction_record_id){
+            await updateStatus(onrampTransaction);
+        }
+    }))
 
 }
 

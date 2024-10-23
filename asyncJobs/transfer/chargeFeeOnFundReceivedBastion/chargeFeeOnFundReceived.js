@@ -15,13 +15,14 @@ exports.chargeFeeOnFundReceivedAsync = async(config) => {
         // fetch transferRecord
         const {data: onrampRecord, error: onrampRecordError} = await supabase
             .from("onramp_transactions")
-            .select("*, developer_fees: developer_fee_id(*)")
+            .select("*, developer_fees: developer_fee_id(*), bridge_transaction_info:bridge_transaction_record_id(*)")
             .eq("id", config.recordId)
             .single()
         
         if (onrampRecordError) throw onrampRecordError
 
         const feeRecord = onrampRecord.developer_fees
+        const bridgeRecord = onrampRecord.bridge_transaction_info
         // fee already charged
         if (feeRecord.bastion_status == "CONFIRMED" || feeRecord.charged_status == "CONFIRMED") return 
 
@@ -29,7 +30,7 @@ exports.chargeFeeOnFundReceivedAsync = async(config) => {
         const {data: bridgeVirtualAccount, error: bridgeVirtualAccountError} = await supabase
             .from("bridge_virtual_accounts")
             .select("*")
-            .eq("virtual_account_id", onrampRecord.bridge_virtual_account_id)
+            .eq("virtual_account_id", bridgeRecord.bridge_virtual_account_id)
             .single()
         
         if (bridgeVirtualAccountError) throw bridgeVirtualAccountError

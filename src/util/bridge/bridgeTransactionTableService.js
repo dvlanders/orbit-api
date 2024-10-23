@@ -3,7 +3,7 @@ const supabase = require("../supabaseClient")
 const updateBridgeTransactionRecord = async(bridgeTransactionId, toUpdate) => {
     const {data, error} = await supabase
         .from('bridge_transactions')
-        .update(toUpdate)
+        .update({...toUpdate, updated_at: new Date().toISOString()})
         .eq('id', bridgeTransactionId)
         .select()
         .single()

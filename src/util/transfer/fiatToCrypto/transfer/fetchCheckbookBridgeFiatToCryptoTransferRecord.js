@@ -7,14 +7,14 @@ const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchCheckbookBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
     // get transactio record
-    const record = await fetchFiatToCryptoRequestInfortmaionById(id, profileId)
+    const record = await fetchFiatToCryptoRequestInfortmaionById(id, profileId, "CHECKBOOK", "BRIDGE")
     if (!record) return null
     // get source plaid account information
 
     let { data: plaidAccount, error: plaidAccountError } = await supabaseCall(() => supabase
         .from('checkbook_accounts')
         .select('id, account_number, routing_number, bank_name')
-        .eq("checkbook_id", record.plaid_checkbook_id)
+        .eq("checkbook_id", record.checkbook_transfer_info?.plaid_checkbook_id)
         .single())
 
     if (plaidAccountError) throw plaidAccountError
