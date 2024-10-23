@@ -31,6 +31,7 @@ const { updateReceiver } = require('../util/blindpay/endpoint/updateReceiver');
 const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccount');
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
+const { updateAccountInfoById } = require('../util/blindpay/bankAccountService');
 const { createYellowcardAccount } = require('../util/yellowcard/createYellowcardAccount');
 const { YcAccountInfoError, YcAccountInfoErrorType } = require('../util/yellowcard/utils/errors');
 
@@ -486,7 +487,7 @@ exports.getAllAccounts = async (req, res) => {
 	const acceptedFields = {
 		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei_bitso", "transfers_bitso", "ach_cop_bitso"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
@@ -924,6 +925,11 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	if (!isUUID(receiverId)) return res.status(400).json({ error: "Invalid receiver_id" })
 	if (!(await verifyUser(fields.user_id, profileId))) return res.status(401).json({ error: "userId not found" })
 
+	// TODO: this is temporary until Blindpay ships Argentina
+	if(fields.currency === "ars") {
+		return res.status(503).json({ error: "Service for Argentina is coming soon. Please check back later." });
+	}
+
 	let bankAccountExist, bankAccountRecord
 	// upload information and create new user
 	try {
@@ -950,21 +956,14 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	try {
 		const response = await createBankAccount(bankAccountRecord);
 		const account = await insertAccountProviders(bankAccountRecord.id, bankAccountRecord.currency, "offramp", bankAccountRecord.type, "BLINDPAY", bankAccountRecord.user_id);
-		// insert the record to the blindpay_accounts table
-		const { error: bankAccountUpdateError } = await supabase
-			.from('blindpay_bank_accounts')
-			.update({
-				blindpay_response: response,
-				blindpay_account_id: response.id,
-				blockchain_address: response.blockchain_address,
-				global_account_id: account.id,
-			})
-			.eq('id', bankAccountRecord.id)
 
-		if (bankAccountUpdateError) {
-			await createLog("account/createBlindpayBankAccount", fields.user_id, bankAccountUpdateError.message, bankAccountUpdateError, null, res)
-			return res.status(500).json({ error: 'Internal Server Error' });
+		const toUpdate = {
+			blindpay_response: response,
+			blindpay_account_id: response.id,
+			blockchain_address: response.blockchain_address,
+			global_account_id: account.id,		
 		}
+		await updateAccountInfoById(bankAccountRecord.id, bankAccountRecord.type, toUpdate);
 
 		const responseObject = {
 			status: "ACTIVE",
@@ -1178,7 +1177,7 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 		'currency': "string", 'bankName': "string", 'accountOwnerName': "string", 'firstName': "string",
 		'lastName': "string", 'businessName': "string", 'accountOwnerType': (value) => inStringEnum(value, ["individual", "business"]), 'businessIdentifierCode': "string",
 		'accountNumber': "string", "routingNumber": "string", "streetLine1": "string", "streetLine2": "string", "city": "string", "state": "string", "postalCode": "string", "country": "string", "userId": (value) => isUUID(value),
-		'accountType': "string"
+		'accountType': (value) => inStringEnum(value, ["us", "iban"])
 	};
 
 	// Execute fields validation

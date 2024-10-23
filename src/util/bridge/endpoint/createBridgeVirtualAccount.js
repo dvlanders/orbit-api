@@ -5,6 +5,7 @@ const  createLog  = require("../../logger/supabaseLogger");
 const {getAddress} = require("ethers");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet");
+const { getUserWallet } = require("../../user/getUserWallet");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -37,7 +38,7 @@ const developerFeePercent = "0.0" //FIX ME
 
 const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 	// get wallet address
-	const {walletAddress: address} = await getBastionWallet(userId, virtualAccountPaymentRailToChain[rail.destinationPaymentRail])
+	const {address} = await getUserWallet(userId, virtualAccountPaymentRailToChain[rail.destinationPaymentRail])
 	if (!address) throw new Error (`No user wallet found`)
 
 	// upsert virtual account record, if fail to upsert since there is conflict, select will return no record

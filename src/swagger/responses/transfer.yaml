@@ -3,70 +3,82 @@ CryptoToCryptoTransferResponse:
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToCryptoTransferObject'
+        $ref: "#/components/schemas/CryptoToCryptoTransferObject"
 CryptoToFiatTransferResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToFiatTransferObject'
+        $ref: "#/components/schemas/CryptoToFiatTransferObject"
 FiatToCryptoTransferResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/FiatToCryptoTransferObject'
+        $ref: "#/components/schemas/FiatToCryptoTransferObject"
 CryptoToCryptoRecordResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToCryptoRecordObject'
+        $ref: "#/components/schemas/CryptoToCryptoRecordObject"
 CryptoToFiatRecordResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToFiatRecordObject'
+        $ref: "#/components/schemas/CryptoToFiatRecordObject"
 FiatToCryptoRecordResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/FiatToCryptoRecordObject'
+        $ref: "#/components/schemas/FiatToCryptoRecordObject"
 FiatToFiatRecordResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/FiatToFiatRecordObject'
+        $ref: "#/components/schemas/FiatToFiatRecordObject"
 CryptoToCryptoAllRecordsResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToCryptoAllRecordsObject'
+        $ref: "#/components/schemas/CryptoToCryptoAllRecordsObject"
 CryptoToFiatAllRecordsResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToFiatAllRecordsObject'
+        $ref: "#/components/schemas/CryptoToFiatAllRecordsObject"
 FiatToCryptoAllRecordsResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/FiatToCryptoAllRecordsObject'
+        $ref: "#/components/schemas/FiatToCryptoAllRecordsObject"
 CryptoToFiatConversionRateResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/CryptoToFiatConversionRateObject'
+        $ref: "#/components/schemas/CryptoToFiatConversionRateObject"
 AcceptFiatToCryptoQuoteResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/AcceptFiatToCryptoQuoteObject'
+        $ref: "#/components/schemas/AcceptFiatToCryptoQuoteObject"
+BridgeAssetTransferResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/BridgeAssetTransferObject"
+BridgeAssetRecordResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/BridgeAssetTransferObject"

@@ -9,10 +9,12 @@ const createLog = require("../../src/util/logger/supabaseLogger");
 const { isFeeWalletRegistered } = require("../../src/util/smartContract/registerWallet/checkFeeWalletIsRegistered");
 const { regsiterFeeWallet } = require("../../src/util/smartContract/registerWallet/registerFeeWallet");
 const supabase = require("../../src/util/supabaseClient");
+const { getUserWallet } = require("../../src/util/user/getUserWallet");
+const { updateDeveloperUserWallet } = require("../../src/util/user/updateUserWallet");
 const { JobError, JobErrorType } = require("../error");
 
 const chainToRegister = [
-    Chain.POLYGON_MAINNET
+    Chain.POLYGON_MAINNET,
 ]
 
 const updateDeveloperUserAsyncCheck = async(job, config, userId, profileId) => {
@@ -39,17 +41,17 @@ const updateDeveloperUserAsync = async(config) => {
 		}
         const userId = config.userId
 		// update customer object for providers
-		const [bastionResult, bridgeResult, checkbookResult] = await Promise.all([
-			updateBastionDeveloperUser(userId), 
+		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
+			updateDeveloperUserWallet(userId, ["FEE_COLLECTION", "PREFUNDED"]), 
 			bridgeFunction(userId), 
 			updateCheckbookUser(userId) 
 		])
 
         // register fee wallet on payment processor contract
         await Promise.all(chainToRegister.map(async(chain) => {
-            const {walletAddress} = await getBastionWallet(userId, chain, "FEE_COLLECTION")
-            if (await isFeeWalletRegistered(chain, walletAddress)) return
-
+            const {address} = await getUserWallet(userId, chain, "FEE_COLLECTION")
+            if (!address) return
+            if (await isFeeWalletRegistered(chain, address)) return
             // register the fee wallet
             await regsiterFeeWallet(userId, walletAddress, chain)
         }))

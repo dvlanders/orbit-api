@@ -1,10 +1,11 @@
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet");
 const { currencyDecimal } = require("../../common/blockchain");
 const supabase = require("../../supabaseClient");
+const { getUserWallet } = require("../../user/getUserWallet");
 const { toUnitsString } = require("../cryptoToCrypto/utils/toUnits");
 const { insertFeeRecord } = require("./insertFeeRecord");
 
-exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, profileId, info, transferType, cryptoProvider, requestId) => {
+exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, profileId, info, transferType, walletProvider, requestId, additionalFields={}) => {
     // get fee_collection_user_id
     const {data: feeCollectionUser, error: feeCollectionUserError} = await supabase
     .from("profiles")
@@ -16,7 +17,7 @@ exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, p
     if (!feeCollectionUser.developer_user_id) throw new Error("Developer user account is not created")
 
     // get fee_collection_wallet_address
-    const {walletAddress: feeCollectionWalletAddress} = await getBastionWallet(feeCollectionUser.developer_user_id, info.chain, "FEE_COLLECTION")
+    const {address: feeCollectionWalletAddress} = await getUserWallet(feeCollectionUser.developer_user_id, info.chain, "FEE_COLLECTION")
     if (!feeCollectionWalletAddress) throw new Error (`No feeCollectionWalletAddress wallet found`)
 
     const record = {
@@ -28,12 +29,13 @@ exports.createNewFeeRecord = async(transferId, feeType, feePercent, feeAmount, p
         fee_collection_wallet_address: feeCollectionWalletAddress,
         fee_collection_chain: info.chain,
         fee_collection_currency: info.currency,
-        crypto_provider: cryptoProvider,
+        crypto_provider: walletProvider,
         charged_status: "CREATED",
         charged_transfer_id: transferId,
         charged_transfer_type: transferType,
         charged_wallet_address: info.chargedWalletAddress,
-        request_id: requestId
+        request_id: requestId,
+        ...additionalFields
     }
     
     const feeRecord = await insertFeeRecord(record)

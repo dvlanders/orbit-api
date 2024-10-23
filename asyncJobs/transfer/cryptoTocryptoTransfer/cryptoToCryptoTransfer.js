@@ -2,11 +2,14 @@ const bastionGasCheck = require("../../../src/util/bastion/utils/gasCheck")
 const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
 const { currencyDecimal } = require("../../../src/util/common/blockchain")
 const createLog = require("../../../src/util/logger/supabaseLogger")
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../src/util/smartContract/approve/approveTokenBastion")
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../src/util/smartContract/approve/approveToken")
 const { getTokenAllowance } = require("../../../src/util/smartContract/approve/getApproveAmount")
 const supabase = require("../../../src/util/supabaseClient")
 const { executeAsyncBastionCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/bastionTransfer")
+const { executeAsyncCircleCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/circleTransfer")
+const cryptoToCryptoSupportedFunctions = require("../../../src/util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
+const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const { JobError, JobErrorType } = require("../../error")
 
 const cryptoToCryptoTransferAsync = async(config) => {
@@ -21,7 +24,7 @@ const cryptoToCryptoTransferAsync = async(config) => {
         if (error) throw error
 
         // gas check
-        const { needFund, fundSubmitted } = await bastionGasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
+        const { needFund, fundSubmitted } = await gasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
         if (needFund){
             throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
         }
@@ -37,7 +40,9 @@ const cryptoToCryptoTransferAsync = async(config) => {
             }
         }
         
-        await executeAsyncBastionCryptoTransfer(config)
+        const {asyncExecuteFunc} = cryptoToCryptoSupportedFunctions[record.chain][record.currency]
+        if (!asyncExecuteFunc) throw new Error(`No transfer function found for trancation: ${record.id}`)
+        await asyncExecuteFunc(config)
 
     }catch (error){
         if (error instanceof JobError) throw error

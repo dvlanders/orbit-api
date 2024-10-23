@@ -67,7 +67,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
-	spei_bitso: {
+	spei: {
 		usdc: {
 			mxn: {
 				transferFunc: createTransferToBlindpaySmartContract,
@@ -77,7 +77,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
-	transfers_bitso: {
+	transfers: {
 		usdc: {
 			ars: {
 				transferFunc: createTransferToBlindpaySmartContract,
@@ -87,7 +87,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
 		}
 	},
-	ach_cop_bitso: {
+	ach_cop: {
 		usdc: {
 			cop: {
 				transferFunc: createTransferToBlindpaySmartContract,

@@ -34,6 +34,7 @@ async function createBastionDeveloperWallet(userId, type) {
 	const data = await response.json();
 
 	if (response.status == 409) {
+		// user already exists
 		throw new BastionError(data.message, data.details, response.status);
 	}
 
@@ -46,20 +47,32 @@ async function createBastionDeveloperWallet(userId, type) {
 			for (const chain of addressEntry.chains) {
 				const { data: insertData, error } = await supabase
 					.from('bastion_wallets')
-					.insert([{
+					.insert({
 						user_id: userId,
 						chain: chain,
 						address: isAddress(addressEntry.address) ? getAddress(addressEntry.address) : addressEntry.address,
 						type: type,
 						bastion_user_id: bastionUserId
-					}])
-					.select();
+					})
+					.select()
+					.single();
 
 				if (error) {
 					throw new Error(`Supabase insert error: ${JSON.stringify(error)}`);
-				} else if (!(insertData && insertData.length > 0)) {
-					logger.warn('Supabase insert resulted in no data or an empty response.');
 				}
+				// insert in user_wallets table
+				const { data: insertUserWalletData, error: insertUserWalletError } = await supabase
+					.from('user_wallets')
+					.insert({
+						user_id: userId,
+						chain: chain,
+						address: insertData.address,
+						wallet_provider: "BASTION",
+						wallet_type: type,
+						bastion_wallet_id: insertData.id
+					})
+				
+				if (insertUserWalletError) throw insertUserWalletError
 				// if chain is POLYGON_MAINNET, fund the wallet with 0.1 MATIC
 				if (chain === Chain.POLYGON_MAINNET) {
 					await fundUserGasFee(userId, preFundAmount, Chain.POLYGON_MAINNET, type);

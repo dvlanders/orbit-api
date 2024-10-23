@@ -1,74 +1,75 @@
+const { bridgeRestrictedCountryCodes } = require("../bridge/utils/restrictedCountries");
 const { checkIsSignedAgreementIdSigned } = require("../user/signedAgreement");
 const { hifiSupportedChain } = require("./blockchain");
 
-const isValidDate = (input, type="YYYY-MM-DD") => {
-    if (type === "ISO"){
-        const date = new Date(input);
-        return !isNaN(date.getTime());
-    }
+const isValidDate = (input, type = "YYYY-MM-DD") => {
 
-    // Check if the input is a string
-    if (typeof input !== 'string') {
-        return false;
-    }
+	if (type === "ISO") {
+		const date = new Date(input);
+		return !isNaN(date.getTime());
+	}
 
-    // Regular expression to check if the format is YYYY-MM-DD
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
+	// Check if the input is a string
+	if (typeof input !== 'string') {
+		return false;
+	}
 
-    if (!regex.test(input)) {
-        return false;
-    }
+	// Regular expression to check if the format is YYYY-MM-DD
+	const regex = /^\d{4}-\d{2}-\d{2}$/;
 
-    // Parse the date components
-    const [year, month, day] = input.split('-').map(Number);
+	if (!regex.test(input)) {
+		return false;
+	}
 
-    // Check if the date is valid
-    const date = new Date(`${year}-${month}-${day}`);
+	// Parse the date components
+	const [year, month, day] = input.split('-').map(Number);
 
-    // Date object automatically rolls over invalid dates, so we need to verify the input matches
-    return (
-        date.getFullYear() === year &&
-        date.getMonth() + 1 === month && // getMonth() returns 0-based month
-        date.getDate() === day
-    );
+	// Check if the date is valid
+	const date = new Date(`${year}-${month}-${day}`);
+	// Date object automatically rolls over invalid dates, so we need to verify the input matches
+	return (
+		date.getUTCFullYear() === year &&
+		date.getUTCMonth() + 1 === month && // getMonth() returns 0-based month
+		date.getUTCDate() === day
+	);
 };
 
 const isValidEmail = (input) => {
-    // Check if the input is a string
-    if (typeof input !== 'string') {
-        return false;
-    }
+	// Check if the input is a string
+	if (typeof input !== 'string') {
+		return false;
+	}
 
-    // Regular expression to validate email format
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	// Regular expression to validate email format
+	const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    return regex.test(input);
+	return regex.test(input);
 };
 
 const isValidState = (stateCode) => {
-    // Invalid state codes array
-    const invalidStates = ["NY", "AK", "FL", "LA", "CT", "GA", "ID", "KS", "RI", "SC", "TX", "WA"];
+	// Invalid state codes array
+	const invalidStates = ["NY", "FL", "LA", "AK"];
 
-    // Check if stateCode is a string
-    if (typeof stateCode !== 'string' || stateCode.length !== 2) {
-        return false;
-    }
+	// Check if stateCode is a string
+	if (typeof stateCode !== 'string') {
+		return false;
+	}
 
-    // Ensure the state code is not in the invalid states array
-    return !invalidStates.includes(stateCode);
-}; 
+	// Ensure the state code is not in the invalid states array
+	return !invalidStates.includes(stateCode);
+};
 
 const isValidCountryCode = (countryCode) => {
-    // List of restricted country codes
-    const restrictedCountries = ["CUB", "IRN", "SDN", "PRK", "VEN", "RUS", "UKR", "BLR", "MMR", "SYR"];
+	// List of restricted country codes
+	const restrictedCountries = bridgeRestrictedCountryCodes;
 
-    // Check if countryCode is a string
-    if (typeof countryCode !== 'string' || countryCode.length !== 3) {
-        return false;
-    }
+	// Check if countryCode is a string
+	if (typeof countryCode !== 'string' || countryCode.length !== 3) {
+		return false;
+	}
 
-    // Ensure the country code is not in the restricted countries array
-    return !restrictedCountries.includes(countryCode);
+	// Ensure the country code is not in the restricted countries array
+	return !restrictedCountries.includes(countryCode);
 };
 
 const inStringEnum = (value, enumArray) => {
@@ -76,56 +77,56 @@ const inStringEnum = (value, enumArray) => {
 }
 
 const isValidUrl = (url) => {
-    try {
-        new URL(url);
-        return true;
-    } catch {
-        return false;
-    }
+	try {
+		new URL(url);
+		return true;
+	} catch {
+		return false;
+	}
 };
 
 const isValidIPv4 = (ip) => {
-    const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    return ipv4Regex.test(ip);
+	const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+	return ipv4Regex.test(ip);
 };
 
 const isInRange = (value, min, max) => {
-    return value >= min && value <= max;
+	return value >= min && value <= max;
 }
 
 const isHIFISupportedChain = (chain) => {
-    return hifiSupportedChain.includes(chain)
+	return hifiSupportedChain.includes(chain)
 }
 
-const isValidAmount = (amount, min=0, max=Infinity) => {
-    return (typeof amount === "number" && amount >= min && amount <= max) || (typeof amount === "string" && !isNaN(amount) && Number(amount) >= min && Number(amount) <= max)
+const isValidAmount = (amount, min = 0, max = Infinity) => {
+	return (typeof amount === "number" && amount >= min && amount <= max) || (typeof amount === "string" && !isNaN(amount) && Number(amount) >= min && Number(amount) <= max)
 }
 
-const isValidMessage = (message, maxLines=Infinity, maxLengthPerLine=Infinity) => {
-    const lines = message.split('\n');
-    if (lines.length > maxLines) {
-        return false;
-    }
+const isValidMessage = (message, maxLines = Infinity, maxLengthPerLine = Infinity) => {
+	const lines = message.split('\n');
+	if (lines.length > maxLines) {
+		return false;
+	}
 
-    for (const line of lines) {
-        if (line.length > maxLengthPerLine) {
-            return false;
-        }
-    }
+	for (const line of lines) {
+		if (line.length > maxLengthPerLine) {
+			return false;
+		}
+	}
 
-    return true;
+	return true;
 }
 
 module.exports = {
-    isValidDate,
-    isValidEmail,
-    isValidState,
-    isValidCountryCode,
-    inStringEnum,
-    isValidUrl,
-    isValidIPv4,
-    isInRange,
-    isHIFISupportedChain,
-    isValidAmount,
-    isValidMessage
+	isValidDate,
+	isValidEmail,
+	isValidState,
+	isValidCountryCode,
+	inStringEnum,
+	isValidUrl,
+	isValidIPv4,
+	isInRange,
+	isHIFISupportedChain,
+	isValidAmount,
+	isValidMessage
 }
