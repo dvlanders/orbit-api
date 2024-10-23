@@ -18,7 +18,6 @@ const { safeStringToFloat } = require("../../../utils/number");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { burnUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/burn");
 const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSupportedPairFetchFunctions");
-const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
 const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");

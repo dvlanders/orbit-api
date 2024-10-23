@@ -9,23 +9,6 @@ const { approveUsdc } = require("./approveUsdc")
 const { depositUsdcForBurn } = require("./burnUsdc")
 const { mintUsdc } = require("./mintUsdc")
 
-const bridgingUsdcScheduleCheck = async(job, config, userId, profileId) => {
-
-    const {data, error} = await supabase
-        .from("jobs_queue")
-        .select("*")
-        .eq("job", job)
-        .eq("user_id", userId)
-        .order("created_at", {ascending: false})
-    
-    if (!data || data.length <= 0) return true
-    for (const record of data){
-        if (areObjectsEqual(record.config, config)) return false
-    }
-
-    return true
-}
-
 const checkIsContractActionConfirmedAndUpdateStatus = async(recordId, bridgingRecordId) => {
     const { data, error } = await supabase
         .from('contract_actions')
@@ -171,5 +154,4 @@ const bridgeUsdc = async (config) => {
 
 module.exports = { 
     bridgeUsdc,
-    bridgingUsdcScheduleCheck
  }

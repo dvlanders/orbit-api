@@ -9,7 +9,6 @@ const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType
 const { toUnitsString } = require("../utils/toUnits")
 const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
-const { cryptoToCryptoTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoTocryptoTransfer/scheduleCheck")
 const supabase = require("../../../supabaseClient")
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
 const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")

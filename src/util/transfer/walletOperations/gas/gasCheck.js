@@ -1,5 +1,4 @@
 const createJob = require("../../../../../asyncJobs/createJob");
-const { fundGasScheduleCheck } = require("../../../../../asyncJobs/wallets/fundGas");
 const { Chain } = require("../../../common/blockchain");
 const createLog = require("../../../logger/supabaseLogger");
 const { getUserWallet, getUserWalletBalance } = require("../../../user/getUserWallet");

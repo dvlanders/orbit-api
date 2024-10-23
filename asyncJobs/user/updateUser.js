@@ -8,19 +8,6 @@ const { updateUserWallet } = require("../../src/util/user/updateUserWallet");
 const notifyUserStatusUpdate = require("../../webhooks/user/notifyUserStatusUpdate");
 const { JobError, JobErrorType } = require("../error");
 
-
-const updateUserAsyncCheck = async(job, config, userId, profileId) => {
-
-    const {data, error} = await supabase
-        .from("jobs_queue")
-        .select("*")
-        .eq("job", job)
-        .eq("user_id", userId)
-    
-    if (!data || data.length <= 0) return true
-    return false
-}
-
 const updateUserAsync = async(config) => {
     try{
         let bridgeFunction
@@ -51,5 +38,4 @@ const updateUserAsync = async(config) => {
 
 module.exports = {
     updateUserAsync,
-    updateUserAsyncCheck
 }

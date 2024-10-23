@@ -1,4 +1,3 @@
-const { bridgingUsdcScheduleCheck } = require("../../../../asyncJobs/bridging/cctp/bridgeUsdc")
 const createJob = require("../../../../asyncJobs/createJob")
 const { checkBalanceForTransactionAmount } = require("../../bastion/utils/balanceCheck")
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet")

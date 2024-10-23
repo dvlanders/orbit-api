@@ -7,7 +7,6 @@ const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
 const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { v4 } = require("uuid");

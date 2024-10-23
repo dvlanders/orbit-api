@@ -5,7 +5,6 @@ const fetch = require('node-fetch'); // Ensure node-fetch is installed and impor
 const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCryptoToFiatTransfer');
 const createLog = require('../../src/util/logger/supabaseLogger');
 const { simulateSandboxCryptoToFiatTransactionStatus } = require('../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction');
-const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
 const { statusMapBastion } = require('../../src/util/transfer/walletOperations/bastion/statusMap');
 const { statusMapCircle } = require('../../src/util/transfer/walletOperations/circle/statusMap');
 const { updateOfframpTransactionRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService');
