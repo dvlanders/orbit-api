@@ -5,6 +5,7 @@ const { bridgeFieldsToRequestFields, getEndorsementStatus } = require("../utils"
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -130,7 +131,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 		}));
 
 		// call bridge endpoint
-		const response = await fetch(`${BRIDGE_URL}/v0/customers`, {
+		const response = await fetchWithLogging(`${BRIDGE_URL}/v0/customers`, {
 			method: 'POST',
 			headers: {
 				'Idempotency-Key': idempotencyKey,

@@ -2,6 +2,7 @@ const { updateCircleTransactionRecord, getCircleTransactionRecord } = require(".
 const createLog = require("../../logger/supabaseLogger");
 const { safeParseBody } = require("../../utils/response");
 const { updateFeeRecord } = require("./updateFeeRecord");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const { CIRCLE_WALLET_URL, CIRCLE_WALLET_API_KEY } = process.env;
 
@@ -34,7 +35,7 @@ const updateDeveloperFeeRecordCircle = async (feeTransaction, responseBody=null,
             }
         };
 
-        response = await fetch(url, options);
+        response = await fetchWithLogging(url, options);
         data = await safeParseBody(response)
     }
 

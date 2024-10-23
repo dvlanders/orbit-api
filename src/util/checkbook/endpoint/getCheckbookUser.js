@@ -3,6 +3,7 @@ const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
 const { createCheckbookUser } = require("./createCheckbookUser");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const GetCheckbookUserErrorType = {
@@ -22,7 +23,7 @@ class GetCheckbookUserError extends Error {
 
 const checkUserApiKeyPairsHealth = async(checkbook_user) => {
     // check if the api key and api secret is valid
-    const response = await fetch(`${CHECKBOOK_URL}/user`, {
+    const response = await fetchWithLogging(`${CHECKBOOK_URL}/user`, {
         method: 'GET',
         headers: {
             'Accept': 'application/json',

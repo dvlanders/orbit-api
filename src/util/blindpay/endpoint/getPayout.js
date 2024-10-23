@@ -1,4 +1,5 @@
 const { GetPayoutErrorType, GetPayoutError } = require("../errors");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const getPayout = async (payoutId) => {
   const headers = {
@@ -11,7 +12,7 @@ const getPayout = async (payoutId) => {
 
   let response, responseBody;
   try {
-    response = await fetch(url, {
+    response = await fetchWithLogging(url, {
       method: "GET",
       headers: headers,
     });

@@ -4,6 +4,7 @@ const supabase = require('../supabaseClient');
 const { Chain } = require('../common/blockchain');
 const createLog = require('../logger/supabaseLogger');
 const { getBastionWallet } = require('./utils/getBastionWallet');
+const { fetchWithLogging } = require('../logger/fetchLogger');
 
 /**
  * Uses Bastion to send MATIC on Polygon Mainnet
@@ -45,7 +46,7 @@ async function fundMaticPolygon(userId, amount, type = "INDIVIDUAL") {
 			body: JSON.stringify(bodyObject)
 		};
 
-		const response = await fetch(url, options);
+		const response = await fetchWithLogging(url, options);
 		const data = await response.json();
 		if (!response.ok) {
 			throw JSON.stringify(data);

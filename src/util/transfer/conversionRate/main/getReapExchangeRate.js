@@ -1,5 +1,6 @@
 const createLog = require("../../../logger/supabaseLogger")
 const getUserReapApiCred = require("../../../reap/utils/getUserApiCred")
+const { fetchWithLogging } = require("../../../logger/fetchLogger")
 
 const getReapExchangeRate = async (userId, fromCurrency, toCurrency) => {
     const {apiKey, entityId} = await getUserReapApiCred(userId)
@@ -16,7 +17,7 @@ const getReapExchangeRate = async (userId, fromCurrency, toCurrency) => {
         method: "GET",
         headers,
     }
-    const response = await fetch(url, options)
+    const response = await fetchWithLogging(url, options)
     const responseBody = await response.json()
     if (!response.ok) {
         await createLog("reap/getReapExchangeRate", userId, responseBody.message, responseBody)

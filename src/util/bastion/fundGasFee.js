@@ -8,6 +8,7 @@ const { getDeveloperUserId } = require('../user/getDeveloperUser');
 const { getUserWallet } = require('../user/getUserWallet');
 const { getUserBalanceBastion } = require('./main/getWalletBalance');
 const { sendSlackGasStationWalletBalanceAlert } = require('../logger/slackLogger');		
+const { fetchWithLogging } = require('../logger/fetchLogger');
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -74,7 +75,7 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 			body: JSON.stringify(bodyObject)
 		};
 
-		const response = await fetch(url, options);
+		const response = await fetchWithLogging(url, options);
 		const data = await response.json();
 		if (!response.ok) {
 			throw JSON.stringify(data);

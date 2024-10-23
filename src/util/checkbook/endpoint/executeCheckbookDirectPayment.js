@@ -1,3 +1,5 @@
+const { fetchWithLogging } = require('../../logger/fetchLogger');
+
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const ExecuteCheckbookDirectPaymentErrorType = {
@@ -38,7 +40,7 @@ const executeCheckbookDirectPayment = async (recipient, accountType, routingNumb
 		body: JSON.stringify(body)
 	};
 
-	const response = await fetch(url, options);
+	const response = await fetchWithLogging(url, options);
 	const responseBody = await response.json();
 	return {response, responseBody};
 }

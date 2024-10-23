@@ -1,3 +1,5 @@
+const { fetchWithLogging } = require('../../logger/fetchLogger');
+
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
@@ -11,7 +13,7 @@ const getUserActions = async(requestId, userId) => {
 		}
 	};
 
-    const response = await fetch(url, options);
+    const response = await fetchWithLogging(url, options);
     return response
 }
 

@@ -4,6 +4,7 @@ const { v4 } = require("uuid");
 const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementStatus, extractActionsAndFields } = require("../utils");
 const createLog = require("../../logger/supabaseLogger");
 const { CustomerStatus } = require("../../user/common");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -71,7 +72,7 @@ exports.getBridgeExternalAccount = async (userId, accountId) => {
 
 
 		// fetch up-to-date infortmation
-		const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/external_accounts/${bridgeExternalAccountData.bridge_external_account_id}`, {
+		const response = await fetchWithLogging(`${BRIDGE_URL}/v0/customers/${bridgeCustomerData.bridge_id}/external_accounts/${bridgeExternalAccountData.bridge_external_account_id}`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY

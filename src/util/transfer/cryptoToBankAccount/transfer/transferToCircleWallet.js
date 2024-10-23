@@ -9,6 +9,7 @@ const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { v4 } = require('uuid');
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
+const { fetchWithLogging } = require("../../../logger/fetchLogger");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -85,7 +86,7 @@ const transferToCircleWallet = async (config) => {
 	};
 
 
-	const response = await fetch(url, options);
+	const response = await fetchWithLogging(url, options);
 	const responseBody = await response.json();
 
 

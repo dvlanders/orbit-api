@@ -1,3 +1,5 @@
+const { fetchWithLogging } = require("../../logger/fetchLogger");
+
 const { CIRCLE_WALLET_URL, CIRCLE_WALLET_API_KEY } = process.env;
 
 const getCircleTransaction = async (transactionId) => {
@@ -11,7 +13,7 @@ const getCircleTransaction = async (transactionId) => {
 		}
 	};
 
-    const response = await fetch(url, options);
+    const response = await fetchWithLogging(url, options);
     return response;
 }
 

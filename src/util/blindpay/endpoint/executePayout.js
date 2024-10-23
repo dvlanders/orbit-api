@@ -1,4 +1,5 @@
 const { ExecutePayoutErrorType, ExecutePayoutError } = require("../errors");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const executePayout = async (quoteId, fromWalletAddress) => {
   const headers = {
@@ -16,7 +17,7 @@ const executePayout = async (quoteId, fromWalletAddress) => {
 
   let response, responseBody;
   try {
-    response = await fetch(url, {
+    response = await fetchWithLogging(url, {
       method: "POST",
       headers: headers,
       body: JSON.stringify(payoutRequestBody),

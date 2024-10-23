@@ -5,6 +5,7 @@ const { updateFiatToFiatRecordByRequestId } = require("../utils/fiatToFiatTransa
 const fetchCheckbookFiatToFiatTransferRecord = require("./fetchCheckbookFiatToFiatTransferRecord");
 const { CreateFiatToFiatTransferError, CreateFiatToFiatTransferErrorType } = require("../utils/utils");
 const { isValidAmount } = require("../../../common/transferValidation");
+const { fetchWithLogging } = require("../../../logger/fetchLogger");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -83,7 +84,7 @@ const transferFromPlaidToBankAccount = async(configs) => {
             body: JSON.stringify(body)
         };
 
-        const response = await fetch(createDigitalPaymentUrl, options);
+        const response = await fetchWithLogging(createDigitalPaymentUrl, options);
         const responseBody = await response.json();
 
         if (!response.ok) {

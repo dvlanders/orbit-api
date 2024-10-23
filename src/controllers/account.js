@@ -32,6 +32,7 @@ const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccou
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
 const { updateAccountInfoById } = require('../util/blindpay/bankAccountService');
+const { fetchWithLogging } = require('../util/logger/fetchLogger');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -799,7 +800,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		};
 
 		const url = `${process.env.CIRCLE_URL}/businessAccount/banks/wires`;
-		const response = await fetch(url, {
+		const response = await fetchWithLogging(url, {
 			method: 'POST',
 			headers: headers,
 			body: JSON.stringify(requestBody)

@@ -3,6 +3,7 @@ const { v4 } = require("uuid");
 const { createLog } = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { insertAccountProviders, fetchAccountProvidersWithInternalId } = require("../../account/accountProviders/accountProvidersService")
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
@@ -81,7 +82,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 		}
 
 
-		const response = await fetch(`${CHECKBOOK_URL}/account/bank/iav/plaid`, {
+		const response = await fetchWithLogging(`${CHECKBOOK_URL}/account/bank/iav/plaid`, {
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
@@ -97,7 +98,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 
 			const { account, routing, name } = plaidAccountData.accounts[0];
 			// create checkbook account
-			const checkbookAccountResponse = await fetch(`${CHECKBOOK_URL}/account/bank`, {
+			const checkbookAccountResponse = await fetchWithLogging(`${CHECKBOOK_URL}/account/bank`, {
 				method: 'POST',
 				headers: {
 					'Accept': 'application/json',
@@ -227,7 +228,7 @@ exports.createCheckbookBankAccountForVirtualAccount = async (checkbookUserId, vi
 			"routing": routingNumber,
 			"type": "CHECKING",
 		}
-		const response = await fetch(`${CHECKBOOK_URL}/account/bank`, {
+		const response = await fetchWithLogging(`${CHECKBOOK_URL}/account/bank`, {
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',

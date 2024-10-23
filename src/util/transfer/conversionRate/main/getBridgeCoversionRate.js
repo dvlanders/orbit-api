@@ -1,4 +1,5 @@
 const createLog = require("../../../logger/supabaseLogger")
+const { fetchWithLogging } = require("../../../logger/fetchLogger")
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -23,7 +24,7 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
         const from = "usd"
         const to = toCurrency
 
-        const response = await fetch(`${BRIDGE_URL}/v0/exchange_rates?from=${from}&to=${to}`, {
+        const response = await fetchWithLogging(`${BRIDGE_URL}/v0/exchange_rates?from=${from}&to=${to}`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY

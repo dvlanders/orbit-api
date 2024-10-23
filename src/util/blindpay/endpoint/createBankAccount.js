@@ -6,6 +6,7 @@ const {
 } = require("../errors");
 const { BlindpayBankAccountType, BlindpayBankAccountTypeRequestParamMapping } = require("../utils");
 const { updateAccountInfoById } = require("../bankAccountService");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const bankAccountRequestBodyBuilder = async (bankAccountInfo) => {
 
@@ -65,7 +66,7 @@ const createBankAccount = async (bankAccountInfo) => {
 
   let response, responseBody;
   try {
-    response = await fetch(url, {
+    response = await fetchWithLogging(url, {
       method: "POST",
       headers: headers,
       body: JSON.stringify(requestBody),

@@ -1,4 +1,5 @@
 const { CreateQuoteErrorType, CreateQuoteError } = require("../errors");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const checkQuote = async (sourceCurrency, destinationCurrency, requestAmount = 100, coverFees = false) => {
   const headers = {
@@ -18,7 +19,7 @@ const checkQuote = async (sourceCurrency, destinationCurrency, requestAmount = 1
   const url = `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/quotes/check`;
   let response, responseBody;
   try {
-    response = await fetch(url, {
+    response = await fetchWithLogging(url, {
       method: "POST",
       headers: headers,
       body: JSON.stringify(quoteRequestBody),

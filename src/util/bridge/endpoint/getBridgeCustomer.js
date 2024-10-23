@@ -5,6 +5,7 @@ const { BridgeCustomerStatus, RejectionReasons, AccountActions, getEndorsementSt
 const createLog = require("../../logger/supabaseLogger");
 const { CustomerStatus } = require("../../user/common");
 const { KycLevel } = require("../../user/kycInfo");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -146,7 +147,7 @@ const getBridgeCustomer = async(userId, kycLevel = null) => {
         }
 
         // fetch up-to-date infortmation
-        const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeCustomer.bridge_id}`, {
+        const response = await fetchWithLogging(`${BRIDGE_URL}/v0/customers/${bridgeCustomer.bridge_id}`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
