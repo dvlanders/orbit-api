@@ -7,13 +7,13 @@ const { convertKeysToCamelCase } = require("../../../utils/object")
 
 const fetchManualDepositBridgeFiatToCryptoTransferRecord = async(id, profileId) => {
     // get transactio record
-    const record = await fetchFiatToCryptoRequestInfortmaionById(id, profileId)
+    const record = await fetchFiatToCryptoRequestInfortmaionById(id, profileId, "MANUAL_DEPOSIT", "BRIDGE")
     if (!record) return null
     // get rail information
     let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
         .from('bridge_virtual_accounts')
         .select('*')
-        .eq("virtual_account_id", record.bridge_virtual_account_id)
+        .eq("id", record.bridge_transfer_info?.virtual_account_id)
         .single())
 
     if (bridgeVirtualAccountError) throw bridgeVirtualAccountError

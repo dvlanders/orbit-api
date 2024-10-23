@@ -21,7 +21,7 @@ const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiat
 const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
 const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
 const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
-const { safeStringToFloat } = require("../../../utils/number");
+const { safeStringToFloat, safeSum } = require("../../../utils/number");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
@@ -128,7 +128,7 @@ const initTransferData = async (config) => {
 	}
 
 	// update into crypto to crypto table
-	const amountIncludeDeveloperFee = parseFloat((amount + feeAmount).toFixed(2))
+	const amountIncludeDeveloperFee = parseFloat(safeSum([amount, feeAmount]).toFixed(2))
 	const result = await updateOfframpTransactionRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress, amount_include_developer_fee: amountIncludeDeveloperFee })
 	return result
 }

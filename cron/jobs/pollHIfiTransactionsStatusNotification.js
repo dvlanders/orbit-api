@@ -10,7 +10,7 @@ const notifyOnrampTransactions = async () => {
 
     const { data: onrampTrasactionData, error: onrampTransactionError } = await supabase
         .from("onramp_transactions")
-        .select("*")
+        .select("*, checkbook_transaction_info:checkbook_transaction_record_id(*), bridge_transaction_info:bridge_transaction_record_id(*)")
         .or("status.eq.REFUNDED, status.eq.FAILED")
         .gt("updated_at", now.toISOString())
         .order("updated_at", { ascending: true });
@@ -20,6 +20,9 @@ const notifyOnrampTransactions = async () => {
         return;
     }
 
+    const checkbookRecord = onrampTrasactionData.checkbook_transaction_info;
+    const bridgeRecord = onrampTrasactionData.bridge_transaction_info;
+
     await Promise.all(
         onrampTrasactionData.map(async (transaction) => {
             notifyTransaction(
@@ -28,8 +31,8 @@ const notifyOnrampTransactions = async () => {
                 transaction.id,
                 {
                     transactionStatus: transaction.status,
-                    checkbookStatus: transaction.checkbook_status,
-                    bridgeStatus: transaction.bridge_status,
+                    checkbookStatus: checkbookRecord.checkbook_status,
+                    bridgeStatus: bridgeRecord.bridge_status,
                     failedReason: transaction.failed_reason,
                 }
             );

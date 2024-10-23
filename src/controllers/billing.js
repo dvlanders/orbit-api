@@ -186,7 +186,7 @@ exports.createCheckoutSession = async (req, res) => {
             product: productId.product_id,
             unit_amount: 100,
           },
-          quantity: 50
+          quantity: Math.max(1000, billingInfo.monthly_minimum)
         },
       ],
       mode: "payment",

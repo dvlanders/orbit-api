@@ -44,12 +44,12 @@ const fetchAllFiatToCryptoTransferRecord = async(profileId, extraQuery, limit=10
 
     let query = supabase
         .from("onramp_transactions")
-        .select("id, fiat_provider, crypto_provider, users: user_id!inner(id, profile_id), virtual_account: bridge_virtual_account_id!inner(id)")
+        .select("id, fiat_provider, crypto_provider, users: user_id!inner(id, profile_id), bridge_transaction_info: bridge_transaction_record_id(virtual_account_id)")
         .eq("users.profile_id", profileId)
 
     if (userId) query = query.eq("user_id", userId)
     if (virtualAccountId) query = query
-                                    .eq("virtual_account.id", virtualAccountId)
+                                    .eq("bridge_transaction_info.virtual_account_id", virtualAccountId)
                                     .eq("fiat_provider", "MANUAL_DEPOSIT")
 
     query = query
