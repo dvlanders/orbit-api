@@ -1,5 +1,6 @@
 const { currencyContractAddress } = require("../../common/blockchain");
 const { erc20Transfer } = require("../utils/erc20FunctionMap");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -26,6 +27,6 @@ exports.transfer = async(id, requestRecord) => {
 		body: JSON.stringify(bodyObject)
 	};
 
-    const response = await fetch(url, options);
+    const response = await fetchWithLogging(url, options, "BASTION");
     return response
 }

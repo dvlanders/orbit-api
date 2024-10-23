@@ -2,6 +2,7 @@ const createLog = require("../../logger/supabaseLogger");
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -107,7 +108,7 @@ const submitKycDataIndividual = async (userId, type, bastionUserId) => {
 		body: JSON.stringify(requestBody)
 	};
 
-	const response = await fetch(url, options);
+	const response = await fetchWithLogging(url, options, "BASTION");
 	return response;
 };
 

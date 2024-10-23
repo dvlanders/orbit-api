@@ -1,6 +1,7 @@
 const createLog = require("../../logger/supabaseLogger")
 const getUserReapApiCred = require("../utils/getUserApiCred")
 const { chainToReapNetwork } = require("../utils/map")
+const { fetchWithLogging } = require("../../logger/fetchLogger")
 
 const getUserReapWalletAddress = async(userId, chain) => {
     const {apiKey, entityId} = await getUserReapApiCred(userId)
@@ -11,7 +12,7 @@ const getUserReapWalletAddress = async(userId, chain) => {
         "x-reap-api-key": apiKey,
         "x-reap-entity-id": entityId
     }
-    const response = await fetch(url, {headers})
+    const response = await fetchWithLogging(url, {headers}, "REAP")
     const responseBody = await response.json()
     if (!response.ok){
         await createLog("reap/utils/getUserReapWalletAddress", userId, responseBody.message, responseBody)
