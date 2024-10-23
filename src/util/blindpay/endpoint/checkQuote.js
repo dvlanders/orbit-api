@@ -23,7 +23,7 @@ const checkQuote = async (sourceCurrency, destinationCurrency, requestAmount = 1
       method: "POST",
       headers: headers,
       body: JSON.stringify(quoteRequestBody),
-    });
+    }, "BLINDPAY");
     responseBody = await response.json();
   } catch (error) {
     console.error("Blindpay API check quote fetch error or parsing error:", error);

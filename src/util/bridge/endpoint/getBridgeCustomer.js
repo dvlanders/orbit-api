@@ -152,7 +152,7 @@ const getBridgeCustomer = async(userId, kycLevel = null) => {
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
 			}
-		});
+		}, "BRIDGE");
         const responseBody = await response.json()
         if (response.status == 500) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, "Bridge internal server error", responseBody)
         if (!response.ok) throw new getBridgeCustomerError(getBridgeCustomerErrorType.INTERNAL_ERROR, responseBody.message, responseBody)

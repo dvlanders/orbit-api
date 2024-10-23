@@ -13,7 +13,7 @@ const getCircleTransaction = async (transactionId) => {
 		}
 	};
 
-    const response = await fetchWithLogging(url, options);
+    const response = await fetchWithLogging(url, options, "CIRCLE");
     return response;
 }
 

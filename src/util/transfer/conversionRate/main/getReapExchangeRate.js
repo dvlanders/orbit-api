@@ -17,7 +17,7 @@ const getReapExchangeRate = async (userId, fromCurrency, toCurrency) => {
         method: "GET",
         headers,
     }
-    const response = await fetchWithLogging(url, options)
+    const response = await fetchWithLogging(url, options, "REAP")
     const responseBody = await response.json()
     if (!response.ok) {
         await createLog("reap/getReapExchangeRate", userId, responseBody.message, responseBody)

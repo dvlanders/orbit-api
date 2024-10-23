@@ -65,13 +65,14 @@ const logHifiApi = async (message) => {
 
 }
 
-const logThirdPartyApi = async (thirdPartyUrl, method, reqBody, response, error = null) => {
+const logThirdPartyApi = async (thirdPartyUrl, tag, method, reqBody, response, error = null) => {
 
 	try{
 		const now = Date.now() * 1e6;
 
 		const message = {
 			url: thirdPartyUrl,
+			tag: tag,
 			method: method ? method : null,
 			statusCode: response ? response.status : null,
 			statusText: response ? response.statusText : null,

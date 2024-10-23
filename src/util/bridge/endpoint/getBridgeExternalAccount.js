@@ -77,7 +77,7 @@ exports.getBridgeExternalAccount = async (userId, accountId) => {
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
 			}
-		});
+		}, "BRIDGE");
 
 		const bridgeData = await response.json()
 

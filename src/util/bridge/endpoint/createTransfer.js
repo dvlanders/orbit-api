@@ -31,7 +31,7 @@ const createBridgeTransfer = async (clientReferenceId, amount, onBehalfOfBridgeU
 		},
 		body: JSON.stringify(requestBody)
 	}
-	const response = await fetchWithLogging(url, options);
+	const response = await fetchWithLogging(url, options, "BRIDGE");
 	const responseBody = await safeParseBody(response)
 	// update bridge transaction record
 	const toUpdate = {

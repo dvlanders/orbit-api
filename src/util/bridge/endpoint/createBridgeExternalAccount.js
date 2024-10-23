@@ -119,7 +119,7 @@ exports.createBridgeExternalAccount = async (
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(bodyObject)
-		});
+		}, "BRIDGE");
 
 		const bridgeData = await bridgeResponse.json();
 

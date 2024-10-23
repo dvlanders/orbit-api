@@ -15,7 +15,7 @@ const fetchBridgeVirtualAccountMicroDeposit = async(userId, virtualAccountId, li
             headers: {
                 'Api-Key': BRIDGE_API_KEY
             }
-        })
+        }, "BRIDGE")
 
         const responseBody = await response.json()
 

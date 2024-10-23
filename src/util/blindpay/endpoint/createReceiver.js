@@ -138,7 +138,7 @@ const createReceiver = async (receiverInfo) => {
       method: "POST",
       headers: headers,
       body: JSON.stringify(receiverRequestBody),
-    });
+    }, "BLINDPAY");
     responseBody = await response.json();
   } catch (error) {
     throw new CreateReceiverError(

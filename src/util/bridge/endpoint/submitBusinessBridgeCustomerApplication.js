@@ -222,7 +222,7 @@ exports.createBusinessBridgeCustomer = async (userId, bridgeId = undefined, isUp
 			}
 		}
 		// call bridge endpoint
-		const response = await fetchWithLogging(url, options);
+		const response = await fetchWithLogging(url, options, "BRIDGE");
 		const responseBody = await safeParseBody(response)
 
 

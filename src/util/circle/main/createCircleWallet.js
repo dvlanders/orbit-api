@@ -73,7 +73,7 @@ const createCircleWallet = async (userId, walletType="INDIVIDUAL") => {
                 "name": `${userId}`
             })
         }
-        const walletSetResponse = await fetchWithLogging(walletSetUrl, walletSetOptions)
+        const walletSetResponse = await fetchWithLogging(walletSetUrl, walletSetOptions, "CIRCLE")
         const walletSetResponseBody = await safeParseBody(walletSetResponse)
 
         if (!walletSetResponse.ok){
@@ -101,7 +101,7 @@ const createCircleWallet = async (userId, walletType="INDIVIDUAL") => {
                 "metadata": [{name: `userId-${userId}-${walletType}`, refId: `${userId}-${walletType}`}]
             })
         }
-        const walletResponse = await fetchWithLogging(walletUrl, walletOptions)
+        const walletResponse = await fetchWithLogging(walletUrl, walletOptions, "CIRCLE")
         const walletResponseBody = await safeParseBody(walletResponse)
 
         // error

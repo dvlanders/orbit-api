@@ -26,6 +26,6 @@ exports.submitUserAction = async(params) => {
 		body: JSON.stringify(bodyObject)
 	};
 
-    const response = await fetchWithLogging(url, options);
+    const response = await fetchWithLogging(url, options, "BASTION");
     return response
 }

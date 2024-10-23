@@ -85,7 +85,7 @@ const submitKycData = async (userId, bastionUserId) => {
 		body: JSON.stringify(requestBody)
 	};
 
-	const response = await fetchWithLogging(url, options);
+	const response = await fetchWithLogging(url, options, "BASTION");
 	return response;
 };
 

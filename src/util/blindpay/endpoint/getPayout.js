@@ -15,7 +15,7 @@ const getPayout = async (payoutId) => {
     response = await fetchWithLogging(url, {
       method: "GET",
       headers: headers,
-    });
+    }, "BLINDPAY");
     responseBody = await response.json();
   } catch (error) {
     throw new GetPayoutError(

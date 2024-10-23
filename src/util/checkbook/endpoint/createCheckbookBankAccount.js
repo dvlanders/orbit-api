@@ -90,7 +90,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
-		});
+		}, "CHECKBOOK");
 
 		const plaidAccountData = await response.json()
 		// happy path
@@ -111,7 +111,7 @@ exports.createCheckbookBankAccountWithProcessorToken = async (userId, accountTyp
 					routing: routing,
 					type: accountType
 				})
-			});
+			}, "CHECKBOOK");
 			const checkbookAccountResponseBody = await checkbookAccountResponse.json();
 			if (!checkbookAccountResponse.ok) {
 				throw new createCheckbookError(createCheckbookErrorType.INTERNAL_ERROR, checkbookAccountResponseBody.error || "unknown error", checkbookAccountResponseBody)
@@ -236,7 +236,7 @@ exports.createCheckbookBankAccountForVirtualAccount = async (checkbookUserId, vi
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
-		});
+		}, "CHECKBOOK");
 
 		const checkbookData = await response.json()
 		// happy path

@@ -139,7 +139,7 @@ exports.createIndividualBridgeCustomer = async (userId) => {
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
-		});
+		}, "BRIDGE");
 
 		const responseBody = await response.json();
 		const { status: baseStatus } = getEndorsementStatus(responseBody.endorsements, "base")

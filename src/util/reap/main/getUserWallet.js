@@ -12,7 +12,7 @@ const getUserReapWalletAddress = async(userId, chain) => {
         "x-reap-api-key": apiKey,
         "x-reap-entity-id": entityId
     }
-    const response = await fetchWithLogging(url, {headers})
+    const response = await fetchWithLogging(url, {headers}, "REAP")
     const responseBody = await response.json()
     if (!response.ok){
         await createLog("reap/utils/getUserReapWalletAddress", userId, responseBody.message, responseBody)

@@ -11,7 +11,7 @@ const getReapPayment = async(paymentId, userId) => {
         "x-reap-entity-id": entityId
     }
 
-    const response = await fetchWithLogging(url, {headers})
+    const response = await fetchWithLogging(url, {headers}, "REAP")
     return response
 }
 

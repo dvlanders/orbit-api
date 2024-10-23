@@ -86,7 +86,7 @@ const transferToCircleWallet = async (config) => {
 	};
 
 
-	const response = await fetchWithLogging(url, options);
+	const response = await fetchWithLogging(url, options, "BASTION");
 	const responseBody = await response.json();
 
 

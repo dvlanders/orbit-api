@@ -19,7 +19,7 @@ const acceptPaymentQuote = async(paymentId, userId) => {
         method: "PUT",
         headers,
         body: JSON.stringify(requestBody)
-    })
+    }, "REAP")
 
     return response
 

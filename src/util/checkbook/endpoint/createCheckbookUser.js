@@ -50,7 +50,7 @@ const createSingleCheckbookUser = async (user, user_id, checkbook_user_id, type)
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify(requestBody)
-	});
+	}, "CHECKBOOK");
 
 	const responseBody = await response.json()
 
@@ -83,7 +83,7 @@ const createSingleCheckbookUser = async (user, user_id, checkbook_user_id, type)
 					'Accept': 'application/json',
 					'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
 				}
-			})
+			}, "CHECKBOOK")
 			// successfully getch record
 			const responseBody = await response.json()
 			if (response.ok && responseBody.total == 1) {

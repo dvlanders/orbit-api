@@ -84,7 +84,7 @@ const transferFromPlaidToBankAccount = async(configs) => {
             body: JSON.stringify(body)
         };
 
-        const response = await fetchWithLogging(createDigitalPaymentUrl, options);
+        const response = await fetchWithLogging(createDigitalPaymentUrl, options, "CHECKBOOK");
         const responseBody = await response.json();
 
         if (!response.ok) {

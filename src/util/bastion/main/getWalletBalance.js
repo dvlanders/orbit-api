@@ -17,7 +17,7 @@ exports.getUserBalanceBastion = async(bastionUserId, chain, currency) => {
 		}
 	};
 
-    const response = await fetchWithLogging(url, options);
+    const response = await fetchWithLogging(url, options, "BASTION");
     const responseBody = await safeParseBody(response)
     if (!response.ok) {
         await createLog("user/getUserWalletBalance", null, "Something went wrong when getting wallet balance", responseBody, null)

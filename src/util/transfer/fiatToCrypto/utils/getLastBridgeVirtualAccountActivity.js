@@ -22,7 +22,7 @@ exports.getLastBridgeVirtualAccountActivity = async (userId, bridgeVirtualAccoun
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
 			}
-		});
+		}, "BRIDGE");
         const responseBody = await response.json()
 
         if (!response.ok){

@@ -56,7 +56,7 @@ exports.createBridgeLiquidationAddress = async (
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
-		});
+		}, "BRIDGE");
 
 		const responseJson = await response.json();
 

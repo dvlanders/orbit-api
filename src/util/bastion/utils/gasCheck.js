@@ -45,7 +45,7 @@ const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId)
 			}
 		};
 
-        const response = await fetchWithLogging(url, options)
+        const response = await fetchWithLogging(url, options, "BASTION")
         const responseBody = await response.json()
 
         if (!response.ok){

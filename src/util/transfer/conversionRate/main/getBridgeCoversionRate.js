@@ -29,7 +29,7 @@ const getBridgeConversionRate = async(fromCurrency, toCurrency, profileId) => {
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
 			}
-		});
+		}, "BRIDGE");
 		const responseBody = await response.json();
         if (!response.ok) {
             await createLog("transfer/conversionRate/getBridgeConversionRate", null, responseBody.message, responseBody, profileId) 

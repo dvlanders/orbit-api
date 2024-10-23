@@ -35,7 +35,7 @@ const updateDeveloperFeeRecordCircle = async (feeTransaction, responseBody=null,
             }
         };
 
-        response = await fetchWithLogging(url, options);
+        response = await fetchWithLogging(url, options, "CIRCLE");
         data = await safeParseBody(response)
     }
 

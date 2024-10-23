@@ -133,7 +133,7 @@ const updateReceiver = async (receiverInfo) => {
       headers: headers,
       body: JSON.stringify(receiverRequestBody),
     }
-  );
+    , "BLINDPAY");
 
   const responseBody = await response.json();
   // console.log(responseBody);

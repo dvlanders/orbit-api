@@ -804,7 +804,7 @@ exports.createCircleWireBankAccount = async (req, res) => {
 			method: 'POST',
 			headers: headers,
 			body: JSON.stringify(requestBody)
-		});
+		}, "CIRCLE");
 
 
 		if (response.status === 400 || response.status === 401) {

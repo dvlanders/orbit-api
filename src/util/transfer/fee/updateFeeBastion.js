@@ -29,7 +29,7 @@ const updateDeveloperFeeRecordBastion = async(feeTransaction, responseBody=null,
             }
         };
 
-        response = await fetchWithLogging(url, options);
+        response = await fetchWithLogging(url, options, "BASTION");
         data = await safeParseBody(response)
         if (response.status === 404 || !response.ok) {
             const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${data.message || 'Unknown error'}. Bastion request Id: ${feeRecord.request_id}`;

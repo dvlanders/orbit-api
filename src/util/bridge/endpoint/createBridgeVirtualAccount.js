@@ -99,7 +99,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify(requestBody)
-	});
+	}, "BRIDGE");
 
 	const responseBody = await response.json()
 	if (response.ok) {

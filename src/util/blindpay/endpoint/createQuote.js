@@ -24,7 +24,7 @@ const createQuote = async (bankAccountId, quoteAmount, network, token) => {
       method: "POST",
       headers: headers,
       body: JSON.stringify(quoteRequestBody),
-    });
+    }, "BLINDPAY");
     responseBody = await response.json();
   } catch (error) {
     throw new CreateQuoteError(

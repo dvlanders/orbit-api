@@ -19,7 +19,7 @@ async function createUser(userId) {
 		body: JSON.stringify(bodyObject),
 	};
 
-	const response = await fetchWithLogging(url, options);
+	const response = await fetchWithLogging(url, options, "BASTION");
 	return response
 }
 

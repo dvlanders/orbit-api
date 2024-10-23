@@ -40,7 +40,7 @@ const executeCheckbookDirectPayment = async (recipient, accountType, routingNumb
 		body: JSON.stringify(body)
 	};
 
-	const response = await fetchWithLogging(url, options);
+	const response = await fetchWithLogging(url, options, "CHECKBOOK");
 	const responseBody = await response.json();
 	return {response, responseBody};
 }

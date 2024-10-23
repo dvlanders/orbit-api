@@ -21,7 +21,7 @@ const createPaymentQuote = async(userId, accountId, paymentConfig) => {
         headers,
         body: JSON.stringify(requestBody)
     }
-    const response = await fetchWithLogging(url, options)
+    const response = await fetchWithLogging(url, options, "REAP")
     
     return response
 

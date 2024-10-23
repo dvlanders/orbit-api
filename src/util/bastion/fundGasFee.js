@@ -75,7 +75,7 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 			body: JSON.stringify(bodyObject)
 		};
 
-		const response = await fetchWithLogging(url, options);
+		const response = await fetchWithLogging(url, options, "BASTION");
 		const data = await response.json();
 		if (!response.ok) {
 			throw JSON.stringify(data);

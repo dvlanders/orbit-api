@@ -21,7 +21,7 @@ const executePayout = async (quoteId, fromWalletAddress) => {
       method: "POST",
       headers: headers,
       body: JSON.stringify(payoutRequestBody),
-    });
+    }, "BLINDPAY");
     responseBody = await response.json();
   } catch (error) {
     throw new ExecutePayoutError(

@@ -30,7 +30,7 @@ const checkUserApiKeyPairsHealth = async(checkbook_user) => {
             'Authorization': `${checkbook_user.api_key}:${checkbook_user.api_secret}`,
             'Content-Type': 'application/json'
         },
-    }); 
+    }, "CHECKBOOK"); 
     const responseBody = await response.json()
     if (response.ok){
         return
