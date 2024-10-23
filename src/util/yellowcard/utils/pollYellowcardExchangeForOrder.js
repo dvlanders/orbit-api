@@ -123,6 +123,7 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 					console.log('successful bastion user action')
 
 					const offrampTransactionRecordToUpdate = {
+                        bastion_request_id: bastionResponseBody.requestId,
 						bastion_response: bastionResponseBody,
 						transaction_hash: bastionResponseBody.transactionHash,
 						bastion_transaction_status: bastionResponseBody.status,
