@@ -49,6 +49,7 @@ const { createUsdcBridgingRequest } = require("../util/transfer/bridging/createU
 const { checkIsBridgingRequestIdAlreadyUsed } = require("../util/transfer/bridging/fetchRequestInformation");
 const fetchBridgingTransactions = require("../util/transfer/bridging/fetchBridgingTransactions");
 const { getUserWallet } = require("../util/user/getUserWallet");
+const createJob = require("../../asyncJobs/createJob");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {

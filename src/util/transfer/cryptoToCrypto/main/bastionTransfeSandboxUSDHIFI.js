@@ -134,10 +134,7 @@ const createBastionSandboxCryptoTransfer = async(fields) => {
     const jobConfig = {
         recordId: record.id
     }
-    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
-    if (canSchedule){
-        await createJob("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
-    }
+    await createJob("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
 
     return receipt
 

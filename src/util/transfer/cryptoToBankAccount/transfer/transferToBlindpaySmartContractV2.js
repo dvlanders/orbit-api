@@ -245,9 +245,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
     // TODO: This is for Bridge, we need to fix it for Blindpay in the future when we want to allow Fee transfer
     const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
-    if (await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id)) {
-        await createJob("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id, profileId)
-    }
+    await createJob("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id, profileId)
     return { isExternalAccountExist: true, transferResult: result }
 }
 
@@ -275,9 +273,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
         walletTransactionRecordId: providerRecordId
     }
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
-    if (await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id)) {
-        await createJob("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id, profileId)
-    }
+    await createJob("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id, profileId)
     const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
     return { isExternalAccountExist: true, transferResult: result }
 }
@@ -393,9 +389,7 @@ const acceptBlindpayCryptoToFiatTransfer = async (config) => {
 	const jobConfig = {
 		recordId
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
-	}
+	await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
 	const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
 	return result
 }

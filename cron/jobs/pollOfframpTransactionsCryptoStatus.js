@@ -6,7 +6,6 @@ const notifyCryptoToFiatTransfer = require('../../webhooks/transfer/notifyCrypto
 const createLog = require('../../src/util/logger/supabaseLogger');
 const { simulateSandboxCryptoToFiatTransactionStatus } = require('../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction');
 const { executeBlindpayPayoutScheduleCheck } = require('../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck');
-const createJob = require('../../asyncJobs/createJob');
 const { statusMapBastion } = require('../../src/util/transfer/walletOperations/bastion/statusMap');
 const { statusMapCircle } = require('../../src/util/transfer/walletOperations/circle/statusMap');
 const { updateOfframpTransactionRecord } = require('../../src/util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService');

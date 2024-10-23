@@ -173,10 +173,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 		const jobConfig = {
 			offrampRecordId: updatedOfframpRecord.id
 		}
-		console.log("jobConfig", jobConfig)
-		if (await reapApproveFundsScheduleCheck("reapApproveFunds", jobConfig, sourceUserId, profileId)){
-			await createJob("reapApproveFunds", jobConfig, sourceUserId, profileId)
-		}
+		await createJob("reapApproveFunds", jobConfig, sourceUserId, profileId)
 	}
 
 	const result = await fetchReapCryptoToFiatTransferRecord(updatedOfframpRecord.id, profileId)
@@ -243,9 +240,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 		const jobConfig = {
 			offrampRecordId: updatedRecord.id
 		}
-		if (await reapApproveFundsScheduleCheck("reapApproveFunds", jobConfig, sourceUserId, profileId)){
-			await createJob("reapApproveFunds", jobConfig, sourceUserId, profileId)
-		}
+		await createJob("reapApproveFunds", jobConfig, sourceUserId, profileId)
 	}
 
 	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
@@ -418,9 +413,7 @@ const acceptReapCryptoToFiatTransfer = async(config) => {
 	const jobConfig = {
 		recordId
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
-	}
+	await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
 
 	const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
     return result

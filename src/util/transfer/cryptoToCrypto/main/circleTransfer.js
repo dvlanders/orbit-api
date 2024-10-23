@@ -126,10 +126,7 @@ const createCircleCryptoTransfer = async(fields) => {
     const jobConfig = {
         recordId: record.id
     }
-    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
-    if (canSchedule){
-        await createJob("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
-    }
+    await createJob("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
 
     return receipt
 

@@ -79,10 +79,7 @@ const updateStatus = async (onrampTransaction) => {
 
 					if (onrampTransaction.developer_fee_id) {
 						const jobConfig = {recordId: onrampTransaction.id}
-						const canSchedule = await chargeFeeOnFundReceivedScheduleCheck("chargeFeeOnFundReceived", jobConfig, onrampTransaction.destination_user_id, onrampTransaction.destination_user.profile_id)
-						if (canSchedule){
-							await createJob("chargeFeeOnFundReceived", jobConfig, onrampTransaction.destination_user_id, onrampTransaction.destination_user.profile_id, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
-						}
+						await createJob("chargeFeeOnFundReceived", jobConfig, onrampTransaction.destination_user_id, onrampTransaction.destination_user.profile_id)
 					}
 
                     // send slack notification if failed

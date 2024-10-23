@@ -352,11 +352,7 @@ exports.createHifiUserAsync = async (req, res) => {
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
-		const canSchedule = await createUserAsyncCheck("createUser", { userId, userType: fields.userType }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
-
-
 		return res.status(200).json(createHifiUserResponse)
 
 	} catch (error) {
@@ -404,8 +400,6 @@ exports.updateHifiUserAsync = async (req, res) => {
 		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
 
 		// insert async jobs
-		const canSchedule = await updateUserAsyncCheck("updateUser", { userId, userType: user.user_type }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
 		await createJob("updateUser", { userId, userType: user.user_type }, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);
@@ -498,8 +492,6 @@ exports.createDeveloperUser = async (req, res) => {
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
-		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
@@ -605,8 +597,6 @@ exports.updateDeveloperUser = async (req, res) => {
 		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
 
 		// insert async jobs
-		const canSchedule = await updateDeveloperUserAsyncCheck("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
 		await createJob("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);

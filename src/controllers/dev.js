@@ -178,17 +178,6 @@ exports.testSendMessage = async(req, res) => {
     }
 }
 
-exports.testCreateJob = async(req, res) => {
-    if (req.method !== "POST"){
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    await createJob("testJob", {userid: "123", amount: "123"}, undefined, undefined)
-
-    return res.status(200).json({message: "success"})
-
-}
-
 exports.testApproveAsset = async(req, res) => {
     if (req.method !== "POST"){
         return res.status(405).json({ error: 'Method not allowed' });

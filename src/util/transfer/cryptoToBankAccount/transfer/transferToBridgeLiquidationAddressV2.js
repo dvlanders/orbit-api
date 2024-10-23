@@ -429,9 +429,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	const jobConfig = {
 		recordId: initialTransferRecord.id
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
-	}
+	await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
 
 	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return { isExternalAccountExist: true, transferResult: result }

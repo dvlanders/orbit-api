@@ -69,9 +69,7 @@ const sandboxMintUSDHIFI = async(config) => {
             amount: amount,
             onRampRecordId: initialRecord.id
         }
-        if (mintScheduleCheck("mint", jobConfig, sourceUserId, profileId)){
-            await createJob("mint", jobConfig, sourceUserId, profileId)
-        }
+        await createJob("mint", jobConfig, sourceUserId, profileId)
 
         const func = FiatToCryptoSupportedPairFetchFunctionsCheck("BRIDGE", "CHECKBOOK")
         const result = await func(initialRecord.id, profileId)

@@ -37,10 +37,7 @@ const gasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId) => {
             const jobConfig = {
                 userId, chain, amount: gasAmount[chain], walletType, profileId
             }
-            const canSchedule = await fundGasScheduleCheck("fundGas", jobConfig, userId, profileId)
-            if (canSchedule){
-                await createJob("fundGas", jobConfig, userId, profileId)
-            }
+            await createJob("fundGas", jobConfig, userId, profileId)
             return {needFund: true, fundSubmitted: true, error: false}
         }
 

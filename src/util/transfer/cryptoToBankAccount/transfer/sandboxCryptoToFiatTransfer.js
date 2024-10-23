@@ -280,9 +280,7 @@ const createSandboxCryptoToFiatTransfer = async (config) => {
 	const jobConfig = {
 		recordId: initialTransferRecord.id
 	}
-	if (await cryptoToFiatTransferSandboxScheduleCheck("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)
-	}
+	await createJob("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)
 
     const func = FetchCryptoToBankSupportedPairCheck(initialTransferRecord.crypto_provider, initialTransferRecord.fiat_provider)
     const result = await func(initialTransferRecord.id, profileId)

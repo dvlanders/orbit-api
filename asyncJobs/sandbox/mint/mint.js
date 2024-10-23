@@ -1,19 +1,15 @@
 const { v4 } = require("uuid")
-const { mintUSDHIFI } = require("../../../src/util/smartContract/sandboxUSDHIFI/mint")
 const createJob = require("../../createJob")
-const { mintCheckScheduleCheck } = require("./scheduleCheck")
 const createLog = require("../../../src/util/logger/supabaseLogger")
-const { simulateSandboxCryptoToFiatTransactionStatus } = require("../../../src/util/transfer/cryptoToBankAccount/utils/simulateSandboxCryptoToFiatTransaction")
 const { simulateSandboxFiatToCryptoTransactionStatus } = require("../../../src/util/transfer/fiatToCrypto/utils/simulateSandboxFiatToCryptoTransaction")
 const notifyFiatToCryptoTransfer = require("../../../webhooks/transfer/notifyFiatToCryptoTransfer")
 const supabase = require("../../../src/util/supabaseClient")
 const { USDHIFIContractAddressMap } = require("../../../src/util/smartContract/sandboxUSDHIFI/utils")
-const { getUserWallet } = require("../../../src/util/user/getUserWallet")
-const { insertWalletTransactionRecord, submitWalletUserAction, getUserAction, updateWalletTransactionRecord } = require("../../../src/util/transfer/walletOperations/utils")
+const { insertWalletTransactionRecord, submitWalletUserAction } = require("../../../src/util/transfer/walletOperations/utils")
 const { transferType } = require("../../../src/util/transfer/utils/transfer")
 const { updateOnrampTransactionRecord } = require("../../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService")
-const { updateContractActionRecord, insertSingleContractActionRecord, getContractActionRecord } = require("../../../src/util/transfer/contractAction/contractActionTableService")
-const { statusMapBastion } = require("../../../src/util/transfer/walletOperations/bastion/statusMap")
+const { updateContractActionRecord, insertSingleContractActionRecord } = require("../../../src/util/transfer/contractAction/contractActionTableService")
+const { getRetryConfig } = require("../../retryJob")
 
 
 const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df'
@@ -32,13 +28,11 @@ const mintCheck = async(config) => {
             .eq("id", contractActionRecordId)
             .maybeSingle()
 
-        // reinsert check job if not yet in final status
+        // reschedule check job if not yet in final status
         if ((contractActionRecord.status == "SUBMITTED" || contractActionRecord.status == "ACCEPTED" || contractActionRecord.status == "PENDING")){
-            const currentTime = new Date();
-            currentTime.setSeconds(currentTime.getSeconds() + 30);
-            const nextRetry = currentTime.toISOString()
-            await createJob("mintCheck", config, userId, profileId, currentTime.toISOString(), 0, nextRetry)
-            return
+            return {
+                retryDetails: getRetryConfig(true, 15000, "Mint in not yet confirmed"),
+            }
         }
 
         const toUpdateOnrampRecord = {
@@ -137,11 +131,16 @@ const mint = async(config) => {
         // insert mint check if success
         if (mainTableStatus == "SUBMITTED" || mainTableStatus == "ACCEPTED"){
             const newJogConfig = {...config, contractActionRecordId: record.id}
-            if (!(await mintCheckScheduleCheck("mintCheck", newJogConfig, userId, profileId))) return
             const currentTime = new Date();
             currentTime.setSeconds(currentTime.getSeconds() + 30);
             const nextRetry = currentTime.toISOString()
-            await createJob("mintCheck", newJogConfig, userId, profileId, currentTime.toISOString(), 0, nextRetry)
+
+            const asyncJobSettings = {
+                allowDuplicate: false,
+                nextRetry: nextRetry,
+            }
+            await createJob("mintCheck", newJogConfig, userId, profileId, asyncJobSettings)
+
         }
 
     }catch (error){

@@ -48,9 +48,7 @@ const createUsdcBridgingRequest = async (config) => {
         
         // create Job to initiate bridge
         const jobConfig = { bridgingRecordId: record.id }
-        if (await bridgingUsdcScheduleCheck("bridgeUsdc", jobConfig, sourceUserId, profileId)){
-            await createJob("bridgeUsdc", jobConfig, sourceUserId, profileId)
-        }
+        await createJob("bridgeUsdc", jobConfig, sourceUserId, profileId)
 
         const receipt = await fetchBridgingTransactions(record.id, profileId)
         return receipt
