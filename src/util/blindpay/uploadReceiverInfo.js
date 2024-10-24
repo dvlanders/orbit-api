@@ -155,6 +155,19 @@ const uploadReceiverKYCInfo = async (fields) => {
     );
   }
 
+  if (fields.kyc_type === "standard" && fields.type === "individual" && fields.country !== fields.id_doc_country) {
+    throw new ReceiverInfoUploadError(
+      ReceiverInfoUploadErrorType.INVALID_FIELD,
+      400,
+      "",
+      {
+        error: `country and id_doc_country must be the same for individual standard KYC`,
+        missing_fields: [],
+        invalid_fields: ["country", "id_doc_country"],
+      }
+    );
+  }
+
   const invalidFiles = await filesValidation(fields);
   if (invalidFiles.length > 0) {
     throw new ReceiverInfoUploadError(
