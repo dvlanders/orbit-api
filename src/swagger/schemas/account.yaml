@@ -361,6 +361,230 @@ EurOfframpSepaAccount:
     - ibanAccountNumber
     - businessIdentifierCode
     - ibanCountryCode
+KesOfframpMOMOAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [kes]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    kind:
+      type: string
+      enum: [MOMO_MPESA]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountHolderName
+    - kind
+XofOfframpMOMOAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [xof]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    kind:
+      type: string
+      enum: [MOMO_MTN]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountHolderName
+    - kind
+RwfOfframpMOMOAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [rwf]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    kind:
+      type: string
+      enum: [MOMO_MTN]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountHolderName
+    - kind
+ZmwOfframpMOMOAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [zmw]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    kind:
+      type: string
+      enum: [MOMO_MTN]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountHolderName
+    - kind
+NgnOfframpBankAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [ngn]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountNumber:
+      type: string
+      description: Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind.
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    kind:
+      type: string
+      enum: ["BANK_Access Bank", "BANK_GT Bank", "BANK_United Bank for Africa"]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountHolderName
+    - kind
+UgxOfframpBankAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [ugx]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountNumber:
+      type: string
+      description: Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind.
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    bankName:
+      type: string
+      description: Recipient bank name
+    kind:
+      type: string
+      enum: ["BANK_Manul Entry"]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountNumber
+    - accountHolderName
+    - bankName
+    - kind
+TzsOfframpBankAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [tzs]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountNumber:
+      type: string
+      description: Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind.
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    bankName:
+      type: string
+      description: Recipient bank name
+    kind:
+      type: string
+      enum: ["BANK_Manul Entry"]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountNumber
+    - accountHolderName
+    - bankName
+    - kind
+MwkOfframpBankAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [mwk]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountNumber:
+      type: string
+      description: Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind.
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    bankName:
+      type: string
+      description: Recipient bank name
+    kind:
+      type: string
+      enum: ["BANK_Manul Entry"]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountNumber
+    - accountHolderName
+    - bankName
+    - kind
+XafOfframpBankAccount:
+  type: object
+  properties:
+    currency:
+      type: string
+      enum: [xaf]
+    accountHolderPhone:
+      type: string
+      description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountNumber:
+      type: string
+      description: Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind.
+    accountHolderName:
+      type: string
+      description: Name of the account holder as it appears on the Mobile Money account.
+    bankName:
+      type: string
+      description: Recipient bank name
+    kind:
+      type: string
+      enum: ["BANK_Manul Entry"]
+      description: Kind of Mobile Money transfer.
+  required:
+    - currency
+    - accountHolderPhone
+    - accountNumber
+    - accountHolderName
+    - bankName
+    - kind
 SAReceiverCreateIndividualLightKYCAccount:
   type: object
   title: "Receiver Individual Light KYC Account"
@@ -970,6 +1194,168 @@ UsdOfframpWireAccountObject:
     message: "Account created successfully"
     id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
 EurOfframpSepaAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+KesOfframpMomoAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+XofOfframpMomoAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+RwfOfframpMomoAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+ZmwOfframpMomoAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+NgnOfframpBankAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+UgxOfframpBankAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+TzsOfframpBankAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+MwkOfframpBankAccountObject:
+  type: object
+  properties:
+    status:
+      type: string
+    invalidFields:
+      type: array
+      items:
+        type: string
+    message:
+      type: string
+    id:
+      type: string
+  example:
+    status: "ACTIVE"
+    invalidFields: []
+    message: "Account created successfully"
+    id: "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+XafOfframpBankAccountObject:
   type: object
   properties:
     status:
