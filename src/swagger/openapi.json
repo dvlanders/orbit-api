@@ -538,10 +538,31 @@
                   "$ref": "#/components/schemas/ACH_COPCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/MOMO_MPESACryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/MOMO_KESCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/NIBBS_BANKCryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/MOMO_XOFCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_RWFCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_ZMWCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_NGNCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_UGXCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_TZSCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_MWKCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_XAFCryptoToFiatTransfer"
                 }
               ]
             }
@@ -3601,9 +3622,9 @@
           "paymentRail"
         ]
       },
-      "MOMO_MPESACryptoToFiatTransfer": {
+      "MOMO_KESCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to KES (MOMO MPESA)",
+        "title": "Crypto to KES (MOMO KES)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3646,6 +3667,10 @@
             "enum": [
               "kes"
             ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
           }
         },
         "required": [
@@ -3657,12 +3682,201 @@
           "chain",
           "sourceCurrency",
           "destinationCurrency",
-          "paymentRail"
+          "purposeOfPayment"
         ]
       },
-      "NIBBS_BANKCryptoToFiatTransfer": {
+      "MOMO_XOFCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to NGN (NIBSS BANK TRANSFER)",
+        "title": "Crypto to XOF (MOMO XOF)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "xof"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "MOMO_RWFCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to RWF (MOMO RWF)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "rwf"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "MOMO_ZMWCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to ZMW (MOMO ZMW)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "zmw"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_NGNCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to NGN (BANK NGN)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3705,6 +3919,10 @@
             "enum": [
               "ngn"
             ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
           }
         },
         "required": [
@@ -3716,7 +3934,259 @@
           "chain",
           "sourceCurrency",
           "destinationCurrency",
-          "paymentRail"
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_UGXCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to UGX (BANK UGX)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ugx"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_TZSCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to TZS (BANK TZS)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "tzs"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_MWKCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to MWK (BANK MWK)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "mwk"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_XAFCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to XAF (BANK XAF)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "xaf"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
         ]
       },
       "FiatToCryptoTransfer": {
