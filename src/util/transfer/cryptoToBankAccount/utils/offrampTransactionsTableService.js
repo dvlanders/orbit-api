@@ -14,6 +14,19 @@ const updateOfframpTransactionRecord = async(offrampTransactionId, toUpdate) => 
     return data
 }   
 
+const updateOfframpTransactionRecordWithVersion = async(offrampTransactionId, toUpdate, currentVersion) => {
+    const {data, error} = await supabase
+        .from('offramp_transactions')
+        .update({...toUpdate, version: currentVersion + 1, updated_at: new Date().toISOString()})
+        .eq('id', offrampTransactionId)
+        .eq('version', currentVersion)
+        .select()
+        .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    return data
+}   
+
 const getOfframpTransactionRecord = async(offrampTransactionId) => {
     const {data, error} = await supabase
         .from('offramp_transactions')
@@ -50,5 +63,6 @@ module.exports = {
     updateOfframpTransactionRecord,
     getOfframpTransactionRecord,
     insertSingleOfframpTransactionRecord,
-    insertMultipleOfframpTransactionRecord
+    insertMultipleOfframpTransactionRecord,
+    updateOfframpTransactionRecordWithVersion
 }

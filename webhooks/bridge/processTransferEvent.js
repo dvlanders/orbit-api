@@ -3,7 +3,7 @@ const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
 const { HifiOfframpTransactionBridgeStatusMap, HifiOfframpTransactionFailedStatuses } = require("../../src/util/bridge/utils");
 const { updateBridgeTransactionRecord } = require("../../src/util/bridge/bridgeTransactionTableService");
-const { updateOfframpTransactionRecord } = require("../../src/util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService");
+const { updateOfframpTransactionRecordWithVersion } = require("../../src/util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
 const notifyCryptoToFiatTransfer = require("../transfer/notifyCryptoToFiatTransfer");
@@ -33,7 +33,7 @@ const processTransferEvent = async (event) => {
     // get the original offramp record
     const {data: offrampRecord, error: offrampRecordError} = await supabaseCall(() => supabase
         .from('offramp_transactions')
-        .select('id, transaction_status, bridge_transaction_info:bridge_transaction_record_id(bridge_status)')
+        .select('id, transaction_status, version, bridge_transaction_info:bridge_transaction_record_id(bridge_status)')
         .eq('id', client_reference_id)
         .maybeSingle());
     
@@ -46,10 +46,16 @@ const processTransferEvent = async (event) => {
       return;
     }
 
+    const workingVersion = offrampRecord.version;
+
     const toUpdate = {
       transaction_status: HifiOfframpTransactionBridgeStatusMap[state] || "UNKNOWN"
     }
-    const updatedOfframpRecord = await updateOfframpTransactionRecord(offrampRecord.id, toUpdate);
+    const updatedOfframpRecord = await updateOfframpTransactionRecordWithVersion(offrampRecord.id, toUpdate, workingVersion);
+
+    if(!updatedOfframpRecord){
+        throw new Error(`Concurrent update detected. Please retry processing offramp transaction record with id ${offrampRecord.id} for event ${id}`);
+    }
 
     const toUpdateBridge = {
       bridge_response: event,
