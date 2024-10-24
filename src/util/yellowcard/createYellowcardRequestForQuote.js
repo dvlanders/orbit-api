@@ -7,8 +7,6 @@ const { getBearerDid } = require('./utils/getBearerDid');
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 
 
-
-
 async function createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
 
 
@@ -29,9 +27,6 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 
 	// Retrieve the selected offering using the fetchSelectedOffering utility
 	const { foundOfferings, selectedOffering, payin, payout } = await fetchSelectedOffering(sourceCurrency, destinationCurrency);
-
-
-
 
 	if (!selectedOffering) {
 		throw new Error('No offering found for the selected payment pair');
