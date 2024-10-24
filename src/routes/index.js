@@ -16,6 +16,7 @@ module.exports = (app, express) => {
 	const localUser = require("./localAdmin.js/user")
 	const internalUser = require("./internal/user")
 	const internalBilling = require("./internal/billing")
+	const dashboardAuth = require("./dashboard/auth")
 
 
 	user(router);
@@ -34,6 +35,6 @@ module.exports = (app, express) => {
 	internalUser(router)
 	internalBilling(router)
 	dashboardDeveloper(router)
-
+	dashboardAuth(router)
 	app.use("/", router);
 };
