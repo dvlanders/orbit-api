@@ -396,7 +396,7 @@ const acceptBlindpayCryptoToFiatTransfer = async (config) => {
 	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
 		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
 	}
-	const result = await fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId)
+	const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
 	return result
 }
 
