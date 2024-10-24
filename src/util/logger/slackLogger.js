@@ -565,12 +565,22 @@ const sendSlackReqResMessage = async (request, response) => {
     delete request.query.profileEmail;
     delete request.query.profileId;
 
-    await app.client.chat.postMessage({
-      token: process.env.SLACK_BOT_TOKEN,
-      channel: process.env.SLACK_CHANNEL_API,
-      text: "API Request and Response",
-      blocks: await reqResBlockBuilder(caller, request, response),
-    });
+    if(response.statusCode >= 500){
+      await app.client.chat.postMessage({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: process.env.SLACK_CHANNEL_API_500,
+        text: "API Request and Response",
+        blocks: await reqResBlockBuilder(caller, request, response),
+      });
+    }else{
+      await app.client.chat.postMessage({
+        token: process.env.SLACK_BOT_TOKEN,
+        channel: process.env.SLACK_CHANNEL_API_400,
+        text: "API Request and Response",
+        blocks: await reqResBlockBuilder(caller, request, response),
+      });
+    }
+
   } catch (error) {
     // console.error(error);
   }

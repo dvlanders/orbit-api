@@ -2,6 +2,7 @@ const createLog = require("../../logger/supabaseLogger");
 const { CreateReceiverErrorType, CreateReceiverError } = require("../errors");
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const ownerRequestBodyBuilder = async (ownerInfo) => {
   const ownersList = await Promise.all(
@@ -125,14 +126,14 @@ const updateReceiver = async (receiverInfo) => {
 
   // console.log("receiverRequestBody: \n", receiverRequestBody);
   // console.log(receiverInfo.blindpay_receiver_id);
-  const response = await fetch(
+  const response = await fetchWithLogging(
     `${process.env.BLINDPAY_URL}/instances/${process.env.BLINDPAY_INSTANCE_ID}/receivers/${receiverInfo.blindpay_receiver_id}`,
     {
       method: "PUT",
       headers: headers,
       body: JSON.stringify(receiverRequestBody),
     }
-  );
+    , "BLINDPAY");
 
   const responseBody = await response.json();
   // console.log(responseBody);

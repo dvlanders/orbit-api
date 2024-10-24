@@ -1,6 +1,7 @@
 const createLog = require("../../../logger/supabaseLogger");
 const supabase = require("../../../supabaseClient");
 const { supabaseCall } = require("../../../supabaseWithRetry");
+const { fetchWithLogging } = require("../../../logger/fetchLogger");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -16,12 +17,12 @@ exports.getLastBridgeVirtualAccountActivity = async (userId, bridgeVirtualAccoun
         if (bridgeUserError) throw bridgeUserError
 
         // get latest activity id of the virtual account
-        const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeUser.bridge_id}/virtual_accounts/${bridgeVirtualAccountId}/history?limit=1`, {
+        const response = await fetchWithLogging(`${BRIDGE_URL}/v0/customers/${bridgeUser.bridge_id}/virtual_accounts/${bridgeVirtualAccountId}/history?limit=1`, {
 			method: 'GET',
 			headers: {
 				'Api-Key': BRIDGE_API_KEY
 			}
-		});
+		}, "BRIDGE");
         const responseBody = await response.json()
 
         if (!response.ok){

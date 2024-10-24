@@ -3,6 +3,7 @@ const { toUnitsString } = require("../../transfer/cryptoToCrypto/utils/toUnits")
 const { safeParseBody } = require("../../utils/response")
 const { blockchainToCircleChain } = require("../utils/chainConvert")
 const { nativeTokenName } = require("../utils/currency")
+const { fetchWithLogging } = require("../../logger/fetchLogger")
 
 
 const getCircleWalletBalance = async (walletId, chain, currency) => {
@@ -21,7 +22,7 @@ const getCircleWalletBalance = async (walletId, chain, currency) => {
         }
     }
 
-    const response = await fetch(url, options)
+    const response = await fetchWithLogging(url, options, "CIRCLE")
     const responseBody = await safeParseBody(response)
     if (!response.ok) throw new Error(responseBody.message)
     
