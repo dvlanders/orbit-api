@@ -28,30 +28,48 @@ EurOfframpSepaAccountResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccountObject'
-BrlOfframpReceiverCreateResponse:
+SAOfframpReceiverCreateResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverCreateObject'
-BrlOfframpReceiverUpdateResponse:
+        $ref: '#/components/schemas/SAOfframpReceiverCreateObject'
+SAOfframpReceiverUpdateResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverUpdateObject'
-BrlOfframpReceiverGetResponse:
+        $ref: '#/components/schemas/SAOfframpReceiverUpdateObject'
+SAOfframpReceiverGetResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/BrlOfframpReceiverGetObject'
+        $ref: '#/components/schemas/SAOfframpReceiverGetObject'
 BrlOfframpPixAccountResponse:
   description: Success
   content:
     application/json:
       schema:
         $ref: '#/components/schemas/BrlOfframpPixAccountObject'
+CopOfframpAchCopAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/CopOfframpAchCopAccountObject'
+MxnOfframpSpeiAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/MxnOfframpSpeiAccountObject'
+ArsOfframpTransfersAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ArsOfframpTransfersAccountObject'
 GetAccountResponse:
   description: Success
   content:

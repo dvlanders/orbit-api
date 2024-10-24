@@ -8,7 +8,7 @@ const { cryptoToCryptoTransferAsync } = require("./transfer/cryptoTocryptoTransf
 const { cryptoToFiatTransferScheduleCheck } = require("./transfer/cryptoToFiatTransfer/scheduleCheck");
 const { cryptoToFiatTransferAsync } = require("./transfer/cryptoToFiatTransfer/cryptoToFiatTransfer");
 const { chargeFeeOnFundReceivedScheduleCheck } = require("./transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
-const { chargeFeeOnFundReceivedBastionAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
+const { chargeFeeOnFundReceivedAsync } = require("./transfer/chargeFeeOnFundReceivedBastion/chargeFeeOnFundReceived");
 const { executeBlindpayPayoutScheduleCheck } = require("./transfer/executeBlindpayPayout/scheduleCheck");
 const { executeBlindpayPayout } = require("./transfer/executeBlindpayPayout/executeBlindpayPayout");
 const { updateDeveloperUserAsyncCheck, updateDeveloperUserAsync } = require("./user/updateDeveloperUser");
@@ -19,6 +19,11 @@ const { cryptoToFiatTransferSandboxAsync } = require("./sandbox/cryptoToFiatTran
 const { cryptoToCryptoTransferSandboxScheduleCheck } = require("./sandbox/cryptoToCryptoTransfer/scheduleCheck");
 const { cryptoToCryptoTransferSandboxAsync } = require("./sandbox/cryptoToCryptoTransfer/cryptoToCryptoTransfer");
 const { retryBridgeCustomerCreation, retryBridgeCustomerCreationCheck } = require("./user/retryBridgeCustomerCreation");
+const { baseAssetWithdrawAsyncScheduleCheck } = require("./transfer/baseAssetWithdraw/scheduleCheck");
+const { baseAssetWithdrawAsync } = require("./transfer/baseAssetWithdraw/baseAssetWithdraw");
+const { bridgingUsdcScheduleCheck, bridgeUsdc } = require("./bridging/cctp/bridgeUsdc");
+const { reapApproveFundsScheduleCheck } = require("./transfer/cryptoToFiatTransfer/reap/scheduleCheck");
+const { reapApproveFundsAsync } = require("./transfer/cryptoToFiatTransfer/reap/approveFunds");
 
 
 exports.jobMapping = {
@@ -50,9 +55,9 @@ exports.jobMapping = {
 		scheduleCheck: cryptoToFiatTransferScheduleCheck,
 		execute: cryptoToFiatTransferAsync,
 	},
-	chargeFeeOnFundReceivedBastion: {
+	chargeFeeOnFundReceived: {
 		scheduleCheck: chargeFeeOnFundReceivedScheduleCheck,
-		execute: chargeFeeOnFundReceivedBastionAsync,
+		execute: chargeFeeOnFundReceivedAsync,
 	},
 	executeBlindpayPayout: {
 		scheduleCheck: executeBlindpayPayoutScheduleCheck,
@@ -81,6 +86,18 @@ exports.jobMapping = {
 	retryBridgeCustomerCreation: {
 		scheduleCheck: retryBridgeCustomerCreationCheck,
 		execute: retryBridgeCustomerCreation
+	},
+	baseAssetWithdraw: {
+		scheduleCheck: baseAssetWithdrawAsyncScheduleCheck,
+		execute: baseAssetWithdrawAsync
+	},
+	bridgeUsdc: {
+		scheduleCheck: bridgingUsdcScheduleCheck,
+		execute: bridgeUsdc
+	},
+	reapApproveFunds: {
+		scheduleCheck: reapApproveFundsScheduleCheck,
+		execute: reapApproveFundsAsync
 	}
 }
 

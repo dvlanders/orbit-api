@@ -4,25 +4,53 @@ const supabase = require('../supabaseClient');
 const { Chain } = require('../common/blockchain');
 const createLog = require('../logger/supabaseLogger');
 const { getBastionWallet } = require('./utils/getBastionWallet');
+const { getDeveloperUserId } = require('../user/getDeveloperUser');
+const { getUserWallet } = require('../user/getUserWallet');
+const { getUserBalanceBastion } = require('./main/getWalletBalance');
+const { sendSlackGasStationWalletBalanceAlert } = require('../logger/slackLogger');		
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
-const gasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with ETH to serve as gas station wallet
-const gasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
+const HIFIgasStation = '4fb4ef7b-5576-431b-8d88-ad0b962be1df' // this is the user id in bastion prod that has been prefunded with ETH to serve as gas station wallet
+const HIFIgasStationWalletAddress = '0x9Bf9Bd42Eb098C3fB74F37d2A3BA8141B5785a5f'
+
+const gasStationNotificationThreshold = {
+	"ETHEREUM_MAINNET": 0.1,
+	"POLYGON_MAINNET": 1
+}
 
 const currencySymbolMap = {
 	"ETHEREUM_MAINNET": "ETH",
 	"POLYGON_MAINNET": "MATIC"
 }
 
-async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL") {
+async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profileId=undefined) {
+	let shouldReschedule = true
 	try {
 		// get user wallet
-		const {walletAddress} = await getBastionWallet(userId, chain, type)
+		const {address: walletAddress} = await getUserWallet(userId, chain, type)
 		if (!walletAddress) throw new Error(`No user wallet found`)
 		
 		const currencySymbol = currencySymbolMap[chain]
 		if (!currencySymbol) throw new Error(`No currencySymbol found for chain: ${chain}`)
+		
+		let gasStation = HIFIgasStation
+		let gasStationWalletAddress = HIFIgasStationWalletAddress
+
+		//  get gas station from developer user if chain is not POLYGON_MAINNET or POLYGON_AMOY
+		if (chain == Chain.ETHEREUM_MAINNET) {
+			shouldReschedule = false
+			if (!profileId) throw new Error("Target chain is not POLYGON, should provide profileId in order to get developer user information")
+			// get developer userId
+			const developerUserId = await getDeveloperUserId(profileId)
+			if (!developerUserId) throw new Error(`No developer user found for profile ${profileId}`)
+			const {bastionUserId, address, walletProvider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
+			// FIX ME
+			if (walletProvider !== "BASTION") throw new Error(`Gas station wallet only supported for provider BASTION`) 
+			if (!bastionUserId || !address) throw new Error(`Gas station wallet not created for profile ${profileId}`) 
+			gasStation = bastionUserId
+			gasStationWalletAddress = address
+		}
 			
 		const requestId = uuidv4();
 		const bodyObject = {
@@ -72,12 +100,18 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL") {
 			throw gasError;
 		}
 
-		return data;
+		const gasStationWalletBalance = await getUserBalanceBastion(gasStation, chain, "gas");
+		const gasStationWalletThreshold = gasStationNotificationThreshold[chain];
+		const gasStationBalance = parseFloat(gasStationWalletBalance.displayBalance);
+		if(gasStationBalance < gasStationWalletThreshold) {
+			await sendSlackGasStationWalletBalanceAlert(profileId, userId, gasStationWalletAddress, chain, currencySymbol, gasStationBalance);
+		}
+
+		return {success: true};
 
 	} catch (error) {
 		await createLog("bastion/fundUserGasFee", userId, error.message, error)
-		return null
-		// throw JSON.stringify(error);
+		return {success: false, shouldReschedule}
 	}
 }
 

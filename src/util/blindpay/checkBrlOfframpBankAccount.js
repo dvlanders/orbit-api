@@ -1,43 +1,31 @@
 const supabase = require("../supabaseClient");
 const { supabaseCall } = require("../supabaseWithRetry");
+const { getBankAccountTableInfoFromAccountType } = require("./bankAccountService");
 
 const checkBrlOfframpBankAccount = async (accountInfo) => {
   const type = accountInfo.type;
-
+  const {table, existConditions} = getBankAccountTableInfoFromAccountType(type);
   let query = supabase
-    .from("blindpay_bank_accounts")
+    .from(table)
     .select()
     .eq("user_id", accountInfo.user_id)
     .eq("receiver_id", accountInfo.receiver_id)
-	.not('global_account_id', 'is', null);
-	
-  if (type === "pix") {
-    query = query.eq("pix_key", accountInfo.pix_key);
-  } else if (type === "ach") {
-    query = query
-      .eq("routing_number", accountInfo.routing_number)
-      .eq("account_number", accountInfo.account_number);
-  } else if (type === "wire") {
-    query = query
-      .eq("routing_number", accountInfo.routing_number)
-      .eq("account_number", accountInfo.account_number);
-  }else{
-	throw new Error("Invalid account type");
-  }
+    .eq("type", type)
+	  .not('global_account_id', 'is', null);
+
+  existConditions.forEach(field => {
+    query = query.eq(field, accountInfo[field]);
+  });
 
   const { data: bankAccountRecord, error: bankAccountRecordError } =
     await supabaseCall(() => query.maybeSingle());
 
   if (bankAccountRecordError) throw bankAccountRecordError;
 
-  if (bankAccountRecord) {
-    return {
-      bankAccountExist: true,
-      bankAccountRecord,
-    };
-  }
-
-  return { bankAccountExist: false, bankAccountRecord};
+  return {
+    bankAccountExist: !!bankAccountRecord,
+    bankAccountRecord,
+  };
 };
 
 module.exports = {

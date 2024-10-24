@@ -25,7 +25,7 @@ const updateStatus = async (transaction) => {
 
 		if (!response.ok) {
 			const errorMessage = `Failed to get user-action from bastion. Status: ${response.status}. Message: ${responseBody.message || 'Unknown error'}. Bastion request Id: ${transaction.request_id}`;
-			await createLog('pollCryptoToCryptoTransferStatus/updateStatus', transaction.destination_user_id, errorMessage, responseBody);
+			await createLog('pollBastionGasTransaction/updateStatus', transaction.destination_user_id, errorMessage, responseBody);
 		}else{
             toUpdate.status = responseBody.status
         }
@@ -60,6 +60,10 @@ async function pollBastionGasTransaction() {
             .or("status.eq.SUBMITTED,status.eq.ACCEPTED,status.eq.PENDING")
             .select("*")
             .order('updated_at', {ascending: true})
+
+		if (error) throw error
+		if (!data) return
+		
         await Promise.all(data.map(async(transation) => {
             await updateStatus(transation)
         }))

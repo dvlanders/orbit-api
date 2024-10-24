@@ -6,7 +6,7 @@ const errorMappings = {
       message: "Transfer amount exceeds balance.",
       type: "CLIENT_ERROR"
     },
-    "gas required exceeds allowance (7717)":{
+    "insufficient gas for transaction":{
       message: "Not enough gas, please contact HIFI for more information",
       type: "INTERNAL_ERROR"
     },

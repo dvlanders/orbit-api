@@ -32,6 +32,7 @@ exports.authorize = async (req, res, next) => {
 		// get keyInfo
 		const keyInfo = await verifyApiKey(apiKeyId)
 		if (!keyInfo) return res.status(401).json({ error: "Invalid api key" });
+		if (!keyInfo.profiles.prod_enabled && process.env.NODE_ENV !== "development") return res.status(401).json({ error: "Production access is not enabled. Please contact HIFI for more information." });
 		// check userId
 		if (userId && (!isUUID(userId) || !(await verifyUser(userId, keyInfo.profile_id)))) return res.status(401).json({ error: "userId not found" });
 
@@ -150,6 +151,10 @@ exports.logRequestResponse = (req, res, next) => {
 			statusCode: res.statusCode,
 			response: parsedBody
 		};
+
+		if(res.errorMessage){
+			logData.error = res.errorMessage;
+		}
 
 		logToLoki(logData);
 

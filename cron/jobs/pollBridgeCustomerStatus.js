@@ -20,8 +20,12 @@ const updateStatus = async (customer) => {
 
 		if (!response.ok) {
 			const errorData = await response.json();
-			console.error('Error response:', errorData);
-			return res.status(response.status).json({ error: 'Failed to fetch bridge customer' });
+			return await createLog(
+				"pollBridgeCustomerStatus",
+				customer.user_id,
+				`Failed to get customer from Bridge: user id: ${customer.user_id}, customer id: ${customer.id}`,
+				errorData
+			  );
 		}
 
 		const data = await response.json();

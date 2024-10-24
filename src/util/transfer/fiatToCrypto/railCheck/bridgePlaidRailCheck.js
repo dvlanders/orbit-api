@@ -27,7 +27,7 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
     // get bridge virtual account that has the corresponding rail
     let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabaseCall(() => supabase
         .from('bridge_virtual_accounts')
-        .select('virtual_account_id, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number, destination_wallet_address')
+        .select('id, virtual_account_id, deposit_institutions_bank_routing_number, deposit_institutions_bank_account_number, destination_wallet_address')
         .eq("user_id", destinationUserId)
         .eq("source_currency", sourceCurrency)
         .eq("destination_currency", destinationCurrency)
@@ -69,10 +69,21 @@ const bridgePlaidRailCheck = async(CheckbookAccountIdForPlaid, sourceCurrency, d
         throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, checkbookUserError.message)
     }
     
-        
+    const { data: bridgeUser, error: bridgeUserError } = await supabaseCall(() => supabase
+        .from("bridge_customers")
+        .select("bridge_id")
+        .eq("user_id", destinationUserId)
+        .single())
+
+    if (bridgeUserError) {
+        await createLog("transfer/utils/bridgePlaidRailCheck", sourceUserId, bridgeUserError.message, bridgeUserError)
+        throw new CreateFiatToCryptoTransferError(CreateFiatToCryptoTransferErrorType.INTERNAL_ERROR, bridgeUserError.message)
+    }
 
     const transferInfo = {
+        virtual_account_id: bridgeVirtualAccount.id, // destination
         bridge_virtual_account_id: bridgeVirtualAccount.virtual_account_id, // destination
+        bridge_id: bridgeUser.bridge_id, // destination
         account_number: bridgeVirtualAccount.deposit_institutions_bank_account_number, // destination
         routing_number: bridgeVirtualAccount.deposit_institutions_bank_routing_number,  // destination
         plaid_checkbook_id: checkbookAccountForPlaid.checkbook_id, // source

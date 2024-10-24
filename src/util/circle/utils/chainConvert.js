@@ -1,0 +1,27 @@
+const circleChainToBlockchain = {
+    "MATIC-AMOY": "POLYGON_AMOY",
+    "ETH-SEPOLIA": "ETHEREUM_TESTNET",
+    "AVAX-FUJI": "AVALANCHE_FUJI",
+    "SOL-DEVNET": "SOLANA_DEVNET",
+    "ARB-SEPOLIA": "ARBITRUM_TESTNET",
+    "MATIC": "POLYGON_MAINNET",
+    "ETH": "ETHEREUM_MAINNET",
+    "AVAX": "AVALANCHE_MAINNET",
+    "SOL": "SOLANA_MAINNET",
+    "ARB": "ARBITRUM_MAINNET",
+}
+
+const blockchainToCircleChain = {
+    "POLYGON_AMOY": "MATIC-AMOY",
+    "ETHEREUM_TESTNET": "ETH-SEPOLIA",
+    "AVALANCHE_FUJI": "AVAX-FUJI",
+    "SOLANA_DEVNET": "SOL-DEVNET",
+    "ARBITRUM_TESTNET": "ARB-SEPOLIA",
+    "POLYGON_MAINNET": "MATIC",
+    "ETHEREUM_MAINNET": "ETH",
+    "AVALANCHE_MAINNET": "AVAX",
+    "SOLANA_MAINNET": "SOL",
+    "ARBITRUM_MAINNET": "ARB",
+}
+
+module.exports = { circleChainToBlockchain, blockchainToCircleChain }

@@ -3,11 +3,10 @@ const createJob = require("../../asyncJobs/createJob");
 const {sendMessage} = require("../../webhooks/sendWebhookMessage");
 const { submitUserAction } = require("../util/bastion/endpoints/submitUserAction");
 const { Chain, currencyContractAddress } = require("../util/common/blockchain");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveTokenBastion");
+const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../util/smartContract/approve/approveToken");
 const supabase = require("../util/supabaseClient");
 const jwt = require("jsonwebtoken");
 const { erc20Approve } = require("../util/bastion/utils/erc20FunctionMap");
-const { chargeFeeOnFundReceivedBastion } = require("../util/transfer/fiatToCrypto/transfer/chargeFeeOnFundReceived");
 const { createStripeBill } = require("../util/billing/createBill");
 const tutorialCheckList = require("../util/dashboard/tutorialCheckList");
 const createLog = require("../util/logger/supabaseLogger");
@@ -24,7 +23,22 @@ const getUserReapWalletAddress = require("../util/reap/main/getUserWallet");
 const { mintUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/mint");
 const { burnUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/burn");
 const { transferUSDHIFI } = require("../util/smartContract/sandboxUSDHIFI/transfer");
+const { toUnitsString } = require("../util/transfer/cryptoToCrypto/utils/toUnits");
+const { burnUsdc } = require("../util/smartContract/cctp/burn");
+const { fetchAttestation } = require("../util/smartContract/cctp/fetchAttestation");
+const { receiveMessageAndMint } = require("../util/smartContract/cctp/receiveMessageAndMint");
+const { createTransactionFeeRecord } = require("../util/billing/fee/transactionFeeBilling");
+const { getFee } = require("../util/billing/feeRateMap");
+const { transferType } = require("../util/transfer/utils/transfer");
+const { calculateCustomerMonthlyBill } = require("../util/billing/customerBillCalculator");
 const stripe = require('stripe')(process.env.STRIPE_SK_KEY);
+const forge = require('node-forge');
+const { generateCypherText } = require("../util/circle/utils/generateCypherText");
+const sandboxUSDHIFIAbi = require("../util/smartContract/sandboxUSDHIFI/abi.json")
+const { insertSingleBridgeTransactionRecord } = require("../util/bridge/bridgeTransactionTableService");
+const { insertCheckbookTransactionRecord } = require("../util/checkbook/checkbookTransactionTableService");
+const { updateOnrampTransactionRecord } = require("../util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
+const { updateOfframpTransactionRecord } = require("../util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService");
 
 const uploadFile = async (file, path) => {
     
@@ -104,7 +118,7 @@ exports.testwebhook = async(req, res) => {
                 console.error('Failed to verify token:', err.message);
                 throw new Error("wrong token")
             } else {
-                console.log('Token is valid. Decoded payload:', decoded);
+                // console.log('Token is valid. Decoded payload:', decoded);
             }
         });
         return res.status(200).json({message: "Success"})
@@ -212,9 +226,17 @@ exports.registerFeeWallet = async(req, res) => {
     }
     try{
         const chain = Chain.POLYGON_MAINNET
-        const userId = "80fdf48c-42b2-4bf8-b4a9-d00817bae912"
-        const {walletAddress} = await getBastionWallet(userId, chain, "FEE_COLLECTION")
-        await regsiterFeeWallet(userId, walletAddress, chain)
+        const {data, error} = await supabase
+            .from("user_wallets")
+            .select("*")
+            .eq("wallet_type", "FEE_COLLECTION")
+            .eq("chain", chain)
+        if (error) throw error
+        
+        await Promise.all(data.map(async(wallet) => {
+            await regsiterFeeWallet(wallet.user_id, wallet.address, chain)
+        }))
+
         return res.status(200).json({message: "success"})
     }catch(error){
         console.error(error)
@@ -224,7 +246,7 @@ exports.registerFeeWallet = async(req, res) => {
 
 exports.triggerOnRampFeeCharge = async(req, res) => {
     try{
-        await chargeFeeOnFundReceivedBastion("ae1a8634-4c7c-4c7c-b3f1-c090411340b1")
+        await createJob("chargeFeeOnFundReceived", {recordId: "c2f5a76b-d631-4725-a783-e39f9fea6cbc"}, "8f766843-5a41-4799-8c20-29906a212f66", "e37f17be-1369-4853-8026-65e9903bd430")
         return res.status(200).json({message: "ok"})
     }catch (error){
         console.error(error)
@@ -234,7 +256,7 @@ exports.triggerOnRampFeeCharge = async(req, res) => {
 
 exports.testCreateBill = async(req, res) => {
     try{
-        const profileId = "3b8be475-1b32-4ff3-9384-b6699c139869"
+        const profileId = "e4c758d7-5475-4505-ba15-e129db0a441f"
         const {data: billingInformation, error: billingInformationError} = await supabase
             .from("billing_information")
             .select("*")
@@ -242,8 +264,10 @@ exports.testCreateBill = async(req, res) => {
             .single()
         
         await createStripeBill(billingInformation)
+
         return res.status(200).json({message: "success"})
     }catch (error){
+        console.error(error)
         return res.status(500).json({error: "Internal server error"})
 
     }
@@ -461,5 +485,385 @@ exports.testSelectOnEnum = async(req, res) => {
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "error"})
+    }
+}
+
+exports.testBridgeUsdc = async(req, res) => {
+    try{
+        const userId = "adf65db6-38b7-4bc7-95aa-9c8e9c59481a"
+        const sourceChain = Chain.ETHEREUM_TESTNET
+        const destinationChain = Chain.POLYGON_AMOY
+        const {walletAddress: sourceAddress, bastionUserId: sourceBastionUserId} = await getBastionWallet(userId, sourceChain)
+        const {walletAddress: destinationAddress, bastionUserId: destinationBastionUserId} = await getBastionWallet(userId, destinationChain)
+        
+        const resultCircle = await fetchAttestation(sourceChain, "0xb04433f917b566034a3e9ec8d619b0e371f1df528a82bc8b72c49ca992cfd28a")
+        const result = await receiveMessageAndMint(userId, destinationBastionUserId, destinationChain, resultCircle.messageBytes, resultCircle.attestationSignature, destinationAddress)
+
+        return res.status(200).json(result)
+
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "error"})
+    }
+}
+
+exports.insertAllFeeRecords = async (req, res) => {
+
+
+    try{
+        const {data: allTransactions, error: allTransactionsError} = await supabase
+            .from("crypto_to_crypto")
+            .select("id")
+            .eq("status", "CONFIRMED")
+
+        
+        if (allTransactionsError) throw allTransactionsError
+        console.log(allTransactions.length)
+        await Promise.all(allTransactions.map(async(transaction) => {
+            await createTransactionFeeRecord(transaction.id, transferType.CRYPTO_TO_CRYPTO)
+        }))
+
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+
+}
+
+exports.insertFeeTag = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .from("crypto_to_crypto")
+            .select("id, recipient_user_id")
+
+        await Promise.all( data.map(async(transaction) => {
+            successTags = []
+            failedTags = []
+
+            if (!transaction.recipient_user_id) {   
+                successTags.push("external")
+                failedTags.push("external")
+            }
+            else {
+                successTags.push("internal")
+                failedTags.push("internal")
+            }
+
+            const {data: feeTags, error: feeTagsError} = await supabase
+                .from("crypto_to_crypto")
+                .update({
+                    billing_tags_success: successTags,
+                    billing_tags_failed: failedTags
+                })
+                .eq("id", transaction.id)
+            if (feeTagsError) throw feeTagsError
+
+        }))
+        
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testAggregateFunction = async(req, res) => {
+    try{
+        const {data, error} = await supabase
+            .rpc("get_fee_transactions_sum", {
+                profile_id: "e4c758d7-5475-4505-ba15-e129db0a441f",
+                start_date: "2024-09-01",
+                end_date: "2024-10-31",
+                transaction_type: transferType.CRYPTO_TO_CRYPTO,
+                status: "VOIDED"
+            })
+
+        return res.status(200).json({data, error})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.migrateWallettoNewTable = async(req, res) => {
+    try{
+        let createdAt = "2200-01-01"
+        while (true){
+            const {data, error} = await supabase
+                .from("bastion_wallets")
+                .select("id, address, chain, user_id, type, created_at")
+                .lt("created_at", createdAt)
+                .order("created_at", {ascending: false})
+                .limit(1000)
+            
+            if (error) throw error
+            console.log(data.length)
+
+            if (data.length == 0) break
+
+            const walletToInsert = data.map((wallet) => {
+                return {
+                    address: wallet.address,
+                    chain: wallet.chain,
+                    user_id: wallet.user_id,
+                    bastion_wallet_id: wallet.id,
+                    wallet_type: wallet.type,
+                    wallet_provider: "BASTION"
+                }
+            })
+            const {data: insertedData, error: insertedError} = await supabase
+                .from("user_wallets")
+                .insert(walletToInsert)
+
+            if (insertedError) throw insertedError
+
+            createdAt = data[data.length - 1].created_at
+
+        }
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.genCypherText = async(req, res) => {
+    try{
+        const entitySecret = forge.util.hexToBytes(process.env.CIRCLE_WALLET_ENTITY_SECRET)
+        const publicKey = forge.pki.publicKeyFromPem(process.env.CIRCLE_WALLET_PUBLIC_KEY.replace(/\\n/g, '\n'))
+        const encryptedData = publicKey.encrypt(entitySecret, 'RSA-OAEP', {
+        md: forge.md.sha256.create(),
+        mgf1: {
+            md: forge.md.sha256.create(),
+        },
+        })
+
+        console.log(forge.util.encode64(encryptedData))
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testGenCircleWalletSet = async(req, res) => {
+    try{
+        const url = `${process.env.CIRCLE_WALLET_URL}/v1/w3s/developer/walletSets`
+        const options = {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "Authorization": `Bearer ${process.env.CIRCLE_WALLET_API_KEY}`
+            },
+            body: JSON.stringify({
+                "entitySecretCiphertext": generateCypherText(),
+                "idempotencyKey": v4(),
+                "name": "HIFI Dev Sandbox2"
+            })
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testGenCircleWallet = async(req, res) => {
+    try{
+        const url = `${process.env.CIRCLE_WALLET_URL}/v1/w3s/developer/wallets`
+        const options = {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "Authorization": `Bearer ${process.env.CIRCLE_WALLET_API_KEY}`
+            },
+            body: JSON.stringify({
+                "idempotencyKey": v4(),
+                "accountType": "EOA",
+                "blockchains": ["MATIC-AMOY", "ETH-SEPOLIA", "AVAX-FUJI", "SOL-DEVNET", "ARB-SEPOLIA"],
+                "walletSetId": process.env.CIRCLE_WALLET_SET_ID,
+                "metadata": [{name: "123", refId: "123"}],
+                "entitySecretCiphertext": generateCypherText(),
+                "count": 1,
+            })
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testGetContractFromCircle = async(req, res) => {
+    try{
+        const url = `${process.env.CIRCLE_WALLET_URL}/v1/w3s/contracts/query`
+        const options = {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "Authorization": `Bearer ${process.env.CIRCLE_WALLET_API_KEY}`
+            },
+            body: JSON.stringify({
+                "abiFunctionSignature": "decimals()",
+                "abiJson": JSON.stringify(sandboxUSDHIFIAbi),
+                "address": "0x545f651965f3322fda6232f010df37ab41969505",
+                "blockchain": "MATIC-AMOY",
+            })
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testSubmitTransactionCircle = async(req, res) => {
+    try{
+        const url = `${process.env.CIRCLE_WALLET_URL}/v1/w3s/developer/transactions/contractExecution`
+        const options = {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json",
+                "Authorization": `Bearer ${process.env.CIRCLE_WALLET_API_KEY}`
+            },
+            body: JSON.stringify({
+                "idempotencyKey": v4(),
+                "abiFunctionSignature": "transfer(address, uint256)",
+                "abiParameters": ["0xB1Ec8F89EFD7363A1B939bFe545d2Fca01Bb7381", "1000000"],
+                "ContractAddress": currencyContractAddress.POLYGON_AMOY.usdc,
+                "walletId": "53f6242a-9b80-5cda-b679-721eb93aa2fc",
+                "entitySecretCiphertext": generateCypherText(),
+                "feeLevel": "MEDIUM"
+            })
+        }
+        const response = await fetch(url, options)
+        const responseBody = await response.json()
+        return res.status(200).json(responseBody)
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.migrateOfframpBridgeProviders = async(req, res) => {
+    try{
+
+        const {data, error} = await supabase
+            .from("offramp_transactions")
+            .select()
+            .not("user_id", "is", null)
+            .is("bridge_transaction_record_id", null)
+            .eq("fiat_provider", "BRIDGE")
+
+        if (error) throw error
+
+        await Promise.all(data.map(async(record) => {
+
+            const { data: bridgeUser, error: bridgeUserError } = await supabase
+                .from("bridge_customers")
+                .select("bridge_id")
+                .eq("user_id", record.destination_user_id)
+                .single()
+
+            if (bridgeUserError) throw bridgeUserError
+
+            const toInsertBridge = {
+                user_id: record.user_id,
+                request_id: v4(),
+                bridge_user_id: bridgeUser.bridge_id,
+                bridge_status: record.bridge_status,
+                bridge_response: record.bridge_response,
+                bridge_transfer_id: record.bridge_transfer_id,
+            }
+
+            const bridgeRecord = await insertSingleBridgeTransactionRecord(toInsertBridge);
+
+            await updateOfframpTransactionRecord(record.id, {bridge_transaction_record_id: bridgeRecord.id})
+
+        }))
+
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.migrateOnrampProviders = async(req, res) => {
+    try{
+
+        const {data, error} = await supabase
+            .from("onramp_transactions")
+            .select()
+            .not("user_id", "is", null)
+            .is("bridge_transaction_record_id", null)
+            .is("checkbook_transaction_record_id", null)
+
+        if (error) throw error
+
+        await Promise.all(data.map(async(record) => {
+
+            const { data: bridgeUser, error: bridgeUserError } = await supabase
+                .from("bridge_customers")
+                .select("bridge_id")
+                .eq("user_id", record.destination_user_id)
+                .single()
+
+            if (bridgeUserError) throw bridgeUserError
+
+            let { data: bridgeVirtualAccount, error: bridgeVirtualAccountError } = await supabase
+                .from('bridge_virtual_accounts')
+                .select('id')
+                .eq("virtual_account_id", record.bridge_virtual_account_id)
+                .maybeSingle()
+            
+            if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
+
+            const toInsertBridge = {
+                user_id: record.user_id,
+                request_id: v4(),
+                last_bridge_virtual_account_event_id: record.last_bridge_virtual_account_event_id,
+                virtual_account_id: bridgeVirtualAccount.id,
+                bridge_virtual_account_id: record.bridge_virtual_account_id,
+                bridge_user_id: bridgeUser.bridge_id,
+                bridge_status: record.bridge_status,
+                bridge_response: record.bridge_response,
+                bridge_deposit_id: record.bridge_deposit_id,
+            }
+
+            const bridgeRecord = await insertSingleBridgeTransactionRecord(toInsertBridge);
+
+            const toInsertCheckbook = {
+                user_id: record.user_id,
+                plaid_checkbook_id: record.plaid_checkbook_id,
+                destination_checkbook_user_id: record.destination_checkbook_user_id,
+                checkbook_status: record.checkbook_status,
+                checkbook_response: record.checkbook_response,
+                checkbook_payment_id: record.checkbook_payment_id,
+                destination_checkbook_user_id: record.destination_checkbook_user_id,
+            }
+
+            const checkbookRecord = await insertCheckbookTransactionRecord(toInsertCheckbook);
+
+            await updateOnrampTransactionRecord(record.id, {bridge_transaction_record_id: bridgeRecord.id, checkbook_transaction_record_id: checkbookRecord.id})
+
+        }))
+
+        return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
     }
 }

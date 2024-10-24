@@ -1,0 +1,36 @@
+
+const BalanceTopupType = {
+    AUTOPAY : "AUTOPAY",
+    CHECKOUT : "CHECKOUT",
+    ACCOUNT_MINIMUM : "ACCOUNT_MINIMUM",
+    MONTHLY_RESET : "MONTHLY_RESET"
+}
+
+const BalanceTopupStatus = {
+    PENDING : "PENDING",
+    SUCCEEDED : "SUCCEEDED",
+    FAILED : "FAILED",
+    CANCELLED : "CANCELLED",
+    CREATED: "CREATED"
+}
+
+const validTransitions = {
+    [BalanceTopupStatus.CREATED]: [BalanceTopupStatus.CREATED],
+    [BalanceTopupStatus.PENDING]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING],
+    [BalanceTopupStatus.SUCCEEDED]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING, BalanceTopupStatus.SUCCEEDED],
+    [BalanceTopupStatus.CANCELLED]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING, BalanceTopupStatus.CANCELLED],
+    [BalanceTopupStatus.FAILED]: [BalanceTopupStatus.CREATED, BalanceTopupStatus.PENDING, BalanceTopupStatus.FAILED]
+};
+
+const generateHIFICreditId = () => {
+    const timestamp = Date.now().toString(16);
+    const randomPart = Math.floor(Math.random() * 1e8).toString(16);
+    return `HIFI_cr_${timestamp}${randomPart}`;
+  }
+
+module.exports = {
+    BalanceTopupType,
+    BalanceTopupStatus,
+    generateHIFICreditId,
+    validTransitions
+}

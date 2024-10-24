@@ -41,7 +41,8 @@
       * For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.
       
       Quote-based transfers:
-        * BRL offramp transfer
+        * South America offramp transfers
+        * Africa offramp transfers
 
     tags:
       - Transfer
@@ -97,6 +98,38 @@
     responses:
       "200":
         $ref: "#/components/responses/FiatToCryptoRecordResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/transfer/bridge-asset:
+  post:
+    summary: Bridge Stablecoin
+    description: Bridge stablecoin across chains
+    tags:
+      - Transfer
+    requestBody:
+      $ref: "#/components/requestBodies/BridgeAssetTransferBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/BridgeAssetTransferResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+  get:
+    summary: Get a Bridge Asset Record
+    tags:
+      - Transfer
+    parameters:
+      - $ref: "#/components/parameters/BridgeAssetRecordIDParameter"
+    responses:
+      "200":
+        $ref: "#/components/responses/BridgeAssetRecordResponse"
       "401":
         $ref: "#/components/responses/UnauthorizedResponse"
       "404":

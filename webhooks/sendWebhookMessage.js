@@ -45,7 +45,7 @@ const sendMessage = async(profileId, requestBody, eventId=v4(), numberOfRetries=
             timestamp: new Date().toISOString(),
         }
         // try sending the webhook message
-        const token = jwt.sign(requestBody, privateKey, {
+        const token = jwt.sign(toSend, privateKey, {
             algorithm: 'RS256',
             expiresIn: '1h'
           });

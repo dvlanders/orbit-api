@@ -3,13 +3,15 @@ const { getNextCycleEnd } = require('../helper/dateTimeUtils');
 const createLog = require('../logger/supabaseLogger');
 const supabase = require('../supabaseClient');
 const { calculateCustomerMonthlyBill } = require('./customerBillCalculator');
+const { getTotalBalanceTopups, insertBalanceTopupRecord, topupBalance } = require('./balance/balanceService');
+const { BalanceTopupStatus, BalanceTopupType, generateHIFICreditId } = require('./balance/utils');
 
 const STRIPE_SK_KEY = process.env.STRIPE_SK_KEY
 const stripe = require('stripe')(STRIPE_SK_KEY);
 
 function generateHifiInvoiceId(length = 10) {
     const uuid = v4().replace(/-/g, ''); // Remove hyphens to get a continuous string
-    return "HIFI_" + uuid.slice(0, length); // Truncate to the desired length
+    return "HIFI_in_" + uuid.slice(0, length); // Truncate to the desired length
   }
 
 exports.createStripeBill = async(billingInformation) => {
@@ -35,12 +37,19 @@ exports.createStripeBill = async(billingInformation) => {
         const billingInfo = await calculateCustomerMonthlyBill(billingInformation.profile_id, billingInformation.next_billing_period_start, billingInformation.next_billing_period_end)
         const billablePayoutFee = parseFloat((billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value).toFixed(2))
         const billableDepositFee = parseFloat(billingInfo.fiatDeposit.value.toFixed(2))
-        const billableVirtualAccountFee = parseFloat(billingInfo.virtualAccount.value.toFixed(2))
+        const totalTopUps = parseFloat(billingInfo.totalTopUps.toFixed(2))
         const monthlyMinimum = parseFloat(billingInfo.monthlyMinimum.toFixed(2))
-        const feeToMinimum = Math.max(monthlyMinimum - (billablePayoutFee + billableDepositFee + billableVirtualAccountFee), 0)
+        const balanceLeft = parseFloat(billingInfo.balance.balanceLeft.toFixed(2))
+        const debt = (balanceLeft < 0 ? Math.abs(balanceLeft) : 0) + billingInfo.totalTransactionFeeFailed
+        const transactionFeeFailedToChargedOrMinimum = parseFloat((Math.max(Math.max(monthlyMinimum - totalTopUps, 0), debt).toFixed(2)))
+        
+        // service fee
+        const billableVirtualAccountFee = parseFloat(billingInfo.virtualAccount.value.toFixed(2))
         const integrationFee = parseFloat(billingInfo.integrationFee.toFixed(2))
         const platformFee = parseFloat(billingInfo.platformFee.toFixed(2))
-        const finalBillableFee = Math.max(billablePayoutFee + billableDepositFee + billableVirtualAccountFee, monthlyMinimum) + integrationFee + platformFee
+
+
+        const finalBillableFee = transactionFeeFailedToChargedOrMinimum + integrationFee + platformFee + billableVirtualAccountFee
         const hifiBillingId = generateHifiInvoiceId()
 
         // insert billing history
@@ -56,12 +65,12 @@ exports.createStripeBill = async(billingInformation) => {
                 fiat_deposit_config: billingInformation.fiat_deposit_config,
                 billing_period_start: billingInformation.next_billing_period_start,
                 billing_period_end: billingInformation.next_billing_period_end,
-                billable_payout_fee: billablePayoutFee,
-                billable_deposit_fee: billableDepositFee,
+                billable_payout_fee: 0,
+                billable_deposit_fee: 0,
                 billable_active_virtual_account_fee: billableVirtualAccountFee,
                 billable_integration_fee: integrationFee,
                 billable_platform_fee: platformFee,
-                fee_to_minimum: feeToMinimum,
+                fee_to_minimum: transactionFeeFailedToChargedOrMinimum,
                 final_billable_fee_amount: finalBillableFee,
                 status: "CREATED",
                 provider: "STRIPE",
@@ -95,11 +104,9 @@ exports.createStripeBill = async(billingInformation) => {
 
         // create invoice items
         const products = [
-            {productName: "deposit_fee", fee: billableDepositFee}, 
-            {productName: "payout_fee", fee: billablePayoutFee}, 
             {productName: "active_virtual_account_fee", fee: billableVirtualAccountFee}, 
             {productName: "integration_fee", fee: integrationFee}, 
-            {productName: "account_minimum", fee: feeToMinimum}, 
+            {productName: "account_minimum", fee: transactionFeeFailedToChargedOrMinimum}, 
             {productName: "platform_fee", fee: platformFee}, 
         ]
 
@@ -164,6 +171,25 @@ exports.createStripeBill = async(billingInformation) => {
                 next_billing_period_end: nextBillingEnd
             })
             .eq("profile_id", billingInformation.profile_id)
+        if (updateBillingInformationError) throw updateBillingInformationError
+
+        // reset balance to zero if user have debet
+        if (billingInfo.balance.balanceLeft < 0) {
+            const toInsert = {
+                stripe_invoice_id: invoiceId,
+                profile_id: billingInformation.profile_id,
+                balance_id: billingInfo.balance.id,
+                amount: Math.abs(billingInfo.balance.balanceLeft),
+                status: BalanceTopupStatus.CREATED,
+                type: BalanceTopupType.MONTHLY_RESET,
+                hifi_credit_id: generateHIFICreditId()
+              }
+          
+            const topupRecord = await insertBalanceTopupRecord(toInsert);
+            await topupBalance(toInsert.profile_id, toInsert.amount, topupRecord.id, sentInvoice.invoice_pdf);
+        }
+
+
         return 
 
 

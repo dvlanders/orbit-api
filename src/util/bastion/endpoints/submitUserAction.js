@@ -3,9 +3,9 @@ const { currencyContractAddress } = require("../../common/blockchain");
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 
-exports.submitUserAction = async(params) => {
+exports.submitUserAction = async (params) => {
 
-    const bodyObject = {
+	const bodyObject = {
 		requestId: params.requestId,
 		userId: params.userId,
 		contractAddress: params.contractAddress,
@@ -14,7 +14,7 @@ exports.submitUserAction = async(params) => {
 		actionParams: params.actionParams
 	};
 
-    const url = `${BASTION_URL}/v1/user-actions`;
+	const url = `${BASTION_URL}/v1/user-actions`;
 	const options = {
 		method: 'POST',
 		headers: {
@@ -25,6 +25,7 @@ exports.submitUserAction = async(params) => {
 		body: JSON.stringify(bodyObject)
 	};
 
-    const response = await fetch(url, options);
-    return response
+	const response = await fetch(url, options);
+
+	return response
 }

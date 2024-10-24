@@ -9,7 +9,7 @@ exports.updateBillStatus = async(event) => {
         // fetch history
         const {data: billingHistory, error: billingHistoryError} = await supabase
         .from("billing_history")
-        .select("stripe_response")
+        .select("stripe_response, status")
         .eq("id", hifiInternalBillingId)
         .maybeSingle()
         
@@ -17,7 +17,7 @@ exports.updateBillStatus = async(event) => {
         if (!billingHistory) return
         // update 
         let toUpdate
-        if (event.type == "invoice.sent"){
+        if (event.type == "invoice.sent" && billingHistory.status != "PAID"){
             toUpdate = {
                 status: "UNPAID",
                 stripe_response: {
@@ -35,8 +35,22 @@ exports.updateBillStatus = async(event) => {
                 stripe_payment_id: event.data.object.payment_intent,
                 updated_at: new Date().toISOString(),
             }
-        }else {
-            return
+        }else if (event.type == "invoice.update") {
+            const object = event.data.object
+            toUpdate = {
+                stripe_invoice_id: object.id,
+                stripe_payment_id: object.payment_intent,
+                billing_documentation_url: object.invoice_pdf,
+                hosted_billing_page_url: object.hosted_invoice_url,
+                stripe_response: {
+                    history: [event, ...billingHistory.stripe_response.history]
+                },
+                updated_at: new Date().toISOString(),
+            }
+
+            if (object.status == "void") {
+                toUpdate.status = "CANCELLED"
+            }
         }
         // update billing history
         if (toUpdate != undefined) {

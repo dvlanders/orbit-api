@@ -1,7 +1,7 @@
 const supabase = require("../supabaseClient");
 const { sendSlackLogMessage } = require("./slackLogger");
 
-async function createLog(source, userId, log, response, profileId = null) {
+async function createLog(source, userId, log, response, profileId = null, res = null) {
 	// don't log in test environment
 	if (process.env.NODE_TEST) {
 		console.log("Logging disabled in test environment");
@@ -13,6 +13,10 @@ async function createLog(source, userId, log, response, profileId = null) {
 		log: log,
 		response: response,
 	};
+
+	if(res){
+		res.errorMessage = {...newLog};
+	}
 
 	if (userId) {
 		const { data: userData, error: userError } = await supabase

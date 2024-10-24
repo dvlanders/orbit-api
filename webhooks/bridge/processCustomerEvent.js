@@ -22,13 +22,19 @@ const processCustomerEvent = async (event) => {
       })
       .eq('bridge_id', id)
       .select('*, users(is_developer)')
-      .single());
+      .maybeSingle());
 
   if (updateError) {
     console.error('Failed to update bridge customer status', updateError);
     await createLog('processCustomerEvent', null, 'Failed to update bridge customer status', updateError);
     return
   }
+
+  if(!bridgeCustomer) {
+    await createLog('processCustomerEvent', null, 'Customer data is prob in dev_production database, so we cannot find it here in production db.');
+    return;
+  }
+
   if (!bridgeCustomer.is_developer) {
     await notifyUserStatusUpdate(bridgeCustomer.user_id)
   }

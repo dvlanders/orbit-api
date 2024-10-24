@@ -72,6 +72,7 @@ exports.createExchangeTransfer = async (req, res) => {
 			presentationDefinition: selectedOffering.data.requiredClaims
 		});
 
+		console.log('selectedCredentials:', selectedCredentials);
 
 		// construct the data object
 		const data = {

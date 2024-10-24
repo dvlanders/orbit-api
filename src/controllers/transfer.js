@@ -15,9 +15,13 @@ const { v4 } = require('uuid');
 const { verifyUser } = require("../util/helper/verifyUser");
 const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../util/transfer/cryptoToBankAccount/utils/createTransfer");
 const FiatToCryptoSupportedPairFunctionsCheck = require("../util/transfer/fiatToCrypto/utils/fiatToCryptoSupportedPairFunctions");
+const FiatToFiatSupportedPairFunctionsCheck = require("../util/transfer/fiatToFiat/utils/fiatToFiatSupportedPairFunctions");
+const { checkIsFiatToFiatRequestIdAlreadyUsed, fetchFiatToFiatProvidersInformationById } = require("../util/transfer/fiatToFiat/utils/fiatToFiatTransactionService");
+const { CreateFiatToFiatTransferError, CreateFiatToFiatTransferErrorType } = require("../util/transfer/fiatToFiat/utils/utils");
+const FiatToFiatSupportedPairFetchFunctionsCheck = require("../util/transfer/fiatToFiat/utils/fiatToFiatSupportedPairFetchFunctions");
 const { CreateFiatToCryptoTransferError, CreateFiatToCryptoTransferErrorType } = require("../util/transfer/fiatToCrypto/utils/utils");
 const { checkIsCryptoToFiatRequestIdAlreadyUsed, fetchCryptoToFiatRequestInfortmaionById, fetchCryptoToFiatProvidersInformationById } = require("../util/transfer/cryptoToBankAccount/utils/fetchRequestInformation");
-const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoProvidersInformationById, checkIsFiatToFiatRequestIdAlreadyUsed } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
+const { checkIsFiatToCryptoRequestIdAlreadyUsed, fetchFiatToCryptoProvidersInformationById } = require("../util/transfer/fiatToCrypto/utils/fetchRequestInformation");
 const fetchFiatToCryptoTransferRecord = require("../util/transfer/fiatToCrypto/transfer/fetchCheckbookBridgeFiatToCryptoTransferRecord");
 const fetchCryptoToCryptoTransferRecord = require("../util/transfer/cryptoToCrypto/main/fetchTransferRecord");
 const cryptoToCryptoSupportedFunctions = require("../util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions");
@@ -39,7 +43,12 @@ const { isInRange, isValidAmount, isHIFISupportedChain, inStringEnum } = require
 const { createSandboxCryptoToFiatTransfer } = require("../util/transfer/cryptoToBankAccount/transfer/sandboxCryptoToFiatTransfer");
 const sandboxMintUSDHIFI = require("../util/transfer/fiatToCrypto/transfer/sandboxMintUSDHIFI");
 const { createBastionSandboxCryptoTransfer } = require("../util/transfer/cryptoToCrypto/main/bastionTransfeSandboxUSDHIFI");
-const { account } = require(".");
+const { insertTransactionFeeRecord } = require("../util/billing/fee/feeTransactionService");
+const { transferType } = require("../util/transfer/utils/transfer");
+const { createUsdcBridgingRequest } = require("../util/transfer/bridging/createUsdcBridingRequest");
+const { checkIsBridgingRequestIdAlreadyUsed } = require("../util/transfer/bridging/fetchRequestInformation");
+const fetchBridgingTransactions = require("../util/transfer/bridging/fetchBridgingTransactions");
+const { getUserWallet } = require("../util/user/getUserWallet");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -77,30 +86,29 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request_id exist
-		const { isAlreadyUsed } = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
+		const { isAlreadyUsed, newRecord } = await checkIsCryptoToCryptoRequestIdAlreadyUsed(requestId, senderUserId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_CRYPTO, status: "CREATED" });
 
 		// fetch sender wallet address information
-		if (senderWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-		if (senderWalletType && !allowedWalletTypes.includes(senderWalletType)) return res.status(400).json({ error: `wallet type ${senderWalletType} is not supported` })
 		const _senderWalletType = senderWalletType || "INDIVIDUAL"
-		const { walletAddress: senderAddress, bastionUserId: senderBastionUserId } = await getBastionWallet(senderUserId, chain, _senderWalletType)
-		if (!senderAddress || !senderBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+		const { address: senderAddress, bastionUserId: senderBastionUserId, walletProvider: senderWalletProvider, circleWalletId: senderCircleWalletId } = await getUserWallet(senderUserId, chain, _senderWalletType)
+		if (!senderAddress) return res.status(400).json({ error: `Sender is not allowed to trasnfer crypto (user wallet record not found)` })
 		fields.senderAddress = senderAddress
 		fields.senderBastionUserId = senderBastionUserId
-		// check privilege
-		if (!(await isBastionKycPassed(senderBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
-
+		fields.feeTransactionId = feeTransaction.id
+		fields.senderWalletProvider = senderWalletProvider
+		fields.senderCircleWalletId = senderCircleWalletId
+		fields.senderWalletType = _senderWalletType
 		// check recipient wallet address if using recipientUserId
 		if (recipientUserId) {
-			if (recipientWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-			if (recipientWalletType && !allowedWalletTypes.includes(recipientWalletType)) return res.status(400).json({ error: `wallet type ${recipientWalletType} is not supported` })
 			const _recipientWalletType = recipientWalletType || "INDIVIDUAL"
-			const { walletAddress: recipientAddress, bastionUserId: recipientBastionUserId } = await getBastionWallet(recipientUserId, chain, _recipientWalletType)
-			if (!recipientAddress || !recipientBastionUserId) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user wallet record not found)` })
+			const { address: recipientAddress, bastionUserId: recipientBastionUserId, walletProvider: recipientWalletProvider } = await getUserWallet(recipientUserId, chain, _recipientWalletType)
+			if (!recipientAddress) return res.status(400).json({ error: `Recipient is not allowed to trasnfer crypto (user wallet record not found)` })
 			fields.recipientAddress = recipientAddress
 			fields.recipientBastionUserId = recipientBastionUserId
-			if (!(await isBastionKycPassed(recipientBastionUserId))) return res.status(400).json({ error: `User is not allowed to accept crypto` })
+			fields.recipientWalletProvider = recipientWalletProvider
+			fields.recipientWalletType = _recipientWalletType
 		}
 
 
@@ -110,7 +118,8 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 		}
 
 		// get transfer function
-		const { transferFunc } = cryptoToCryptoSupportedFunctions[chain][currency]
+		const {transferFunc} = cryptoToCryptoSupportedFunctions[chain][currency]
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported transfer` })
 		// transfer
 		const receipt = await transferFunc(fields)
 
@@ -123,7 +132,7 @@ exports.createCryptoToCryptoTransfer = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		await createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error)
+		await createLog("transfer/createCryptoToCryptoTransfer", senderUserId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -156,7 +165,7 @@ exports.getAllCryptoToCryptoTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		await createLog("transfer/getAllCryptoToCryptoTransfer", userId, error.message, error, profileId)
+		await createLog("transfer/getAllCryptoToCryptoTransfer", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -180,7 +189,7 @@ exports.getCryptoToCryptoTransfer = async (req, res) => {
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		await createLog("transfer/getCryptoToCryptoTransfer", null, error.message, error, profileId)
+		await createLog("transfer/getCryptoToCryptoTransfer", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -193,7 +202,7 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 	const fields = req.body;
 	const { profileId } = req.query
-	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference } = fields
+	let { requestId, destinationAccountId, amount, chain, sourceCurrency, destinationCurrency, sourceUserId, description, purposeOfPayment, paymentRail, feeType, feeValue, sourceWalletType, sameDayAch, receivedAmount, achReference, sepaReference, wireMessage, swiftReference } = fields
 
 	try {
 		// field validation
@@ -210,17 +219,18 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 			"amount": (value) => isValidAmount(value),
 			"chain": (value) => isHIFISupportedChain(value),
 			"sourceCurrency": (value) => inStringEnum(value, ["usdc", "usdt", "usdHifi"]),
-			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "kes"]),
+			"destinationCurrency": (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "kes", "ngn", "xof", "rwf", "zmw", "ugx", "tzs", "mwk", "xaf"]),
 			"paymentRail": "string",
 			"description": "string",
 			"purposeOfPayment": "string",
-			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
+			"sourceWalletType": (value) => inStringEnum(value, allowedWalletTypes),
 			"sameDayAch": "boolean",
 			"achReference": "string",
 			"sepaReference": "string",
 			"wireMessage": "string",
 			"swiftReference": "string"
 		}
+
 		const { missingFields, invalidFields } = fieldsValidation({ ...fields }, requiredFields, acceptedFields)
 		if (missingFields.length > 0 || invalidFields.length > 0) {
 			return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
@@ -228,15 +238,12 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 		if (!amount && !receivedAmount) return res.status(401).json({ error: "Either amount and receivedAmount is required" })
 		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
-		// check is request id valid
-		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 
-		const { isAlreadyUsed } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
+		const { isAlreadyUsed, newRecord } = await checkIsCryptoToFiatRequestIdAlreadyUsed(requestId, profileId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.CRYPTO_TO_FIAT, status: "CREATED" });
 
 		// FIX ME SHOULD put it in the field validation 
-		if (amount && !isNumberOrNumericString(amount)) return res.status(400).json({ error: "Invalid amount" })
-		if (receivedAmount && !isNumberOrNumericString(receivedAmount)) return res.status(400).json({ error: "Invalid receivedAmount" })
 		if (amount && !cryptoToFiatAmountCheck(amount, sourceCurrency, chain)) return res.status(400).json({ error: "Invalid amount for sourceCurrency" })
 
 		// check if fee config is correct
@@ -250,32 +257,31 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 
 		// get account info
 		const accountInfo = await fetchAccountProviders(destinationAccountId, profileId)
-		if (!accountInfo || !accountInfo.account_id) return res.status(400).json({ error: `destinationAccountId not exist` });
+
+		if (!accountInfo || !accountInfo.account_id) return res.status(400).json({ error: `destinationAccountId does not exist` });
 		if (accountInfo.rail_type != "offramp") return res.status(400).json({ error: `destinationAccountId is not a offramp bank account` });
 		if (accountInfo.currency != destinationCurrency) return res.status(400).json({ error: `destinationCurrency not allowed for destinationAccountId` });
-		let paymentRail = accountInfo.payment_rail
+		if (paymentRail && accountInfo.payment_rail != paymentRail) return res.status(400).json({ error: `paymentRail not allowed for destinationAccountId` });
+		if (!paymentRail) paymentRail = accountInfo.payment_rail;
+		fields.accountInfo = accountInfo
 		const destinationUserId = accountInfo.user_id
+		fields.destinationUserId = destinationUserId
 
-		// if accountInfo.paymentRail is "ach" and the "sameDayAch" is true, then set the paymentRail to "sameDayAch"
-		// refactor the below to return a 400 error if sameDayAch is true, but payment_rail is not "ach"
-		if (accountInfo.payment_rail == "ach" && sameDayAch) {
-			paymentRail = "sameDayAch"
-		} else if (sameDayAch && !accountInfo.payment_rail == "ach") {
-			return res.status(400).json({ error: `sameDayAch is only available for ACH transfers, but the destinationAccountId passed was not for an ACH account.` })
-		}
+		// block if destination user is not equal to source user
+		if (destinationUserId != sourceUserId) return res.status(400).json({ error: `destinationUserId is not equal to sourceUserId` });
 
 		// get user wallet
 		// fetch sender wallet address information
-		if (sourceWalletType == "") return res.status(400).json({ error: `wallet type can not be empty string` })
-		if (sourceWalletType && !allowedWalletTypes.includes(sourceWalletType)) return res.status(400).json({ error: `wallet type ${sourceWalletType} is not supported` })
 		const _sourceWalletType = sourceWalletType || "INDIVIDUAL"
-		const { walletAddress: sourceWalletAddress, bastionUserId: sourceBastionUserId } = await getBastionWallet(sourceUserId, chain, _sourceWalletType)
-		if (!sourceWalletAddress || !sourceBastionUserId) {
-			return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
-		}
-		if (!(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+		const { address: sourceWalletAddress, bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, chain, _sourceWalletType)
+		if (!sourceWalletAddress) return res.status(400).json({ error: `No user wallet found for chain: ${chain}` })
+		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `User is not allowed to trasnfer crypto (user status invalid)` })
+
+		if(sourceWalletProvider === "CIRCLE" && accountInfo.provider === "REAP") return res.status(400).json({ error: `User wallet type if not supported for the offramp rail` });
+
+		// sandbox transfer
 		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && sourceCurrency == "usdHifi") {
-			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
+			const { isExternalAccountExist, transferResult } = await createSandboxCryptoToFiatTransfer({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceCircleWalletId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, feeTransactionId: feeTransaction.id, sourceWalletProvider, newRecord, accountInfo })
 			if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
 			const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
 			return res.status(200).json(receipt);
@@ -284,13 +290,14 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 		//check is source-destination pair supported
 		const funcs = CryptoToBankSupportedPairCheck(paymentRail, sourceCurrency, destinationCurrency)
 		if (!funcs) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
-		const { transferFunc } = funcs
-		if (!transferFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
+		const { transferFunc, validationFunc } = funcs
+		if (!transferFunc || !validationFunc) return res.status(400).json({ error: `${paymentRail}: ${sourceCurrency} to ${destinationCurrency} is not a supported rail` });
 
-
-		const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference })
+        const validationRes = await validationFunc({ amount, feeType, feeValue, paymentRail, sameDayAch, wireMessage });
+        if (!validationRes.valid) return res.status(400).json({ error: `fields provided are invalid`, invalidFieldsAndMessages: validationRes.invalidFieldsAndMessages })
+        
+        const { isExternalAccountExist, transferResult } = await transferFunc({ requestId, sourceUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, feeType, feeValue, paymentRail, sameDayAch, sourceBastionUserId, sourceWalletType: _sourceWalletType, destinationUserId, description, purposeOfPayment, receivedAmount, achReference, sepaReference, wireMessage, swiftReference, accountInfo, feeTransactionId: feeTransaction.id, sourceWalletProvider, newRecord })
 		if (!isExternalAccountExist) return res.status(400).json({ error: `Invalid destinationAccountId or unsupported rail for provided destinationAccountId` });
-
 		const receipt = await transferObjectReconstructor(transferResult, destinationAccountId);
 
 		return res.status(200).json(receipt);
@@ -304,7 +311,8 @@ exports.createCryptoToFiatTransfer = async (req, res) => {
 				return res.status(500).json({ error: "An unexpected error occurred" })
 			}
 		}
-		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error)
+		console.log(error)
+		await createLog("transfer/crypto-to-fiat", sourceUserId, error.message, error, null, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 }
@@ -336,7 +344,7 @@ exports.getAllCryptoToFiatTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		await createLog("transfer/getAllCryptoToFiatTransfer", userId, error.message, error, profileId)
+		await createLog("transfer/getAllCryptoToFiatTransfer", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -378,7 +386,7 @@ exports.getCryptoToFiatTransfer = async (req, res) => {
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		await createLog("transfer/getCryptoToFiatTransfer", null, error.message, error, profileId)
+		await createLog("transfer/getCryptoToFiatTransfer", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: `Unexpected error happened` })
 	}
 
@@ -419,8 +427,9 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// check is request id valid
 		if (!isUUID(requestId)) return res.status(400).json({ error: "invalid requestId" })
 		// check is request id valid
-		const { isAlreadyUsed } = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
+		const { isAlreadyUsed, newRecord } = await checkIsFiatToCryptoRequestIdAlreadyUsed(requestId, sourceUserId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.FIAT_TO_CRYPTO, status: "CREATED" });
 
 		// check fee config
 		if (feeType || feeValue) {
@@ -430,14 +439,15 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 
 
 		// look up the provider to get the actual internal account id
-		const providerResult = await fetchAccountProviders(sourceAccountId, profileId);
-		if (!providerResult || !providerResult.account_id) return res.status(400).json({ error: `No provider found for id: ${sourceAccountId}` });
-		const internalAccountId = providerResult.account_id;
+		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId);
+		if (!accountInfo || !accountInfo.account_id) return res.status(400).json({ error: `No provider found for id: ${sourceAccountId}` });
+		const internalAccountId = accountInfo.account_id;
+		fields.accountInfo = accountInfo
 
 		// simulation in sandbox
 
-		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi") {
-			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
+		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi"){
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo, feeTransactionId: feeTransaction.id, recordId: newRecord.id})
 			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 			return res.status(200).json(transferResult);
 		}
@@ -446,7 +456,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
-		let transferResult = await transferFunc({ requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId })
+		let transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo, feeTransactionId: feeTransaction.id, recordId: newRecord.id})
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);
@@ -460,7 +470,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		await createLog("transfer/createFiatToCryptoTransfer", sourceUserId, error.message, error)
+		await createLog("transfer/createFiatToCryptoTransfer", sourceUserId, error.message, error, null, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -500,7 +510,7 @@ exports.getFiatToCryptoTransfer = async (req, res) => {
 		return res.status(200).json(transactionRecord)
 
 	} catch (error) {
-		await createLog("transfer/getCryptoToFiatTransfer", null, error.message, error, profileId)
+		await createLog("transfer/getCryptoToFiatTransfer", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: `Unexpected error happened` })
 	}
 
@@ -543,7 +553,7 @@ exports.getAllFiatToCryptoTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error(error)
-		await createLog("transfer/getAllFiatToCryptoTransfer", userId, error.message, error, profileId)
+		await createLog("transfer/getAllFiatToCryptoTransfer", userId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
@@ -567,7 +577,7 @@ exports.cryptoToFiatConversionRate = async (req, res) => {
 
 		return res.status(200).json(conversionRate)
 	} catch (error) {
-		await createLog("transfer/cryptoToFiatConversionRate", null, error.message, error, profileId)
+		await createLog("transfer/cryptoToFiatConversionRate", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -614,7 +624,7 @@ exports.createFiatToFiatViaCryptoTransfer = async (req, res) => {
 
 	} catch (error) {
 		console.error('Combined Transfer Error:', error);
-		await createLog("transfer/createFiatToFiatViaCryptoTransfer", requestId, error.message, error);
+		await createLog("transfer/createFiatToFiatViaCryptoTransfer", requestId, error.message, error, null, res);
 		return res.status(500).json({ error: "Unexpected error happened", details: error.message });
 	}
 };
@@ -688,7 +698,7 @@ exports.createDirectCryptoToFiatTransfer = async (req, res) => {
 				return res.status(500).json({ error: "An unexpected error occurred" })
 			}
 		}
-		await createLog("transfer/createDirectCryptoToFiatTransfer", null, error.message, error, profileId)
+		await createLog("transfer/createDirectCryptoToFiatTransfer", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
@@ -711,7 +721,9 @@ exports.acceptQuoteTypeCryptoToFiatTransfer = async (req, res) => {
 
 		// get account Info
 		const accountInfo = await fetchAccountProviders(record.destination_account_id, profileId)
+
 		const funcs = CryptoToBankSupportedPairCheck(accountInfo.payment_rail, record.source_currency, record.destination_currency)
+
 		if (!funcs) throw new Error(`No available functions found for id: ${id}`)
 		const { acceptQuoteFunc } = funcs
 		if (!funcs) return res.status(400).json({ error: `This is not a quote transaction, id: ${id}` })
@@ -720,7 +732,7 @@ exports.acceptQuoteTypeCryptoToFiatTransfer = async (req, res) => {
 		return res.status(200).json(receipt)
 
 	} catch (error) {
-		await createLog("transfer/acceptQuoteTypeCryptoToFiatTransfer", null, error.message, error, profileId)
+		await createLog("transfer/acceptQuoteTypeCryptoToFiatTransfer", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 
@@ -758,123 +770,32 @@ exports.createFiatTotFiatTransfer = async (req, res) => {
 
 
 		// check is request id valid
-		const { isAlreadyUsed } = await checkIsFiatToFiatRequestIdAlreadyUsed(requestId, sourceUserId, accountNumber, routingNumber, recipientName, type, sourceAccountId, amount, currency, memo)
+		const { isAlreadyUsed } = await checkIsFiatToFiatRequestIdAlreadyUsed(requestId);
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
-		// get the plaid connected bank account from supabase
 
-		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId)
+		const accountInfo = await fetchAccountProviders(sourceAccountId, profileId);
+		if (!accountInfo || !accountInfo.account_id || accountInfo.provider !== "CHECKBOOK") return res.status(400).json({ error: `No account found for sourceAccountId: ${sourceAccountId}` });
 
+		const sourceCurrency = accountInfo.currency;
+		const destinationCurrency = accountInfo.currency;
 
+		const transferFunc = FiatToFiatSupportedPairFunctionsCheck(sourceCurrency, destinationCurrency);
+		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency}` });
 
-		// get the checkbook account representing checkbook account from supabase
-		const { data: checkbookAccount, error: checkbookAccountError } = await supabaseCall(() => supabase
+		let transferResult = await transferFunc({ requestId, accountNumber, routingNumber, recipientName, type, sourceUserId, sourceAccountId: accountInfo.account_id, amount, currency, memo, profileId });
+		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
-			.from('checkbook_accounts')
-			.select('*')
-			.eq('id', accountInfo.account_id)
-			.maybeSingle()
-		);
-
-		if (checkbookAccountError) throw checkbookAccountError;
-		if (!checkbookAccount) throw new Error('Checkbook account not found');
-
-
-		// get the checkbook user for the account from supabase
-		const { data: checkbookUser, error: checkbookUserError } = await supabaseCall(() => supabase
-			.from('checkbook_users')
-			.select('*')
-			.eq('checkbook_user_id', checkbookAccount.checkbook_user_id)
-			.maybeSingle()
-		);
-
-		if (checkbookUserError) throw checkbookUserError;
-		if (!checkbookUser) throw new Error('Checkbook user not found');
-
-		// execute checkbook payment
-		const createDigitalPaymentUrl = `${process.env.CHECKBOOK_URL}/check/direct`;
-		const body = {
-			"recipient": `${checkbookUser.user_id}@hifibridge.com`,
-			"account_type": type,
-			"routing_number": routingNumber,
-			"account_number": accountNumber,
-			"name": recipientName,
-			"amount": amount,
-			"account": checkbookAccount.checkbook_id,
-			"description": memo,
-		}
-
-		const options = {
-			method: 'POST',
-			headers: {
-				'Accept': 'application/json',
-				'Authorization': `${checkbookUser.api_key}:${checkbookUser.api_secret}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(body)
-		};
-
-		const response = await fetch(createDigitalPaymentUrl, options);
-		const responseBody = await response.json()
-
-		if (!response.ok) {
-			const { data, error } = await supabase
-				.from("fiat_to_fiat_transactions")
-				.update({
-					checkbook_response: responseBody,
-					status: "SUBMISSION_FAILED"
-				})
-				.eq("id", requestId)
-			await createLog("transfer/ach/pull", sourceUserId, responseBody.message, responseBody)
-			throw new Error(responseBody.message)
-		}
-		const toUpdate = {
-			checkbook_response: responseBody,
-			status: "FIAT_SUBMITTED",
-			checkbook_payment_id: responseBody.id,
-			checkbook_status: responseBody.status
-		}
-
-		if (process.env.NODE_ENV === "development") {
-			toUpdate.status = "CONFIRMED"
-			toUpdate.checkbook_status = "PAID"
-		}
-
-		// update record
-		const { data: updatedRecord, error: updatedRecordError } = await supabaseCall(() => supabase
-			.from("fiat_to_fiat_transactions")
-			.update(toUpdate)
-			.eq("request_id", requestId)
-			.select()
-			.single())
-
-		if (updatedRecordError) {
-			await createLog("transfer/ach/pull", sourceUserId, updatedRecordError.message, updatedRecordError)
-			throw new Error(updatedRecordError.message)
-		}
-
-		let responseObject = {
-			id: updatedRecord.id,
-			requestId: updatedRecord.request_id,
-			createdAt: updatedRecord.created_at,
-			recipientName: updatedRecord.recipient_name,
-			status: updatedRecord.status,
-			amount: updatedRecord.amount,
-			currency: updatedRecord.currency,
-			sourceAccountId: updatedRecord.source_account_id,
-		}
-
-		return res.status(200).json(responseObject);
+		return res.status(200).json(transferResult);
 
 	} catch (error) {
-		console.log(error)
-		if (error instanceof CreateFiatToCryptoTransferError) {
-			if (error.type == CreateFiatToCryptoTransferErrorType.CLIENT_ERROR) {
+		if (error instanceof CreateFiatToFiatTransferError) {
+			if (error.type == CreateFiatToFiatTransferErrorType.CLIENT_ERROR) {
 				return res.status(400).json({ error: error.message })
 			} else {
 				return res.status(500).json({ error: "Unexpected error happened" })
 			}
 		}
-		await createLog("transfer/ach/pull", sourceUserId, error.message, error)
+		await createLog("transfer/ach/pull", sourceUserId, error.message, error, null, res);
 		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
@@ -911,6 +832,13 @@ exports.getTransfers = async (req, res) => {
 					break;
 				case TransferType["crypto-to-crypto"]:
 					transactionRecord = await fetchCryptoToCryptoTransferRecord(id, profileId);
+					break;
+				case TransferType["fiat-to-fiat"]:
+					({ fiatProvider, fiatReceiver } = await fetchFiatToFiatProvidersInformationById(id));
+					if (!fiatProvider || !fiatReceiver) return res.status(404).json({ error: `No transaction found for id: ${id} for transfer type: ${transferType}` });
+					fetchFunc = await FiatToFiatSupportedPairFetchFunctionsCheck(fiatProvider, fiatReceiver);
+					transactionRecord = await fetchFunc(id, profileId);
+					transactionRecord = await transferObjectReconstructor(transactionRecord);
 					break;
 				default:
 					return res.status(400).json({ error: `Invalid transfer type: ${transferType}` });
@@ -965,8 +893,568 @@ exports.getTransfers = async (req, res) => {
 		}
 
 	} catch (error) {
-		await createLog("transfer/getTransfers", null, error.message, error, profileId)
+		await createLog("transfer/getTransfers", null, error.message, error, profileId, res)
 		return res.status(500).json({ error: 'An unexpected error occurred' });
+	}
+
+}
+
+
+// exports.createPfiDid = async (req, res) => {
+// 	if (req.method !== 'POST') {
+// 		return res.status(405).json({ error: 'Method not allowed' });
+// 	}
+
+// 	const { userId } = req.body;
+// 	console.log('createPfiDid');
+// 	const pfiDidId = "hifiSandboxPfi"
+
+// 	const { DidDht } = await import('@web5/dids');
+// 	const pfiDid = await DidDht.create({
+// 		options: {
+// 			publish: true,
+// 			services: [{
+// 				id: pfiDidId,
+// 				type: 'PFI',
+// 				serviceEndpoint: 'https://pfi-sandbox.hifibridge.com/'
+// 			}]
+// 		},
+// 	})
+// 	console.log('didDht:', pfiDid);
+
+// 	const portableDid = await pfiDid.export()
+
+// 	// save the record to supabase
+// 	const { data, error } = await supabaseCall(() => supabase
+// 		.from('tbd_decentralized_identifiers')
+// 		.insert({
+// 			user_id: userId,
+// 			did: pfiDid.uri,
+// 			portable_did: portableDid,
+// 			did_dht: pfiDid,
+// 		}
+// 		)
+// 		.single())
+
+// 	if (error) {
+// 		console.error('Error creating DID:', error);
+// 		return res.status(500).json({ error: "An unexpected error occurred" });
+// 	}
+
+
+// 	console.log('portableDid:', portableDid);
+
+// 	const did = pfiDid.uri;
+// 	const didDocument = JSON.stringify(pfiDid.document);
+// 	console.log('DID:', did);
+// 	console.log('DID Document:', didDocument);
+
+
+// 	return res.status(200).json({
+// 		did: did,
+// 		didDocument: didDocument
+
+// 	});
+
+
+
+// }
+
+
+// exports.createExchangeTransfer = async (req, res) => {
+// 	if (req.method !== 'POST') {
+// 		return res.status(405).json({ error: 'Method not allowed' });
+
+// 	}
+
+
+// 	const { userId, sourceCurrency, destinationCurrency } = req.body
+
+// 	// look up the did record for a given sourceUserId
+// 	const { data: didRecord, error: didRecordError } = await supabaseCall(() => supabase
+// 		.from('tbd_decentralized_identifiers')
+// 		.select('*')
+// 		.eq('user_id', userId)
+// 		.maybeSingle())
+
+// 	if (didRecordError || !didRecord) {
+// 		console.error('Error fetching DID record:', didRecordError);
+// 		return res.status(500).json({ error: "An unexpected error occurred" });
+// 	}
+
+// 	// console.log('didRecord:', didRecord);
+
+// 	const { DidDht, BearerDid } = await import('@web5/dids');
+// 	const { VerifiableCredential, PresentationExchange } = await import('@web5/credentials');
+
+
+
+// 	let matchedOfferings = [];
+
+// 	const { TbdexHttpClient, Rfq, Quote, Order, OrderStatus, Close, Message } = await import('@tbdex/http-client');
+
+// 	const offerings = await TbdexHttpClient.getOfferings({ pfiDid: process.env.YC_PFI_DID });
+
+// 	// if there are no offerings, return an error
+// 	if (!offerings) {
+// 		return res.status(500).json({ error: "An unexpected error occurred" });
+// 	}
+
+// 	// Define the specific offering ID to find
+// 	const offeringId = 'offering_01j8thhe0pf6jaybgd00y7ht40';// KES in Sandbox PFI
+
+// 	// Find the offering by ID directly from the offerings array
+// 	const selectedOffering = offerings.find(offering => offering.metadata.id === offeringId);
+
+// 	// if there is no offering with the specified ID, return an error
+// 	if (!selectedOffering) {
+// 		return res.status(500).json({ error: "An unexpected error occurred" });
+// 	}
+
+
+// 	const presentationDefinition = selectedOffering.data.requiredClaims;
+
+// 	// construct the metadata object
+// 	const metadata = {
+// 		to: selectedOffering.metadata.from,
+// 		from: didRecord.did,
+// 		protocol: '1.0'
+// 	}
+
+
+// 	let ycRfq
+
+// 	try {
+
+// 		// Select the credentials to be used for the exchange
+// 		const selectedCredentials = PresentationExchange.selectCredentials({
+// 			vcJwts: ["eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpkaHQ6aG8zYXhwNXBncDRrOGE3a3F0Yjhrbm41dWFxd3k5Z2hrbTk4d3J5dG5oNjdic243ZXpyeSMwIn0.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vdzNpZC5vcmcvdmMvc3RhdHVzLWxpc3QvMjAyMS92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImlkIjoidXJuOnV1aWQ6YzMwZTYxOWItNGYyZC00OGY2LTkzMmQtMDlkNTRkODVmN2EyIiwiaXNzdWVyIjoiZGlkOmRodDpobzNheHA1cGdwNGs4YTdrcXRiOGtubjV1YXF3eTlnaGttOTh3cnl0bmg2N2JzbjdlenJ5IiwiaXNzdWFuY2VEYXRlIjoiMjAyNC0wOS0wNlQwNzo0ODowM1oiLCJjcmVkZW50aWFsU3ViamVjdCI6eyJpZCI6ImRpZDpkaHQ6b244bzNyZWFkNnRrMWZ1ZWFkamVlM3IxOGJhbmI1dGozazh4YXRrZmpxMWc2cjllemR0byJ9fSwibmJmIjoxNzI1NjA4ODgzLCJqdGkiOiJ1cm46dXVpZDpjMzBlNjE5Yi00ZjJkLTQ4ZjYtOTMyZC0wOWQ1NGQ4NWY3YTIiLCJpc3MiOiJkaWQ6ZGh0OmhvM2F4cDVwZ3A0azhhN2txdGI4a25uNXVhcXd5OWdoa205OHdyeXRuaDY3YnNuN2V6cnkiLCJzdWIiOiJkaWQ6ZGh0Om9uOG8zcmVhZDZ0azFmdWVhZGplZTNyMThiYW5iNXRqM2s4eGF0a2ZqcTFnNnI5ZXpkdG8iLCJpYXQiOjE3MjU2MDg4ODN9.Cm-_3-TMmfRZFCVs0Xdt-YYTVwyBeYuR644_Ly4Svj3S5JmlrNGM4tT30G1hZRQl7po0WNsUNmYOEgX5sEItDQ"], // array of JWTs after YC actually issues the credentials
+// 			presentationDefinition: presentationDefinition
+// 		});
+
+
+// 		// construct the data object
+// 		const data = {
+// 			offeringId: selectedOffering.metadata.id,
+// 			payin: {
+// 				kind: "USDC_LEDGER",
+// 				amount: "10",
+// 			},
+// 			payout: {
+// 				kind: 'MOMO_MPESA',
+// 				paymentDetails: {
+// 					accountNumber: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+// 					reason: 'Test payout',
+// 					accountHolderName: 'Sam Yoon',
+
+// 				}
+// 			},
+// 			claims: selectedCredentials
+// 		};
+
+// 		// create the rfq
+// 		ycRfq = Rfq.create({
+// 			metadata: metadata,
+// 			data: data,
+// 		});
+
+
+
+// 	} catch (error) {
+// 		console.error('Error creating RFQ:', error);
+// 		return res.status(500).json({ error: error });
+// 	}
+
+// 	// console.log('rfq:', ycRfq);
+// 	const bearerDid = await BearerDid.import({ portableDid: didRecord.portable_did });
+// 	// console.log('rfq:', rfq);
+// 	await ycRfq.sign(bearerDid);
+// 	try {
+// 		// create the exchange
+// 		await TbdexHttpClient.createExchange(ycRfq);
+
+// 	} catch (error) {
+// 		//log details
+// 		console.error("error details:", error);
+
+// 		return res.status(500).json({ error: error });
+// 	}
+
+// 	//poll for quote
+// 	let quote;
+// 	let close;
+// 	let exchange;
+// 	//Wait for Quote message to appear in the exchange
+// 	while (!quote) {
+// 		try {
+// 			exchange = await TbdexHttpClient.getExchange({
+// 				pfiDid: ycRfq.metadata.to,
+// 				did: bearerDid,
+// 				exchangeId: ycRfq.exchangeId
+// 			});
+
+// 		} catch (error) {
+// 			console.error('Error during getExchange:', error);
+// 			return res.status(500).json({ error: error });
+// 		}
+
+// 		quote = exchange.find(msg => msg instanceof Quote);
+
+// 		if (!quote) {
+// 			// Make sure the exchange is still open
+// 			close = exchange.find(msg => msg instanceof Close);
+// 			if (close) { break; }
+// 			else {
+// 				// Wait 2 seconds before making another request
+// 				await new Promise(resolve => setTimeout(resolve, 2000));
+// 			}
+// 		}
+// 	}
+
+
+
+
+// 	// create order object
+// 	const order = Order.create({
+// 		metadata: {
+// 			from: didRecord.did,         // Customer's DID
+// 			to: quote.metadata.from,       // PFI's DID
+// 			exchangeId: quote.exchangeId,  // Exchange ID from the Quote
+// 			protocol: "1.0"                // Version of tbDEX protocol you're using
+// 		}
+// 	});
+
+
+// 	await order.sign(bearerDid);
+
+// 	console.log('order:', order);
+// 	try {
+// 		await TbdexHttpClient.submitOrder(order);
+
+// 	} catch (error) {
+// 		console.error('Error submitting order:', error);
+// 		return res.status(500).json({ error: error });
+// 	}
+
+// 	let orderStatusUpdate;
+// 	let orderClose;
+
+// 	while (!orderClose) {
+// 		const exchange = await TbdexHttpClient.getExchange({
+// 			pfiDid: order.metadata.to,
+// 			did: bearerDid,
+// 			exchangeId: order.exchangeId
+// 		});
+
+// 		for (const message of exchange) {
+// 			if (message instanceof OrderStatus) {
+// 				// a status update to display to your customer
+// 				orderStatusUpdate = message.data.orderStatus;
+// 			}
+// 			else if (message instanceof Close) {
+// 				// final message of exchange has been written
+// 				orderClose = message;
+// 				break;
+// 			}
+// 		}
+// 	}
+
+// 	console.log('orderClose:', orderClose);
+
+// 	return res.status(200).json({
+// 		quote: quote,
+// 		closeMessage: orderClose
+// 	});
+// }
+
+
+
+exports.createExchangeTransferTemp = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+	const { userId } = req.body
+
+	// look up the did record for a given sourceUserId
+	const { data: didRecord, error: didRecordError } = await supabaseCall(() => supabase
+		.from('tbd_decentralized_identifiers')
+		.select('*')
+		.eq('user_id', userId)
+		.maybeSingle())
+
+	if (didRecordError || !didRecord) {
+		console.error('Error fetching DID record:', didRecordError);
+		return res.status(500).json({ error: "An unexpected error occurred" });
+	}
+
+
+	const { DidDht, BearerDid } = await import('@web5/dids');
+	const { VerifiableCredential, PresentationExchange } = await import('@web5/credentials');
+
+
+	const payinCurrencyCode = 'USDC';
+	const payoutCurrencyCode = 'KES';
+	let matchedOfferings = [];
+
+	const { TbdexHttpClient, Rfq, Quote, Order, OrderStatus, Close, Message } = await import('@tbdex/http-client');
+
+	const ycDid = "did:dht:ho3axp5pgp4k8a7kqtb8knn5uaqwy9ghkm98wrytnh67bsn7ezry";
+	const offerings = await TbdexHttpClient.getOfferings({ pfiDid: ycDid });
+
+	if (offerings) {
+		const filteredOfferings = offerings.filter(offering =>
+			offering.data.payin.currencyCode === payinCurrencyCode &&
+			offering.data.payout.currencyCode === payoutCurrencyCode
+		);
+		matchedOfferings.push(...filteredOfferings);
+	}
+	// const presentationDefinition = matchedOfferings[0].data.requiredClaims;
+
+	// matchedOfferings.forEach(offering => {
+	// 	console.log(JSON.stringify(offering, null, 2)); // `null` and `2` are for formatting purposes
+	// });
+	console.log('offerings:', JSON.stringify(matchedOfferings, null, 2));
+	// loop through matched offerings where the offering.metada.id is == offering_01j60vgcygettvse30t5vxr6zt
+	// const selectedOffering = matchedOfferings.find(offering => offering.metadata.id === 'offering_01j60vgcygettvse30t5vxr6zt');
+	const selectedOffering = matchedOfferings.find(offering => offering.metadata.id === 'offering_01j9bgxk9pf2asxdy0yjf5bja3');
+
+	console.log('selectedOffering', selectedOffering)
+	// console.log('selectedOffering.data.requiredClaims:', JSON.stringify(selectedOffering.data.requiredClaims, null, 2));
+
+
+	const presentationDefinition = selectedOffering.data.requiredClaims;
+	console.log('presentationDefinition:', JSON.stringify(presentationDefinition, null, 2));
+	// construct the metadata object
+	const metadata = {
+		to: selectedOffering.metadata.from,
+		from: didRecord.did,
+		protocol: '1.0'
+	}
+
+	console.log('metadata:', metadata);
+
+
+	let ycRfq
+
+	try {
+
+		// Select the credentials to be used for the exchange
+		const selectedCredentials = PresentationExchange.selectCredentials({
+			vcJwts: ["eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDpkaHQ6aG8zYXhwNXBncDRrOGE3a3F0Yjhrbm41dWFxd3k5Z2hrbTk4d3J5dG5oNjdic243ZXpyeSMwIn0.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vdzNpZC5vcmcvdmMvc3RhdHVzLWxpc3QvMjAyMS92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImlkIjoidXJuOnV1aWQ6YzMwZTYxOWItNGYyZC00OGY2LTkzMmQtMDlkNTRkODVmN2EyIiwiaXNzdWVyIjoiZGlkOmRodDpobzNheHA1cGdwNGs4YTdrcXRiOGtubjV1YXF3eTlnaGttOTh3cnl0bmg2N2JzbjdlenJ5IiwiaXNzdWFuY2VEYXRlIjoiMjAyNC0wOS0wNlQwNzo0ODowM1oiLCJjcmVkZW50aWFsU3ViamVjdCI6eyJpZCI6ImRpZDpkaHQ6b244bzNyZWFkNnRrMWZ1ZWFkamVlM3IxOGJhbmI1dGozazh4YXRrZmpxMWc2cjllemR0byJ9fSwibmJmIjoxNzI1NjA4ODgzLCJqdGkiOiJ1cm46dXVpZDpjMzBlNjE5Yi00ZjJkLTQ4ZjYtOTMyZC0wOWQ1NGQ4NWY3YTIiLCJpc3MiOiJkaWQ6ZGh0OmhvM2F4cDVwZ3A0azhhN2txdGI4a25uNXVhcXd5OWdoa205OHdyeXRuaDY3YnNuN2V6cnkiLCJzdWIiOiJkaWQ6ZGh0Om9uOG8zcmVhZDZ0azFmdWVhZGplZTNyMThiYW5iNXRqM2s4eGF0a2ZqcTFnNnI5ZXpkdG8iLCJpYXQiOjE3MjU2MDg4ODN9.Cm-_3-TMmfRZFCVs0Xdt-YYTVwyBeYuR644_Ly4Svj3S5JmlrNGM4tT30G1hZRQl7po0WNsUNmYOEgX5sEItDQ"], // array of JWTs after YC actually issues the credentials
+			presentationDefinition: presentationDefinition
+		});
+
+		console.log('selectedCredentials:', selectedCredentials);
+
+		// construct the data object
+		const data = {
+			offeringId: selectedOffering.metadata.id,
+			payin: {
+				kind: "USDC_LEDGER",
+				amount: "10",
+			},
+			payout: {
+				kind: 'MOMO_MPESA',
+				paymentDetails: {
+					accountNumber: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+					reason: 'Test payout',
+					accountHolderName: 'Sam Yoon',
+
+				}
+			},
+			claims: selectedCredentials
+		};
+
+		// create the rfq
+		ycRfq = Rfq.create({
+			metadata: metadata,
+			data: data,
+		});
+
+
+
+	} catch (error) {
+		console.error('Error creating RFQ:', error);
+		return res.status(500).json({ error: error });
+	}
+
+	// console.log('rfq:', ycRfq);
+	const bearerDid = await BearerDid.import({ portableDid: didRecord.portable_did });
+	// console.log('rfq:', rfq);
+	await ycRfq.sign(bearerDid);
+	try {
+		// create the exchange
+		await TbdexHttpClient.createExchange(ycRfq);
+
+	} catch (error) {
+		console.error('Error creating exchange:', error);
+		//log details
+		console.error("error details:", error.details);
+
+		return res.status(500).json({ error: error });
+	}
+
+	//poll for quote
+	let quote;
+	let close;
+	let exchange;
+	console.log("ycRfq.exchangeId", ycRfq.exchangeId);
+	//Wait for Quote message to appear in the exchange
+	while (!quote) {
+		try {
+			exchange = await TbdexHttpClient.getExchange({
+				pfiDid: ycRfq.metadata.to,
+				did: bearerDid,
+				exchangeId: ycRfq.exchangeId
+			});
+
+		} catch (error) {
+			console.error('Error during getExchange:', error);
+			return res.status(500).json({ error: error });
+		}
+
+		quote = exchange.find(msg => msg instanceof Quote);
+		console.log('************found quote:', quote);
+
+		if (!quote) {
+			// Make sure the exchange is still open
+			close = exchange.find(msg => msg instanceof Close);
+			console.log('************found close:', close);
+			if (close) { break; }
+			else {
+				// Wait 2 seconds before making another request
+				await new Promise(resolve => setTimeout(resolve, 2000));
+			}
+		}
+	}
+
+	console.log('quote:', quote);
+
+
+
+	// create order object
+	const order = Order.create({
+		metadata: {
+			from: didRecord.did,         // Customer's DID
+			to: quote.metadata.from,       // PFI's DID
+			exchangeId: quote.exchangeId,  // Exchange ID from the Quote
+			protocol: "1.0"                // Version of tbDEX protocol you're using
+		}
+	});
+
+
+	await order.sign(bearerDid);
+
+	console.log('order:', order);
+	try {
+		await TbdexHttpClient.submitOrder(order);
+
+	} catch (error) {
+		console.error('Error submitting order:', error);
+		return res.status(500).json({ error: error });
+	}
+
+	let orderStatusUpdate;
+	let orderClose;
+
+	while (!orderClose) {
+		const exchange = await TbdexHttpClient.getExchange({
+			pfiDid: order.metadata.to,
+			did: bearerDid,
+			exchangeId: order.exchangeId
+		});
+
+		for (const message of exchange) {
+			if (message instanceof OrderStatus) {
+				// a status update to display to your customer
+				orderStatusUpdate = message.data.orderStatus;
+			}
+			else if (message instanceof Close) {
+				// final message of exchange has been written
+				orderClose = message;
+				break;
+			}
+		}
+	}
+
+	console.log('orderClose:', orderClose);
+
+	return res.status(200).json({
+		quote: quote,
+		closeMessage: orderClose
+	});
+}
+exports.createBridgingRequest = async (req, res) => {
+	if (req.method !== 'POST') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId } = req.query
+	const fields = req.body
+	fields.profileId = profileId
+	const { sourceUserId, destinationUserId, requestId, sourceWalletType, destinationWalletType, sourceChain, destinationChain } = fields
+
+	try {
+		const requiredFields = ["sourceUserId", "destinationUserId", "amount", "sourceChain", "destinationChain", "requestId", "currency"]
+		const acceptedFields = {
+			"sourceUserId": (value) => isUUID(value),
+			"destinationUserId": (value) => isUUID(value),
+			"amount": (value) => isValidAmount(value),
+			"sourceChain": (value) => isHIFISupportedChain(value),
+			"destinationChain": (value) => isHIFISupportedChain(value),
+			"requestId": (value) => isUUID(value),
+			"currency": (value) => inStringEnum(value, ["usdc"]),
+			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
+			"destinationWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
+		}
+
+		const { missingFields, invalidFields } = fieldsValidation(fields, requiredFields, acceptedFields);
+		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields });
+
+		// check if sourceUserId and destinationUserId are under profileId
+		if (!(await verifyUser(sourceUserId, profileId))) return res.status(401).json({ error: "sourceUserId not found" })
+		if (!(await verifyUser(destinationUserId, profileId))) return res.status(401).json({ error: "destinationUserId not found" })
+		if (!sourceWalletType) fields.sourceWalletType = "INDIVIDUAL"
+		if (!destinationWalletType) fields.destinationWalletType = "INDIVIDUAL"
+
+		// check if source wallet is kyc passed
+		const {bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
+		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `Source user is not allowed to transfer crypto (user status invalid)` })
+
+		// check if destination wallet is kyc passed
+		const {bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider, circleWalletId: destinationCircleWalletId } = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
+		if (destinationBastionUserId && !(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `Destination user is not allowed to receive crypto (user status invalid)` })
+
+		// check if requestId is already used
+		const { isAlreadyUsed, newRecord } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
+		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+
+		// TODO: create function map for different currency
+		// right now only usdc bridging is supported
+		const result = await createUsdcBridgingRequest({...fields, newRecord});
+		return res.status(200).json(result);
+	} catch (error) {
+		await createLog("transfer/createBridgingRequest", sourceUserId, error.message, error, profileId, res)
+		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
+
+exports.getBridgingTransactions = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { profileId, id } = req.query
+
+	try {
+		// TODO: create function map for different currency
+		// right now only usdc bridging is supported
+		const receipt = await fetchBridgingTransactions(id, profileId)
+		return res.status(200).json(receipt)
+
+	} catch (error) {
+		await createLog("transfer/getBridgingTransactions", null, error.message, error, profileId, res)
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 
 }

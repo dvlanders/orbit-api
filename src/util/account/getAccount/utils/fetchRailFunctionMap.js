@@ -4,6 +4,7 @@ const fetchPlaidAccountInformation = require("../main/fetchPlaidAccountInformati
 const fetchCircleAccount = require("../main/fetchCircleAccount")
 const fetchBlindpayAccount = require("../main/fetchBlindpayAccount")
 const { fetchReapAccountInformation } = require("../main/fetchReapAccount")
+const { BlindpayBankAccountType } = require("../../../blindpay/utils")
 const createLog = require("../../../logger/supabaseLogger")
 const supabase = require("../../../supabaseClient")
 
@@ -35,7 +36,22 @@ const railFunctionsMap = {
 		},
 		BRL: {
 			PIX: {
-				BLINDPAY: async (accountId) => await fetchBlindpayAccount("brl", null, accountId)
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.PIX, null, accountId)
+			},
+		},
+		MXN: {
+			SPEI: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.SPEI, null, accountId)
+			},
+		},
+		COP: {
+			ACH_COP: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.ACH_COP, null, accountId)
+			},
+		},
+		ARS: {
+			TRANSFERS: {
+				BLINDPAY: async (accountId) => await fetchBlindpayAccount(BlindpayBankAccountType.TRANSFERS, null, accountId)
 			}
 		},
 		HKD: {
@@ -78,7 +94,7 @@ const accountInfoAggregator = async (funcs) => {
             const { func, accountId, currency, railType, paymentRail } = funcs[key];
             let accountInfo = await func(accountId); // this will always be one account object
 
-			if(!accountInfo) throw new Error(`No account found for accountId ${accountId}`);
+			if(!accountInfo) return { count: 0, banks: [] };
 			
 			accountInfo.accountId = key;
 			accountInfo.rail = {

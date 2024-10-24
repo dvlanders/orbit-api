@@ -7,23 +7,24 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
 
     const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "BLINDPAY", "BASTION");
     if (!record) return null;
+    const blindpayTransferInfo = record.blindpay_transfer_info;
 
-    const bankAccountInfo = await getBankAccountInfo(record.to_blindpay_account_id);
+    const bankAccountInfo = await getBankAccountInfo(blindpayTransferInfo.account_id, blindpayTransferInfo.type);
     
     const conversionRate = {
         fromCurrency: record.source_currency,
         toCurrency: record.destination_currency,
-        conversionRate: record.conversion_rate?.blindpay_quotation / 100,
+        conversionRate: blindpayTransferInfo.conversion_rate?.blindpay_quotation / 100,
         vaildFrom: new Date().toISOString(),
-        vaildUntil: record.conversion_rate?.expires_at ? new Date(record.conversion_rate?.expires_at).toISOString() : new Date().toISOString(),
+        vaildUntil: blindpayTransferInfo.conversion_rate?.expires_at ? new Date(blindpayTransferInfo.conversion_rate?.expires_at).toISOString() : new Date().toISOString(),
     }
     const quoteInformation = {
         fromCurrency: conversionRate.fromCurrency,
         toCurrency: conversionRate.toCurrency,
         vaildFrom: conversionRate.vaildFrom,
         vaildUntil: conversionRate.vaildUntil,
-        sendingAmount: record.conversion_rate?.sender_amount / 100,
-        receivingAmount: record.conversion_rate?.receiver_amount / 100,
+        sendingAmount: blindpayTransferInfo.conversion_rate?.sender_amount / 100,
+        receivingAmount: blindpayTransferInfo.conversion_rate?.receiver_amount / 100,
     }
 
     const result = {
@@ -38,7 +39,7 @@ const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
             amount: record.amount,
             destinationCurrency: record.destination_currency,
             liquidationAddress: record.to_wallet_address,
-            destinationAccountId: bankAccountInfo.id,
+            destinationAccountId: bankAccountInfo?.accountId,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
             updatedAt: record.updated_at,

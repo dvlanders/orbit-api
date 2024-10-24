@@ -1,36 +1,90 @@
-const _getFeeRate = (provider, currency, feeConfig) => {
+
+const defaultFeeForUnknownTag = {
+    type: "FIX",
+    value: 0
+}
+
+const _getTagFeeRate = (tag, feeConfig) => {
     try{
-        const feeRate = feeConfig[provider][currency]
-        return feeRate || feeConfig[provider]["DEFAULT"] || feeConfig["DEFAULT"]
+        if (!feeConfig) return defaultFeeForUnknownTag
+        const feeRate = feeConfig[tag]
+        return feeRate || defaultFeeForUnknownTag
     }catch (error){
-        return feeConfig["DEFAULT"]
+        return defaultFeeForUnknownTag
     }
 }
 
+const getFee = (transaction, feeConfig, success=true) => {
 
-exports.feeMap = (transactions, feeConfig) => {
-    let totalFee = 0
-    const feeInformation = {}
+    // get provider
+    const fiatProvider = transaction.fiat_provider || "DEFAULT"
+    const cryptoProvider = transaction.crypto_provider || "DEFAULT"
+    // get fee config for provider
+    const feeConfigForFiatProvider = feeConfig[fiatProvider] || feeConfig["DEFAULT"]
+    const feeConfigForCryptoProvider = feeConfig[cryptoProvider] || feeConfig["DEFAULT"]
 
-    transactions.map((trx) => {
-        const feeRateFiat = _getFeeRate(trx.fiat_provider, trx.currency, feeConfig)
-        const feeRateCrypto = _getFeeRate(trx.crypto_provider, trx.currency, feeConfig)
-        // FIX ME consider transform to usd
-        let fee = 0
-        // fiat
-        if (feeRateFiat.type == "PERCENT"){
-            fee += parseFloat(feeRateFiat.value) * trx.total_amount
-        }else if (feeRateFiat.type == "FIX"){
-            fee += parseFloat(feeRateFiat.value) * trx.count
+    // get currency
+    const currency = transaction.currency || "DEFAULT"
+    // get fee config for currency
+    const fiatFeeConfigForCurrency = feeConfigForFiatProvider[currency] || feeConfigForFiatProvider["DEFAULT"]
+    const cryptoFeeConfigForCurrency = feeConfigForCryptoProvider[currency] || feeConfigForCryptoProvider["DEFAULT"]
+
+    // get tags
+    const tags = (success ? transaction.billing_tags_success : transaction.billing_tags_failed) || []
+
+    let fee = 0
+    tags.map((tag) => {
+
+        const fiatFeeRate = _getTagFeeRate(tag, fiatFeeConfigForCurrency)
+        const cryptoFeeRate = _getTagFeeRate(tag, cryptoFeeConfigForCurrency)
+
+        if (fiatFeeRate.type == "PERCENT"){
+            fee += parseFloat(fiatFeeRate.value) * transaction.amount
+        }else if (fiatFeeRate.type == "FIX"){
+            fee += parseFloat(fiatFeeRate.value)
         }
         // crypto
-        if (feeRateCrypto.type == "PERCENT"){
-            fee += parseFloat(feeRateCrypto.value) * trx.total_amount
-        }else if (feeRateCrypto.type == "FIX"){
-            fee += parseFloat(feeRateCrypto.value) * trx.count
+        if (cryptoFeeRate.type == "PERCENT"){
+            fee += parseFloat(cryptoFeeRate.value) * transaction.amount
+        }else if (cryptoFeeRate.type == "FIX"){
+            fee += parseFloat(cryptoFeeRate.value)
         }
-        totalFee += fee
-    })
 
-    return totalFee
+    })
+    return fee
+
+}
+
+const getFeeCrypto = (transaction, feeConfig, success=true) => {
+    // get provider
+    const provider = transaction.provider || "DEFAULT"
+    // get fee config for provider
+    const feeConfigForProvider = feeConfig[provider] || feeConfig["DEFAULT"]
+
+    // get currency
+    const chain = transaction.chain || "DEFAULT"
+    // get fee config for currency
+    const feeConfigForChain = feeConfigForProvider[chain] || feeConfigForProvider["DEFAULT"]
+
+    // get tags
+    const tags = (success ? transaction.billing_tags_success : transaction.billing_tags_failed) || []
+
+    let fee = 0
+    tags.map((tag) => {
+        const feeRate = _getTagFeeRate(tag, feeConfigForChain)
+        
+        if (feeRate.type == "PERCENT"){
+            fee += parseFloat(feeRate.value) * transaction.amount
+        }else if (feeRate.type == "FIX"){
+            fee += parseFloat(feeRate.value)
+        }
+
+    })
+    return fee
+}
+
+
+module.exports = {
+    getFee,
+    getFeeCrypto
 }

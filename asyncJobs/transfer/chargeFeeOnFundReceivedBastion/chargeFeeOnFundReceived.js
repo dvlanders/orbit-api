@@ -1,33 +1,36 @@
 const { virtualAccountPaymentRailToChain } = require("../../../src/util/bridge/utils")
 const { currencyDecimal } = require("../../../src/util/common/blockchain")
 const createLog = require("../../../src/util/logger/supabaseLogger")
-const { approveMaxTokenToPaymentProcessor, paymentProcessorContractMap } = require("../../../src/util/smartContract/approve/approveTokenBastion")
+const { approveMaxTokenToPaymentProcessor, paymentProcessorContractMap } = require("../../../src/util/smartContract/approve/approveToken")
 const { getTokenAllowance } = require("../../../src/util/smartContract/approve/getApproveAmount")
 const supabase = require("../../../src/util/supabaseClient")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { chargeFeeBastion } = require("../../../src/util/transfer/fiatToCrypto/transfer/chargeFeeBastion")
+const { chargeFeeCircle } = require("../../../src/util/transfer/fee/chargeFeeCircle")
+const { getUserWallet } = require("../../../src/util/user/getUserWallet")
 const { JobError, JobErrorType } = require("../../error")
 
-
-
-exports.chargeFeeOnFundReceivedBastionAsync = async(config) => {
+exports.chargeFeeOnFundReceivedAsync = async(config) => {
     try{
         // fetch transferRecord
         const {data: onrampRecord, error: onrampRecordError} = await supabase
             .from("onramp_transactions")
-            .select("*, developer_fees: developer_fee_id(*)")
+            .select("*, developer_fees: developer_fee_id(*), bridge_transaction_info:bridge_transaction_record_id(*)")
             .eq("id", config.recordId)
             .single()
         
         if (onrampRecordError) throw onrampRecordError
 
         const feeRecord = onrampRecord.developer_fees
+        const bridgeRecord = onrampRecord.bridge_transaction_info
+        // fee already charged
+        if (feeRecord.bastion_status == "CONFIRMED" || feeRecord.charged_status == "CONFIRMED") return 
 
         //get destination wallet address
         const {data: bridgeVirtualAccount, error: bridgeVirtualAccountError} = await supabase
             .from("bridge_virtual_accounts")
             .select("*")
-            .eq("virtual_account_id", onrampRecord.bridge_virtual_account_id)
+            .eq("virtual_account_id", bridgeRecord.bridge_virtual_account_id)
             .single()
         
         if (bridgeVirtualAccountError) throw bridgeVirtualAccountError
@@ -44,17 +47,20 @@ exports.chargeFeeOnFundReceivedBastionAsync = async(config) => {
             throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true)
         }
 
-        const info = {
-            destinationWalletAddress: bridgeVirtualAccount.destination_wallet_address,
-            transferAmount
+        // get user wallet and map to charge fee function
+        const {walletProvider, circleWalletId} = await getUserWallet(onrampRecord.destination_user_id, chain)
+        if (walletProvider == "BASTION"){
+            await chargeFeeBastion(onrampRecord, feeRecord, paymentProcessorContractAddress, bridgeVirtualAccount.destination_wallet_address, transferAmount)
+        }else if (walletProvider == "CIRCLE"){
+            await chargeFeeCircle(onrampRecord, feeRecord, paymentProcessorContractAddress, bridgeVirtualAccount.destination_wallet_address, transferAmount, circleWalletId)
+        }else{
+            throw new Error("Unknown wallet provider")
         }
-
-        await chargeFeeBastion(onrampRecord, feeRecord, paymentProcessorContractAddress, info)
 
     }catch (error){
         console.error(error)
         if (error instanceof JobError) throw error
-        await createLog("job/transfer/chargeFeeOnFundReceivedBastionAsync", config.userId, error.message, error)
+        await createLog("job/transfer/chargeFeeOnFundReceivedAsync", config.userId, error.message, error)
         // don't reSchedule
         throw new JobError(JobErrorType.RESCHEDULE, error.message, null, error.message, false)
     }

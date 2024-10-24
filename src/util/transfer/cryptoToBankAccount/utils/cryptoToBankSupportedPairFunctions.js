@@ -1,12 +1,15 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
 const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer, executeAsyncTransferCryptoToFiat: executeReapAsyncTransferCryptoToFiat } = require("../transfer/createReapCryptoToFiatTransfer");
-const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract");
+const { createYellowcardCryptoToFiatTransfer, acceptYellowcardCryptoToFiatTransfer } = require("../transfer/createYellowcardCryptoToFiatTransfer");
+const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract_DEP");
 const { createTransferToBlindpaySmartContract, acceptBlindpayCryptoToFiatTransfer, executeAsyncBlindpayTransferCryptoToFiat } = require("../transfer/transferToBlindpaySmartContractV2");
 
-const { transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw } = require("../transfer/transferToBridgeLiquidationAddress");
+// const { transferToBridgeLiquidationAddress, transferToBridgeLiquidationAddressDeveloperWithdraw } = require("../transfer/transferToBridgeLiquidationAddress_DEP");
 const { createTransferToBridgeLiquidationAddress, executeAsyncTransferCryptoToFiat: executeBridgeAsyncTransferCryptoToFiat } = require("../transfer/transferToBridgeLiquidationAddressV2");
 
 const transferToCircleWallet = require("../transfer/transferToCircleWallet");
+
+const { validateYellowCardTransferParams, validateBlindPayTransferParams, validateReapTransferParams, validateBridgeTransferParams } = require("./fieldValidationFunctions");
 
 const CryptoToBankSupportedPairCheck = (paymentRail, sourceCurrency, destinationCurrency) => {
 	try {
@@ -22,6 +25,7 @@ const CryptoToBankSupportedPairFunctions = {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
 				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
+				validationFunc: validateBridgeTransferParams
 			},
 		}
 	},
@@ -30,30 +34,16 @@ const CryptoToBankSupportedPairFunctions = {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
 				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
+				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer,
+				validationFunc: validateBridgeTransferParams
 			},
 		},
 		usdt: {
 			usd: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
 				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
-			},
-		}
-	},
-	sameDayAch: {
-		usdc: {
-			usd: {
-				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
-			},
-		},
-		usdt: {
-			usd: {
-				transferFunc: createTransferToBridgeLiquidationAddress,
-				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer
+				directWithdrawFunc: createBridgeDirectCryptoToFiatTransfer,
+				validationFunc: validateBridgeTransferParams
 			},
 		}
 	},
@@ -62,7 +52,8 @@ const CryptoToBankSupportedPairFunctions = {
 			eur: {
 				transferFunc: createTransferToBridgeLiquidationAddress,
 				asyncTransferExecuteFunc: executeBridgeAsyncTransferCryptoToFiat,
-				directWithdrawFunc: null
+				directWithdrawFunc: null,
+				validationFunc: validateBridgeTransferParams
 			},
 		}
 	},
@@ -72,6 +63,67 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createTransferToBlindpaySmartContract,
 				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
 				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	spei: {
+		usdc: {
+			mxn: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	transfers: {
+		usdc: {
+			ars: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	ach_cop: {
+		usdc: {
+			cop: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	spei_bitso: {
+		usdc: {
+			mxn: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	transfers_bitso: {
+		usdc: {
+			ars: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
+			},
+		}
+	},
+	ach_cop_bitso: {
+		usdc: {
+			cop: {
+				transferFunc: createTransferToBlindpaySmartContract,
+				acceptQuoteFunc: acceptBlindpayCryptoToFiatTransfer,
+				asyncTransferExecuteFunc: executeAsyncBlindpayTransferCryptoToFiat,
+				validationFunc: validateBlindPayTransferParams
 			},
 		}
 	},
@@ -80,7 +132,8 @@ const CryptoToBankSupportedPairFunctions = {
 			hkd: {
 				transferFunc: createReapCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
-				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat,
+				validationFunc: validateReapTransferParams
 			},
 		}
 	},
@@ -89,19 +142,92 @@ const CryptoToBankSupportedPairFunctions = {
 			usd: {
 				transferFunc: createReapCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
-				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat,
+				validationFunc: validateReapTransferParams
 			},
 		}
 	},
-	momo_mpesa: {
+	momo_kes: {
 		usdc: {
 			kes: {
-				transferFunc: createReapCryptoToFiatTransfer,
-				acceptQuoteFunc: acceptReapCryptoToFiatTransfer,
-				asyncTransferExecuteFunc: executeReapAsyncTransferCryptoToFiat
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    momo_xof: {
+        usdc: {
+			xof: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    momo_rwf: {
+        usdc: {
+			rwf: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    momo_zmw: {
+        usdc: {
+			zmw: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
 			},
 		}
-	}
+	},
+	bank_ngn: {
+		usdc: {
+			ngn: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    bank_ugx: {
+        usdc: {
+            ugx: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    bank_tzs: {
+        usdc: {
+            tzs: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    bank_mwk: {
+        usdc: {
+            mwk: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+        }
+    },
+    bank_xaf: {
+        usdc: {
+            xaf: {
+				transferFunc: createYellowcardCryptoToFiatTransfer,
+				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
+				validationFunc: validateYellowCardTransferParams,
+			},
+		}
+	},
 }
 
 module.exports = CryptoToBankSupportedPairCheck

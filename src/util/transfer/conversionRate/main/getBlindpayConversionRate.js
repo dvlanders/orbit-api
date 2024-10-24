@@ -33,14 +33,7 @@ const getBlindpayConversionRate = async(fromCurrency, toCurrency, profileId) => 
     }catch (error){
         const errorResponse = error instanceof CreateQuoteError ? error.rawResponse : error;
         await createLog("transfer/conversionRate/getBlindpayConversionRate", null, error.message, errorResponse, profileId);
-        return {
-            fromCurrency,
-            toCurrency,
-            conversionRate: null,
-            vaildFrom: null,
-            vaildUntil: null,
-            message: "Not available"
-        }
+        return null;
     }
 
 }

@@ -40,6 +40,7 @@ const BankAccountInfoUploadErrorType = {
   FILE_TOO_LARGE: "FILE_TOO_LARGE",
   RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
   KYC_STATUS_NOT_APPROVED: "KYC_STATUS_NOT_APPROVED",
+  KYC_TYPE_NOT_SUPPORTED: "KYC_TYPE_NOT_SUPPORTED",
 };
 
 class BankAccountInfoUploadError extends Error {
@@ -57,6 +58,7 @@ const CreateBankAccountErrorType = {
   RECORD_NOT_FOUND: "RECORD_NOT_FOUND",
   INVALID_FIELD: "INVALID_FIELD",
   INTERNAL_ERROR: "INTERNAL_ERROR",
+  CLIENT_ERROR: "CLIENT_ERROR",
 };
 
 class CreateBankAccountError extends Error {

@@ -63,7 +63,10 @@
           "enum": [
             "usd",
             "eur",
-            "brl"
+            "brl",
+            "mxn",
+            "ars",
+            "cop"
           ]
         },
         "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
@@ -91,7 +94,10 @@
             "ach",
             "wire",
             "sepa",
-            "pix"
+            "pix",
+            "spei",
+            "transfers",
+            "ach_cop"
           ]
         },
         "required": false
@@ -231,6 +237,24 @@
         "description": "Transfer record ID.",
         "required": true
       },
+      "BridgeAssetRecordIDParameter": {
+        "name": "id",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Bridge asset record ID.",
+        "required": true
+      },
+      "BridgeAssetRecordIDParameter": {
+        "name": "id",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "Bridge asset record ID.",
+        "required": true
+      },
       "FromCurrencyParameter": {
         "name": "fromCurrency",
         "in": "query",
@@ -250,7 +274,10 @@
           "enum": [
             "usd",
             "eur",
-            "brl"
+            "brl",
+            "mxn",
+            "ars",
+            "cop"
           ]
         },
         "required": true
@@ -272,7 +299,8 @@
           "enum": [
             "crypto-to-crypto",
             "fiat-to-crypto",
-            "crypto-to-fiat"
+            "crypto-to-fiat",
+            "fiat-to-fiat"
           ]
         },
         "description": "Transfer type",
@@ -286,7 +314,8 @@
           "enum": [
             "crypto-to-crypto",
             "fiat-to-crypto",
-            "crypto-to-fiat"
+            "crypto-to-fiat",
+            "fiat-to-fiat"
           ]
         },
         "description": "Transfer type",
@@ -408,53 +437,53 @@
           }
         }
       },
-      "BrlOfframpReceiverCreateBody": {
+      "SAOfframpReceiverCreateBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateIndividualLightKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateIndividualLightKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateIndividualStandardKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateIndividualStandardKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateBusinessLightKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateBusinessLightKYBAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverCreateBusinessStandardKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverCreateBusinessStandardKYBAccount"
                 }
               ]
             }
           }
         }
       },
-      "BrlOfframpReceiverUpdateBody": {
+      "SAOfframpReceiverUpdateBody": {
         "required": true,
         "content": {
           "application/json": {
             "schema": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateIndividualLightKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateIndividualLightKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateIndividualStandardKYCAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateIndividualStandardKYCAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateBusinessLightKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateBusinessLightKYBAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlReceiverUpdateBusinessStandardKYBAccount"
+                  "$ref": "#/components/schemas/SAReceiverUpdateBusinessStandardKYBAccount"
                 }
               ]
             }
           }
         }
       },
-      "BrlOfframpAccountBody": {
+      "SAOfframpAccountBody": {
         "required": true,
         "content": {
           "application/json": {
@@ -464,10 +493,13 @@
                   "$ref": "#/components/schemas/BrlOfframpPixAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlOfframpAchAccount"
+                  "$ref": "#/components/schemas/CopOfframpAchCopAccount"
                 },
                 {
-                  "$ref": "#/components/schemas/BrlOfframpWireAccount"
+                  "$ref": "#/components/schemas/MxnOfframpSpeiAccount"
+                },
+                {
+                  "$ref": "#/components/schemas/ArsOfframpTransfersAccount"
                 }
               ]
             }
@@ -504,6 +536,21 @@
                 },
                 {
                   "$ref": "#/components/schemas/SWIFTCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/SPEICryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/TRANSFERSCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/ACH_COPCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_MPESACryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/NIBBS_BANKCryptoToFiatTransfer"
                 }
               ]
             }
@@ -530,6 +577,16 @@
           }
         }
       },
+      "BridgeAssetTransferBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeAssetTransfer"
+            }
+          }
+        }
+      },
       "UserCreateBody": {
         "required": true,
         "content": {
@@ -537,10 +594,16 @@
             "schema": {
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/IndividualUserCreate"
+                  "$ref": "#/components/schemas/IndividualUserKycOneCreate"
                 },
                 {
-                  "$ref": "#/components/schemas/BusinessUserCreate"
+                  "$ref": "#/components/schemas/IndividualUserKycTwoCreate"
+                },
+                {
+                  "$ref": "#/components/schemas/BusinessUserKycOneCreate"
+                },
+                {
+                  "$ref": "#/components/schemas/BusinessUserKycTwoCreate"
                 }
               ]
             }
@@ -626,32 +689,32 @@
           }
         }
       },
-      "BrlOfframpReceiverCreateResponse": {
+      "SAOfframpReceiverCreateResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverCreateObject"
+              "$ref": "#/components/schemas/SAOfframpReceiverCreateObject"
             }
           }
         }
       },
-      "BrlOfframpReceiverUpdateResponse": {
+      "SAOfframpReceiverUpdateResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverUpdateObject"
+              "$ref": "#/components/schemas/SAOfframpReceiverUpdateObject"
             }
           }
         }
       },
-      "BrlOfframpReceiverGetResponse": {
+      "SAOfframpReceiverGetResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/BrlOfframpReceiverGetObject"
+              "$ref": "#/components/schemas/SAOfframpReceiverGetObject"
             }
           }
         }
@@ -662,6 +725,36 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/BrlOfframpPixAccountObject"
+            }
+          }
+        }
+      },
+      "CopOfframpAchCopAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CopOfframpAchCopAccountObject"
+            }
+          }
+        }
+      },
+      "MxnOfframpSpeiAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MxnOfframpSpeiAccountObject"
+            }
+          }
+        }
+      },
+      "ArsOfframpTransfersAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ArsOfframpTransfersAccountObject"
             }
           }
         }
@@ -856,12 +949,39 @@
           }
         }
       },
+      "BridgeAssetTransferResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeAssetTransferObject"
+            }
+          }
+        }
+      },
+      "BridgeAssetRecordResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BridgeAssetTransferObject"
+            }
+          }
+        }
+      },
       "UserObjectPendingResponse": {
         "description": "Success",
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/UserObjectPending"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UserObjectPending"
+                },
+                {
+                  "$ref": "#/components/schemas/UserObjectPending_dep"
+                }
+              ]
             }
           }
         }
@@ -871,7 +991,14 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/UserObjectActive"
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UserObjectActive"
+                },
+                {
+                  "$ref": "#/components/schemas/UserObjectActive_dep"
+                }
+              ]
             }
           }
         }
@@ -1132,7 +1259,7 @@
       },
       "UsdOfframpWireNonUSAccount": {
         "type": "object",
-        "title": "USD Offramp Wire to Non-US Bank Account",
+        "title": "USD Offramp Wire to IBAN Bank Account",
         "properties": {
           "accountType": {
             "type": "string",
@@ -1414,9 +1541,9 @@
           "ibanCountryCode"
         ]
       },
-      "BrlReceiverCreateIndividualLightKYCAccount": {
+      "SAReceiverCreateIndividualLightKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Light KYC Account",
+        "title": "Receiver Individual Light KYC Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1460,9 +1587,9 @@
           "country"
         ]
       },
-      "BrlReceiverCreateIndividualStandardKYCAccount": {
+      "SAReceiverCreateIndividualStandardKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Standard KYC Account",
+        "title": "Receiver Individual Standard KYC Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1493,7 +1620,7 @@
           },
           "country": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\". `country` should match `id_doc_country`."
           },
           "tax_id": {
             "type": "string"
@@ -1521,26 +1648,37 @@
           },
           "id_doc_country": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
+            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\". `id_doc_country` should match `country`."
           },
           "id_doc_type": {
             "type": "string",
             "enum": [
-              "passport",
-              "id_card"
+              "PASSPORT",
+              "ID_CARD",
+              "DRIVERS"
             ]
           },
           "id_doc_front_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "id_doc_back_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "proof_of_address_doc_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "UTILITY_BILL",
+              "BANK_STATEMENT",
+              "RENTAL_AGREEMENT",
+              "TAX_DOCUMENT",
+              "GOVERNMENT_CORRESPONDENCE"
+            ]
           },
           "proof_of_address_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           }
         },
         "required": [
@@ -1562,9 +1700,9 @@
           "id_doc_front_file"
         ]
       },
-      "BrlReceiverCreateBusinessLightKYBAccount": {
+      "SAReceiverCreateBusinessLightKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Light KYB Account",
+        "title": "Receiver Business Light KYB Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1608,9 +1746,9 @@
           "country"
         ]
       },
-      "BrlReceiverCreateBusinessStandardKYBAccount": {
+      "SAReceiverCreateBusinessStandardKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Standard KYB Account",
+        "title": "Receiver Business Standard KYB Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1665,10 +1803,12 @@
             "type": "string"
           },
           "incorporation_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "proof_of_ownership_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "owners": {
             "type": "array",
@@ -1695,9 +1835,9 @@
           "owners"
         ]
       },
-      "BrlReceiverUpdateIndividualLightKYCAccount": {
+      "SAReceiverUpdateIndividualLightKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Light KYC Account",
+        "title": "Receiver Individual Light KYC Account",
         "properties": {
           "first_name": {
             "type": "string"
@@ -1720,9 +1860,9 @@
           }
         }
       },
-      "BrlReceiverUpdateIndividualStandardKYCAccount": {
+      "SAReceiverUpdateIndividualStandardKYCAccount": {
         "type": "object",
-        "title": "BRL Receiver Individual Standard KYC Account",
+        "title": "Receiver Individual Standard KYC Account",
         "properties": {
           "first_name": {
             "type": "string"
@@ -1792,9 +1932,9 @@
           }
         }
       },
-      "BrlReceiverUpdateBusinessLightKYBAccount": {
+      "SAReceiverUpdateBusinessLightKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Light KYB Account",
+        "title": "Receiver Business Light KYB Account",
         "properties": {
           "legal_name": {
             "type": "string"
@@ -1817,9 +1957,9 @@
           }
         }
       },
-      "BrlReceiverUpdateBusinessStandardKYBAccount": {
+      "SAReceiverUpdateBusinessStandardKYBAccount": {
         "type": "object",
-        "title": "BRL Receiver Business Standard KYB Account",
+        "title": "Receiver Business Standard KYB Account",
         "properties": {
           "legal_name": {
             "type": "string"
@@ -1916,21 +2056,32 @@
           "id_doc_type": {
             "type": "string",
             "enum": [
-              "passport",
-              "id_card"
+              "PASSPORT",
+              "ID_CARD",
+              "DRIVERS"
             ]
           },
           "id_doc_front_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "id_doc_back_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           },
           "proof_of_address_doc_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "UTILITY_BILL",
+              "BANK_STATEMENT",
+              "RENTAL_AGREEMENT",
+              "TAX_DOCUMENT",
+              "GOVERNMENT_CORRESPONDENCE"
+            ]
           },
           "proof_of_address_doc_file": {
-            "type": "string"
+            "type": "string",
+            "description": "File size should not exceed 3MB"
           }
         },
         "required": [
@@ -1954,7 +2105,7 @@
       },
       "BrlOfframpPixAccount": {
         "type": "object",
-        "title": "BRL Offramp Pix Account",
+        "title": "BRL Offramp PIX Account",
         "properties": {
           "type": {
             "type": "string",
@@ -1967,107 +2118,177 @@
           },
           "pix_key": {
             "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "brl"
+            ]
           }
         },
         "required": [
           "type",
           "name",
-          "pix_key"
+          "pix_key",
+          "currency"
         ]
       },
-      "BrlOfframpAchAccount": {
+      "CopOfframpAchCopAccount": {
         "type": "object",
-        "title": "BRL Offramp Ach Account",
+        "title": "COP Offramp ACH_COP Account",
         "properties": {
           "type": {
             "type": "string",
             "enum": [
-              "ach"
+              "ach_cop"
             ]
           },
           "name": {
-            "type": "string"
-          },
-          "beneficiary_name": {
-            "type": "string"
-          },
-          "routing_number": {
-            "type": "string"
-          },
-          "account_number": {
             "type": "string"
           },
           "account_type": {
+            "type": "string",
+            "enum": [
+              "checking",
+              "savings"
+            ]
+          },
+          "ach_cop_beneficiary_first_name": {
             "type": "string"
           },
-          "account_class": {
+          "ach_cop_beneficiary_last_name": {
             "type": "string"
+          },
+          "ach_cop_document_id": {
+            "type": "string"
+          },
+          "ach_cop_document_type": {
+            "type": "string",
+            "enum": [
+              "CC",
+              "CE",
+              "NIT",
+              "PASS",
+              "PEP"
+            ]
+          },
+          "ach_cop_email": {
+            "type": "string"
+          },
+          "ach_cop_bank_code": {
+            "type": "string"
+          },
+          "ach_cop_bank_account": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "cop"
+            ]
           }
         },
         "required": [
           "type",
           "name",
-          "beneficiary_name",
-          "routing_number",
-          "account_number",
           "account_type",
-          "account_class"
+          "ach_cop_beneficiary_first_name",
+          "ach_cop_beneficiary_last_name",
+          "ach_cop_document_id",
+          "ach_cop_document_type",
+          "ach_cop_email",
+          "ach_cop_bank_code",
+          "ach_cop_bank_account",
+          "currency"
         ]
       },
-      "BrlOfframpWireAccount": {
+      "ArsOfframpTransfersAccount": {
         "type": "object",
-        "title": "BRL Offramp Wire Account",
+        "title": "ARS Offramp TRANSFERS Account",
         "properties": {
           "type": {
             "type": "string",
             "enum": [
-              "wire"
+              "transfers"
             ]
           },
           "name": {
             "type": "string"
           },
+          "transfers_type": {
+            "type": "string",
+            "enum": [
+              "CVU",
+              "CBU",
+              "ALIAS"
+            ]
+          },
+          "transfers_account": {
+            "type": "string"
+          },
           "beneficiary_name": {
             "type": "string"
           },
-          "routing_number": {
-            "type": "string"
-          },
-          "account_number": {
-            "type": "string"
-          },
-          "address_line_1": {
-            "type": "string"
-          },
-          "address_line_2": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "state_province_region": {
-            "type": "string"
-          },
-          "country": {
+          "currency": {
             "type": "string",
-            "description": "Two-letter alpha-2 country codes as defined in the ISO 3166-1 spec. eg. \"US\"."
-          },
-          "postal_code": {
-            "type": "string"
+            "enum": [
+              "ars"
+            ]
           }
         },
         "required": [
           "type",
           "name",
+          "transfers_type",
+          "transfers_account",
           "beneficiary_name",
-          "routing_number",
-          "account_number",
-          "address_line_1",
-          "address_line_2",
-          "city",
-          "state_province_region",
-          "country",
-          "postal_code"
+          "currency"
+        ]
+      },
+      "MxnOfframpSpeiAccount": {
+        "type": "object",
+        "title": "MXN Offramp SPEI Account",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "spei"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "spei_protocol": {
+            "type": "string",
+            "enum": [
+              "clabe",
+              "debitcard",
+              "phonenum"
+            ]
+          },
+          "spei_institution_code": {
+            "type": "string"
+          },
+          "spei_clabe": {
+            "type": "string"
+          },
+          "beneficiary_name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "mxn"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "spei_protocol",
+          "spei_institution_code",
+          "beneficiary_name",
+          "currency"
         ]
       },
       "UsdOnrampAchAccountObject": {
@@ -2253,7 +2474,7 @@
           "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
         }
       },
-      "BrlOfframpReceiverCreateObject": {
+      "SAOfframpReceiverCreateObject": {
         "type": "object",
         "properties": {
           "id": {
@@ -2272,7 +2493,7 @@
           "kyc_type": "light"
         }
       },
-      "BrlOfframpReceiverUpdateObject": {
+      "SAOfframpReceiverUpdateObject": {
         "type": "object",
         "properties": {
           "success": {
@@ -2287,7 +2508,7 @@
           "id": "1ad0b5f8-95ac-4d6c-8562-8fdb209c86c3"
         }
       },
-      "BrlOfframpReceiverGetObject": {
+      "SAOfframpReceiverGetObject": {
         "type": "object",
         "properties": {
           "count": {
@@ -2306,6 +2527,84 @@
         }
       },
       "BrlOfframpPixAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+        }
+      },
+      "CopOfframpAchCopAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+        }
+      },
+      "MxnOfframpSpeiAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "c26f5827-9d43-4bf0-88f4-9817c9cceb84"
+        }
+      },
+      "ArsOfframpTransfersAccountObject": {
         "type": "object",
         "properties": {
           "status": {
@@ -2720,7 +3019,7 @@
       },
       "ACHCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to ACH",
+        "title": "Crypto to USD (ACH)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2761,9 +3060,7 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
-              "brl"
+              "usd"
             ]
           },
           "sameDayAch": {
@@ -2802,7 +3099,7 @@
       },
       "SEPACryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to SEPA",
+        "title": "Crypto to EUR (SEPA)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2843,9 +3140,7 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
-              "brl"
+              "eur"
             ]
           },
           "feeType": {
@@ -2880,7 +3175,7 @@
       },
       "WIRECryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to WIRE",
+        "title": "Crypto to Fiat (WIRE)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2923,7 +3218,10 @@
             "enum": [
               "usd",
               "eur",
-              "brl"
+              "brl",
+              "mxn",
+              "ars",
+              "cop"
             ]
           },
           "feeType": {
@@ -2958,7 +3256,7 @@
       },
       "PIXCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to PIX",
+        "title": "Crypto to BRL (PIX)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -2999,9 +3297,223 @@
           "destinationCurrency": {
             "type": "string",
             "enum": [
-              "usd",
-              "eur",
               "brl"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "SPEICryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to MXN (SPEI)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "mxn"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "TRANSFERSCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to ARS (TRANSFERS)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ars"
+            ]
+          },
+          "feeType": {
+            "type": "string",
+            "enum": [
+              "PERCENT",
+              "FIX"
+            ]
+          },
+          "feeValue": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "description": "note: 0.01 equals to 1% when feeType is set to PERCENT, checkout https://docs.hifibridge.com/docs/fee-collection for more information)"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "ACH_COPCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to COP (SPEI)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "cop"
             ]
           },
           "feeType": {
@@ -3032,7 +3544,7 @@
       },
       "SWIFTCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to SWIFT",
+        "title": "Crypto to Fiat (SWIFT)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3075,12 +3587,133 @@
             "enum": [
               "usd",
               "eur",
-              "brl"
+              "brl",
+              "mxn",
+              "ars",
+              "cop"
             ]
           },
           "swiftReference": {
             "type": "string",
             "description": "A payment reference message or remittance information to be included in a SWIFT transaction. It can have at most 4 lines (separated by \"\\n\"), each line with a max length of 35 chars. The allowed characters are a-z, A-Z, 0-9, special characters (/ - ? : ( ) . , ' +), and spaces.\n"
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "MOMO_MPESACryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to KES (MOMO MPESA)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "kes"
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "paymentRail"
+        ]
+      },
+      "NIBBS_BANKCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to NGN (NIBSS BANK TRANSFER)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ngn"
+            ]
           }
         },
         "required": [
@@ -4921,10 +5554,212 @@
           }
         }
       },
-      "IndividualUserCreate": {
+      "BridgeAssetTransfer": {
         "type": "object",
-        "title": "Create Individual User",
         "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string",
+            "description": "User Id of the sender"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "User Id of the recipient"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "sourceChain": {
+            "type": "string",
+            "description": "Chain where the source asset is",
+            "enum": [
+              "POLYGON_MAINNET",
+              "ETHEREUM_MAINNET"
+            ]
+          },
+          "destinationChain": {
+            "type": "string",
+            "description": "Chain where the asset will be bridged to",
+            "enum": [
+              "POLYGON_MAINNET",
+              "ETHEREUM_MAINNET"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "usdc"
+            ]
+          }
+        },
+        "required": [
+          "sourceUserId",
+          "destinationUserId",
+          "amount",
+          "requestId",
+          "sourceChain",
+          "currency",
+          "destinationChain"
+        ]
+      },
+      "BridgeAssetTransferObject": {
+        "type": "object",
+        "properties": {
+          "transferType": {
+            "type": "string"
+          },
+          "transferDetails": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string"
+              },
+              "sourceUserId": {
+                "type": "string"
+              },
+              "destinationUserId": {
+                "type": "string"
+              },
+              "sourceChain": {
+                "type": "string"
+              },
+              "destinationChain": {
+                "type": "string"
+              },
+              "sourceWalletAddress": {
+                "type": "string"
+              },
+              "destinationWalletAddress": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "description": "Status of the transfer. Possible values:\n\n`CREATED`, `PROCESSING`, `COMPLETED`, `FAILED`\n"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "transactionHash": {
+                "type": "object",
+                "properties": {
+                  "APPROVE_TO_TOKEN_MESSENGER": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "BURN_USDC_ON_SOURCE_CHAIN": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "RECEIVE_MESSAGE_AND_MINT": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              },
+              "failedReason": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        },
+        "example": {
+          "transferType": "BRIDGE_ASSET",
+          "transferDetails": {
+            "id": "5e87372e-b5dc-4735-9bc3-b4fde3a0a398",
+            "requestId": "3da09d1a-13f2-40a0-9cb3-2628da485g93",
+            "sourceUserId": "8f766843-5a41-4799-8c20-29906a212f66",
+            "destinationUserId": "b7f624a9-b960-421f-a64f-d253a5210ae5",
+            "sourceChain": "ETHEREUM_MAINNET",
+            "destinationChain": "POLYGON_MAINNET",
+            "sourceWalletAddress": "0xb1ec8f89efd7363a1b939bfe545d2fca01bb7381",
+            "destinationWalletAddress": "0x0865F3F871FbB227D52abEFdBEa9Af549Def664d",
+            "amount": 10,
+            "currency": "usdc",
+            "status": "COMPLETED",
+            "createdAt": "2024-10-15T19:51:11.295724+00:00",
+            "updatedAt": "2024-10-15T19:55:32.448+00:00",
+            "transactionHash": {
+              "APPROVE_TO_TOKEN_MESSENGER": "0xd0741af0d7d9b9356b74a32f78d9f43472cfafbf08850c4bf6b4398a031ec9d6",
+              "BURN_USDC_ON_SOURCE_CHAIN": "0x077e54e32f5e4bf295614749a12bd13e21f34f07a646377db7bcbdfb3f9c4c48",
+              "RECEIVE_MESSAGE_AND_MINT": "0x077e54e32f5e4bf295614749a12bd13e21f34f07a646377db7bcbdfb3f9c4c48"
+            },
+            "failedReason": null
+          }
+        }
+      },
+      "IndividualUserKycOneCreate": {
+        "type": "object",
+        "title": "Create Individual User (KYC Level 1)",
+        "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              1
+            ]
+          },
+          "userType": {
+            "type": "string",
+            "enum": [
+              "individual"
+            ]
+          },
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user. \n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
+            "format": "ipv4"
+          }
+        },
+        "required": [
+          "kycLevel",
+          "userType",
+          "legalFirstName",
+          "legalLastName",
+          "dateOfBirth"
+        ]
+      },
+      "IndividualUserKycTwoCreate": {
+        "type": "object",
+        "title": "Create Individual User (KYC Level 2)",
+        "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              2
+            ]
+          },
           "userType": {
             "type": "string",
             "enum": [
@@ -4999,10 +5834,11 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of the file of the proof of residency.\nUtility bills and bank statements are recommended for proof of address.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         },
         "required": [
+          "kycLevel",
           "userType",
           "legalFirstName",
           "legalLastName",
@@ -5018,13 +5854,61 @@
           "postalCode",
           "stateProvinceRegion",
           "signedAgreementId",
-          "ipAddress"
+          "ipAddress",
+          "proofOfResidency"
         ]
       },
-      "BusinessUserCreate": {
+      "BusinessUserKycOneCreate": {
         "type": "object",
-        "title": "Create Business User",
+        "title": "Create Business User (KYC Level 1)",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              1
+            ]
+          },
+          "userType": {
+            "type": "string",
+            "enum": [
+              "business"
+            ]
+          },
+          "businessName": {
+            "type": "string"
+          },
+          "ipAddress": {
+            "type": "string",
+            "description": "IP address of the user.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n",
+            "format": "ipv4"
+          },
+          "ultimateBeneficialOwners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UltimateBeneficialOwnerKycOne"
+            }
+          }
+        },
+        "required": [
+          "kycLevel",
+          "userType",
+          "businessName",
+          "ipAddress",
+          "ultimateBeneficialOwners"
+        ]
+      },
+      "BusinessUserKycTwoCreate": {
+        "type": "object",
+        "title": "Create Business User (KYC Level 2)",
+        "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "The KYC level of the user. Possible values are 1 and 2.",
+            "enum": [
+              2
+            ]
+          },
           "userType": {
             "type": "string",
             "enum": [
@@ -5119,15 +6003,16 @@
           "ultimateBeneficialOwners": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UltimateBeneficialOwner"
+              "$ref": "#/components/schemas/UltimateBeneficialOwnerKycTwo"
             }
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nUtility bills and bank statements are recommended for proof of address.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         },
         "required": [
+          "kycLevel",
           "userType",
           "businessName",
           "businessType",
@@ -5147,13 +6032,21 @@
           "proofOfOwnership",
           "website",
           "businessDescription",
-          "isDao"
+          "isDao",
+          "proofOfResidency"
         ]
       },
       "IndividualUserUpdate": {
         "type": "object",
         "title": "Update Individual User",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "If provided, the KYC level of the user will be upgraded to the provided level and the user will be required to submit all the fields required for the new KYC level. \nYou can refer to the Create Individual User (KYC Level 2) endpoint for the required fields.\n\nCurrently you can only upgrade from KYC level 1 to 2.\n",
+            "enum": [
+              2
+            ]
+          },
           "legalFirstName": {
             "type": "string"
           },
@@ -5222,7 +6115,7 @@
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of the file of the proof of residency.\nRequired for users based in the EU or withdrawing into EU bank accounts.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of the file of the proof of residency.\nUtility bills and bank statements are recommended for proof of address.\nRequired for individuals who provide government ID documents from a controlled or prohibited region and claim residence outside that region.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         }
       },
@@ -5230,6 +6123,13 @@
         "type": "object",
         "title": "Update Business User",
         "properties": {
+          "kycLevel": {
+            "type": "number",
+            "description": "If provided, the KYC level of the user will be upgraded to the provided level and the user will be required to submit all the fields required for the new KYC level. \nYou can refer to the Create Business User (KYC Level 2) endpoint for the required fields.\n\nCurrently you can only upgrade from KYC level 1 to 2.\n",
+            "enum": [
+              2
+            ]
+          },
           "businessName": {
             "type": "string"
           },
@@ -5318,16 +6218,47 @@
           "ultimateBeneficialOwners": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UltimateBeneficialOwner"
+              "$ref": "#/components/schemas/UltimateBeneficialOwnerKycTwo"
             }
           },
           "proofOfResidency": {
             "type": "string",
-            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nRequired for businesses who require access to SEPA (Single Euro Payments Area).\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
+            "description": "URL of image of the proof of address that ties the owner's name to the provided address. Typically a utility bill or bank statement.\nRequired for businesses registered or operating in the EEA (European Economic Area).\nUtility bills and bank statements are recommended for proof of address.\n\n(See [here](https://docs.hifibridge.com/docs/unsupported-regions-countries) for the list of unsupported countries/states.)\n\n*Maximum file size 10MB and minimum file size 10KB\n\n*Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif\n"
           }
         }
       },
-      "UltimateBeneficialOwner": {
+      "UltimateBeneficialOwnerKycOne": {
+        "type": "object",
+        "properties": {
+          "legalFirstName": {
+            "type": "string"
+          },
+          "legalLastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "Date of birth in format yyyy-mm-dd.",
+            "format": "date"
+          },
+          "hasControl": {
+            "type": "boolean",
+            "description": "True if the person has a significant responsibility to control, manage, or direct the activities of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "isSigner": {
+            "type": "boolean",
+            "description": "True if the person can authorize transactions on behalf of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          }
+        },
+        "required": [
+          "legalFirstName",
+          "legalLastName",
+          "dateOfBirth",
+          "hasControl",
+          "isSigner"
+        ]
+      },
+      "UltimateBeneficialOwnerKycTwo": {
         "type": "object",
         "properties": {
           "legalFirstName": {
@@ -5376,6 +6307,22 @@
             "type": "string",
             "description": "Must be supplied for countries that use postal codes."
           },
+          "hasOwnership": {
+            "type": "boolean",
+            "description": "True if the person has at least 25% ownership of the business."
+          },
+          "hasControl": {
+            "type": "boolean",
+            "description": "True if the person has a significant responsibility to control, manage, or direct the activities of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "isSigner": {
+            "type": "boolean",
+            "description": "True if the person can authorize transactions on behalf of the business. At least one of the ultimateBeneficialOwners needs to have this set to true."
+          },
+          "relationshipEstablishedAt": {
+            "type": "string",
+            "description": "The date that the ultimateBeneficialOwners first became an owner, control person, or signer for the business in format yyyy-mm-dd."
+          },
           "govIdFront": {
             "type": "string",
             "description": "URL of image of the government issued ID Valid file types: .pdf, .jpeg, .jpg, .png, .heic, .tif"
@@ -5402,7 +6349,11 @@
           "postalCode",
           "stateProvinceRegion",
           "govIdFront",
-          "proofOfResidency"
+          "proofOfResidency",
+          "hasOwnership",
+          "hasControl",
+          "isSigner",
+          "relationshipEstablishedAt"
         ]
       },
       "ToSLink": {
@@ -5427,6 +6378,520 @@
         ]
       },
       "UserObjectPending": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "kyc": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "onChain": {
+            "type": "object",
+            "properties": {
+              "wallet": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "addresses": {
+                    "type": "object",
+                    "properties": {
+                      "POLYGON_AMOY": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "achPush": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "achPull": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "offRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "ach": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "brl": {
+                "type": "object",
+                "properties": {
+                  "pix": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "mxn": {
+                "type": "object",
+                "properties": {
+                  "spei": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "cop": {
+                "type": "object",
+                "properties": {
+                  "ach_cop": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "ars": {
+                "type": "object",
+                "properties": {
+                  "transfers": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "user": {
+            "id": "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa",
+            "kyc": {
+              "level": 2,
+              "status": "ACTIVE",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "message": ""
+            }
+          },
+          "onChain": {
+            "wallet": {
+              "status": "ACTIVE",
+              "message": "",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "addresses": {
+                "POLYGON_AMOY": {
+                  "address": "0x43B343Bb48E23F58406271131B71448fF95787AD"
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "usd": {
+              "achPush": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              },
+              "achPull": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "SEPA onRamp will be available in near future"
+              }
+            }
+          },
+          "offRamp": {
+            "usd": {
+              "ach": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "PENDING",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "kyc aplication still under review"
+              }
+            },
+            "brl": {
+              "pix": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "mxn": {
+              "spei": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "cop": {
+              "ach_cop": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "ars": {
+              "transfers": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "ars TRANSFERS offRamp will be available in near future"
+              }
+            }
+          }
+        }
+      },
+      "UserObjectPending_dep": {
         "type": "object",
         "properties": {
           "wallet": {
@@ -5735,6 +7200,520 @@
         }
       },
       "UserObjectActive": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "kyc": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "integer"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "onChain": {
+            "type": "object",
+            "properties": {
+              "wallet": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "actionNeeded": {
+                    "type": "object",
+                    "properties": {
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "fieldsToResubmit": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "addresses": {
+                    "type": "object",
+                    "properties": {
+                      "POLYGON_AMOY": {
+                        "type": "object",
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "achPush": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "achPull": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "offRamp": {
+            "type": "object",
+            "properties": {
+              "usd": {
+                "type": "object",
+                "properties": {
+                  "ach": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "euro": {
+                "type": "object",
+                "properties": {
+                  "sepa": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "brl": {
+                "type": "object",
+                "properties": {
+                  "pix": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "mxn": {
+                "type": "object",
+                "properties": {
+                  "spei": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "cop": {
+                "type": "object",
+                "properties": {
+                  "ach_cop": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "ars": {
+                "type": "object",
+                "properties": {
+                  "transfers": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string"
+                      },
+                      "actionNeeded": {
+                        "type": "object",
+                        "properties": {
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "fieldsToResubmit": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "example": {
+          "user": {
+            "id": "4d93ab4f-3983-4ac0-8c97-54bbc0f287fa",
+            "kyc": {
+              "level": 2,
+              "status": "ACTIVE",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "message": ""
+            }
+          },
+          "onChain": {
+            "wallet": {
+              "status": "ACTIVE",
+              "message": "",
+              "actionNeeded": {
+                "actions": [],
+                "fieldsToResubmit": []
+              },
+              "addresses": {
+                "POLYGON_AMOY": {
+                  "address": "0x43B343Bb48E23F58406271131B71448fF95787AD"
+                }
+              }
+            }
+          },
+          "onRamp": {
+            "usd": {
+              "achPush": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              },
+              "achPull": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "SEPA onRamp will be available in near future"
+              }
+            }
+          },
+          "offRamp": {
+            "usd": {
+              "ach": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "euro": {
+              "sepa": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "brl": {
+              "pix": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "mxn": {
+              "spei": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "cop": {
+              "ach_cop": {
+                "status": "ACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": ""
+              }
+            },
+            "ars": {
+              "transfers": {
+                "status": "INACTIVE",
+                "actionNeeded": {
+                  "actions": [],
+                  "fieldsToResubmit": []
+                },
+                "message": "ars TRANSFERS offRamp will be available in near future"
+              }
+            }
+          }
+        }
+      },
+      "UserObjectActive_dep": {
         "type": "object",
         "properties": {
           "wallet": {
@@ -6076,6 +8055,9 @@
                 "userKycStatus": {
                   "type": "string"
                 },
+                "userKycLevel": {
+                  "type": "integer"
+                },
                 "walletStatus": {
                   "type": "string"
                 },
@@ -6108,6 +8090,7 @@
               "phone": "+11234567890",
               "createdAt": "2024-08-08T19:54:33.035Z",
               "userKycStatus": "ACTIVE",
+              "userKycLevel": 2,
               "walletStatus": "ACTIVE",
               "walletAddress": {
                 "POLYGON_MAINNET": {
@@ -6288,7 +8271,7 @@
         }
       }
     },
-    "/account/wire/international/offramp": {
+    "/account/wire/us/offramp": {
       "post": {
         "summary": "Add USD Offramp Bank Account (Wire)",
         "tags": [
@@ -6348,10 +8331,10 @@
         }
       }
     },
-    "/account/brl/receiver": {
+    "/account/south-america/receiver": {
       "post": {
-        "summary": "Create BRL Offramp Receiver",
-        "description": "Create a Receiver for Brazilian Real (BRL) Offramp. This should be called prior to \nadding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.\n",
+        "summary": "Create South America Offramp Receiver",
+        "description": "Create a Receiver for South America Offramp. This should be called prior to \nadding any South America offramp bank account since each South America offramp bank account is tied to a receiver.\n\n| Limit Type               | Individual Light KYC | Business Light KYB | Individual Standard KYC | Business Standard KYB |\n|--------------------------|----------------------|--------------------|-------------------------|-----------------------|\n| Per Transaction Limit    | $1,000               | $3,000             | $10,000                 | $30,000               |\n| Daily Limit              | $3,000               | $6,000             | $50,000                 | $100,000              |\n| Monthly Limit            | $10,000              | $15,000            | $100,000                | $250,000              |\n",
         "tags": [
           "Account"
         ],
@@ -6361,11 +8344,11 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpReceiverCreateBody"
+          "$ref": "#/components/requestBodies/SAOfframpReceiverCreateBody"
         },
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverCreateResponse"
+            "$ref": "#/components/responses/SAOfframpReceiverCreateResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -6379,8 +8362,8 @@
         }
       },
       "get": {
-        "summary": "Get BRL Offramp Receiver",
-        "description": "Get an existing BRL Offramp Receiver detail.",
+        "summary": "Get South America Offramp Receiver",
+        "description": "Get an existing South America Offramp Receiver detail.",
         "tags": [
           "Account"
         ],
@@ -6394,7 +8377,7 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverGetResponse"
+            "$ref": "#/components/responses/SAOfframpReceiverGetResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -6408,8 +8391,8 @@
         }
       },
       "put": {
-        "summary": "Update BRL Offramp Receiver",
-        "description": "Update an existing BRL Offramp Receiver detail.",
+        "summary": "Update South America Offramp Receiver",
+        "description": "Update an existing South America Offramp Receiver detail.",
         "tags": [
           "Account"
         ],
@@ -6422,11 +8405,11 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpReceiverUpdateBody"
+          "$ref": "#/components/requestBodies/SAOfframpReceiverUpdateBody"
         },
         "responses": {
           "200": {
-            "$ref": "#/components/responses/BrlOfframpReceiverUpdateResponse"
+            "$ref": "#/components/responses/SAOfframpReceiverUpdateResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -6440,10 +8423,10 @@
         }
       }
     },
-    "/account/brl/offramp": {
+    "/account/south-america/offramp": {
       "post": {
-        "summary": "Add BRL Offramp Bank Account (PIX)",
-        "description": "Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create BRL Offramp Receiver` endpoint.\n",
+        "summary": "Add a South America Offramp Bank Account",
+        "description": "Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.\n\n**We currently support Brazil (BRL), Colombia (COP), and Mexico (MXN) offramp bank accounts. (Argentina (ARS) coming soon ...)**\n",
         "tags": [
           "Account"
         ],
@@ -6456,7 +8439,7 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/BrlOfframpAccountBody"
+          "$ref": "#/components/requestBodies/SAOfframpAccountBody"
         },
         "responses": {
           "200": {
@@ -6670,7 +8653,7 @@
     "/transfer/crypto-to-fiat": {
       "post": {
         "summary": "Convert Stablecoin to Fiat",
-        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * BRL offramp transfer\n",
+        "description": "Transfer crypto to fiat currency and send it to an offramp bank account.\n\nThere are two types of transfers, **quote-based** and **non-quote-based** transfers. \n* For **non-quote-based transfers**, the transfers are initiated immediately.\n* For **quote-based transfers**, the transfer status will initially be `OPEN_QUOTE`. You have to accept the transfer quote through the `Accept Transfer Quote` endpoint to initiate the transfer.\n\nQuote-based transfers:\n  * South America offramp transfers\n  * Africa offramp transfers\n",
         "tags": [
           "Transfer"
         ],
@@ -6756,6 +8739,57 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/FiatToCryptoRecordResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/transfer/bridge-asset": {
+      "post": {
+        "summary": "Bridge Stablecoin",
+        "description": "Bridge stablecoin across chains",
+        "tags": [
+          "Transfer"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/BridgeAssetTransferBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BridgeAssetTransferResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a Bridge Asset Record",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BridgeAssetRecordIDParameter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BridgeAssetRecordResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"
@@ -7005,7 +9039,7 @@
     "/user/create": {
       "post": {
         "summary": "Create User",
-        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.\n",
+        "description": "Create a new Hifi user (Individual/Business)\n\nHIFI does not provide services to users or businesses from sanctioned and high-risk regions or unsupported US states. See [here](https://docs.hifibridge.com/docs/supported-regions-countries) for supported regions.\n\nTo learn more about user KYC levels, see [here](https://docs.hifibridge.com/docs/kyc-level).\n",
         "tags": [
           "User"
         ],

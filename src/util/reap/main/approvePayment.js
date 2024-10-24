@@ -1,0 +1,27 @@
+const getUserReapApiCred = require("../utils/getUserApiCred")
+
+const approvePayment = async(paymentId, userId) => {
+    const url = `${process.env.REAP_URL}/payments/${paymentId}/action`
+    const {apiKey, entityId} = await getUserReapApiCred(userId)
+    const headers = {
+        "accept": "application/json",
+        "content-type": "application/json;schema=PAAS",
+        "x-reap-api-key": apiKey,
+        "x-reap-entity-id": entityId
+    }
+    const requestBody = {
+        type: "payment",
+        action: "approve"
+    }
+
+    const response = await fetch(url, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(requestBody)
+    })
+
+    return response
+
+}
+
+module.exports = approvePayment

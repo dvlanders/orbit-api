@@ -64,14 +64,13 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
-/account/wire/international/offramp:
+/account/wire/us/offramp:
   post:
     summary: Add USD Offramp Bank Account (Wire)
     tags:
       - Account
     parameters:
       - $ref: "#/components/parameters/UserIdParameter"
-      # - $ref: "#/components/parameters/AccountTypeParameter"
     requestBody:
       $ref: "#/components/requestBodies/UsdOfframpWireAccountBody"
     responses:
@@ -101,21 +100,27 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
-/account/brl/receiver:
+/account/south-america/receiver:
   post:
-    summary: Create BRL Offramp Receiver
+    summary: Create South America Offramp Receiver
     description: |
-      Create a Receiver for Brazilian Real (BRL) Offramp. This should be called prior to 
-      adding a BRL offramp bank account since each BRL offramp bank account is tied to a receiver.
+      Create a Receiver for South America Offramp. This should be called prior to 
+      adding any South America offramp bank account since each South America offramp bank account is tied to a receiver.
+
+      | Limit Type               | Individual Light KYC | Business Light KYB | Individual Standard KYC | Business Standard KYB |
+      |--------------------------|----------------------|--------------------|-------------------------|-----------------------|
+      | Per Transaction Limit    | $1,000               | $3,000             | $10,000                 | $30,000               |
+      | Daily Limit              | $3,000               | $6,000             | $50,000                 | $100,000              |
+      | Monthly Limit            | $10,000              | $15,000            | $100,000                | $250,000              |
     tags:
       - Account
     parameters:
       - $ref: '#/components/parameters/UserIdParameter'
     requestBody:
-      $ref: '#/components/requestBodies/BrlOfframpReceiverCreateBody'
+      $ref: '#/components/requestBodies/SAOfframpReceiverCreateBody'
     responses:
       '200':
-        $ref: '#/components/responses/BrlOfframpReceiverCreateResponse'
+        $ref: '#/components/responses/SAOfframpReceiverCreateResponse'
       '401':
         $ref: '#/components/responses/UnauthorizedResponse'
       '404':
@@ -123,8 +128,8 @@
       '500':
         $ref: '#/components/responses/InternalServerErrorResponse'
   get:
-    summary: Get BRL Offramp Receiver
-    description: Get an existing BRL Offramp Receiver detail.
+    summary: Get South America Offramp Receiver
+    description: Get an existing South America Offramp Receiver detail.
     tags:
       - Account
     parameters:
@@ -132,7 +137,7 @@
       - $ref: '#/components/parameters/ReceiverIdOptionalParameter'
     responses:
       '200':
-        $ref: '#/components/responses/BrlOfframpReceiverGetResponse'
+        $ref: '#/components/responses/SAOfframpReceiverGetResponse'
       '401':
         $ref: '#/components/responses/UnauthorizedResponse'
       '404':
@@ -140,36 +145,38 @@
       '500':
         $ref: '#/components/responses/InternalServerErrorResponse'
   put:
-    summary: Update BRL Offramp Receiver
-    description: Update an existing BRL Offramp Receiver detail.
+    summary: Update South America Offramp Receiver
+    description: Update an existing South America Offramp Receiver detail.
     tags:
       - Account
     parameters:
       - $ref: '#/components/parameters/UserIdParameter'
       - $ref: '#/components/parameters/ReceiverIdParameter'
     requestBody:
-      $ref: '#/components/requestBodies/BrlOfframpReceiverUpdateBody'
+      $ref: '#/components/requestBodies/SAOfframpReceiverUpdateBody'
     responses:
       '200':
-        $ref: '#/components/responses/BrlOfframpReceiverUpdateResponse'
+        $ref: '#/components/responses/SAOfframpReceiverUpdateResponse'
       '401':
         $ref: '#/components/responses/UnauthorizedResponse'
       '404':
         $ref: '#/components/responses/NotFoundResponse'
       '500':
         $ref: '#/components/responses/InternalServerErrorResponse'
-/account/brl/offramp:
+/account/south-america/offramp:
   post:
-    summary: Add BRL Offramp Bank Account (PIX)
+    summary: Add a South America Offramp Bank Account
     description: |
-      Add a Brazilian Real (BRL) Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create BRL Offramp Receiver` endpoint.
+      Add a South America Offramp Bank Account to a Receiver. You will need a receiver id to add a bank account to. You can get the receiver id through the `Create South America Offramp Receiver` endpoint.
+
+      **We currently support Brazil (BRL), Colombia (COP), and Mexico (MXN) offramp bank accounts. (Argentina (ARS) coming soon ...)**
     tags:
       - Account
     parameters:
       - $ref: '#/components/parameters/UserIdParameter'
       - $ref: '#/components/parameters/ReceiverIdParameter'
     requestBody:
-      $ref: '#/components/requestBodies/BrlOfframpAccountBody'
+      $ref: '#/components/requestBodies/SAOfframpAccountBody'
     responses:
       "200":
         $ref: "#/components/responses/BrlOfframpPixAccountResponse"

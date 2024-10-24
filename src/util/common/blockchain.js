@@ -1,3 +1,5 @@
+const { formatUnits } = require("ethers")
+
 const NODE_ENV = process.env.NODE_ENV
 
 const Chain = {
@@ -11,6 +13,15 @@ const Chain = {
 
 }
 
+const ChainId = {
+	ETHEREUM_MAINNET: 1,
+	OPTIMISM_MAINNET: 10,
+	POLYGON_MAINNET: 137,
+	ETHEREUM_TESTNET: 11155111,
+	OPTIMISM_SEPOLIA: 11155420,
+	POLYGON_AMOY: 80002,
+	BASE_MAINNET: 8453
+}
 const hifiSupportedChain = NODE_ENV == "development" ?
 	[Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET] // FIXME: remove Chain.POLYGON_MAINNET from development
 
@@ -44,10 +55,29 @@ const currencyContractAddress = {
 	}
 }
 
+const baseAssetMap = {
+	ETHEREUM_MAINNET: "ETH",
+	POLYGON_MAINNET: "MATIC",
+	ETHEREUM_TESTNET: "ETH",
+	POLYGON_AMOY: "MATIC",
+}
+
+const convertWeiToEthers = (wei, decimals="0", toFixed=2) => {
+    const _wei = BigInt(wei)
+    const ether = formatUnits(_wei, parseInt(decimals))
+    const [int, dic] = ether.split(".")
+
+    const formated = `${int}.${dic ? dic.slice(0, toFixed) : "00"}`
+    return formated
+}
+
 
 module.exports = {
 	Chain,
 	hifiSupportedChain,
 	currencyDecimal,
-	currencyContractAddress
+	currencyContractAddress,
+	baseAssetMap,
+	convertWeiToEthers,
+	ChainId
 }

@@ -15,6 +15,11 @@ CryptoToFiatTransferBody:
           - $ref: '#/components/schemas/WIRECryptoToFiatTransfer'
           - $ref: '#/components/schemas/PIXCryptoToFiatTransfer'
           - $ref: '#/components/schemas/SWIFTCryptoToFiatTransfer'
+          - $ref: '#/components/schemas/SPEICryptoToFiatTransfer'
+          - $ref: '#/components/schemas/TRANSFERSCryptoToFiatTransfer'
+          - $ref: '#/components/schemas/ACH_COPCryptoToFiatTransfer'
+          - $ref: '#/components/schemas/MOMO_MPESACryptoToFiatTransfer'
+          - $ref: '#/components/schemas/NIBBS_BANKCryptoToFiatTransfer'
 FiatToCryptoTransferBody:
   required: true
   content:
@@ -27,3 +32,9 @@ FiatToFiatTransferBody:
     application/json:
       schema:
         $ref: '#/components/schemas/FiatToFiatTransfer'
+BridgeAssetTransferBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/BridgeAssetTransfer'

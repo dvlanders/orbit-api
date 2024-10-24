@@ -1,7 +1,7 @@
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
 
-exports.getUserActions = async(requestId, userId) => {
+const getUserActions = async(requestId, userId) => {
     const url = `${BASTION_URL}/v1/user-actions/${requestId}?userId=${userId}`;
 	const options = {
 		method: 'GET',
@@ -13,4 +13,8 @@ exports.getUserActions = async(requestId, userId) => {
 
     const response = await fetch(url, options);
     return response
+}
+
+module.exports = {
+	getUserActions
 }

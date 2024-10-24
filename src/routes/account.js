@@ -10,13 +10,21 @@ module.exports = (router) => {
 	router.get("/account", authorize, logRequestResponse, account.getAccount);
 	router.get("/account/all", authorize, logRequestResponse, account.getAllAccounts);
 	router.post("/account/wire/offramp", authorize, logRequestResponse, account.createCircleWireBankAccount);
-	router.post("/account/wire/international/offramp", authorize, logRequestResponse, account.createInternationalWireOfframpDestination);
+	router.post("/account/wire/us/offramp", authorize, logRequestResponse, account.createWireUsOfframpDestination);
+	router.post("/account/swift/offramp", authorize, logRequestResponse, account.createSwiftOfframpDestination)
 	router.get("/account/onRampRail/virtualAccount", authorize, logRequestResponse, account.getVirtualAccount)
-	router.post("/account/brl/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
-	router.post("/account/brl/receiver", authorize, logRequestResponse, account.createBlindpayReceiver);
+	router.post("/account/south-america/offramp", authorize, logRequestResponse, account.createBlindpayBankAccount);
+	router.post("/account/south-america/receiver", authorize, logRequestResponse, account.createBlindpayReceiver);
 	router.post("/account/apac/offramp", authorize, logRequestResponse, account.createAPACOfframpDestination);
-	router.get("/account/brl/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
-	router.put("/account/brl/receiver", authorize, logRequestResponse, account.updateBlindpayReceiver);
-	router.post("/account/kes/offramp", authorize, logRequestResponse, account.createMomoMpesaAccount);
-
+	router.get("/account/south-america/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
+	router.put("/account/south-america/receiver", authorize, logRequestResponse, account.updateBlindpayReceiver);
+	router.post("/account/kes/momo/offramp", authorize, logRequestResponse, account.createKesMomoAccount);
+    router.post("/account/xof/momo/offramp", authorize, logRequestResponse, account.createXofMomoAccount);
+    router.post("/account/rwf/momo/offramp", authorize, logRequestResponse, account.createRwfMomoAccount);
+    router.post("/account/zmw/momo/offramp", authorize, logRequestResponse, account.createZmwMomoAccount);
+	router.post("/account/ngn/bank/offramp", authorize, logRequestResponse, account.createNgnBankAccount);
+    router.post("/account/ugx/bank/offramp", authorize, logRequestResponse, account.createUgxBankAccount);
+    router.post("/account/tzs/bank/offramp", authorize, logRequestResponse, account.createTzsBankAccount);
+    router.post("/account/mwk/bank/offramp", authorize, logRequestResponse, account.createMwkBankAccount);
+    router.post("/account/xaf/bank/offramp", authorize, logRequestResponse, account.createXafBankAccount);
 };
