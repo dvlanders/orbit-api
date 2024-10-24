@@ -265,3 +265,20 @@ exports.localAdmin = async (req, res, next) => {
 		return res.status(500).json({ error: "Internal server error" })
 	}
 }
+
+// Middleware to log the response body and status code
+exports.updateLastUserActivity = (req, res, next) => {
+	const originalSend = res.send;
+  
+	// Override the res.send method
+	res.send = async function(body) {
+		// if it's not okay, don't update last user activity
+		if (res.statusCode < 200 || res.statusCode > 300) return originalSend.apply(this, arguments);
+		// update last user activity
+		await updateLastUserActivity(body)
+
+	  	return originalSend.apply(this, arguments);
+	};
+  
+	next();
+};
