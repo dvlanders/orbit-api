@@ -2,6 +2,7 @@ const createJob = require("../../../../asyncJobs/createJob");
 const createLog = require("../../logger/supabaseLogger");
 const { Chain } = require("../../common/blockchain");
 const { getBastionWallet } = require("./getBastionWallet");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 const BASTION_URL = process.env.BASTION_URL;
@@ -43,7 +44,7 @@ const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId)
 			}
 		};
 
-        const response = await fetch(url, options)
+        const response = await fetchWithLogging(url, options, "BASTION")
         const responseBody = await response.json()
 
         if (!response.ok){

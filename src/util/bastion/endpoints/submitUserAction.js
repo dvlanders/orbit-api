@@ -1,4 +1,5 @@
 const { currencyContractAddress } = require("../../common/blockchain");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
@@ -25,6 +26,6 @@ exports.submitUserAction = async(params) => {
 		body: JSON.stringify(bodyObject)
 	};
 
-    const response = await fetch(url, options);
+    const response = await fetchWithLogging(url, options, "BASTION");
     return response
 }

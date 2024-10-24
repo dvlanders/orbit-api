@@ -5,7 +5,7 @@ const supabase = require("../../../supabaseClient")
 const updateOnrampTransactionRecord = async(onrampTransactionId, toUpdate) => {
     const {data, error} = await supabase
         .from('onramp_transactions')
-        .update(toUpdate)
+        .update({updated_at: new Date().toISOString(), ...toUpdate})
         .eq('id', onrampTransactionId)
         .select()
         .single()

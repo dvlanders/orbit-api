@@ -2,6 +2,7 @@ const createLog = require("../../logger/supabaseLogger");
 const { CreateReceiverErrorType, CreateReceiverError } = require("../errors");
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const ownerRequestBodyBuilder = async (ownerInfo) => {
   const ownersList = await Promise.all(
@@ -133,11 +134,11 @@ const createReceiver = async (receiverInfo) => {
 
   let response, responseBody;
   try {
-    response = await fetch(url, {
+    response = await fetchWithLogging(url, {
       method: "POST",
       headers: headers,
       body: JSON.stringify(receiverRequestBody),
-    });
+    }, "BLINDPAY");
     responseBody = await response.json();
   } catch (error) {
     throw new CreateReceiverError(

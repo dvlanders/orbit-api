@@ -6,6 +6,7 @@ const {getAddress} = require("ethers");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet");
 const { getUserWallet } = require("../../user/getUserWallet");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
 
@@ -90,7 +91,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 		},
 	}
 
-	const response = await fetch(`${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts`, {
+	const response = await fetchWithLogging(`${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts`, {
 		method: 'POST',
 		headers: {
 			'Idempotency-Key': idempotencyKey,
@@ -98,7 +99,7 @@ const createBridgeVirtualAccount = async(userId, bridgeId, rail) => {
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify(requestBody)
-	});
+	}, "BRIDGE");
 
 	const responseBody = await response.json()
 	if (response.ok) {

@@ -445,7 +445,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		// simulation in sandbox
 
 		if (process.env.NODE_ENV == "development" && (chain == Chain.POLYGON_AMOY || chain == Chain.ETHEREUM_TESTNET) && destinationCurrency == "usdHifi"){
-			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo, feeTransactionId: feeTransaction.id})
+			let transferResult = await sandboxMintUSDHIFI({ sourceAccountId, requestId, amount, sourceCurrency, destinationCurrency, chain, internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo, feeTransactionId: feeTransaction.id, recordId: newRecord.id})
 			transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 			return res.status(200).json(transferResult);
 		}
@@ -454,7 +454,7 @@ exports.createFiatToCryptoTransfer = async (req, res) => {
 		const transferFunc = FiatToCryptoSupportedPairFunctionsCheck(sourceCurrency, chain, destinationCurrency)
 		if (!transferFunc) return res.status(400).json({ error: `Unsupported rail for ${sourceCurrency} to ${destinationCurrency} on ${chain}` });
 
-		let transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo, feeTransactionId: feeTransaction.id})
+		let transferResult = await transferFunc({requestId, amount, sourceCurrency, destinationCurrency, chain, sourceAccountId: internalAccountId, isInstant, sourceUserId, destinationUserId, feeType, feeValue, profileId, accountInfo, feeTransactionId: feeTransaction.id, recordId: newRecord.id})
 		transferResult = await transferObjectReconstructor(transferResult, sourceAccountId);
 
 		return res.status(200).json(transferResult);

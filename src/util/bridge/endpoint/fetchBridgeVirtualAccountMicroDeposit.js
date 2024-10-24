@@ -1,5 +1,6 @@
 const createLog = require("../../logger/supabaseLogger");
 const { getBridgeUserId } = require("../utils");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -9,12 +10,12 @@ const fetchBridgeVirtualAccountMicroDeposit = async(userId, virtualAccountId, li
 
         const bridgeId = await getBridgeUserId(userId)
         const url = `${BRIDGE_URL}/v0/customers/${bridgeId}/virtual_accounts/${virtualAccountId}/history?event_type=microdeposit&limit=${limit}${createdBefore? `&starting_after=${createdBefore}`: ""}${createdAfter? `&ending_before=${createdAfter}`: ""}`
-        const response = await fetch(url, {
+        const response = await fetchWithLogging(url, {
             method: 'GET',
             headers: {
                 'Api-Key': BRIDGE_API_KEY
             }
-        })
+        }, "BRIDGE")
 
         const responseBody = await response.json()
 
