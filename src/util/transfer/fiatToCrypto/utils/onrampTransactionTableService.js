@@ -14,12 +14,12 @@ const updateOnrampTransactionRecord = async(onrampTransactionId, toUpdate) => {
     return data
 }   
 
-const updateOnrampTransactionRecordWithVersion = async(onrampTransactionId, toUpdate, currentVersion) => {
+const updateOnrampTransactionRecordAtomic = async(onrampTransactionId, toUpdate, currentUpdateAt) => {
     const {data, error} = await supabase
         .from('onramp_transactions')
-        .update({...toUpdate, version: currentVersion + 1, updated_at: new Date().toISOString()})
+        .update({...toUpdate, updated_at: new Date().toISOString()})
         .eq('id', onrampTransactionId)
-        .eq('version', currentVersion)
+        .lte('updated_at', currentUpdateAt)
         .select()
         .maybeSingle()
 
@@ -64,5 +64,5 @@ module.exports = {
     getOnrampTransactionRecord,
     insertSingleOnrampTransactionRecord,
     insertMultipleOnrampTransactionRecord,
-    updateOnrampTransactionRecordWithVersion
+    updateOnrampTransactionRecordAtomic
 }

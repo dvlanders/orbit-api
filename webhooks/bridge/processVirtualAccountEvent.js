@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require("uuid");
 const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
 const { createTransactionFeeRecord } = require("../../src/util/billing/fee/transactionFeeBilling");
 const { updateBridgeTransactionRecord, upsertBridgeTransactionRecord } = require("../../src/util/bridge/bridgeTransactionTableService");
-const { updateOnrampTransactionRecord, insertSingleOnrampTransactionRecord, updateOnrampTransactionRecordWithVersion } = require("../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
+const { updateOnrampTransactionRecord, insertSingleOnrampTransactionRecord, updateOnrampTransactionRecordAtomic } = require("../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
 const { transferType } = require("../../src/util/transfer/utils/transfer");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
@@ -25,13 +25,13 @@ const processExistingOnrampTransaction = async (existingRecord, event) => {
   }
 
   // Add version check for optimistic locking
-  const workingVersion = existingRecord.version;
+  const currentUpdatedAt = existingRecord.updated_at;
   
   const toUpdate = {
     status: HifiOnrampTransactionBridgeStatusMap[type] || "UNKNOWN",
     transaction_hash: destination_tx_hash
   }
-  const updatedOnrampRecord = await updateOnrampTransactionRecordWithVersion(existingRecord.id, toUpdate, workingVersion);
+  const updatedOnrampRecord = await updateOnrampTransactionRecordAtomic(existingRecord.id, toUpdate, currentUpdatedAt);
 
   if(!updatedOnrampRecord){
     throw new Error(`Concurrent update detected. Please retry processing onramp transaction record with id: ${existingRecord.id} for event id: ${id}`);
@@ -151,7 +151,7 @@ const processVirtualAccountEvent = async (event) => {
 
       const { data: onrampRecord, error: onrampRecordError } = await supabaseCall(() => supabase
         .from("onramp_transactions")
-        .select("id, version, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+        .select("id, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
         .eq("bridge_transaction_record_id", existingBridgeRecord.id)
         .single());
 
@@ -167,7 +167,7 @@ const processVirtualAccountEvent = async (event) => {
 
         const { data: existingRecord, error: existingRecordError } = await supabaseCall(() => supabase
           .from("onramp_transactions")
-          .select("id, version, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+          .select("id, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
           .eq("id", referenceId)
           .maybeSingle());
 
@@ -181,7 +181,7 @@ const processVirtualAccountEvent = async (event) => {
         // Check if we have existing onramp records with this referenceId, either fully match or partially match
         const { data: matchingRecords, error: matchingRecordsError } = await supabaseCall(() => supabase
           .from("onramp_transactions")
-          .select("id, version, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+          .select("id, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
           .like("reference_id", `%${referenceId}%`));
 
         if(matchingRecordsError) throw matchingRecordsError;
