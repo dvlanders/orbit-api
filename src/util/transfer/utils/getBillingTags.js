@@ -44,45 +44,59 @@ const BillingTagsForOfframp = {
                 failed: [],
             },
         },
-        momo_transfer: {
+        momo_kes: {
             kes:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        momo_xof: {
             xof:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        momo_rwf: {
             rwf:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        momo_zmw: {
             zmw:{
                 success: ["base"],  
                 failed: [],
             },
         },
-        bank_transfer: {
+        bank_ngn: {
             ngn:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        bank_ugx: {
             ugx:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        bank_tzs: {
             TZS:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        bank_mwk: {
             MWK:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
+        },
+        bank_xaf: {
             XAF:{
                 success: ["base"],  
                 failed: [],
-            },
+            }
         },
         fps:{
             hkd:{
