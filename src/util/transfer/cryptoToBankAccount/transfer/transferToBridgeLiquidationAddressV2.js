@@ -410,7 +410,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
         }
-        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 		return { isExternalAccountExist: true, transferResult: result }
     }
@@ -420,7 +420,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Transfer amount exceeds wallet balance"
         }
-        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 		return { isExternalAccountExist: true, transferResult: result }
     }

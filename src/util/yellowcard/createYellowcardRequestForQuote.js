@@ -5,6 +5,7 @@ const { getYellowcardAccountDetails } = require('./utils/getYellowcardAccountDet
 const { fetchSelectedOffering } = require('./utils/fetchSelectedOffering');
 const { getBearerDid } = require('./utils/getBearerDid');
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
+const { safeToNumberString } = require('../utils/number');
 
 
 async function createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
@@ -28,8 +29,9 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	// Retrieve the selected offering using the fetchSelectedOffering utility
 	const { foundOfferings, selectedOffering, payin, payout } = await fetchSelectedOffering(sourceCurrency, destinationCurrency);
 
-	if (!selectedOffering) {
-		throw new Error('No offering found for the selected payment pair');
+	// no quote found
+	if (!foundOfferings) {
+		return { yellowcardRequestForQuote: null, foundOfferings: false }
 	}
 
 	const yellowcardIssuedVerifiableCredentialToHifi = process.env.YC_CREDENTIAL_VC
@@ -40,14 +42,8 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		presentationDefinition: selectedOffering.data.requiredClaims
 	});
 
-
-	// convert amount to string
-	if (!amount) {
-		throw new Error('Amount is required');
-	} else {
-		amount = amount.toString();
-	}
-
+	// convert amount to string with 2 decimal places
+	amount = safeToNumberString(amount, 2);
 
 	const rfqData = {
 		offeringId: selectedOffering.metadata.id,
@@ -90,17 +86,12 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	// console.log('rfq:', rfq);
 	await ycRfq.sign(bearerDid);
 
-
+	// create the exchange
 	try {
-		// create the exchange
 		await TbdexHttpClient.createExchange(ycRfq);
-
 	} catch (error) {
-		console.error('Error creating exchange:', error);
-		//log details
-		console.error("Error details:", JSON.stringify(error.details.errors[0].detail, null, 2));
-
-		return res.status(500).json({ error: error });
+		await createLog("createYellowcardRequestForQuote", null, error.message, error )
+		throw new Error("Failed to create exchange for createYellowcardRequestForQuote")
 	}
 
 	//poll for quote
