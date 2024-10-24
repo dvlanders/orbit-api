@@ -1,27 +1,17 @@
 const createLog = require('../../logger/supabaseLogger');
-const { supabaseCall } = require('../../supabaseWithRetry');
-const supabase = require('../../supabaseClient');
 const { getBearerDid } = require('./getBearerDid');
-const { submitUserAction } = require("../../../util/bastion/endpoints/submitUserAction");
-const { v4: uuidv4 } = require('uuid');
-const { currencyContractAddress } = require("../../common/blockchain");
-const { getMappedError } = require("../../../util/bastion/utils/errorMappings");
-const { updateRequestRecord } = require("../../../util/transfer/cryptoToBankAccount/utils/updateRequestRecord")
-const { erc20Transfer } = require("../../../util/bastion/utils/erc20FunctionMap");
 const { pollYellowcardExchangeForOrder } = require('./pollYellowcardExchangeForOrder');
+const { updateRequestRecord } = require('../../transfer/cryptoToBankAccount/utils/updateRequestRecord');
 
 // Fetches offerings from a specific PFI and returns a selected offering based on currency pair.
 async function executeYellowcardExchange(offrampTransactionRecord) {
 
 	const { TbdexHttpClient, Order } = await import('@tbdex/http-client');
-	const { data: yellowcardTransactionRecord, error: yellowcardTransactionError } = await supabase
-		.from('yellowcard_transactions')
-		.select('*')
-		.eq('id', offrampTransactionRecord.yellowcard_transaction_id)
-		.maybeSingle();
 
-	if (yellowcardTransactionError || !yellowcardTransactionRecord) {
-		console.error('Error fetching yellowcard transaction record:', yellowcardTransactionError);
+	const yellowcardTransactionRecord = offrampTransactionRecord.yellowcard_transaction_info;
+
+	if (!yellowcardTransactionRecord) {
+		console.error('No yellowcard transaction record');
 		return { error: "An unexpected error occurred fetching transaction record." };
 	}
 
@@ -43,6 +33,7 @@ async function executeYellowcardExchange(offrampTransactionRecord) {
 		await TbdexHttpClient.submitOrder(order);
 	} catch (error) {
 		console.error('Error submitting order:', error);
+		await updateRequestRecord(offrampTransactionRecord.id, { transaction_status: "QUOTE_FAILED" });
 		await createLog("transfer/util/executeYellowcardExchange", offrampTransactionRecord.user_id, "Error submitting order", error);
 		return { error: `Order submission failed: ${error.message}`, statusCode: error.statusCode };
 	}

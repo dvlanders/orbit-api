@@ -1,62 +1,37 @@
 const { currencyContractAddress, currencyDecimal } = require("../../../common/blockchain");
 const supabase = require("../../../supabaseClient");
-const bridgeRailCheck = require("../railCheck/bridgeRailCheckV2");
 const { getAddress, isAddress } = require("ethers");
-const { CreateCryptoToBankTransferError, CreateCryptoToBankTransferErrorType } = require("../utils/createTransfer");
-const createLog = require("../../../logger/supabaseLogger");
-const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
-const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveTokenBastion");
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveTokenBastion");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
-const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
-const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
-const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
-const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
-const { getMappedError } = require("../../../bastion/utils/errorMappings");
-const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
-const getBridgeConversionRate = require("../../conversionRate/main/getBridgeCoversionRate");
 const { v4 } = require("uuid");
-const fetchBridgeCryptoToFiatTransferRecord = require("./fetchBridgeCryptoToFiatTransferRecordV2");
-const { chainToVirtualAccountPaymentRail } = require("../../../bridge/utils");
-const createBridgeTransfer = require("../../../bridge/endpoint/createTransfer");
-const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService");
-const { safeStringToFloat } = require("../../../utils/number");
-const createPaymentQuote = require("../../../reap/main/createPayment");
-const fetchTbdexCryptoToFiatTransferRecord = require("./fetchYellowcardCryptoToFiatTransferRecord");
-const getUserReapWalletAddress = require("../../../reap/main/getUserWallet");
-const acceptPaymentQuote = require("../../../reap/main/acceptPaymentQuote");
-const getReapPayment = require("../../../reap/main/getPayment");
-const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
-const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
 const createYellowcardRequestForQuote = require("../../../yellowcard/createYellowcardRequestForQuote");
 const { executeYellowcardExchange } = require("../../../yellowcard/utils/executeYellowcardExchange");
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
+const { getWalletColumnNameFromProvider, insertWalletTransactionRecord } = require("../../walletOperations/utils");
+const { insertYellowCardTransactionInfo, updateYellowCardTransactionInfo } = require("../../../yellowcard/transactionInfoService");
+const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
+const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 
 const initTransferData = async (config) => {
 
-	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, description } = config
+	const { requestId, sourceUserId, destinationUserId, destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, sourceWalletAddress, profileId, sourceWalletType, feeType, feeValue, sourceBastionUserId, paymentRail, purposeOfPayment, description, sourceWalletProvider: walletProvider, accountInfo } = config
 
 	//get crypto contract address
 	const contractAddress = currencyContractAddress[chain][sourceCurrency]
 
+	const toInsertYCRecord = {
+		user_id: sourceUserId,
+	}
+	const yellowcardTransactionRecord = await insertYellowCardTransactionInfo(toInsertYCRecord);
 
+	const walletTxRecord = await insertWalletTransactionRecord(walletProvider, { user_id: sourceUserId, request_id: v4() });
+	const walletColName = getWalletColumnNameFromProvider(walletProvider);
 
-	// create initial transfer record on yellowcard_transactions
-	const { data: yellowcardTransactionRecord, error: yellowcardTransactionRecordError } = await supabase
-		.from('yellowcard_transactions')
-		.insert({
-			user_id: sourceUserId,
-		})
-		.select()
-		.single()
-
-	if (yellowcardTransactionRecordError) throw yellowcardTransactionRecordError
-
+	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
 
 	//insert the initial record
 	const { data: record, error: recordError } = await supabase
@@ -70,22 +45,22 @@ const initTransferData = async (config) => {
 			contract_address: contractAddress,
 			action_name: "transfer",
 			fiat_provider: "YELLOWCARD",
-			crypto_provider: "BASTION",
+			crypto_provider: walletProvider,
 			source_currency: sourceCurrency,
 			destination_currency: destinationCurrency,
 			destination_account_id: destinationAccountId,
 			transfer_from_wallet_type: sourceWalletType,
-			bastion_user_id: sourceBastionUserId,
 			purpose_of_payment: purposeOfPayment,
 			description: description,
 			amount: amount,
+			billing_tags_success: billingTags.success,
+			billing_tags_failed: billingTags.failed,
 			yellowcard_transaction_id: yellowcardTransactionRecord.id,
+			[walletColName]: walletTxRecord.id
 		})
 		.eq("request_id", requestId)
 		.select()
 		.single()
-
-
 
 	if (recordError) throw recordError
 
@@ -100,7 +75,7 @@ const initTransferData = async (config) => {
 		currency: sourceCurrency,
 		chargedWalletAddress: sourceWalletAddress
 	}
-	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, "BASTION", record.request_id)
+	const feeRecord = await createNewFeeRecord(record.id, feeType, feePercent, feeAmount, profileId, info, transferType.CRYPTO_TO_FIAT, walletProvider, record.request_id)
 
 	// return if amount is less than 1 dollar
 	if (clientReceivedAmount < 1) {
@@ -118,7 +93,7 @@ const initTransferData = async (config) => {
 		// no paymentProcessorContract available
 		const toUpdate = {
 			transaction_status: "NOT_INITIATED",
-			failed_reason: `Fee feature not available for ${currency} on ${chain}`
+			failed_reason: `Fee feature not available for ${sourceCurrency} on ${chain}`
 		}
 		record = await updateRequestRecord(record.id, toUpdate)
 		return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
@@ -128,91 +103,6 @@ const initTransferData = async (config) => {
 	await updateRequestRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
 	return { record: record, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord }
 }
-
-// const transferWithFee = async (initialTransferRecord, profileId) => {
-// 	const sourceCurrency = initialTransferRecord.source_currency
-// 	const chain = initialTransferRecord.chain
-// 	const sourceWalletAddress = initialTransferRecord.from_wallet_address
-// 	const developerFeeId = initialTransferRecord.developer_fee_id
-// 	const paymentProcessorContractAddress = initialTransferRecord.payment_processor_contract_address
-// 	const bastionUserId = initialTransferRecord.bastion_user_id
-// 	// get fee config
-// 	const { data: feeRecord, error: feeRecordError } = await supabase
-// 		.from("developer_fees")
-// 		.select("*")
-// 		.eq("id", developerFeeId)
-// 		.single()
-
-// 	if (feeRecordError) throw feeRecordError
-
-// 	const result = await CryptoToFiatWithFeeBastion(initialTransferRecord, feeRecord, paymentProcessorContractAddress, profileId)
-// 	return result
-
-// }
-
-// const transferWithoutFee = async (initialTransferRecord, profileId) => {
-// 	const sourceUserId = initialTransferRecord.user_id
-// 	const sourceCurrency = initialTransferRecord.source_currency
-// 	const chain = initialTransferRecord.chain
-// 	const amount = initialTransferRecord.amount
-// 	const bastionUserId = initialTransferRecord.bastion_user_id
-
-// 	//get payment rail
-// 	const decimals = currencyDecimal[sourceCurrency]
-// 	const transferAmount = toUnitsString(amount, decimals)
-// 	const bodyObject = {
-// 		requestId: initialTransferRecord.bastion_request_id,
-// 		userId: bastionUserId,
-// 		contractAddress: initialTransferRecord.contract_address,
-// 		actionName: "transfer",
-// 		chain: chain,
-// 		actionParams: erc20Transfer(sourceCurrency, chain, initialTransferRecord.to_wallet_address, transferAmount)
-// 	};
-
-// 	const bastionResponse = await submitUserAction(bodyObject)
-// 	const bastionResponseBody = await bastionResponse.json();
-
-// 	// map status
-// 	if (!bastionResponse.ok) {
-// 		// fail to transfer
-// 		await createLog("transfer/util/createTransferToBridgeLiquidationAddress", sourceUserId, bastionResponseBody.message, bastionResponseBody)
-// 		const { message, type } = getMappedError(bastionResponseBody.message)
-
-// 		const toUpdate = {
-// 			bastion_response: bastionResponseBody,
-// 			bastion_transaction_status: "FAILED",
-// 			transaction_status: "NOT_INITIATED",
-// 			failed_reason: message
-// 		}
-
-// 		// in sandbox, just return SUBMITTED_ONCHAIN status
-// 		if (process.env.NODE_ENV == "development") {
-// 			toUpdate.transaction_status = "COMPLETED"
-// 			toUpdate.failed_reason = "This is a simulated success response for sandbox environment only."
-// 		}
-
-// 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-
-// 		// send out webhook message if in sandbox
-// 		if (process.env.NODE_ENV == "development") {
-// 			await simulateSandboxCryptoToFiatTransactionStatus(initialTransferRecord)
-// 		}
-
-// 	} else {
-
-// 		const toUpdate = {
-// 			bastion_response: bastionResponseBody,
-// 			transaction_hash: bastionResponseBody.transactionHash,
-// 			bastion_transaction_status: bastionResponseBody.status,
-// 			transaction_status: bastionResponseBody.status == "FAILED" ? "NOT_INITIATED" : "SUBMITTED_ONCHAIN",
-// 			failed_reason: bastionResponseBody.failureDetails,
-// 		}
-// 		await updateRequestRecord(initialTransferRecord.id, toUpdate)
-// 	}
-
-// 	const result = await fetchReapCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
-// 	return result
-// }
 
 const createYellowcardCryptoToFiatTransfer = async (config) => {
 	const { destinationAccountId, sourceCurrency, destinationCurrency, chain, amount, feeType, feeValue, profileId, sourceUserId, destinationUserId, description, purposeOfPayment } = config
@@ -230,84 +120,44 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 		return { isExternalAccountExist: true, transferResult: result };
 	}
 
+	if(!await checkBalanceForTransactionAmount(sourceUserId, amount, chain, sourceCurrency)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
+        }
+        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return { isExternalAccountExist: true, transferResult: result }
+    }
+
 	const { yellowcardRequestForQuote } = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment)
-	let result = {
-		transferType: transferType.CRYPTO_TO_FIAT,
-		transferDetails: {
-			id: initialTransferRecord.id,
-			requestId: initialTransferRecord.request_id,
-			sourceUserId: sourceUserId,
-			destinationUserId: destinationUserId,
-			chain: chain,
-			sourceCurrency: sourceCurrency,
-			amount: amount,
-			destinationCurrency: destinationCurrency,
-			conversionRate: yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit,
-			destinationAccountId: destinationAccountId,
-			createdAt: initialTransferRecord.created_at,
-			updatedAt: initialTransferRecord.updated_at,
-			expiresAt: new Date(yellowcardRequestForQuote.data.expiresAt).toISOString().replace('Z', '+00:00'),
-			status: initialTransferRecord.transaction_status,
-			contractAddress: initialTransferRecord.contract_address,
-			sourceUser: initialTransferRecord.source_user_id,
-			destinationUser: initialTransferRecord.destination_user_id,
-			failedReason: initialTransferRecord.failed_reason,
-			fee: feeRecord ? {
-				feeId: feeRecord.id,
-				feeType: feeRecord.fee_type,
-				feeAmount: feeRecord.fee_amount,
-				feePercent: feeRecord.fee_percent,
-				status: feeRecord.charged_status,
-				transactionHash: feeRecord.transaction_hash,
-				failedReason: feeRecord.failed_reason
-			} : null,
-		}
-	}
 
 	if (yellowcardRequestForQuote) {
-		// update yellowcard_transactions record
-		const { data: updatedRecord, error: updatedRecordError } = await supabase
-			.from('yellowcard_transactions')
-			.update({
-				yellowcard_rfq_response: yellowcardRequestForQuote,
-				payout_units_per_payin_unit: yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit,
-				quote_id: yellowcardRequestForQuote.metadata.id,
-				quote_expires_at: new Date(yellowcardRequestForQuote.data.expiresAt).toISOString().replace('Z', '+00:00'),
-			})
-			.eq("id", yellowcardTransactionRecord.id)
-			.select()
-			.maybeSingle()
-
-
-		if (updatedRecordError) throw updatedRecordError
-
-
-
+		const toUpdateYC = {
+			yellowcard_rfq_response: yellowcardRequestForQuote,
+			payout_units_per_payin_unit: yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit,
+			quote_id: yellowcardRequestForQuote.metadata.id,
+			quote_expires_at: new Date(yellowcardRequestForQuote.data.expiresAt).toISOString().replace('Z', '+00:00'),
+		}
+		await updateYellowCardTransactionInfo(yellowcardTransactionRecord.id, toUpdateYC);
 	} else {
-		// update the yellowcard_transactions table when we fail to create quote
-		const { data: updatedRecord, error: updatedRecordError } = await supabase
-			.from('yellowcard_transactions')
-			.update({
-				yellowcard_rfq_response: yellowcardRequestForQuote,
-			})
-			.eq("id", yellowcardTransactionRecord.id)
-			.select()
-			.maybeSingle()
-
-		if (updatedRecordError) throw updatedRecordError
-
+		const toUpdateYC = {
+			yellowcard_rfq_response: yellowcardRequestForQuote,
+		}
+		await updateYellowCardTransactionInfo(yellowcardTransactionRecord.id, toUpdateYC);
 	}
 
-
+	const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
 	return { isExternalAccountExist: true, transferResult: result }
 }
+
 const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	const { recordId, profileId } = config;
 
 	// Fetch the offramp transaction record by recordId
 	const { data: record, error: recordError } = await supabase
 		.from("offramp_transactions")
-		.select("*")
+		.select("*, yellowcard_transaction_info:yellowcard_transaction_id (*)")
 		.eq("id", recordId)
 		.maybeSingle();
 
@@ -322,37 +172,9 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 
 	try {
 
-		// TODO: Pass the offramp_transactions record down to the executeYellowcardExchange function so we don't have to call it again
 		// Execute the exchange process, which returns status and additional data
-		const { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord } = await executeYellowcardExchange(record);
-
-
-		// Construct the result object based on the exchange outcome and additional queries as needed
-		const result = {
-			transferType: "CRYPTO_TO_FIAT",
-			transferDetails: {
-				id: updatedOfframpTransactionRecord.id,
-				requestId: updatedOfframpTransactionRecord.request_id,
-				sourceUserId: updatedOfframpTransactionRecord.user_id,
-				destinationUserId: updatedOfframpTransactionRecord.destination_user_id,
-				chain: updatedOfframpTransactionRecord.chain,
-				sourceCurrency: updatedOfframpTransactionRecord.source_currency,
-				amount: updatedOfframpTransactionRecord.amount,
-				destinationCurrency: updatedOfframpTransactionRecord.destination_currency,
-				conversionRate: updatedYellowcardTransactionRecord.payout_units_per_payin_unit,
-				destinationAccountId: updatedOfframpTransactionRecord.destination_account_id,
-				createdAt: updatedOfframpTransactionRecord.created_at,
-				updatedAt: updatedOfframpTransactionRecord.updated_at,
-				expiresAt: updatedYellowcardTransactionRecord.quote_expires_at,
-				status: updatedOfframpTransactionRecord.transaction_status,
-				contractAddress: updatedOfframpTransactionRecord.contract_address,
-				sourceUser: updatedOfframpTransactionRecord.sender_user_id,
-				destinationUser: updatedOfframpTransactionRecord.recipient_user_id,
-				failedReason: updatedOfframpTransactionRecord.failed_reason,
-				fee: null
-			}
-		};
-
+		await executeYellowcardExchange(record);
+		const result = await fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
 		return result;
 	} catch (error) {
 		console.error('Failed to process Yellowcard crypto to fiat transfer:', error);
@@ -360,100 +182,7 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	}
 };
 
-
-
-const acceptYellowcardCryptoToFiatTransferOld = async (config) => {
-
-	const { recordId, profileId } = config
-	// get the offramp_transactions record
-	const { data: record, error: recordError } = await supabase
-		.from("offramp_transactions")
-		.select("yellowcard_transaction_id, user_id, destination_user_id")
-		.eq("id", recordId)
-		.maybeSingle()
-
-	if (recordError) throw recordError
-	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
-
-	// accept quote
-	const orderClose = await executeYellowcardExchange(record.yellowcard_transaction_id)
-
-	console.log('orderClose:', orderClose);
-	if (!orderClose.data.success) {
-
-
-		//update the yellowcard_transactions record
-		const { data: updatedRecord, error: updatedRecordError } = await supabase
-			.from('yellowcard_transactions')
-			.update({
-				yellowcard_order_execution_response: orderClose,
-			})
-			.eq("id", record.yellowcard_transaction_id)
-
-
-		if (updatedRecordError) throw updatedRecordError
-
-
-		return { status: "FAILED", message: responseBody.message }
-	}
-
-	// get latest payment
-	const updatedPaymentresponse = await getReapPayment(record.reap_payment_id, record.destination_user_id)
-	const updatedPaymentresponseBody = await updatedPaymentresponse.json()
-	if (!response.ok) {
-		await createLog("transfer/acceptReapCryptoToFiatTransfer", record.user_id, updatedPaymentresponseBody.message, updatedPaymentresponseBody)
-		const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
-		return result
-	}
-	const toUpdate = {
-		transaction_status: "CREATED",
-		reap_payment_response: updatedPaymentresponseBody,
-		reap_payment_status: updatedPaymentresponseBody.status
-	}
-	await updateRequestRecord(recordId, toUpdate)
-
-	// create Job
-	const jobConfig = {
-		recordId
-	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
-	}
-
-	const result = await fetchReapCryptoToFiatTransferRecord(recordId, profileId)
-	return result
-}
-
-
-// // this should already contain every information needed for transfer
-// const executeAsyncTransferCryptoToFiat = async (config) => {
-// 	// fetch from created record
-// 	const { data, error } = await supabase
-// 		.from('offramp_transactions')
-// 		.select("*")
-// 		.eq("id", config.recordId)
-// 		.single()
-
-// 	if (error) {
-// 		await createLog("transfer/util/executeAsyncTransferCryptoToFiat", data.user_id, error.message)
-// 		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
-// 	}
-
-// 	// transfer
-// 	let receipt
-// 	if (data.developer_fee_id) {
-// 		receipt = await transferWithFee(data, config.profileId)
-// 	} else {
-// 		receipt = await transferWithoutFee(data, config.profileId)
-// 	}
-// 	// notify user
-// 	await notifyCryptoToFiatTransfer(data)
-// 	return receipt
-
-// }
-
 module.exports = {
 	createYellowcardCryptoToFiatTransfer,
 	acceptYellowcardCryptoToFiatTransfer,
-	// executeAsyncTransferCryptoToFiat
 }

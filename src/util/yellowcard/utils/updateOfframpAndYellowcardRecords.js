@@ -18,8 +18,6 @@ async function updateOfframpAndYellowcardRecords(offrampTransactionRecordId, yel
 			throw new Error(`Error updating offramp transaction record: ${updateError.message}`);
 		}
 
-		console.log('updatedOfframpTransactionRecord:', updatedOfframpTransactionRecord);
-
 		const { data: updatedYellowcardTransactionRecord, error: updateYellowcardError } = await supabase
 			.from('yellowcard_transactions')
 			.update(yellowcardTransactionRecordBodyForUpdate)

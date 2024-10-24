@@ -1,8 +1,4 @@
-const { fetchAccountProviders } = require("../../../account/accountProviders/accountProvidersService")
 const { getYellowcardAccountDetails } = require("../../../yellowcard/utils/getYellowcardAccountDetails")
-const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
-const supabase = require("../../../supabaseClient")
-const { supabaseCall } = require("../../../supabaseWithRetry")
 const { transferType } = require("../../utils/transfer")
 const { fetchCryptoToFiatRequestInfortmaionById } = require("../utils/fetchRequestInformation")
 const { convertKeysToCamelCase } = require("../../../utils/object")
@@ -11,9 +7,25 @@ const fetchYellowcardCryptoToFiatTransferRecord = async (id, profileId) => {
 	// get transactio record
 	const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "YELLOWCARD", "BASTION")
 	if (!record) return null
-	const account = await fetchAccountProviders(record.destination_account_id, profileId)
-	const accountInfo = await getYellowcardAccountDetails(record.destination_account_id,)
+	const yellowcardTransferInfo = record.yellowcard_transfer_info;
+	const ycData = yellowcardTransferInfo.yellowcard_rfq_response?.data;
+	const accountInfo = await getYellowcardAccountDetails(record.destination_account_id)
 
+	const conversionRate = {
+        fromCurrency: record.source_currency,
+        toCurrency: record.destination_currency,
+        conversionRate: yellowcardTransferInfo.payout_units_per_payin_unit,
+        vaildFrom: new Date().toISOString(),
+        vaildUntil: yellowcardTransferInfo.quote_expires_at ? new Date(yellowcardTransferInfo.quote_expires_at).toISOString().replace('Z', '+00:00') : new Date().toISOString(),
+    }
+    const quoteInformation = {
+        fromCurrency: conversionRate.fromCurrency,
+        toCurrency: conversionRate.toCurrency,
+        vaildFrom: conversionRate.vaildFrom,
+        vaildUntil: conversionRate.vaildUntil,
+        sendingAmount: ycData?.payin?.total,
+        receivingAmount: ycData?.payout?.total,
+    }
 	const result = {
 		transferType: transferType.CRYPTO_TO_FIAT,
 		transferDetails: {
@@ -34,7 +46,7 @@ const fetchYellowcardCryptoToFiatTransferRecord = async (id, profileId) => {
 			contractAddress: record.contract_address,
 			sourceUser: convertKeysToCamelCase(record.source_user.user_kyc),
 			destinationUser: convertKeysToCamelCase(record.destination_user.user_kyc),
-			destinationAccount: accountInfo,
+			destinationAccount: convertKeysToCamelCase(accountInfo),
 			failedReason: record.failed_reason,
 			fee: record.developer_fees ? {
 				feeId: record.developer_fees.id,
@@ -45,15 +57,8 @@ const fetchYellowcardCryptoToFiatTransferRecord = async (id, profileId) => {
 				transactionHash: record.developer_fees.transaction_hash,
 				failedReason: record.developer_fees.failed_reason
 			} : null,
-			conversionRate: record.conversion_rate,
-			quoteInformation: record.conversion_rate ? {
-				validFrom: record.conversion_rate.validFrom,
-				validUntil: record.conversion_rate.validUntil,
-				sendingCurrency: record.source_currency,
-				sendingAmount: record.amount,
-				receivingCurrency: record.destination_currency,
-				receivingAmount: record.destination_currency_amount
-			} : null
+			conversionRate: conversionRate,
+			quoteInformation: quoteInformation ? quoteInformation : null
 		}
 
 	}
