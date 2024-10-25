@@ -9,7 +9,6 @@ const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType
 const { toUnitsString } = require("../utils/toUnits")
 const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
-const { cryptoToCryptoTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoTocryptoTransfer/scheduleCheck")
 const supabase = require("../../../supabaseClient")
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
 const fetchCryptoToCryptoTransferRecord = require("./fetchTransferRecord")
@@ -100,10 +99,7 @@ const createDirectCryptoTransfer = async(fields) => {
     const jobConfig = {
         recordId: record.id
     }
-    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
-    if (canSchedule){
-        await createJob("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
-    }
+    await createJob("cryptoToCryptoTransfer", jobConfig, senderUserId, profileId)
 
     return receipt
 

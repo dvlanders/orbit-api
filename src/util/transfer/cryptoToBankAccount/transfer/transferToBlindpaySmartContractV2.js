@@ -10,13 +10,12 @@ const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
 const { erc20Approve } = require("../../../bastion/utils/erc20FunctionMap");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken");
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
 const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
 const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
@@ -27,7 +26,7 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertBlinpdayTransactionInfo, updateBlinpdayTransactionInfo } = require("../../../blindpay/transactionInfoService");
-const { executeBlindpayPayoutScheduleCheck } = require("../../../../../asyncJobs/transfer/executeBlindpayPayout/scheduleCheck");
+
 const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, submitWalletUserAction } = require("../../walletOperations/utils");
 const { v4 } = require("uuid")
 const { getUserWallet } = require("../../../user/getUserWallet")
@@ -245,9 +244,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
     // TODO: This is for Bridge, we need to fix it for Blindpay in the future when we want to allow Fee transfer
     const result = await CryptoToFiatWithFeeBastion(updatedRecord, feeRecord, paymentProcessorContractAddress, profileId)
-    if (await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id)) {
-        await createJob("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id, profileId)
-    }
+    await createJob("executeBlindpayPayout", { recordId: initialTransferRecord.id }, initialTransferRecord.user_id, profileId)
     return { isExternalAccountExist: true, transferResult: result }
 }
 
@@ -275,9 +272,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
         walletTransactionRecordId: providerRecordId
     }
     const updatedRecord = await acceptPaymentQuote(paymentConfig)
-    if (await executeBlindpayPayoutScheduleCheck("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id)) {
-        await createJob("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id, profileId)
-    }
+    await createJob("executeBlindpayPayout", { recordId }, initialTransferRecord.user_id, profileId)
     const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
     return { isExternalAccountExist: true, transferResult: result }
 }
@@ -393,9 +388,7 @@ const acceptBlindpayCryptoToFiatTransfer = async (config) => {
 	const jobConfig = {
 		recordId
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
-	}
+	await createJob("cryptoToFiatTransfer", jobConfig, record.user_id, profileId)
 	const result = await fetchBlindpayCryptoToFiatTransferRecord(recordId, profileId)
 	return result
 }

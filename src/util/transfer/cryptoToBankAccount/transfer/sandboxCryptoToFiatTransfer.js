@@ -18,7 +18,6 @@ const { safeStringToFloat } = require("../../../utils/number");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { burnUSDHIFI } = require("../../../smartContract/sandboxUSDHIFI/burn");
 const { FetchCryptoToBankSupportedPairCheck } = require("../utils/cryptoToBankSupportedPairFetchFunctions");
-const { cryptoToFiatTransferSandboxScheduleCheck } = require("../../../../../asyncJobs/sandbox/cryptoToFiatTransfer/scheduleCheck");
 const getReapExchangeRate = require("../../conversionRate/main/getReapExchangeRate");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
@@ -280,9 +279,7 @@ const createSandboxCryptoToFiatTransfer = async (config) => {
 	const jobConfig = {
 		recordId: initialTransferRecord.id
 	}
-	if (await cryptoToFiatTransferSandboxScheduleCheck("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)
-	}
+	await createJob("cryptoToFiatTransferSandbox", jobConfig, sourceUserId, profileId)
 
     const func = FetchCryptoToBankSupportedPairCheck(initialTransferRecord.crypto_provider, initialTransferRecord.fiat_provider)
     const result = await func(initialTransferRecord.id, profileId)

@@ -1,5 +1,4 @@
 const createJob = require("../../../../asyncJobs/createJob");
-const { fundGasScheduleCheck } = require("../../../../asyncJobs/wallets/fundGas");
 const createLog = require("../../logger/supabaseLogger");
 const { Chain } = require("../../common/blockchain");
 const { getBastionWallet } = require("./getBastionWallet");
@@ -59,10 +58,7 @@ const bastionGasCheck = async(userId, chain, walletType="INDIVIDUAL", profileId)
             const jobConfig = {
                 userId, chain, amount: gasAmount[chain], walletType, profileId
             }
-            const canSchedule = await fundGasScheduleCheck("fundGas", jobConfig, userId, profileId)
-            if (canSchedule){
-                await createJob("fundGas", jobConfig, userId, profileId)
-            }
+            await createJob("fundGas", jobConfig, userId, profileId)
             return {needFund: true, fundSubmitted: true, error: false}
         }
 
