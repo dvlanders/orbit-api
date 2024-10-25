@@ -42,7 +42,7 @@ const initTransferData = async (config) => {
 	const billingTags = await getBillingTagsFromAccount(requestId, transferType.CRYPTO_TO_FIAT, sourceUserId, accountInfo)
 
 	//insert the initial record
-	const toInsertOfframpRecord = {
+	const toUpdateOfframpRecord = {
 			user_id: sourceUserId,
 			destination_user_id: destinationUserId,
 			chain: chain,
@@ -65,7 +65,7 @@ const initTransferData = async (config) => {
 			[walletColName]: walletTxRecord.id
 	}
 
-	const record = await insertSingleOfframpTransactionRecord(newRecord.id, toInsertOfframpRecord)
+	const record = await updateOfframpTransactionRecord(newRecord.id, toUpdateOfframpRecord)
 	if (recordError) throw recordError
 
 	// return if no fee charged
