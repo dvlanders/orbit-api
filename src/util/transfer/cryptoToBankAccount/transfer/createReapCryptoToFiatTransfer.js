@@ -340,7 +340,7 @@ const acceptReapCryptoToFiatTransfer = async(config) => {
 		}
 		await updateOfframpTransactionRecord(recordId, toUpdate);
 		const result = fetchReapCryptoToFiatTransferRecord(recordId, profileId);
-		return { isExternalAccountExist: true, transferResult: result };
+		return result
 	}
 
 	// check balance

@@ -17,6 +17,7 @@ const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { insertSingleOfframpTransactionRecord, updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
 const createJob = require("../../../../../asyncJobs/createJob");
+const { safeSum } = require("../../../utils/number");
 
 const initTransferData = async (config) => {
 
@@ -100,8 +101,10 @@ const initTransferData = async (config) => {
 		return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
 	}
 
+	const amountIncludingFee = parseFloat(safeSum([amount, feeAmount]).toFixed(2))
+
 	// update into crypto to crypto table
-	await updateOfframpTransactionRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress })
+	await updateOfframpTransactionRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress, amount_include_developer_fee: amountIncludingFee })
 	return { record: record, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord }
 }
 
@@ -110,26 +113,6 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 
 	//insert request record
 	const { record: initialTransferRecord, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord } = await initTransferData(config)
-
-	if (!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)) {
-		const toUpdate = {
-			transaction_status: "NOT_INITIATED",
-			failed_reason: "Insufficient balance for transaction fee"
-		}
-		await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate);
-		const result = fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
-		return { isExternalAccountExist: true, transferResult: result };
-	}
-
-	if(!await checkBalanceForTransactionAmount(sourceUserId, amount, chain, sourceCurrency)){
-        const toUpdate = {
-            transaction_status: "NOT_INITIATED",
-            failed_reason: "Transfer amount exceeds wallet balance"
-        }
-        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
-        const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
-		return { isExternalAccountExist: true, transferResult: result }
-    }
 
 	const jobConfig = {
 		offrampTransactionRecordId: initialTransferRecord.id,
@@ -157,6 +140,26 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 		console.error('No transaction found for the provided record ID:', recordId);
 		throw new Error("No transaction found for provided record Id");
 	}
+
+	if (!await checkBalanceForTransactionFee(record.id, transferType.CRYPTO_TO_FIAT)) {
+		const toUpdate = {
+			transaction_status: "NOT_INITIATED",
+			failed_reason: "Insufficient balance for transaction fee"
+		}
+		await updateOfframpTransactionRecord(record.id, toUpdate);
+		const result = fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
+		return result
+	}
+
+	if(!await checkBalanceForTransactionAmount(sourceUserId, amount, chain, sourceCurrency)){
+        const toUpdate = {
+            transaction_status: "NOT_INITIATED",
+            failed_reason: "Transfer amount exceeds wallet balance"
+        }
+        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
+        const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+		return result
+    }
 
 	try {
 
