@@ -1,6 +1,6 @@
 const { createBridgeDirectCryptoToFiatTransfer } = require("../transfer/createBridgeDirectCryptoToFiatTransfer");
 const { createReapCryptoToFiatTransfer, acceptReapCryptoToFiatTransfer, executeAsyncTransferCryptoToFiat: executeReapAsyncTransferCryptoToFiat } = require("../transfer/createReapCryptoToFiatTransfer");
-const { createYellowcardCryptoToFiatTransfer, acceptYellowcardCryptoToFiatTransfer } = require("../transfer/createYellowcardCryptoToFiatTransfer");
+const { createYellowcardCryptoToFiatTransfer, acceptYellowcardCryptoToFiatTransfer, executeYellowcardAsyncTransferCryptoToFiat } = require("../transfer/createYellowcardCryptoToFiatTransfer");
 const transferToBlindpaySmartContract = require("../transfer/transferToBlindpaySmartContract_DEP");
 const { createTransferToBlindpaySmartContract, acceptBlindpayCryptoToFiatTransfer, executeAsyncBlindpayTransferCryptoToFiat } = require("../transfer/transferToBlindpaySmartContractV2");
 
@@ -153,6 +153,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -162,6 +163,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -171,6 +173,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -180,6 +183,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
 		}
 	},
@@ -189,6 +193,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -198,6 +203,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -207,6 +213,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -216,6 +223,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
         }
     },
@@ -225,6 +233,7 @@ const CryptoToBankSupportedPairFunctions = {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
 				acceptQuoteFunc: acceptYellowcardCryptoToFiatTransfer,
 				validationFunc: validateYellowCardTransferParams,
+				asyncTransferExecuteFunc: executeYellowcardAsyncTransferCryptoToFiat,
 			},
 		}
 	},

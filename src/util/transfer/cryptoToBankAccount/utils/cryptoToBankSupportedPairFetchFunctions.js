@@ -56,6 +56,12 @@ const FetchCryptoToBankSupportedPairFunctions = {
     BLINDPAY: fetchBlindpayCryptoToFiatTransferRecord,
     YELLOWCARD: fetchYellowcardCryptoToFiatTransferRecord,
    },
+   CIRCLE:{
+    BRIDGE: fetchBridgeCryptoToFiatTransferRecord,
+    REAP: fetchReapCryptoToFiatTransferRecord,
+    BLINDPAY: fetchBlindpayCryptoToFiatTransferRecord,
+    YELLOWCARD: fetchYellowcardCryptoToFiatTransferRecord,
+   },
    EXTERNAL:{
     BRIDGE: fetchDirectBridgeCryptoToFiatTransferRecord
    },

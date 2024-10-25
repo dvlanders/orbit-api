@@ -7,7 +7,7 @@ const { getUserWallet } = require("../../user/getUserWallet");
 const { transferType } = require("../../transfer/utils/transfer");
 const { updateOfframpTransactionRecord } = require('../../transfer/cryptoToBankAccount/utils/offrampTransactionsTableService');
 const { updateYellowCardTransactionInfo } = require('../../yellowcard/transactionInfoService');
-const { yellowcardNetworkToChain } = require('./utils');
+const { yellowcardNetworkToChain, mapCloseReason } = require('./utils');
 const notifyCryptoToFiatTransfer = require('../../../../webhooks/transfer/notifyCryptoToFiatTransfer');
 
 async function getYellowCardDepositInstruction(order, offrampTransactionRecord, bearerDid) {
@@ -27,6 +27,7 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 
 	let orderClose;
 	let timeout = 0;
+	let toUpdateOfframpTransactionRecordWhenFailed = {}
 	while (timeout < 100) {
 		try {
 			const exchange = await TbdexHttpClient.getExchange({
@@ -37,6 +38,8 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 
 			const orderInstructions = exchange.find(message => message instanceof OrderInstructions);
 			const close = exchange.find(message => message instanceof Close);
+			console.log("*************orderInstructions", orderInstructions)
+			console.log("*************close", close)
 
 			// if order instructions found
 			if (orderInstructions) {
@@ -52,10 +55,18 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 				const chain = yellowcardNetworkToChain[network];
 				// no chain found for the network
 				if (!chain) {
+					toUpdateOfframpTransactionRecordWhenFailed = {
+						transaction_status: "NOT_INITIATED",
+						failed_reason: "Unable to process transaction, please reach out for more information",
+					}
 					throw new Error(`No chain found for the network: ${network}`)
 				}
 				// chain doesn't match
 				if (chain !== offrampTransactionRecord.chain) {
+					toUpdateOfframpTransactionRecordWhenFailed = {
+						transaction_status: "NOT_INITIATED",
+						failed_reason: "Unable to process transaction, please reach out for more information",
+					}
 					throw new Error(`Network type doesn't match`)
 				}
 
@@ -74,7 +85,12 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 
 			// if order is closed
 			if (close) {
-				throw new Error(`Order for offramp transaction id: ${offrampTransactionRecord.id} is closed`)
+				const { error, failedReason } = mapCloseReason(close.data.reason)
+				toUpdateOfframpTransactionRecordWhenFailed = {
+					transaction_status: "NOT_INITIATED",
+					failed_reason: failedReason,
+				}
+				throw new Error(`Order for offramp transaction id: ${offrampTransactionRecord.id} is closed, reason: ${close.data.reason}`)
 			}
 
 			// wait for 2 seconds before next poll
@@ -84,10 +100,11 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 			throw new Error(`Order for offramp transaction id: ${offrampTransactionRecord.id} is not closed or not received any instructions after 100 seconds`)
 
 		} catch (error) {
-			await createLog("transfer/util/pollYellowcardExchangeForOrder", offrampTransactionRecord.user_id, error.message, error);
+			await createLog("transfer/util/getYellowCardDepositInstruction", offrampTransactionRecord.user_id, error.message, error);
 			const offrampTransactionRecordToUpdate = {
 				transaction_status: "NOT_INITIATED",
 				failed_reason: "Unable to process transaction, please reach out for more information",
+				...toUpdateOfframpTransactionRecordWhenFailed,
 			}
 			const updatedOfframpTransactionRecord = await updateOfframpTransactionRecord(offrampTransactionRecord.id, offrampTransactionRecordToUpdate)
 			await notifyCryptoToFiatTransfer(updatedOfframpTransactionRecord)

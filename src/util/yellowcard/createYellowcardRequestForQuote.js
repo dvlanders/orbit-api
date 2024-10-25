@@ -21,14 +21,8 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		throw new Error('No payout account details found');
 	}
 
-
-	// const result = fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
-
-	// let bankKind = result.transferDetails.destinationAccount.kind;
-
 	// Retrieve the selected offering using the fetchSelectedOffering utility
 	const { foundOfferings, selectedOffering, payin, payout } = await fetchSelectedOffering(sourceCurrency, destinationCurrency);
-	console.log("*************payin", payin)
 	// no quote found
 	if (!foundOfferings) {
 		return { yellowcardRequestForQuote: null, foundOfferings: false }
@@ -90,7 +84,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	try {
 		await TbdexHttpClient.createExchange(ycRfq);
 	} catch (error) {
-		await createLog("createYellowcardRequestForQuote", null, error.message, error )
+		await createLog("yellowcard/createYellowcardRequestForQuote", null, error.message, error )
 		throw new Error("Failed to create exchange for createYellowcardRequestForQuote")
 	}
 
@@ -109,8 +103,8 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 			});
 
 		} catch (error) {
-			console.error('Error during getExchange:', error);
-			return res.status(500).json({ error: error });
+			await createLog("yellowcard/createYellowcardRequestForQuote", null, error.message, error )
+			throw new Error("Failed to get exchange for createYellowcardRequestForQuote")
 		}
 
 		quote = exchange.find(msg => msg instanceof Quote);
@@ -127,7 +121,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 		}
 	}
 
-	return { yellowcardRequestForQuote: quote };
+	return { yellowcardRequestForQuote: quote, foundOfferings: true };
 }
 
 module.exports = createYellowcardRequestForQuote

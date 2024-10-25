@@ -238,11 +238,29 @@ const failedReasonMap = {
     "REFUND_FAILED": "Failed to refund. Please contact HIFI for more information",
 }
 
+const mapCloseReason = (errorMessage) => {
+    const minAmountRegex = /transaction amount less than the minimum of (\d+)/i;
+    const minAmountMatch = errorMessage.match(minAmountRegex);
+    if (minAmountMatch) {
+        const minimum = parseInt(minAmountMatch[1], 10)
+        return {
+            error: 'AMOUNT_TOO_LOW',
+            failedReason: `Amount is less than the minimum destination amount: ${minimum}`,
+        };
+    }
+
+    return {
+        error: 'UNKNOWN',
+        failedReason: "Unable to process transaction, please reach out for more information",
+    };
+}
+
 module.exports = {
     ycAccountRequiredFieldsMap,
     ycAccountAcceptedFieldsMap,
     insertYcAccountFunctionMap,
     yellowcardNetworkToChain,
     hifiOfframpTransactionStatusMap,
-    failedReasonMap
+    failedReasonMap,
+    mapCloseReason
 }

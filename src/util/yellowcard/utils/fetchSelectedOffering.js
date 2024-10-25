@@ -15,41 +15,36 @@ async function fetchSelectedOffering(sourceCurrency, destinationCurrency) {
 	const { TbdexHttpClient } = await import('@tbdex/http-client');
 	const ycDid = process.env.YC_PFI_DID;
 
-	try {
-		const offerings = await TbdexHttpClient.getOfferings({ pfiDid: ycDid });
+	const offerings = await TbdexHttpClient.getOfferings({ pfiDid: ycDid });
 
-		if (!offerings || offerings.length === 0) {
-			return {
-				foundOfferings: false,
-				selectedOffering: null,
-				payin: null,
-				payout: null
-			}
+	if (!offerings || offerings.length === 0) {
+		return {
+			foundOfferings: false,
+			selectedOffering: null,
+			payin: null,
+			payout: null
 		}
+	}
 
-		// Filter offerings based on the currency pair
-		const selectedOffering = offerings.find(offering =>
-			offering.data.payin.currencyCode === sourceCurrency &&
-			offering.data.payout.currencyCode === destinationCurrency
-		);
+	// Filter offerings based on the currency pair
+	const selectedOffering = offerings.find(offering =>
+		offering.data.payin.currencyCode === sourceCurrency &&
+		offering.data.payout.currencyCode === destinationCurrency
+	);
 
-		if (!selectedOffering) {
-			return {
-				foundOfferings: true,
-				selectedOffering: null,
-				payin: null,
-				payout: null
-			}
-		}
+	if (!selectedOffering) {
 		return {
 			foundOfferings: true,
-			selectedOffering: selectedOffering,
-			payin: selectedOffering.data.payin,
-			payout: selectedOffering.data.payout
+			selectedOffering: null,
+			payin: null,
+			payout: null
 		}
-	} catch (error) {
-		console.error(`Error in fetching offerings: ${error.message}`);
-		throw error;
+	}
+	return {
+		foundOfferings: true,
+		selectedOffering: selectedOffering,
+		payin: selectedOffering.data.payin,
+		payout: selectedOffering.data.payout
 	}
 }
 

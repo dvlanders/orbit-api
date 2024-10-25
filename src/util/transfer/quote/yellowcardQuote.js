@@ -1,3 +1,4 @@
+const createLog = require("../../logger/supabaseLogger");
 const createYellowcardRequestForQuote = require("../../yellowcard/createYellowcardRequestForQuote");
 const { updateYellowCardTransactionInfo } = require("../../yellowcard/transactionInfoService");
 const { updateOfframpTransactionRecord } = require("../cryptoToBankAccount/utils/offrampTransactionsTableService");

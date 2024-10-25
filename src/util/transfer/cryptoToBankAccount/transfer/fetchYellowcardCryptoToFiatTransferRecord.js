@@ -11,21 +11,15 @@ const fetchYellowcardCryptoToFiatTransferRecord = async (id, profileId) => {
 	const ycData = yellowcardTransferInfo.yellowcard_rfq_response?.data;
 	const accountInfo = await getYellowcardAccountDetails(record.destination_account_id)
 
-	const conversionRate = {
-        fromCurrency: record.source_currency,
-        toCurrency: record.destination_currency,
-        conversionRate: yellowcardTransferInfo.payout_units_per_payin_unit,
-        vaildFrom: new Date().toISOString(),
-        vaildUntil: yellowcardTransferInfo.quote_expires_at ? new Date(yellowcardTransferInfo.quote_expires_at).toISOString().replace('Z', '+00:00') : new Date().toISOString(),
-    }
-    const quoteInformation = {
+	const conversionRate = record.conversion_rate ? record.conversion_rate : null
+    const quoteInformation = conversionRate ? {
         fromCurrency: conversionRate.fromCurrency,
         toCurrency: conversionRate.toCurrency,
         vaildFrom: conversionRate.vaildFrom,
         vaildUntil: conversionRate.vaildUntil,
         sendingAmount: ycData?.payin?.total,
         receivingAmount: ycData?.payout?.total,
-    }
+    } : null
 	const result = {
 		transferType: transferType.CRYPTO_TO_FIAT,
 		transferDetails: {

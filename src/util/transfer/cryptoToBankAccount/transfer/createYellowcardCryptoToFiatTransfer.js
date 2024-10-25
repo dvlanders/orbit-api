@@ -20,6 +20,7 @@ const createJob = require("../../../../../asyncJobs/createJob");
 const { safeSum } = require("../../../utils/number");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { pollYellowcardExchangeForOrder, getYellowCardDepositInstruction } = require("../../../yellowcard/utils/pollYellowcardExchangeForOrder");
+const createLog = require("../../../logger/supabaseLogger");
 
 const initTransferData = async (config) => {
 
@@ -59,6 +60,7 @@ const initTransferData = async (config) => {
 			purpose_of_payment: purposeOfPayment,
 			description: description,
 			amount: amount,
+			amount_include_developer_fee: amount,
 			billing_tags_success: billingTags.success,
 			billing_tags_failed: billingTags.failed,
 			yellowcard_transaction_record_id: yellowcardTransactionRecord.id,
@@ -115,10 +117,10 @@ const transferWithFee = async (offrampTransactionRecord) => {
 }
 
 const transferWithoutFee = async (offrampTransactionRecord) => {
+	const sourceCurrency = offrampTransactionRecord.source_currency
+	const sourceUserId = offrampTransactionRecord.user_id
+	const walletType = offrampTransactionRecord.transfer_from_wallet_type
 	try{
-		const sourceCurrency = offrampTransactionRecord.source_currency
-		const sourceUserId = offrampTransactionRecord.user_id
-		const walletType = offrampTransactionRecord.transfer_from_wallet_type
 		// Execute the exchange process, which returns chain and liquidation address
 		const {order, bearerDid} = await executeYellowcardExchange(offrampTransactionRecord);
 		const {chain, liquidationAddress} = await getYellowCardDepositInstruction(order, offrampTransactionRecord, bearerDid);
@@ -144,6 +146,7 @@ const transferWithoutFee = async (offrampTransactionRecord) => {
 		const {response, responseBody, failedReason, providerStatus, mainTableStatus} = await transferToWallet(walletProvider, transferConfig)
 		
 		const offrampTransactionRecordToUpdate = {
+			to_wallet_address: liquidationAddress,
 			transaction_status: mainTableStatus,
 			updated_at: new Date().toISOString()
 		}
@@ -156,7 +159,7 @@ const transferWithoutFee = async (offrampTransactionRecord) => {
 		await notifyCryptoToFiatTransfer(updatedOfframpTransactionRecord)
 
 	} catch (error) {
-		await createLog("transfer/yellowcard/transferWithoutFee", config.sourceUserId, error.message, error)
+		await createLog("transfer/yellowcard/transferWithoutFee", sourceUserId, error.message, error)
 		throw new Error(`Error processing transfer: ${error.message}`);
 	}
 
@@ -172,12 +175,14 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 		offrampTransactionRecordId: initialTransferRecord.id,
 	}
 	await createJob("getQuote", jobConfig, sourceUserId, profileId)
+	const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 
 	return { isExternalAccountExist: true, transferResult: result }
 }
 
 const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	const { recordId, profileId } = config;
+	let sourceUserId
 	try {
 		// Fetch the offramp transaction record by recordId
 		const { data: record, error: recordError } = await supabase
@@ -194,6 +199,23 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 			console.error('No transaction found for the provided record ID:', recordId);
 			throw new Error("No transaction found for provided record Id");
 		}
+		sourceUserId = record.user_id
+		const amount = record.amount
+		const amountIncludingFee = record.amount_include_developer_fee
+		const chain = record.chain
+		const sourceCurrency = record.source_currency
+
+
+		// check if quote is expired
+		if (record.yellowcard_transaction_info.quote_expires_at && new Date(record.yellowcard_transaction_info.quote_expires_at) < new Date(Date.now() - 20000)) {
+			const toUpdate = {
+				transaction_status: "QUOTE_FAILED",
+				failed_reason: "Quote expired"
+			}
+			await updateOfframpTransactionRecord(recordId, toUpdate);
+			const result = fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId);
+			return result
+		}
 
 		// check if balance is enough for transaction fee
 		if (!await checkBalanceForTransactionFee(record.id, transferType.CRYPTO_TO_FIAT)) {
@@ -201,25 +223,26 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 				transaction_status: "NOT_INITIATED",
 				failed_reason: "Insufficient balance for transaction fee"
 			}
-			await updateOfframpTransactionRecord(record.id, toUpdate);
-			const result = fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
+			await updateOfframpTransactionRecord(recordId, toUpdate);
+			const result = fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId);
 			return result
 		}
 
 		// check if balance is enough for transaction amount
-		if(!await checkBalanceForTransactionAmount(sourceUserId, amount, chain, sourceCurrency)){
+		const amountToCheck = Math.max(amount, amountIncludingFee)
+		if(!await checkBalanceForTransactionAmount(sourceUserId, amountToCheck, chain, sourceCurrency)){
 			const toUpdate = {
 				transaction_status: "NOT_INITIATED",
 				failed_reason: "Transfer amount exceeds wallet balance"
 			}
-			await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
-			const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+			await updateOfframpTransactionRecord(recordId, toUpdate)
+			const result = await fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId)
 			return result
 		}
 
 		// create job
 		const jobConfig = {
-			offrampTransactionRecordId: initialTransferRecord.id,
+			recordId,
 		}
 		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
 
@@ -228,19 +251,19 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 			transaction_status: "CREATED",
 			updated_at: new Date().toISOString()
 		}
-		await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframpRecord)
+		await updateOfframpTransactionRecord(recordId, toUpdateOfframpRecord)
 
-		const result = await fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
+		const result = await fetchYellowcardCryptoToFiatTransferRecord(recordId, profileId);
 		return result;
 
 	} catch (error) {
-		await createLog("transfer/createYellowcardCryptoToFiatTransfer", sourceUserId, error.message, error)
+		await createLog("transfer/yellowcard/acceptYellowcardCryptoToFiatTransfer", sourceUserId, error.message, error)
 		throw new Error(`Error processing transfer: ${error.message}`);
 	}
 };
 
 // this should already contain every information needed for transfer
-const executeAsyncTransferCryptoToFiat = async (config) => {
+const executeYellowcardAsyncTransferCryptoToFiat = async (config) => {
 	const { recordId } = config;
 	// fetch from created record
 	const { data, error } = await supabase
@@ -270,5 +293,5 @@ const executeAsyncTransferCryptoToFiat = async (config) => {
 module.exports = {
 	createYellowcardCryptoToFiatTransfer,
 	acceptYellowcardCryptoToFiatTransfer,
-	executeAsyncTransferCryptoToFiat
+	executeYellowcardAsyncTransferCryptoToFiat
 }

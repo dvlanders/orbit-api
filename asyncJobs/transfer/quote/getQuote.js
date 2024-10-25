@@ -1,3 +1,4 @@
+const createLog = require("../../../src/util/logger/supabaseLogger")
 const { getOfframpTransactionRecord } = require("../../../src/util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService")
 const { quoteFunctionMap } = require("../../../src/util/transfer/quote/quoteFunctionMap")
 const notifyCryptoToFiatTransfer = require("../../../webhooks/transfer/notifyCryptoToFiatTransfer")
