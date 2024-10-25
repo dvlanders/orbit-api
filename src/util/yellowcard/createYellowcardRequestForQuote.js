@@ -98,8 +98,9 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	let quote;
 	let close;
 	let exchange;
+	let timeout = 0;
 	//Wait for Quote message to appear in the exchange
-	while (!quote) {
+	while (!quote && timeout < 60) {
 		try {
 			exchange = await TbdexHttpClient.getExchange({
 				pfiDid: ycRfq.metadata.to,
@@ -121,6 +122,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 			else {
 				// Wait 2 seconds before making another request
 				await new Promise(resolve => setTimeout(resolve, 2000));
+				timeout += 2;
 			}
 		}
 	}

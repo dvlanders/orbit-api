@@ -78,7 +78,7 @@ const initTransferData = async (config) => {
 			purpose_of_payment: purposeOfPayment,
 			description: description,
 			destination_currency_amount: receivedAmount,
-			yellowcard_transaction_id: yellowcardTransactionRecord.id,
+			yellowcard_transaction_record_id: yellowcardTransactionRecord.id,
 		})
 		.eq("request_id", requestId)
 		.select()

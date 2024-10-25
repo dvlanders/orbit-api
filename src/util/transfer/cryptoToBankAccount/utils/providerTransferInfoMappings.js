@@ -3,7 +3,7 @@ const FiatProviderSelectMap = {
 	BLINDPAY: "blindpay_transfer_info:blindpay_transaction_id(*)",
 	BRIDGE: "", //TODO: Add the select clause mapping
 	REAP: "", //TODO: Add the select clause mapping
-	YELLOWCARD: "yellowcard_transfer_info:yellowcard_transaction_id(*)", //TODO: Add the select clause mapping
+	YELLOWCARD: "yellowcard_transfer_info:yellowcard_transaction_record_id(*)", //TODO: Add the select clause mapping
 }
 
 const CryptoProviderSelectMap = {

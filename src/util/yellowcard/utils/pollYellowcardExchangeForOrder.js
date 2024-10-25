@@ -53,7 +53,7 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 						const yellowcardTransactionRecordToUpdate = {
 							order_instructions_message: orderInstructions,
 						}
-						const updatedYellowcardTransactionRecord = await updateYellowCardTransactionInfo(offrampTransactionRecord.yellowcard_transaction_id, yellowcardTransactionRecordToUpdate)
+						const updatedYellowcardTransactionRecord = await updateYellowCardTransactionInfo(offrampTransactionRecord.yellowcard_transaction_record_id, yellowcardTransactionRecordToUpdate)
 	
 						return { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord };
 					}
@@ -93,7 +93,7 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 						offrampTransactionRecordToUpdate.failed_reason = walletFailedReason
 					}
 	
-					const updatedYellowcardTransactionRecord = await updateYellowCardTransactionInfo(offrampTransactionRecord.yellowcard_transaction_id, yellowcardTransactionRecordToUpdate);
+					const updatedYellowcardTransactionRecord = await updateYellowCardTransactionInfo(offrampTransactionRecord.yellowcard_transaction_record_id, yellowcardTransactionRecordToUpdate);
 					const updatedOfframpTransactionRecord = await updateOfframpTransactionRecord(offrampTransactionRecord.id, offrampTransactionRecordToUpdate);
 	
 					return { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord };
@@ -112,7 +112,7 @@ async function pollYellowcardExchangeForOrder(order, offrampTransactionRecord, b
 					const yellowcardTransactionRecordToUpdate = {
 						order_close_message: orderClose,
 					}
-					const updatedYellowcardTransactionRecord = await updateYellowCardTransactionInfo(offrampTransactionRecord.yellowcard_transaction_id, yellowcardTransactionRecordToUpdate)
+					const updatedYellowcardTransactionRecord = await updateYellowCardTransactionInfo(offrampTransactionRecord.yellowcard_transaction_record_id, yellowcardTransactionRecordToUpdate)
 
 					return { updatedOfframpTransactionRecord, updatedYellowcardTransactionRecord };
 

@@ -16,6 +16,7 @@ const { insertYellowCardTransactionInfo, updateYellowCardTransactionInfo } = req
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { insertSingleOfframpTransactionRecord, updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
+const createJob = require("../../../../../asyncJobs/createJob");
 
 const initTransferData = async (config) => {
 
@@ -43,7 +44,7 @@ const initTransferData = async (config) => {
 			destination_user_id: destinationUserId,
 			chain: chain,
 			from_wallet_address: isAddress(sourceWalletAddress) ? getAddress(sourceWalletAddress) : sourceWalletAddress,
-			transaction_status: 'OPEN_QUOTE',
+			transaction_status: 'AWAITING_QUOTE',
 			contract_address: contractAddress,
 			action_name: "transfer",
 			fiat_provider: "YELLOWCARD",
@@ -57,7 +58,7 @@ const initTransferData = async (config) => {
 			amount: amount,
 			billing_tags_success: billingTags.success,
 			billing_tags_failed: billingTags.failed,
-			yellowcard_transaction_id: yellowcardTransactionRecord.id,
+			yellowcard_transaction_record_id: yellowcardTransactionRecord.id,
 			[walletColName]: walletTxRecord.id
 	}
 
@@ -130,35 +131,11 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 		return { isExternalAccountExist: true, transferResult: result }
     }
 
-	const { yellowcardRequestForQuote, foundOfferings } = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment)
-	
-	// no offering found
-	if (!foundOfferings) {
-		const toUpdateOfframp = {
-			transaction_status: "NOT_INITIATED",
-			failed_reason: "No offerings found for the selected payment pair"
-		}
-		await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframp)
-		const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
-		return { isExternalAccountExist: true, transferResult: result }
+	const jobConfig = {
+		offrampTransactionRecordId: initialTransferRecord.id,
 	}
+	await createJob("getQuote", jobConfig, sourceUserId, profileId)
 
-	if (yellowcardRequestForQuote) {
-		const toUpdateYC = {
-			yellowcard_rfq_response: yellowcardRequestForQuote,
-			payout_units_per_payin_unit: yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit,
-			quote_id: yellowcardRequestForQuote.metadata.id,
-			quote_expires_at: new Date(yellowcardRequestForQuote.data.expiresAt).toISOString().replace('Z', '+00:00'),
-		}
-		await updateYellowCardTransactionInfo(yellowcardTransactionRecord.id, toUpdateYC);
-	} else {
-		const toUpdateYC = {
-			yellowcard_rfq_response: yellowcardRequestForQuote,
-		}
-		await updateYellowCardTransactionInfo(yellowcardTransactionRecord.id, toUpdateYC);
-	}
-
-	const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId);
 	return { isExternalAccountExist: true, transferResult: result }
 }
 
@@ -168,7 +145,7 @@ const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	// Fetch the offramp transaction record by recordId
 	const { data: record, error: recordError } = await supabase
 		.from("offramp_transactions")
-		.select("*, yellowcard_transaction_info:yellowcard_transaction_id (*)")
+		.select("*, yellowcard_transaction_info:yellowcard_transaction_record_id (*)")
 		.eq("id", recordId)
 		.maybeSingle();
 

@@ -14,7 +14,7 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
     const { data: yellowcardTransactionRecord, error: yellowcardTransactionError } = await supabase
 		.from('yellowcard_transactions')
 		.select('*')
-		.eq('id', transaction.yellowcard_transaction_id)
+		.eq('id', transaction.yellowcard_transaction_record_id)
 		.maybeSingle();
 
     if (yellowcardTransactionError || !yellowcardTransactionRecord) {
