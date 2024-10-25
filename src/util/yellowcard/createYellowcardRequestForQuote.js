@@ -28,7 +28,7 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 
 	// Retrieve the selected offering using the fetchSelectedOffering utility
 	const { foundOfferings, selectedOffering, payin, payout } = await fetchSelectedOffering(sourceCurrency, destinationCurrency);
-
+	console.log("*************payin", payin)
 	// no quote found
 	if (!foundOfferings) {
 		return { yellowcardRequestForQuote: null, foundOfferings: false }

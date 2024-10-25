@@ -2,6 +2,15 @@ const { isUUID } = require("../../common/fieldsValidation");
 const supabase = require("../../supabaseClient");
 const { YcAccountInfoError, YcAccountInfoErrorType } = require("./errors");
 
+// yellowcard network to blockchain network
+const yellowcardNetworkToChain = process.env.NODE_ENV === "development" ? {
+    "POLYGON": "POLYGON_AMOY",
+    "ERC20": "ETHEREUM_TESTNET"
+} : {
+    "POLYGON": "POLYGON_MAINNET",
+    "ERC20": "ETHEREUM_MAINNET"
+}
+
 // MOMO_MPESA
 const momoMpesaRequiredFields = [
     "user_id",
@@ -210,4 +219,5 @@ module.exports = {
     ycAccountRequiredFieldsMap,
     ycAccountAcceptedFieldsMap,
     insertYcAccountFunctionMap,
+    yellowcardNetworkToChain
 }

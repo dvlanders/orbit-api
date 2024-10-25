@@ -34,6 +34,7 @@ const getQuoteFromYellowcard = async (offrampTransactionRecord) => {
             toUpdateYC.payout_units_per_payin_unit = yellowcardRequestForQuote.data.payoutUnitsPerPayinUnit
             toUpdateYC.quote_id = yellowcardRequestForQuote.metadata.id
             toUpdateYC.quote_expires_at = new Date(yellowcardRequestForQuote.data.expiresAt).toISOString()
+            toUpdateYC.exchange_id = yellowcardRequestForQuote.metadata.exchangeId
 
 
             const conversionRate = {

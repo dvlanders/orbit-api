@@ -227,7 +227,7 @@ const transferWithoutFee = async (initialTransferRecord, profileId) => {
 	const {response: walletResponse, responseBody: walletResponseBody, failedReason, providerStatus: walletProviderStatus, mainTableStatus} = await transferToWallet(walletProvider, transferConfig)
 
 	// map status
-	consttoUpdateOfframpRecord = {
+	const toUpdateOfframpRecord = {
 		updated_at: new Date().toISOString(),
 		transaction_status: mainTableStatus
 	}

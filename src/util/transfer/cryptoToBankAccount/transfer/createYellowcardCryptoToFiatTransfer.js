@@ -11,13 +11,15 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const createYellowcardRequestForQuote = require("../../../yellowcard/createYellowcardRequestForQuote");
 const { executeYellowcardExchange } = require("../../../yellowcard/utils/executeYellowcardExchange");
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
-const { getWalletColumnNameFromProvider, insertWalletTransactionRecord } = require("../../walletOperations/utils");
+const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, transferToWallet } = require("../../walletOperations/utils");
 const { insertYellowCardTransactionInfo, updateYellowCardTransactionInfo } = require("../../../yellowcard/transactionInfoService");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
 const { insertSingleOfframpTransactionRecord, updateOfframpTransactionRecord } = require("../utils/offrampTransactionsTableService");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { safeSum } = require("../../../utils/number");
+const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
+const { pollYellowcardExchangeForOrder, getYellowCardDepositInstruction } = require("../../../yellowcard/utils/pollYellowcardExchangeForOrder");
 
 const initTransferData = async (config) => {
 
@@ -101,11 +103,64 @@ const initTransferData = async (config) => {
 		return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
 	}
 
+	// get amount including developer fee
 	const amountIncludingFee = parseFloat(safeSum([amount, feeAmount]).toFixed(2))
 
 	// update into crypto to crypto table
 	await updateOfframpTransactionRecord(record.id, { developer_fee_id: feeRecord.id, payment_processor_contract_address: paymentProcessorContractAddress, amount_include_developer_fee: amountIncludingFee })
 	return { record: record, feeRecord: feeRecord, yellowcardTransactionRecord: yellowcardTransactionRecord }
+}
+
+const transferWithFee = async (offrampTransactionRecord) => {
+
+}
+
+const transferWithoutFee = async (offrampTransactionRecord) => {
+	try{
+		const sourceCurrency = offrampTransactionRecord.source_currency
+		const sourceUserId = offrampTransactionRecord.user_id
+		const walletType = offrampTransactionRecord.transfer_from_wallet_type
+		// Execute the exchange process, which returns chain and liquidation address
+		const {order, bearerDid} = await executeYellowcardExchange(offrampTransactionRecord);
+		const {chain, liquidationAddress} = await getYellowCardDepositInstruction(order, offrampTransactionRecord, bearerDid);
+
+
+		// send transaction
+		const decimals = currencyDecimal[sourceCurrency]
+		const transferAmount = toUnitsString(amount, decimals)
+
+		const { bastionUserId, circleWalletId } = await getUserWallet(sourceUserId, chain, walletType);
+		const providerRecordId = offrampTransactionRecord[getWalletColumnNameFromProvider(walletProvider)]
+		const transferConfig = {
+			referenceId: offrampTransactionRecord.id, 
+			senderCircleWalletId: circleWalletId, 
+			senderBastionUserId: bastionUserId,
+			currency: sourceCurrency, 
+			unitsAmount: transferAmount, 
+			chain: chain, 
+			destinationAddress: liquidationAddress, 
+			transferType: transferType.CRYPTO_TO_FIAT,
+			providerRecordId
+		}
+		const {response, responseBody, failedReason, providerStatus, mainTableStatus} = await transferToWallet(walletProvider, transferConfig)
+		
+		const offrampTransactionRecordToUpdate = {
+			transaction_status: mainTableStatus,
+			updated_at: new Date().toISOString()
+		}
+
+		if (!response.ok) {
+			offrampTransactionRecordToUpdate.failed_reason = failedReason
+		}
+
+		const updatedOfframpTransactionRecord = await updateOfframpTransactionRecord(offrampTransactionRecord.id, offrampTransactionRecordToUpdate)
+		await notifyCryptoToFiatTransfer(updatedOfframpTransactionRecord)
+
+	} catch (error) {
+		await createLog("transfer/yellowcard/transferWithoutFee", config.sourceUserId, error.message, error)
+		throw new Error(`Error processing transfer: ${error.message}`);
+	}
+
 }
 
 const createYellowcardCryptoToFiatTransfer = async (config) => {
@@ -124,56 +179,97 @@ const createYellowcardCryptoToFiatTransfer = async (config) => {
 
 const acceptYellowcardCryptoToFiatTransfer = async (config) => {
 	const { recordId, profileId } = config;
-
-	// Fetch the offramp transaction record by recordId
-	const { data: record, error: recordError } = await supabase
-		.from("offramp_transactions")
-		.select("*, yellowcard_transaction_info:yellowcard_transaction_record_id (*)")
-		.eq("id", recordId)
-		.maybeSingle();
-
-	if (recordError) {
-		console.error('Database error when fetching offramp transaction:', recordError.message);
-		throw new Error(`Database error: ${recordError.message}`);
-	}
-	if (!record) {
-		console.error('No transaction found for the provided record ID:', recordId);
-		throw new Error("No transaction found for provided record Id");
-	}
-
-	if (!await checkBalanceForTransactionFee(record.id, transferType.CRYPTO_TO_FIAT)) {
-		const toUpdate = {
-			transaction_status: "NOT_INITIATED",
-			failed_reason: "Insufficient balance for transaction fee"
-		}
-		await updateOfframpTransactionRecord(record.id, toUpdate);
-		const result = fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
-		return result
-	}
-
-	if(!await checkBalanceForTransactionAmount(sourceUserId, amount, chain, sourceCurrency)){
-        const toUpdate = {
-            transaction_status: "NOT_INITIATED",
-            failed_reason: "Transfer amount exceeds wallet balance"
-        }
-        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
-        const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
-		return result
-    }
-
 	try {
+		// Fetch the offramp transaction record by recordId
+		const { data: record, error: recordError } = await supabase
+			.from("offramp_transactions")
+			.select("*, yellowcard_transaction_info:yellowcard_transaction_record_id (*)")
+			.eq("id", recordId)
+			.maybeSingle();
 
-		// Execute the exchange process, which returns status and additional data
-		await executeYellowcardExchange(record);
+		if (recordError) {
+			console.error('Database error when fetching offramp transaction:', recordError.message);
+			throw new Error(`Database error: ${recordError.message}`);
+		}
+		if (!record) {
+			console.error('No transaction found for the provided record ID:', recordId);
+			throw new Error("No transaction found for provided record Id");
+		}
+
+		// check if balance is enough for transaction fee
+		if (!await checkBalanceForTransactionFee(record.id, transferType.CRYPTO_TO_FIAT)) {
+			const toUpdate = {
+				transaction_status: "NOT_INITIATED",
+				failed_reason: "Insufficient balance for transaction fee"
+			}
+			await updateOfframpTransactionRecord(record.id, toUpdate);
+			const result = fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
+			return result
+		}
+
+		// check if balance is enough for transaction amount
+		if(!await checkBalanceForTransactionAmount(sourceUserId, amount, chain, sourceCurrency)){
+			const toUpdate = {
+				transaction_status: "NOT_INITIATED",
+				failed_reason: "Transfer amount exceeds wallet balance"
+			}
+			await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
+			const result = await fetchYellowcardCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+			return result
+		}
+
+		// create job
+		const jobConfig = {
+			offrampTransactionRecordId: initialTransferRecord.id,
+		}
+		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
+
+		// update offramp transaction record
+		const toUpdateOfframpRecord = {
+			transaction_status: "CREATED",
+			updated_at: new Date().toISOString()
+		}
+		await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdateOfframpRecord)
+
 		const result = await fetchYellowcardCryptoToFiatTransferRecord(record.id, profileId);
 		return result;
+
 	} catch (error) {
-		console.error('Failed to process Yellowcard crypto to fiat transfer:', error);
+		await createLog("transfer/createYellowcardCryptoToFiatTransfer", sourceUserId, error.message, error)
 		throw new Error(`Error processing transfer: ${error.message}`);
 	}
 };
 
+// this should already contain every information needed for transfer
+const executeAsyncTransferCryptoToFiat = async (config) => {
+	const { recordId } = config;
+	// fetch from created record
+	const { data, error } = await supabase
+		.from('offramp_transactions')
+		.select("*, yellowcard_transaction_info:yellowcard_transaction_record_id(*), feeRecord: developer_fee_id(*)")
+		.eq("id", recordId)
+		.single()
+
+	if (error) {
+		await createLog("transfer/yellowcard/executeAsyncTransferCryptoToFiat", data.user_id, error.message)
+		throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
+	}
+
+	// transfer
+	let receipt
+	if (data.developer_fee_id) {
+		receipt = await transferWithFee(data, config.profileId)
+	} else {
+		receipt = await transferWithoutFee(data, config.profileId)
+	}
+	// notify user
+	await notifyCryptoToFiatTransfer(data)
+	return receipt
+
+}
+
 module.exports = {
 	createYellowcardCryptoToFiatTransfer,
 	acceptYellowcardCryptoToFiatTransfer,
+	executeAsyncTransferCryptoToFiat
 }
