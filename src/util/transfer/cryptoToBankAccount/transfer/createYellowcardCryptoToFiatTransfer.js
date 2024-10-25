@@ -66,7 +66,6 @@ const initTransferData = async (config) => {
 	}
 
 	const record = await updateOfframpTransactionRecord(newRecord.id, toUpdateOfframpRecord)
-	if (recordError) throw recordError
 
 	// return if no fee charged
 	if (!feeType || parseFloat(feeValue) <= 0) return { record: record, yellowcardTransactionRecord: yellowcardTransactionRecord }
