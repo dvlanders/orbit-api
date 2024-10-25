@@ -109,6 +109,8 @@ exports.createStripeBill = async(billingInformation) => {
             {productName: "integration_fee", fee: integrationFee}, 
             {productName: "account_minimum", fee: transactionFeeFailedToChargedOrMinimum}, 
             {productName: "platform_fee", fee: platformFee}, 
+            {productName: "kyc_kyb_fee", fee: kycKybFee}, 
+            {productName: "active_user_fee", fee: activeUserFee}, 
         ]
 
         await Promise.all(products.map(async(product) => {

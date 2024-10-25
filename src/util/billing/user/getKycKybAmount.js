@@ -5,9 +5,9 @@ const getKycKybAmount = async (profileId, startDate, endDate, type) => {
 
     const {count, error} = await supabase
         .from("bridge_customers")
-        .select("*, users: user_id!inner(*)", {count: 'exact', head: true})
+        .select("*, users:user_id!inner(*)", {count: 'exact', head: true})
         .eq("users.profile_id", profileId)
-        .eq("users.type", type)
+        .eq("users.user_type", type)
         .not("status", "is", null)
         .neq("status", "invalid_fields")
         .gte("created_at", startDate)
