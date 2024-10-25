@@ -100,6 +100,168 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
+/account/kes/momo/offramp:
+  post:
+    summary: Add KES Offramp Bank Account (MOMO KES)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/KesOfframpMomoAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/KesOfframpMomoAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/xof/momo/offramp:
+  post:
+    summary: Add XOF Offramp Bank Account (MOMO XOF)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/XofOfframpMomoAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/XofOfframpMomoAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/rwf/momo/offramp:
+  post:
+    summary: Add RWF Offramp Bank Account (MOMO RWF)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/RwfOfframpMomoAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/RwfOfframpMomoAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/zmw/momo/offramp:
+  post:
+    summary: Add ZMW Offramp Bank Account (MOMO ZMW)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/ZmwOfframpMomoAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/ZmwOfframpMomoAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/ngn/bank/offramp:
+  post:
+    summary: Add NGN Offramp Bank Account (Bank NGN)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/NgnOfframpBankAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/NgnOfframpBankAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/ugx/bank/offramp:
+  post:
+    summary: Add UGX Offramp Bank Account (Bank UGX)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/UgxOfframpBankAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/UgxOfframpBankAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/tzs/bank/offramp:
+  post:
+    summary: Add TZS Offramp Bank Account (Bank TZS)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/TzsOfframpBankAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/TzsOfframpBankAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/mwk/bank/offramp:
+  post:
+    summary: Add MWK Offramp Bank Account (Bank MWK)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/MwkOfframpBankAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/MwkOfframpBankAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/xaf/bank/offramp:
+  post:
+    summary: Add XAF Offramp Bank Account (Bank XAF)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/XafOfframpBankAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/XafOfframpBankAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/south-america/receiver:
   post:
     summary: Create South America Offramp Receiver

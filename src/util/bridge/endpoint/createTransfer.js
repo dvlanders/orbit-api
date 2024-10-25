@@ -1,6 +1,7 @@
 const { v4 } = require("uuid");
 const { getBridgeTransactionRecord, updateBridgeTransactionRecord } = require("../bridgeTransactionTableService");
 const { safeParseBody } = require("../../utils/response");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -30,7 +31,7 @@ const createBridgeTransfer = async (clientReferenceId, amount, onBehalfOfBridgeU
 		},
 		body: JSON.stringify(requestBody)
 	}
-	const response = await fetch(url, options);
+	const response = await fetchWithLogging(url, options, "BRIDGE");
 	const responseBody = await safeParseBody(response)
 	// update bridge transaction record
 	const toUpdate = {

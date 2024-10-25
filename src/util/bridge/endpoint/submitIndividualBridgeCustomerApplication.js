@@ -8,6 +8,7 @@ const { CustomerStatus } = require("../../user/common");
 const { safeParseBody } = require("../../utils/response");
 const createJob = require("../../../../asyncJobs/createJob");
 const { KycLevel } = require("../../user/kycInfo");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
 const BRIDGE_URL = process.env.BRIDGE_URL;
@@ -162,7 +163,7 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 
 
 		// call bridge endpoint
-		const response = await fetch(url, options);
+		const response = await fetchWithLogging(url, options, "BRIDGE");
 		const responseBody = await safeParseBody(response)
 		if (response.ok) {
 			// extract rejections

@@ -14,6 +14,19 @@ const updateOnrampTransactionRecord = async(onrampTransactionId, toUpdate) => {
     return data
 }   
 
+const updateOnrampTransactionRecordAtomic = async(onrampTransactionId, toUpdate, currentUpdateAt) => {
+    const {data, error} = await supabase
+        .from('onramp_transactions')
+        .update({...toUpdate, updated_at: new Date().toISOString()})
+        .eq('id', onrampTransactionId)
+        .lte('updated_at', currentUpdateAt)
+        .select()
+        .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    return data
+}   
+
 const getOnrampTransactionRecord = async(onrampTransactionId) => {
     const {data, error} = await supabase
         .from('onramp_transactions')
@@ -50,5 +63,6 @@ module.exports = {
     updateOnrampTransactionRecord,
     getOnrampTransactionRecord,
     insertSingleOnrampTransactionRecord,
-    insertMultipleOnrampTransactionRecord
+    insertMultipleOnrampTransactionRecord,
+    updateOnrampTransactionRecordAtomic
 }

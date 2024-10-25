@@ -34,6 +34,17 @@ const insertSingleBridgeTransactionRecord = async(toInsert) => {
     return data
 }
 
+const upsertBridgeTransactionRecord = async(toUpsert) => {
+    const {data, error} = await supabase
+        .from('bridge_transactions')
+        .upsert(toUpsert, {onConflict: "bridge_deposit_id", ignoreDuplicates: true})
+        .select()
+        .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    return data
+}
+
 const insertMultipleBridgeTransactionRecord = async(toInsert) => {
     const {data, error} = await supabase
         .from('bridge_transactions')
@@ -48,5 +59,6 @@ module.exports = {
     updateBridgeTransactionRecord,
     getBridgeTransactionRecord,
     insertSingleBridgeTransactionRecord,
-    insertMultipleBridgeTransactionRecord
+    insertMultipleBridgeTransactionRecord,
+    upsertBridgeTransactionRecord
 }

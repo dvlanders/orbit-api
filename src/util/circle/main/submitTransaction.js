@@ -1,4 +1,5 @@
 const { generateCypherText } = require("../utils/generateCypherText")
+const { fetchWithLogging } = require("../../logger/fetchLogger")
 
 /*
 Example request body:
@@ -34,7 +35,7 @@ const submitTransactionCircle = async (referenceId, requestId, walletId, contrac
             refId: referenceId
         })
     }
-    const response = await fetch(url, options)
+    const response = await fetchWithLogging(url, options, "CIRCLE")
     return response
 }
 

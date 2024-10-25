@@ -28,6 +28,60 @@ EurOfframpSepaAccountResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccountObject'
+KesOfframpMomoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/KesOfframpMomoAccountObject'
+XofOfframpMomoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/XofOfframpMomoAccountObject'
+RwfOfframpMomoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/RwfOfframpMomoAccountObject'
+ZmwOfframpMomoAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ZmwOfframpMomoAccountObject'
+NgnOfframpBankAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/NgnOfframpBankAccountObject'
+UgxOfframpBankAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UgxOfframpBankAccountObject'
+TzsOfframpBankAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/TzsOfframpBankAccountObject'
+MwkOfframpBankAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/MwkOfframpBankAccountObject'
+XafOfframpBankAccountResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/XafOfframpBankAccountObject'
 SAOfframpReceiverCreateResponse:
   description: Success
   content:

@@ -34,6 +34,7 @@ const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAcc
 const { updateAccountInfoById } = require('../util/blindpay/bankAccountService');
 const { createYellowcardAccount } = require('../util/yellowcard/createYellowcardAccount');
 const { YcAccountInfoError, YcAccountInfoErrorType } = require('../util/yellowcard/utils/errors');
+const { fetchWithLogging } = require('../util/logger/fetchLogger');
 
 const Status = {
 	ACTIVE: "ACTIVE",
@@ -801,11 +802,11 @@ exports.createCircleWireBankAccount = async (req, res) => {
 		};
 
 		const url = `${process.env.CIRCLE_URL}/businessAccount/banks/wires`;
-		const response = await fetch(url, {
+		const response = await fetchWithLogging(url, {
 			method: 'POST',
 			headers: headers,
 			body: JSON.stringify(requestBody)
-		});
+		}, "CIRCLE");
 
 
 		if (response.status === 400 || response.status === 401) {

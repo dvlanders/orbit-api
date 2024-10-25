@@ -428,6 +428,96 @@
           }
         }
       },
+      "KesOfframpMomoAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/KesOfframpMOMOAccount"
+            }
+          }
+        }
+      },
+      "XofOfframpMomoAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/XofOfframpMOMOAccount"
+            }
+          }
+        }
+      },
+      "RwfOfframpMomoAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/RwfOfframpMOMOAccount"
+            }
+          }
+        }
+      },
+      "ZmwOfframpMomoAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ZmwOfframpMOMOAccount"
+            }
+          }
+        }
+      },
+      "NgnOfframpBankAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NgnOfframpBankAccount"
+            }
+          }
+        }
+      },
+      "UgxOfframpBankAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UgxOfframpBankAccount"
+            }
+          }
+        }
+      },
+      "TzsOfframpBankAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TzsOfframpBankAccount"
+            }
+          }
+        }
+      },
+      "MwkOfframpBankAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MwkOfframpBankAccount"
+            }
+          }
+        }
+      },
+      "XafOfframpBankAccountBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/XafOfframpBankAccount"
+            }
+          }
+        }
+      },
       "SAOfframpReceiverCreateBody": {
         "required": true,
         "content": {
@@ -538,10 +628,31 @@
                   "$ref": "#/components/schemas/ACH_COPCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/MOMO_MPESACryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/MOMO_KESCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/NIBBS_BANKCryptoToFiatTransfer"
+                  "$ref": "#/components/schemas/MOMO_XOFCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_RWFCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_ZMWCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_NGNCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_UGXCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_TZSCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_MWKCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/BANK_XAFCryptoToFiatTransfer"
                 }
               ]
             }
@@ -676,6 +787,96 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/EurOfframpSepaAccountObject"
+            }
+          }
+        }
+      },
+      "KesOfframpMomoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/KesOfframpMomoAccountObject"
+            }
+          }
+        }
+      },
+      "XofOfframpMomoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/XofOfframpMomoAccountObject"
+            }
+          }
+        }
+      },
+      "RwfOfframpMomoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/RwfOfframpMomoAccountObject"
+            }
+          }
+        }
+      },
+      "ZmwOfframpMomoAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ZmwOfframpMomoAccountObject"
+            }
+          }
+        }
+      },
+      "NgnOfframpBankAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/NgnOfframpBankAccountObject"
+            }
+          }
+        }
+      },
+      "UgxOfframpBankAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UgxOfframpBankAccountObject"
+            }
+          }
+        }
+      },
+      "TzsOfframpBankAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/TzsOfframpBankAccountObject"
+            }
+          }
+        }
+      },
+      "MwkOfframpBankAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MwkOfframpBankAccountObject"
+            }
+          }
+        }
+      },
+      "XafOfframpBankAccountResponse": {
+        "description": "Success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/XafOfframpBankAccountObject"
             }
           }
         }
@@ -1530,6 +1731,340 @@
           "ibanAccountNumber",
           "businessIdentifierCode",
           "ibanCountryCode"
+        ]
+      },
+      "KesOfframpMOMOAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "kes"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MOMO_MPESA"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountHolderName",
+          "kind"
+        ]
+      },
+      "XofOfframpMOMOAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "xof"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MOMO_MTN"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountHolderName",
+          "kind"
+        ]
+      },
+      "RwfOfframpMOMOAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "rwf"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MOMO_MTN"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountHolderName",
+          "kind"
+        ]
+      },
+      "ZmwOfframpMOMOAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "zmw"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "MOMO_MTN"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountHolderName",
+          "kind"
+        ]
+      },
+      "NgnOfframpBankAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "ngn"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind."
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BANK_Access Bank",
+              "BANK_GT Bank",
+              "BANK_United Bank for Africa"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountHolderName",
+          "kind"
+        ]
+      },
+      "UgxOfframpBankAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "ugx"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind."
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "bankName": {
+            "type": "string",
+            "description": "Recipient bank name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BANK_Manul Entry"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountNumber",
+          "accountHolderName",
+          "bankName",
+          "kind"
+        ]
+      },
+      "TzsOfframpBankAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "tzs"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind."
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "bankName": {
+            "type": "string",
+            "description": "Recipient bank name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BANK_Manul Entry"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountNumber",
+          "accountHolderName",
+          "bankName",
+          "kind"
+        ]
+      },
+      "MwkOfframpBankAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "mwk"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind."
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "bankName": {
+            "type": "string",
+            "description": "Recipient bank name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BANK_Manul Entry"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountNumber",
+          "accountHolderName",
+          "bankName",
+          "kind"
+        ]
+      },
+      "XafOfframpBankAccount": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "xaf"
+            ]
+          },
+          "accountHolderPhone": {
+            "type": "string",
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+          },
+          "accountNumber": {
+            "type": "string",
+            "description": "Mobile Money account number of the Recipient. Required field for 'BANK_Access Bank' kind."
+          },
+          "accountHolderName": {
+            "type": "string",
+            "description": "Name of the account holder as it appears on the Mobile Money account."
+          },
+          "bankName": {
+            "type": "string",
+            "description": "Recipient bank name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "BANK_Manul Entry"
+            ],
+            "description": "Kind of Mobile Money transfer."
+          }
+        },
+        "required": [
+          "currency",
+          "accountHolderPhone",
+          "accountNumber",
+          "accountHolderName",
+          "bankName",
+          "kind"
         ]
       },
       "SAReceiverCreateIndividualLightKYCAccount": {
@@ -2440,6 +2975,240 @@
         }
       },
       "EurOfframpSepaAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "KesOfframpMomoAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "XofOfframpMomoAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "RwfOfframpMomoAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "ZmwOfframpMomoAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "NgnOfframpBankAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "UgxOfframpBankAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "TzsOfframpBankAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "MwkOfframpBankAccountObject": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "invalidFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "status": "ACTIVE",
+          "invalidFields": [],
+          "message": "Account created successfully",
+          "id": "daa6ad75-a4c2-486f-a937-1bbf4d19553a"
+        }
+      },
+      "XafOfframpBankAccountObject": {
         "type": "object",
         "properties": {
           "status": {
@@ -3601,9 +4370,9 @@
           "paymentRail"
         ]
       },
-      "MOMO_MPESACryptoToFiatTransfer": {
+      "MOMO_KESCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to KES (MOMO MPESA)",
+        "title": "Crypto to KES (MOMO KES)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3646,6 +4415,10 @@
             "enum": [
               "kes"
             ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
           }
         },
         "required": [
@@ -3657,12 +4430,201 @@
           "chain",
           "sourceCurrency",
           "destinationCurrency",
-          "paymentRail"
+          "purposeOfPayment"
         ]
       },
-      "NIBBS_BANKCryptoToFiatTransfer": {
+      "MOMO_XOFCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to NGN (NIBSS BANK TRANSFER)",
+        "title": "Crypto to XOF (MOMO XOF)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "xof"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "MOMO_RWFCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to RWF (MOMO RWF)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "rwf"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "MOMO_ZMWCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to ZMW (MOMO ZMW)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "zmw"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_NGNCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to NGN (BANK NGN)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -3705,6 +4667,10 @@
             "enum": [
               "ngn"
             ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
           }
         },
         "required": [
@@ -3716,7 +4682,259 @@
           "chain",
           "sourceCurrency",
           "destinationCurrency",
-          "paymentRail"
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_UGXCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to UGX (BANK UGX)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "ugx"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_TZSCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to TZS (BANK TZS)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "tzs"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_MWKCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to MWK (BANK MWK)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "mwk"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
+        ]
+      },
+      "BANK_XAFCryptoToFiatTransfer": {
+        "type": "object",
+        "title": "Crypto to XAF (BANK XAF)",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "Unique identifier for the transfer request (recommend using uuid v4)"
+          },
+          "sourceUserId": {
+            "type": "string"
+          },
+          "destinationUserId": {
+            "type": "string",
+            "description": "If destination account was created under the sourceUserId, the destinationUserId will be the same id. You can specify a different destinationUserId if offramping to a bank account created under a different userId than the sender."
+          },
+          "destinationAccountId": {
+            "type": "string",
+            "description": "Account Id of the destination bank account"
+          },
+          "amount": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0
+          },
+          "chain": {
+            "type": "string",
+            "description": "Choose POLYGON_MAINNET for production, POLYGON_AMOY for sandbox.",
+            "enum": [
+              "POLYGON_MAINNET",
+              "POLYGON_AMOY"
+            ]
+          },
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc",
+              "usdHifi"
+            ],
+            "description": "note: usdHifi is only available in sandbox to simulate token movement."
+          },
+          "destinationCurrency": {
+            "type": "string",
+            "enum": [
+              "xaf"
+            ]
+          },
+          "purposeOfPayment": {
+            "type": "string",
+            "description": "Purpose of Payment. e.g. Payment for Goods."
+          }
+        },
+        "required": [
+          "requestId",
+          "sourceUserId",
+          "destinationUserId",
+          "destinationAccountId",
+          "amount",
+          "chain",
+          "sourceCurrency",
+          "destinationCurrency",
+          "purposeOfPayment"
         ]
       },
       "FiatToCryptoTransfer": {
@@ -8309,6 +9527,276 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/EurOfframpSepaAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/kes/momo/offramp": {
+      "post": {
+        "summary": "Add KES Offramp Bank Account (MOMO KES)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/KesOfframpMomoAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/KesOfframpMomoAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/xof/momo/offramp": {
+      "post": {
+        "summary": "Add XOF Offramp Bank Account (MOMO XOF)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/XofOfframpMomoAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/XofOfframpMomoAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/rwf/momo/offramp": {
+      "post": {
+        "summary": "Add RWF Offramp Bank Account (MOMO RWF)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/RwfOfframpMomoAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RwfOfframpMomoAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/zmw/momo/offramp": {
+      "post": {
+        "summary": "Add ZMW Offramp Bank Account (MOMO ZMW)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ZmwOfframpMomoAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ZmwOfframpMomoAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/ngn/bank/offramp": {
+      "post": {
+        "summary": "Add NGN Offramp Bank Account (Bank NGN)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/NgnOfframpBankAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/NgnOfframpBankAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/ugx/bank/offramp": {
+      "post": {
+        "summary": "Add UGX Offramp Bank Account (Bank UGX)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UgxOfframpBankAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/UgxOfframpBankAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/tzs/bank/offramp": {
+      "post": {
+        "summary": "Add TZS Offramp Bank Account (Bank TZS)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/TzsOfframpBankAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/TzsOfframpBankAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/mwk/bank/offramp": {
+      "post": {
+        "summary": "Add MWK Offramp Bank Account (Bank MWK)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MwkOfframpBankAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MwkOfframpBankAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/xaf/bank/offramp": {
+      "post": {
+        "summary": "Add XAF Offramp Bank Account (Bank XAF)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/XafOfframpBankAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/XafOfframpBankAccountResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"

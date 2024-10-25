@@ -4,7 +4,7 @@ const { convertKeysToCamelCase } = require("../utils/object")
 const getBasicInfo = async (profileId) => {
     const { data: organization, error: organizationError } = await supabase
 			.from("profiles")
-			.select("organization: organization_id(prod_enabled, kyb_status, developer_user_id, prefunded_account_enabled, fee_collection_enabled, billing_enabled)")
+			.select("organization: organization_id(id, prod_enabled, kyb_status, developer_user_id, prefunded_account_enabled, fee_collection_enabled, billing_enabled, website, organization_name)")
 			.eq("id", profileId)
 			.single()
 

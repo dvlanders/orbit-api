@@ -3,6 +3,7 @@ const { v4 } = require("uuid");
 const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry");
 const { CustomerStatus } = require("../../user/common");
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 const CHECKBOOK_API_KEY = process.env.CHECKBOOK_API_KEY;
@@ -41,7 +42,7 @@ const createSingleCheckbookUser = async (user, user_id, checkbook_user_id, type)
 		"user_id": checkbook_user_id
 	}
 
-	const response = await fetch(`${CHECKBOOK_URL}/user`, {
+	const response = await fetchWithLogging(`${CHECKBOOK_URL}/user`, {
 		method: 'POST',
 		headers: {
 			'Accept': 'application/json',
@@ -49,7 +50,7 @@ const createSingleCheckbookUser = async (user, user_id, checkbook_user_id, type)
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify(requestBody)
-	});
+	}, "CHECKBOOK");
 
 	const responseBody = await response.json()
 
@@ -77,12 +78,12 @@ const createSingleCheckbookUser = async (user, user_id, checkbook_user_id, type)
 			throw new createCheckbookError(createCheckbookErrorType.INVALID_FIELD, "Name is missing or invalid", responseBody)
 		} else if (response.status == 400 && responseBody.error == "User already exists") {
 			// fetch the created user
-			const response = await fetch(`${CHECKBOOK_URL}/user/list?page=1&per_page=10&q=${user_id}`, {
+			const response = await fetchWithLogging(`${CHECKBOOK_URL}/user/list?page=1&per_page=10&q=${user_id}`, {
 				headers: {
 					'Accept': 'application/json',
 					'Authorization': `${CHECKBOOK_API_KEY}:${CHECKBOOK_API_SECRET}`,
 				}
-			})
+			}, "CHECKBOOK")
 			// successfully getch record
 			const responseBody = await response.json()
 			if (response.ok && responseBody.total == 1) {
