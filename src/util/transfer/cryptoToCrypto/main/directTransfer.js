@@ -137,7 +137,7 @@ const transferWithFee = async(record, profileId) => {
         feeUnitsAmount: feeUnitsAmount,
         feeCollectionWalletAddress: feeCollectionWalletAddress,
         providerRecordId,
-        paymentProcessType: "EXACT_IN"
+        paymentProcessType: "EXACT_OUT"
     }
 
     const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(record.provider, transferConfig);
