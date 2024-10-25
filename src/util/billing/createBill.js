@@ -47,9 +47,11 @@ exports.createStripeBill = async(billingInformation) => {
         const billableVirtualAccountFee = parseFloat(billingInfo.virtualAccount.value.toFixed(2))
         const integrationFee = parseFloat(billingInfo.integrationFee.toFixed(2))
         const platformFee = parseFloat(billingInfo.platformFee.toFixed(2))
+        const kycKybFee = parseFloat(billingInfo.kycKyb.value.toFixed(2))
+        const activeUserFee = parseFloat(billingInfo.activeUser.value.toFixed(2))
 
 
-        const finalBillableFee = transactionFeeFailedToChargedOrMinimum + integrationFee + platformFee + billableVirtualAccountFee
+        const finalBillableFee = transactionFeeFailedToChargedOrMinimum + integrationFee + platformFee + billableVirtualAccountFee + kycKybFee + activeUserFee
         const hifiBillingId = generateHifiInvoiceId()
 
         // insert billing history
@@ -77,7 +79,6 @@ exports.createStripeBill = async(billingInformation) => {
             })
             .select("id")
             .single()
-        
         
         if (billingHistoryError) throw billingHistoryError
 

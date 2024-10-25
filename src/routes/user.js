@@ -1,6 +1,6 @@
 const { user } = require("../controllers");
 const multer = require('multer');
-const { authorize, logRequestResponse } = require("../util/middleware");
+const { authorize, logRequestResponse, updateLastUserActivity } = require("../util/middleware");
 
 module.exports = (router) => {
 
@@ -13,18 +13,18 @@ module.exports = (router) => {
 
 	router.get("/user/all", authorize, logRequestResponse, user.getAllHifiUser)
 
-	router.get("/user", authorize, logRequestResponse, user.getHifiUser);
-	router.get("/user/developer", authorize, logRequestResponse, user.getDeveloperUserStatus);
+	router.get("/user", authorize, logRequestResponse, updateLastUserActivity,user.getHifiUser);
+	router.get("/user/developer", authorize, logRequestResponse, updateLastUserActivity, user.getDeveloperUserStatus);
 
 
-	router.put("/user", authorize, logRequestResponse, user.updateHifiUser);
-	router.put("/user/async", authorize, logRequestResponse, user.updateHifiUserAsync);
-	router.put("/user/developer", authorize, logRequestResponse, user.updateDeveloperUser);
+	router.put("/user", authorize, logRequestResponse, updateLastUserActivity, user.updateHifiUser);
+	router.put("/user/async", authorize, logRequestResponse, updateLastUserActivity, user.updateHifiUserAsync);
+	router.put("/user/developer", authorize, logRequestResponse, updateLastUserActivity, user.updateDeveloperUser);
 
 	router.post("/tos-link", authorize, logRequestResponse, user.generateToSLink)
 
 	router.put("/tos-link", logRequestResponse, user.acceptToSLink)
-	router.get("/user/wallet/balance", authorize, logRequestResponse, user.getUserWalletBalance);
+	router.get("/user/wallet/balance", authorize, logRequestResponse, updateLastUserActivity, user.getUserWalletBalance);
 
 };
 
