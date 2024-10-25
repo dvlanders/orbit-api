@@ -5,12 +5,11 @@ const { HifiOnrampTransactionBridgeStatusMap, virtualAccountPaymentRailToChain }
 const { v4: uuidv4 } = require("uuid");
 const notifyFiatToCryptoTransfer = require("../transfer/notifyFiatToCryptoTransfer");
 const { createTransactionFeeRecord } = require("../../src/util/billing/fee/transactionFeeBilling");
-const { insertSingleBridgeTransactionRecord, updateBridgeTransactionRecord } = require("../../src/util/bridge/bridgeTransactionTableService");
-const { updateOnrampTransactionRecord, insertSingleOnrampTransactionRecord } = require("../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
+const { updateBridgeTransactionRecord, upsertBridgeTransactionRecord } = require("../../src/util/bridge/bridgeTransactionTableService");
+const { updateOnrampTransactionRecord, insertSingleOnrampTransactionRecord, updateOnrampTransactionRecordAtomic } = require("../../src/util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
 const { transferType } = require("../../src/util/transfer/utils/transfer");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
-const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
 const { isValidBridgeStateTransition } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
 const createJob = require("../../asyncJobs/createJob");
@@ -23,12 +22,19 @@ const processExistingOnrampTransaction = async (existingRecord, event) => {
   if(!isValidBridgeStateTransition(currentBridgeStatus, type)){
     return { originalOnrampRecord: existingRecord, updatedOnrampRecord: null };
   }
+
+  // Add version check for optimistic locking
+  const currentUpdatedAt = existingRecord.updated_at;
   
   const toUpdate = {
     status: HifiOnrampTransactionBridgeStatusMap[type] || "UNKNOWN",
     transaction_hash: destination_tx_hash
   }
-  const updatedOnrampRecord = await updateOnrampTransactionRecord(existingRecord.id, toUpdate);
+  const updatedOnrampRecord = await updateOnrampTransactionRecordAtomic(existingRecord.id, toUpdate, currentUpdatedAt);
+
+  if(!updatedOnrampRecord){
+    throw new Error(`Concurrent update detected. Please retry processing onramp transaction record with id: ${existingRecord.id} for event id: ${id}`);
+  }
 
   const toUpdateBridge = {
     bridge_response: event,
@@ -57,9 +63,27 @@ const processManualOnrampTransaction = async (event) => {
     throw virtualAccountError;
   }
 
-  if(!virtualAccount) return null; // this transaction is created in the dev_production database, so we don't need to process it
+  if(!virtualAccount) return { originalOnrampRecord: null, updatedOnrampRecord: null }; // this transaction is created in the dev_production database, so we don't need to process it
 
   const userId = virtualAccount.user_id;
+
+  const toInsertBridgeRecord = {
+    user_id: userId,
+    request_id: uuidv4(),
+    virtual_account_id: virtualAccount.id,
+    bridge_virtual_account_id: virtual_account_id,
+    last_bridge_virtual_account_event_id: id,
+    bridge_status: type,
+    bridge_response: event,
+    bridge_deposit_id: deposit_id,
+    bridge_user_id: customer_id
+  }
+
+  const bridgeRecord = await upsertBridgeTransactionRecord(toInsertBridgeRecord);
+
+  if(!bridgeRecord){
+    throw new Error(`Concurrent insert manual deposit detected. Please retry event ${id} with deposit_id ${deposit_id}`);
+  }
 
   const toInsert = {
     request_id: uuidv4(),
@@ -80,19 +104,6 @@ const processManualOnrampTransaction = async (event) => {
 
   const onrampRecord = await insertSingleOnrampTransactionRecord(toInsert);
 
-  const toInsertBridgeRecord = {
-    user_id: userId,
-    request_id: uuidv4(),
-    virtual_account_id: virtualAccount.id,
-    bridge_virtual_account_id: virtual_account_id,
-    last_bridge_virtual_account_event_id: id,
-    bridge_status: type,
-    bridge_response: event,
-    bridge_deposit_id: deposit_id,
-    bridge_user_id: customer_id
-  }
-
-  const bridgeRecord = await insertSingleBridgeTransactionRecord(toInsertBridgeRecord);
   const feeTransaction = await createTransactionFeeRecord(onrampRecord.id, transferType.FIAT_TO_CRYPTO);
   await updateOnrampTransactionRecord(onrampRecord.id, { fee_transaction_id: feeTransaction.id, bridge_transaction_record_id: bridgeRecord.id });
 
@@ -139,7 +150,7 @@ const processVirtualAccountEvent = async (event) => {
 
       const { data: onrampRecord, error: onrampRecordError } = await supabaseCall(() => supabase
         .from("onramp_transactions")
-        .select("id, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+        .select("id, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
         .eq("bridge_transaction_record_id", existingBridgeRecord.id)
         .single());
 
@@ -155,7 +166,7 @@ const processVirtualAccountEvent = async (event) => {
 
         const { data: existingRecord, error: existingRecordError } = await supabaseCall(() => supabase
           .from("onramp_transactions")
-          .select("id, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+          .select("id, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
           .eq("id", referenceId)
           .maybeSingle());
 
@@ -169,7 +180,7 @@ const processVirtualAccountEvent = async (event) => {
         // Check if we have existing onramp records with this referenceId, either fully match or partially match
         const { data: matchingRecords, error: matchingRecordsError } = await supabaseCall(() => supabase
           .from("onramp_transactions")
-          .select("id, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
+          .select("id, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)")
           .like("reference_id", `%${referenceId}%`));
 
         if(matchingRecordsError) throw matchingRecordsError;
@@ -204,10 +215,7 @@ const processVirtualAccountEvent = async (event) => {
 
     if (onrampRecord.developer_fee_id) {
       const jobConfig = {recordId: onrampRecord.id}
-      const canSchedule = await chargeFeeOnFundReceivedScheduleCheck("chargeFeeOnFundReceived", jobConfig, onrampRecord.destination_user_id, onrampRecord.destination_user.profile_id)
-      if (canSchedule){
-        await createJob("chargeFeeOnFundReceived", jobConfig, onrampRecord.destination_user_id, onrampRecord.destination_user.profile_id, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
-      }
+      await createJob("chargeFeeOnFundReceived", jobConfig, onrampRecord.destination_user_id, onrampRecord.destination_user.profile_id, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
     }
 
     if (onrampRecord.status === "REFUNDED") {

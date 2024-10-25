@@ -11,6 +11,7 @@ const cloneDeep = require('lodash.clonedeep');
 const createLog = require("./logger/supabaseLogger");
 const { isUserFrozen } = require("./internal/user/checkIsUserFrozen");
 const updateLastUserActivity = require("./user/updateLastUserActivity");
+const { logHifiApi } = require("./grafana/grafanaLogger");
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
 const README_API_KEY = process.env.README_API_KEY
@@ -157,7 +158,7 @@ exports.logRequestResponse = (req, res, next) => {
 			logData.error = res.errorMessage;
 		}
 
-		logToLoki(logData);
+		logHifiApi(logData);
 
 		const reqObject = {
 			method: originalReq.method,
@@ -198,61 +199,6 @@ exports.logRequestResponse = (req, res, next) => {
 	};
 	next();
 };
-
-
-function logToLoki(message) {
-
-	const logEntry = {
-		streams: [{
-			stream: {
-				app: `hifi-api-${process.env.NODE_ENV}`,
-				source: 'logToLoki middleware',
-				profileEmail: message.query.profileEmail,
-				path: message.path,
-			},
-			values: [
-				[`${Date.now() * 1e6}`, JSON.stringify(message, null, 2)]
-			]
-		}]
-	};
-
-
-	fetch(`${process.env.GRAFANA_LOKI_PUSH_URL}`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': `Basic ${Buffer.from(`${process.env.GRAFANA_USER_ID}` + ':' + `${process.env.GRAFANA_API_KEY}`).toString('base64')}`
-		},
-		body: JSON.stringify(logEntry)
-	})
-		.then(response => {
-			if (!response.ok) {
-				console.error(`HTTP Error Response: ${response.status} ${response.statusText}`);
-				return response.text().then(text => {
-					throw new Error(text);
-				});
-			}
-			if (response.status === 204) {
-				console.log('Log sent successfully: No Content');
-				return;
-			}
-			return response.text().then(text => {
-				try {
-					return JSON.parse(text);
-				} catch {
-					return text;
-				}
-			});
-		})
-		.then(data => {
-			if (data) {
-				console.log('Log sent successfully:', data);
-			}
-		})
-		.catch(err => {
-			console.error('Error sending logs to Loki:', err);
-		});
-}
 
 exports.localAdmin = async (req, res, next) => {
 	try {

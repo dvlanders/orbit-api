@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const swaggerDocument = require('./src/swagger/swaggerDocument');
 const swaggerUi = require('swagger-ui-express');
 const path = require('path');
+const { gracefulShutdown } = require('./src/util/gracefulShutdown');
 
 // use this to get NODE_ENV
 const localEnv = require('dotenv').config({ path: process.env.DOTENV_CONFIG_PATH });
@@ -66,6 +67,9 @@ if(!process.env.NODE_TEST){
 		console.log(`Environment : ${env}`);
 	});
 }
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
 
 // Export your Express configuration so that it can be consumed by the Lambda handler
 module.exports = app;

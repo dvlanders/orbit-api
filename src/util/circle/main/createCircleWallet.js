@@ -7,6 +7,7 @@ const { safeParseBody } = require("../../utils/response")
 const { circleChainToBlockchain } = require("../utils/chainConvert")
 const { generateCypherText } = require("../utils/generateCypherText")
 const { isAddress, getAddress } = require("ethers")
+const { fetchWithLogging } = require("../../logger/fetchLogger")
 
 const chainsToCreate = process.env.NODE_ENV === "development" ? ["MATIC-AMOY", "ETH-SEPOLIA", "SOL-DEVNET"] : ["MATIC", "ETH", "SOL"]
 
@@ -72,7 +73,7 @@ const createCircleWallet = async (userId, walletType="INDIVIDUAL") => {
                 "name": `${userId}`
             })
         }
-        const walletSetResponse = await fetch(walletSetUrl, walletSetOptions)
+        const walletSetResponse = await fetchWithLogging(walletSetUrl, walletSetOptions, "CIRCLE")
         const walletSetResponseBody = await safeParseBody(walletSetResponse)
 
         if (!walletSetResponse.ok){
@@ -100,7 +101,7 @@ const createCircleWallet = async (userId, walletType="INDIVIDUAL") => {
                 "metadata": [{name: `userId-${userId}-${walletType}`, refId: `${userId}-${walletType}`}]
             })
         }
-        const walletResponse = await fetch(walletUrl, walletOptions)
+        const walletResponse = await fetchWithLogging(walletUrl, walletOptions, "CIRCLE")
         const walletResponseBody = await safeParseBody(walletResponse)
 
         // error

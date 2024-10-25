@@ -13,7 +13,6 @@ const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount");
 const { CryptoToFiatWithFeeBastion } = require("../../fee/CryptoToFiatWithFeeBastion");
 const { submitUserAction } = require("../../../bastion/endpoints/submitUserAction");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
@@ -152,10 +151,7 @@ const transferToBridgeLiquidationAddress = async (config) => {
         if (allowance < BigInt(transferAmount)){
             // not enough allowance, perform a token allowance job and then schedule a token transfer job
             await approveMaxTokenToPaymentProcessor(sourceUserId, chain, sourceCurrency)
-            const canSchedule = await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", {recordId: initialBastionTransfersInsertData.id, destinationAccountId, destinationCurrency, profileId, feeType, feeValue, sourceCurrency}, sourceUserId, profileId)
-            if (canSchedule){
-                await createJob("cryptoToFiatTransfer", {recordId: initialBastionTransfersInsertData.id, destinationAccountId, destinationCurrency, profileId, feeType, feeValue, sourceCurrency}, sourceUserId, profileId, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
-            }
+			await createJob("cryptoToFiatTransfer", {recordId: initialBastionTransfersInsertData.id, destinationAccountId, destinationCurrency, profileId, feeType, feeValue, sourceCurrency}, sourceUserId, profileId)
             // return creatred record
             const result = {
                 transferType: transferType.CRYPTO_TO_FIAT,

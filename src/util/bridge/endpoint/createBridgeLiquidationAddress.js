@@ -4,7 +4,7 @@ const createLog = require("../../logger/supabaseLogger");
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { BridgeCustomerStatus } = require("../utils");
 const { getAddress } = require("ethers")
-
+const { fetchWithLogging } = require("../../logger/fetchLogger");
 
 
 const BRIDGE_API_KEY = process.env.BRIDGE_API_KEY;
@@ -48,7 +48,7 @@ exports.createBridgeLiquidationAddress = async (
 		}
 
 
-		const response = await fetch(`${BRIDGE_URL}/v0/customers/${userData.bridge_id}/liquidation_addresses`, {
+		const response = await fetchWithLogging(`${BRIDGE_URL}/v0/customers/${userData.bridge_id}/liquidation_addresses`, {
 			method: 'POST',
 			headers: {
 				'Idempotency-Key': idempotencyKey,
@@ -56,7 +56,7 @@ exports.createBridgeLiquidationAddress = async (
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(requestBody)
-		});
+		}, "BRIDGE");
 
 		const responseJson = await response.json();
 

@@ -19,27 +19,30 @@ const pollAsyncJobs = async() => {
         // get all the job that has next_retry smaller than currenct time and sort in asceding order
         const now = new Date()
         let { data: jobsQueue, error } = await supabase
-        .from('jobs_queue')
-        .update({
-            in_process: true
-        })
-        .lt('next_retry', now.toISOString())
-        .gt('retry_deadline', now.toISOString())
-        .eq("env", JOB_ENV)
-        .eq("in_process", false)
-        .select("*")
-        .order('next_retry', {ascending: true})
+            .from('jobs_queue')
+            .update({
+                in_process: true
+            })
+            .lt('next_retry', now.toISOString())
+            .gt('retry_deadline', now.toISOString())
+            .eq("env", JOB_ENV)
+            .eq("in_process", false)
+            .select("*")
+            .order('next_retry', {ascending: true})
     
         if (error) {
             return await createLog("pollAsyncJobs", null, error.message, error)
         }
     
+        // process each job
         await Promise.all(jobsQueue.map(async(job) => {
             let success = false, reschedule = false, retry = false, retryReason = "", jobError = null;
             try{
+                // get job function
                 const jobFunc = jobMapping[job.job].execute
                 const result = await jobFunc({userId: job.user_id, profileId: job.profile_id, ...job.config})
 
+                // retry job if needed
                 if(result?.retryDetails?.retry){
                     const { retry: shouldRetry, delay, reason } = result.retryDetails;
                     const toUpdate = {

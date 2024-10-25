@@ -1,4 +1,5 @@
 const getUserReapApiCred = require("../utils/getUserApiCred")
+const { fetchWithLogging } = require("../../logger/fetchLogger")
 
 const acceptPaymentQuote = async(paymentId, userId) => {
     const url = `${process.env.REAP_URL}/payments/${paymentId}/action`
@@ -14,11 +15,11 @@ const acceptPaymentQuote = async(paymentId, userId) => {
         action: "accept_quote"
     }
 
-    const response = await fetch(url, {
+    const response = await fetchWithLogging(url, {
         method: "PUT",
         headers,
         body: JSON.stringify(requestBody)
-    })
+    }, "REAP")
 
     return response
 

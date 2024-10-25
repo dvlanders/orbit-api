@@ -17,18 +17,6 @@ const chainToRegister = [
     Chain.POLYGON_MAINNET,
 ]
 
-const updateDeveloperUserAsyncCheck = async(job, config, userId, profileId) => {
-
-    const {data, error} = await supabase
-        .from("jobs_queue")
-        .select("*")
-        .eq("job", job)
-        .eq("user_id", userId)
-    
-    if (!data || data.length <= 0) return true
-    return false
-}
-
 const updateDeveloperUserAsync = async(config) => {
     try{
         let bridgeFunction
@@ -65,5 +53,4 @@ const updateDeveloperUserAsync = async(config) => {
 
 module.exports = {
     updateDeveloperUserAsync,
-    updateDeveloperUserAsyncCheck
 }
