@@ -30,6 +30,60 @@ EurOfframpSepaAccountBody:
     application/json:
       schema:
         $ref: '#/components/schemas/EurOfframpSepaAccount'
+KesOfframpMomoAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/KesOfframpMOMOAccount'
+XofOfframpMomoAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/XofOfframpMOMOAccount'
+RwfOfframpMomoAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/RwfOfframpMOMOAccount'
+ZmwOfframpMomoAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/ZmwOfframpMOMOAccount'
+NgnOfframpBankAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/NgnOfframpBankAccount'
+UgxOfframpBankAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/UgxOfframpBankAccount'
+TzsOfframpBankAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/TzsOfframpBankAccount'
+MwkOfframpBankAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/MwkOfframpBankAccount'
+XafOfframpBankAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/XafOfframpBankAccount'
 SAOfframpReceiverCreateBody:
   required: true
   content:

@@ -4,7 +4,7 @@ const { allowanceCheck } = require("../../../bastion/utils/allowanceCheck")
 const { currencyDecimal, currencyContractAddress } = require("../../../common/blockchain")
 const { isValidAmount } = require("../../../common/transferValidation")
 const createLog = require("../../../logger/supabaseLogger")
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken")
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken")
 const { getTokenAllowance } = require("../../../smartContract/approve/getApproveAmount")
 const { CryptoToCryptoWithFeeBastion } = require("../../fee/CryptoToCryptoWithFeeBastion")
 const { getFeeConfig } = require("../../fee/utils")
@@ -13,7 +13,6 @@ const { CreateCryptoToCryptoTransferError, CreateCryptoToCryptoTransferErrorType
 const { toUnitsString } = require("../utils/toUnits")
 const { insertRequestRecord } = require("./insertRequestRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
-const { cryptoToCryptoTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoTocryptoTransfer/scheduleCheck")
 const supabase = require("../../../supabaseClient")
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord")
 const { getMappedError } = require("../../../bastion/utils/errorMappings")
@@ -134,10 +133,7 @@ const createBastionSandboxCryptoTransfer = async(fields) => {
     const jobConfig = {
         recordId: record.id
     }
-    const canSchedule = await cryptoToCryptoTransferScheduleCheck("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
-    if (canSchedule){
-        await createJob("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
-    }
+    await createJob("cryptoToCryptoTransferSandbox", jobConfig, senderUserId, profileId)
 
     return receipt
 
