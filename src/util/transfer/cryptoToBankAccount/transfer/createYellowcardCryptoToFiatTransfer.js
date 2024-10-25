@@ -11,7 +11,7 @@ const { checkBalanceForTransactionFee } = require("../../../billing/fee/transact
 const createYellowcardRequestForQuote = require("../../../yellowcard/createYellowcardRequestForQuote");
 const { executeYellowcardExchange } = require("../../../yellowcard/utils/executeYellowcardExchange");
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
-const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, transferToWallet } = require("../../walletOperations/utils");
+const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils");
 const { insertYellowCardTransactionInfo, updateYellowCardTransactionInfo } = require("../../../yellowcard/transactionInfoService");
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { checkBalanceForTransactionAmount } = require("../../../bastion/utils/balanceCheck");
@@ -21,6 +21,7 @@ const { safeSum } = require("../../../utils/number");
 const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/notifyCryptoToFiatTransfer");
 const { pollYellowcardExchangeForOrder, getYellowCardDepositInstruction } = require("../../../yellowcard/utils/pollYellowcardExchangeForOrder");
 const createLog = require("../../../logger/supabaseLogger");
+const { updateFeeRecord } = require("../../fee/updateFeeRecord");
 
 const initTransferData = async (config) => {
 
@@ -113,6 +114,67 @@ const initTransferData = async (config) => {
 }
 
 const transferWithFee = async (offrampTransactionRecord) => {
+	const sourceCurrency = offrampTransactionRecord.source_currency
+	const paymentProcessorContractAddress = offrampTransactionRecord.payment_processor_contract_address
+	const sourceUserId = offrampTransactionRecord.user_id
+	const walletType = offrampTransactionRecord.transfer_from_wallet_type
+	const feeRecord = offrampTransactionRecord.feeRecord
+	try{
+		// Execute the exchange process, which returns chain and liquidation address
+		const {order, bearerDid} = await executeYellowcardExchange(offrampTransactionRecord);
+		const {chain, liquidationAddress} = await getYellowCardDepositInstruction(order, offrampTransactionRecord, bearerDid);
+
+		// send transaction
+		const feeCollectionWalletAddress = feeRecord.fee_collection_wallet_address
+		const feeUnitsAmount = toUnitsString(feeRecord.fee_amount, currencyDecimal[feeRecord.fee_collection_currency])
+		const unitsAmount = toUnitsString(amount, currencyDecimal[sourceCurrency]) 
+		const { bastionUserId, circleWalletId, walletProvider } = await getUserWallet(sourceUserId, chain, walletType);
+		const providerRecordId = offrampTransactionRecord[getWalletColumnNameFromProvider(walletProvider)]
+
+
+		// perfrom transfer with fee
+		const transferConfig = {
+			referenceId: offrampTransactionRecord.id, 
+			senderCircleWalletId: circleWalletId, 
+			senderBastionUserId: bastionUserId,
+			currency: sourceCurrency, 
+			unitsAmount, 
+			chain, 
+			destinationAddress: liquidationAddress, 
+			transferType: transferType.CRYPTO_TO_FIAT,
+			paymentProcessorContract: paymentProcessorContractAddress,
+			feeUnitsAmount,
+			feeCollectionWalletAddress,
+			providerRecordId,
+			paymentProcessType: "EXACT_OUT"
+		}
+		const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(walletProvider, transferConfig)
+		
+		const offrampTransactionRecordToUpdate = {
+			to_wallet_address: liquidationAddress,
+			transaction_status: mainTableStatus,
+			updated_at: new Date().toISOString()
+		}
+		const toUpdateFeeRecord = {
+			charged_status: feeRecordStatus,
+			updated_at: new Date().toISOString(),
+		}
+
+		if (!response.ok) {
+			await createLog("transfer/yellowcard/transferWithFee", sourceUserId, responseBody.message, responseBody)
+			offrampTransactionRecordToUpdate.failed_reason = failedReason
+			toUpdateFeeRecord.failed_reason = failedReason
+		}
+		const [updatedOfframpRecord, updatedFeeRecord] = await Promise.all([
+			updateOfframpTransactionRecord(offrampTransactionRecord.id, offrampTransactionRecordToUpdate),
+			updateFeeRecord(feeRecord.id, toUpdateFeeRecord)
+		])
+		await notifyCryptoToFiatTransfer(updatedOfframpRecord)
+
+	} catch (error) {
+		await createLog("transfer/yellowcard/transferWithoutFee", sourceUserId, error.message, error)
+		throw new Error(`Error processing transfer: ${error.message}`);
+	}
 
 }
 

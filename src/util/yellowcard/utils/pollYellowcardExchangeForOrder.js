@@ -12,20 +12,10 @@ const notifyCryptoToFiatTransfer = require('../../../../webhooks/transfer/notify
 
 async function getYellowCardDepositInstruction(order, offrampTransactionRecord, bearerDid) {
 
-	const { TbdexHttpClient, Rfq, Quote, Order, OrderStatus, Close, OrderInstructions } = await import('@tbdex/http-client');
+	const { TbdexHttpClient, Close, OrderInstructions } = await import('@tbdex/http-client');
 
-	const sourceUserId = offrampTransactionRecord.user_id
-	const destinationAccountId = offrampTransactionRecord.destination_account_id
-	const sourceCurrency = offrampTransactionRecord.source_currency
-	const destinationCurrency = offrampTransactionRecord.destination_currency
-	const chain = offrampTransactionRecord.chain
-	const amount = offrampTransactionRecord.amount
-	const sourceWalletAddress = offrampTransactionRecord.from_wallet_address
-	const walletType = offrampTransactionRecord.transfer_from_wallet_type
-	const walletProvider = offrampTransactionRecord.crypto_provider
 	const yellowcardTransactionRecordId = offrampTransactionRecord.yellowcard_transaction_record_id
 
-	let orderClose;
 	let timeout = 0;
 	let toUpdateOfframpTransactionRecordWhenFailed = {}
 	while (timeout < 100) {
