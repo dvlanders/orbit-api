@@ -215,9 +215,34 @@ const insertYcAccountFunctionMap = {
     bank_xaf: insertYcBankAccount,
 }
 
+const hifiOfframpTransactionStatusMap = {
+    "PAYIN_PENDING": "COMPLETED_ONCHAIN",
+    "PAYIN_INITIATED": "COMPLETED_ONCHAIN",
+    "PAYIN_SETTLED": "COMPLETED_ONCHAIN",
+	'PAYIN_FAILED': 'FAILED_FIAT_RETURNED',
+    "PAYIN_EXPIRED": "FAILED_ONCHAIN",
+	'PAYOUT_PENDING': 'IN_PROGRESS_FIAT',
+	"PAYOUT_INITIATED": "INITIATED_FIAT",
+	'PAYOUT_SETTLED': 'COMPLETED',
+    "PAYOUT_FAILED": "FAILED_FIAT_RETURNED",
+    "REFUND_PENDING": "FAILED_FIAT_RETURNED",
+    "REFUND_INITIATED": "FAILED_FIAT_RETURNED",
+    "REFUND_SETTLED": "FAILED_FIAT_REFUNDED",
+    "REFUND_FAILED": "FAILED_UNKNOWN", //customer should contact support
+}
+
+const failedReasonMap = {
+    "PAYIN_FAILED": "Failed to fulfilled order. Please contact HIFI for more information",
+    "PAYIN_EXPIRED": "Order expired. Please contact HIFI for more information",
+    "PAYOUT_FAILED": "Failed to initiate fiat payout. Please contact HIFI for more information",
+    "REFUND_FAILED": "Failed to refund. Please contact HIFI for more information",
+}
+
 module.exports = {
     ycAccountRequiredFieldsMap,
     ycAccountAcceptedFieldsMap,
     insertYcAccountFunctionMap,
-    yellowcardNetworkToChain
+    yellowcardNetworkToChain,
+    hifiOfframpTransactionStatusMap,
+    failedReasonMap
 }
