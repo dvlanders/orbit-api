@@ -254,15 +254,15 @@ const updateStatusCircle = async (transaction) => {
 		])
 
 		// sandbox specific
-		if (process.env.NODE_ENV == "development"){
-			const toUpdateInSandbox = {
-				transaction_status: sandboxHifiOfframpTransactionStatusMap[toUpdate.transaction_status] || "UNKNOWN",
-				updated_at: new Date().toISOString()
-			}
-			const updatedData = await updateOfframpTransactionRecord(transaction.id, toUpdateInSandbox)
-			await _simulateSandbox(toUpdateInSandbox.transaction_status, updatedData)
-			return
-		}
+		// if (process.env.NODE_ENV == "development"){
+		// 	const toUpdateInSandbox = {
+		// 		transaction_status: sandboxHifiOfframpTransactionStatusMap[toUpdate.transaction_status] || "UNKNOWN",
+		// 		updated_at: new Date().toISOString()
+		// 	}
+		// 	const updatedData = await updateOfframpTransactionRecord(transaction.id, toUpdateInSandbox)
+		// 	await _simulateSandbox(toUpdateInSandbox.transaction_status, updatedData)
+		// 	return
+		// }
 
 		if (!toUpdate.status || toUpdate.status == transaction.transaction_status) return
 		// if status change , notify

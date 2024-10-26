@@ -22,6 +22,8 @@ const notifyCryptoToFiatTransfer = require("../../../../../webhooks/transfer/not
 const { pollYellowcardExchangeForOrder, getYellowCardDepositInstruction } = require("../../../yellowcard/utils/pollYellowcardExchangeForOrder");
 const createLog = require("../../../logger/supabaseLogger");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
+const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
+const { getUserWallet } = require("../../../user/getUserWallet");
 
 const initTransferData = async (config) => {
 
@@ -119,6 +121,7 @@ const transferWithFee = async (offrampTransactionRecord) => {
 	const sourceUserId = offrampTransactionRecord.user_id
 	const walletType = offrampTransactionRecord.transfer_from_wallet_type
 	const feeRecord = offrampTransactionRecord.feeRecord
+	const amount = offrampTransactionRecord.amount
 	try{
 		// Execute the exchange process, which returns chain and liquidation address
 		const {order, bearerDid} = await executeYellowcardExchange(offrampTransactionRecord);
@@ -182,6 +185,7 @@ const transferWithoutFee = async (offrampTransactionRecord) => {
 	const sourceCurrency = offrampTransactionRecord.source_currency
 	const sourceUserId = offrampTransactionRecord.user_id
 	const walletType = offrampTransactionRecord.transfer_from_wallet_type
+	const amount = offrampTransactionRecord.amount
 	try{
 		// Execute the exchange process, which returns chain and liquidation address
 		const {order, bearerDid} = await executeYellowcardExchange(offrampTransactionRecord);
@@ -192,7 +196,7 @@ const transferWithoutFee = async (offrampTransactionRecord) => {
 		const decimals = currencyDecimal[sourceCurrency]
 		const transferAmount = toUnitsString(amount, decimals)
 
-		const { bastionUserId, circleWalletId } = await getUserWallet(sourceUserId, chain, walletType);
+		const { bastionUserId, circleWalletId, walletProvider } = await getUserWallet(sourceUserId, chain, walletType);
 		const providerRecordId = offrampTransactionRecord[getWalletColumnNameFromProvider(walletProvider)]
 		const transferConfig = {
 			referenceId: offrampTransactionRecord.id, 
