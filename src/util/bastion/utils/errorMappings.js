@@ -10,6 +10,10 @@ const errorMappings = {
       message: "Not enough gas, please contact HIFI for more information",
       type: "INTERNAL_ERROR"
     },
+    "execution reverted: Balance is not enough for transaction": {
+      message: "Transfer amount exceeds balance.",
+      type: "CLIENT_ERROR"
+    }
 
 };
 

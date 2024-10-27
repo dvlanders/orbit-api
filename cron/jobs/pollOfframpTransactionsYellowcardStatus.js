@@ -43,7 +43,6 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
 
 
         const latestMessage = exchange[exchange.length - 1];
-        console.log("latestMessage", latestMessage)
         let flaggedForSlack = false;
         
         if (latestMessage instanceof OrderStatus) {
@@ -82,7 +81,7 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
         }
 
         // if received a close message that is not successful, we need to update the offramp record as failed
-        if (close && !close.data.success) {
+        if (close && !close.data.success && close.data.reason !== "complete") {
             await createLog('pollOfframpTransactionsYellowcardStatus/updateStatusWithYellowcardTransferId', transaction.user_id, 'Received a close message that is not successful', close);
             flaggedForSlack = true;
         }

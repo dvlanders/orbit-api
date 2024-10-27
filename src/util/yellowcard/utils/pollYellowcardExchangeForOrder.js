@@ -28,8 +28,6 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 
 			const orderInstructions = exchange.find(message => message instanceof OrderInstructions);
 			const close = exchange.find(message => message instanceof Close);
-			console.log("*************orderInstructions", orderInstructions)
-			console.log("*************close", close)
 
 			// if order instructions found
 			if (orderInstructions) {
