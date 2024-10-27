@@ -24,6 +24,7 @@ const createLog = require("../../../logger/supabaseLogger");
 const { updateFeeRecord } = require("../../fee/updateFeeRecord");
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { getUserWallet } = require("../../../user/getUserWallet");
+const { simulateSandboxCryptoToFiatTransactionStatus } = require("../utils/simulateSandboxCryptoToFiatTransaction");
 
 const initTransferData = async (config) => {
 
@@ -210,6 +211,20 @@ const transferWithoutFee = async (offrampTransactionRecord) => {
 			providerRecordId
 		}
 		const {response, responseBody, failedReason, providerStatus, mainTableStatus} = await transferToWallet(walletProvider, transferConfig)
+
+		if (process.env.NODE_ENV == "development") {
+			const toUpdate = {
+				updated_at: new Date().toISOString(),
+				to_wallet_address: liquidationAddress,
+				transaction_status: "COMPLETED",
+				failed_reason: "This is a simulated success response for sandbox environment only."
+			}
+	
+			await updateOfframpTransactionRecord(offrampTransactionRecord.id, toUpdate)
+			await simulateSandboxCryptoToFiatTransactionStatus(offrampTransactionRecord)
+			const result = await fetchYellowcardCryptoToFiatTransferRecord(offrampTransactionRecord.id, profileId)
+			return result
+		}
 		
 		const offrampTransactionRecordToUpdate = {
 			to_wallet_address: liquidationAddress,
