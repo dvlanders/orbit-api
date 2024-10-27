@@ -89,22 +89,18 @@ const updateStatusWithYellowcardTransferId = async (transaction) => {
 
         // send slack notification if flagged
         if (flaggedForSlack) {
-            // notifyTransaction(
-            //     transaction.user_id,
-            //     rampTypes.OFFRAMP,
-            //     transaction.id,
-            //     {
-            //         prevTransactionStatus: transaction.transaction_status,
-            //         updatedTransactionStatus: toUpdateOfframpRecord.transaction_status,
-            //         yellowcardStatus: toUpdateYellowcardTransactionRecord.yellowcard_status,
-            //         failedReason: toUpdateOfframpRecord.failed_reason,
-            //     }
-            // );
+            notifyTransaction(
+                transaction.user_id,
+                rampTypes.OFFRAMP,
+                transaction.id,
+                {
+                    prevTransactionStatus: transaction.transaction_status,
+                    updatedTransactionStatus: toUpdateOfframpRecord.transaction_status,
+                    yellowcardStatus: toUpdateYellowcardTransactionRecord.yellowcard_status,
+                    failedReason: toUpdateOfframpRecord.failed_reason,
+                }
+            );
         }
-
-        console.log("toUpdateOfframpRecord", toUpdateOfframpRecord)
-        console.log("toUpdateYellowcardTransactionRecord", toUpdateYellowcardTransactionRecord)
-
 
         // update the offramp transaction record
         const [updatedOfframpTransaction, updatedYellowcardTransaction] = await Promise.all([
