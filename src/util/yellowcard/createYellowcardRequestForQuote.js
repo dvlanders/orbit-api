@@ -7,6 +7,7 @@ const { getBearerDid } = require('./utils/getBearerDid');
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 const { safeToNumberString } = require('../utils/number');
 const { updateYellowCardTransactionInfo } = require('./transactionInfoService');
+const { yellowcardMethodFieldsMapForDevelopment } = require('./utils/utils');
 
 
 async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
@@ -39,6 +40,7 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 
 	// convert amount to string with 2 decimal places
 	amount = safeToNumberString(amount, 2);
+    console.log(JSON.stringify(selectedOffering, null, 2))
 
 	const rfqData = {
 		offeringId: selectedOffering.metadata.id,
@@ -48,10 +50,11 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 			amount: amount,
 		},
 		payout: {
-			kind: payoutAccountDetails.kind || payout.methods[0].kind,
+			// kind: payoutAccountDetails.kind || payout.methods[0].kind,
+            ...yellowcardMethodFieldsMapForDevelopment[payoutAccountDetails.kind],
 			paymentDetails: {
 				accountNumber: payoutAccountDetails.account_number,
-				reason: purposeOfPayment,
+				// reason: purposeOfPayment,
 				accountHolderName: payoutAccountDetails.account_holder_name,
 			}
 		},
@@ -71,6 +74,8 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 		from: process.env.HIFI_DECENTRALIZED_ID,
 		protocol: '1.0'
 	};
+
+    console.log(rfqData)
 
 	const ycRfq = Rfq.create({
 		metadata: rfqMetadata,

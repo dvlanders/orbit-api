@@ -257,6 +257,20 @@ const ycAccountRequiredFieldsMap = {
             "BANK_Enterprise Bank": yellowcardCommonRequiredFields,
             "BANK_Sterling Bank": yellowcardCommonRequiredFields,
             "BANK_Access Bank": yellowcardCommonRequiredFields,
+            "BANK_Keystone Bank": yellowcardCommonRequiredFields,
+            "BANK_Union Bank of Nigeria": yellowcardCommonRequiredFields,
+            "BANK_Wema Bank": yellowcardCommonRequiredFields,
+            "BANK_First City Monument Bank": yellowcardCommonRequiredFields,
+            "BANK_United Bank for Africa": yellowcardCommonRequiredFields,
+            "BANK_Skye Bank": yellowcardCommonRequiredFields,
+            "BANK_Ecobank Nigeria": yellowcardCommonRequiredFields,
+            "BANK_Unity Bank": yellowcardCommonRequiredFields,
+            "BANK_Diamond Bank": yellowcardCommonRequiredFields,
+            "BANK_Citibank Nigeria": yellowcardCommonRequiredFields,
+            "BANK_Standard Chartered Bank": yellowcardCommonRequiredFields,
+            "BANK_Fidelity Bank": yellowcardCommonRequiredFields,
+            "BANK_First Bank of Nigeria": yellowcardCommonRequiredFields,
+            "BANK_Mainstreet Bank": yellowcardCommonRequiredFields,
         },
         bank_ugx: {
             "BANK_Manual Input": yellowcardCommonRequiredFields,
@@ -330,6 +344,20 @@ const ycAccountAcceptedFieldsMap = {
             "BANK_Enterprise Bank": yellowcardCommonAcceptedFields,
             "BANK_Sterling Bank": yellowcardCommonAcceptedFields,
             "BANK_Access Bank": yellowcardCommonAcceptedFields,
+            "BANK_Keystone Bank": yellowcardCommonAcceptedFields,
+            "BANK_Union Bank of Nigeria": yellowcardCommonAcceptedFields,
+            "BANK_Wema Bank": yellowcardCommonAcceptedFields,
+            "BANK_First City Monument Bank": yellowcardCommonAcceptedFields,
+            "BANK_United Bank for Africa": yellowcardCommonAcceptedFields,
+            "BANK_Skye Bank": yellowcardCommonAcceptedFields,
+            "BANK_Ecobank Nigeria": yellowcardCommonAcceptedFields,
+            "BANK_Unity Bank": yellowcardCommonAcceptedFields,
+            "BANK_Diamond Bank": yellowcardCommonAcceptedFields,
+            "BANK_Citibank Nigeria": yellowcardCommonAcceptedFields,
+            "BANK_Standard Chartered Bank": yellowcardCommonAcceptedFields,
+            "BANK_Fidelity Bank": yellowcardCommonAcceptedFields,
+            "BANK_First Bank of Nigeria": yellowcardCommonAcceptedFields,
+            "BANK_Mainstreet Bank": yellowcardCommonAcceptedFields,
         },
         bank_ugx: {
             "BANK_Manual Input": yellowcardCommonAcceptedFields,
@@ -370,6 +398,86 @@ const insertYellowcardAccount = async(tableName, fields) => {
     }
 
     return yellowcardAccountData;
+}
+
+const yellowcardMethodFieldsMapForDevelopment = {
+    "BANK_Stanbic Ibtc Bank": {
+        kind: "BANK_Stanbic Ibtc Bank+3d4d08c1-4811-4fee-9349-a302328e55c1",
+        name: "Stanbic Ibtc Bank",
+        group: "BANK",
+    },
+    "BANK_Zenith Bank": {
+        kind: "BANK_Zenith Bank+6df48502-1ebe-473f-be17-e2cae4dd67ee",
+        name: "Zenith Bank",
+        group: "BANK",
+    },
+    "BANK_Guaranty Trust Bank": {
+        kind: "BANK_Guaranty Trust Bank+31cfcc77-8904-4f86-879c-a0d18b4b9365",
+        name: "Guaranty Trust Bank",
+        group: "BANK",
+    },
+    "BANK_Heritage Bank": {
+        kind: "BANK_Heritage Bank+8ff2ece4-3a97-4f86-9c21-db6db8c477b4",
+        name: "Heritage Bank",
+        group: "BANK",
+    },
+    "BANK_Enterprise Bank": {
+        kind: "BANK_Enterprise Bank+d1843b02-d571-4959-82ab-071ff0db237e",
+        name: "Enterprise Bank",
+        group: "BANK",
+    },
+    "BANK_Sterling Bank": {
+        kind: "BANK_Sterling Bank+8e1bd085-5ed0-4adf-a16d-be819e599940",
+        name: "Sterling Bank",
+        group: "BANK",
+    },
+    "BANK_Access Bank": {
+        kind: "BANK_Access Bank+5f1af11b-305f-4420-8fce-65ed2725a409",
+        name: "Access Bank",
+        // group: "BANK",
+    },
+    "BANK_Keystone Bank": {
+        kind: "BANK_Keystone Bank+125df772-0bd9-4ad2-8b10-ff377f8cfad1",
+        name: "Keystone Bank",
+        group: "BANK",
+    },
+    "BANK_Union Bank of Nigeria": {
+        kind: "BANK_Union Bank of Nigeria+fa316206-dacc-4e87-a80a-5f539a719c56",
+        name: "Union Bank of Nigeria",
+        group: "BANK",
+    },
+    "BANK_Wema Bank": {
+        kind: "BANK_Wema Bank+135e8f0b-3c9a-404c-9b98-65c4d3af4d0f",
+        name: "Wema Bank",
+        group: "BANK",
+    },
+    "BANK_First City Monument Bank": {
+        kind: "BANK_First City Monument Bank+600a5df5-c28c-435c-b3be-19dbed0ee402",
+        name: "First City Monument Bank",
+        group: "BANK",
+    },
+    "BANK_United Bank for Africa": {
+        kind: "BANK_United Bank for Africa+75faa922-8a18-4c54-a357-6d6a670379a3",
+        name: "United Bank for Africa",
+        group: "BANK",
+    },
+    "BANK_Skye Bank": {
+        kind: "BANK_Skye Bank+6ef18cb4-1c34-4129-84c4-e626a6a73d10",
+        name: "Skye Bank",
+        group: "BANK",
+    },
+    "BANK_Ecobank Nigeria": {
+        kind: "BANK_Ecobank Nigeria+754202b6-da04-5f18-a86a-e5b2dd86bbb5",
+        name: "Ecobank Nigeria",
+        group: "BANK",
+    },
+    "BANK_Unity Bank": yellowcardCommonAcceptedFields,
+    "BANK_Diamond Bank": yellowcardCommonAcceptedFields,
+    "BANK_Citibank Nigeria": yellowcardCommonAcceptedFields,
+    "BANK_Standard Chartered Bank": yellowcardCommonAcceptedFields,
+    "BANK_Fidelity Bank": yellowcardCommonAcceptedFields,
+    "BANK_First Bank of Nigeria": yellowcardCommonAcceptedFields,
+    "BANK_Mainstreet Bank": yellowcardCommonAcceptedFields,
 }
 
 const hifiOfframpTransactionStatusMap = {
@@ -419,6 +527,7 @@ module.exports = {
     yellowcardNetworkToChain,
     yellowcardPhoneNumberFormatPatterMap,
     hifiOfframpTransactionStatusMap,
+    yellowcardMethodFieldsMapForDevelopment,
     failedReasonMap,
     mapCloseReason
 }
