@@ -15,7 +15,7 @@ const getQuoteFromYellowcard = async (offrampTransactionRecord) => {
         const purposeOfPayment = offrampTransactionRecord.purpose_of_payment
         const yellowcardTransactionRecordId = offrampTransactionRecord.yellowcard_transaction_record_id
 
-        const { yellowcardRequestForQuote, foundOfferings } = await createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment)
+        const { yellowcardRequestForQuote, foundOfferings } = await createYellowcardRequestForQuote(yellowcardTransactionRecordId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment)
 	
         const toUpdateYC = {
             updated_at: new Date().toISOString(),

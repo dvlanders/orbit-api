@@ -6,9 +6,10 @@ const { fetchSelectedOffering } = require('./utils/fetchSelectedOffering');
 const { getBearerDid } = require('./utils/getBearerDid');
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 const { safeToNumberString } = require('../utils/number');
+const { updateYellowCardTransactionInfo } = require('./transactionInfoService');
 
 
-async function createYellowcardRequestForQuote(destinationUserId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
+async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
 
 
 	const { TbdexHttpClient, Rfq, Quote, Order, OrderStatus, Close, Message } = await import('@tbdex/http-client');
@@ -79,6 +80,11 @@ async function createYellowcardRequestForQuote(destinationUserId, destinationAcc
 	const bearerDid = await getBearerDid();
 	// console.log('rfq:', rfq);
 	await ycRfq.sign(bearerDid);
+
+	// update exchangeId
+	const exchangeId = ycRfq.metadata.exchangeId
+	await updateYellowCardTransactionInfo(yellowcardTransactionRecordId, {exchange_id: exchangeId})
+
 
 	// create the exchange
 	try {

@@ -8,7 +8,6 @@ const { updateRequestRecord } = require("../utils/updateRequestRecord");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { v4 } = require("uuid");
 const { checkBalanceForTransactionFee } = require("../../../billing/fee/transactionFeeBilling");
-const createYellowcardRequestForQuote = require("../../../yellowcard/createYellowcardRequestForQuote");
 const { executeYellowcardExchange } = require("../../../yellowcard/utils/executeYellowcardExchange");
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 const { getWalletColumnNameFromProvider, insertWalletTransactionRecord, transferToWallet, transferToWalletWithPP } = require("../../walletOperations/utils");
