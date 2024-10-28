@@ -1534,6 +1534,36 @@ exports.createKesMomoAccount = async (req, res) => {
     }
 }
 
+exports.createMwkMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createMwkMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
 exports.createXofMomoAccount = async (req, res) => {
     const { userId, profileId } = req.query;
 	const fields = req.body;

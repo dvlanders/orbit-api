@@ -1,14 +1,15 @@
 const { insertAccountProviders } = require("../account/accountProviders/accountProvidersService");
 const { fieldsValidation } = require("../common/fieldsValidation");
 const { YcAccountInfoError, YcAccountInfoErrorType } = require("./utils/errors");
-const { ycAccountRequiredFieldsMap, ycAccountAcceptedFieldsMap, insertYcAccountFunctionMap } = require("./utils/utils");
+const { ycAccountRequiredFieldsMap, ycAccountAcceptedFieldsMap, insertYellowcardAccount, yellowcardPhoneNumberFormatPatterMap } = require("./utils/utils");
 
+const env = process.env.NODE_ENV;
 
 const createYellowcardAccount = async(config) => {
     const {fields, currency, paymentRail} = config;
 
-    const requiredFields = ycAccountRequiredFieldsMap[paymentRail][fields.kind];
-    const acceptedFields = ycAccountAcceptedFieldsMap[paymentRail][fields.kind];
+    const requiredFields = ycAccountRequiredFieldsMap[env][paymentRail][fields.kind];
+    const acceptedFields = ycAccountAcceptedFieldsMap[env][paymentRail][fields.kind];
 
     if (!requiredFields || !acceptedFields) {
         throw new YcAccountInfoError(YcAccountInfoErrorType.INVALID_FIELD, 400, "", { error: "kind is invalid" });
@@ -34,8 +35,15 @@ const createYellowcardAccount = async(config) => {
         );
     }
 
+    // validate phoneNumber
+    const phoneNumberRequiredPattern = yellowcardPhoneNumberFormatPatterMap[currency];
+    if (phoneNumberRequiredPattern) {
+        if (!phoneNumberRequiredPattern.test(fields.accountHolderPhone))
+            throw new YcAccountInfoError(YcAccountInfoErrorType.INVALID_FIELD, 400, "", { error: `Invalid accountHolderPhone format, please follow the pattern ${phoneNumberRequiredPattern}` });
+    }
+
     // insert record
-    const ycAccount = await insertYcAccountFunctionMap[paymentRail](`yellowcard_${paymentRail}_accounts`, fields);
+    const ycAccount = await insertYellowcardAccount(`yellowcard_${paymentRail}_accounts`, fields);
 
     if (!ycAccount) {
         throw new YcAccountInfoError(YcAccountInfoErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });

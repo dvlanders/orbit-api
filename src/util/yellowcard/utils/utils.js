@@ -12,17 +12,35 @@ const yellowcardNetworkToChain = process.env.NODE_ENV === "development" ? {
 }
 
 // MOMO_MPESA
-const momoMpesaRequiredFields = [
-    "user_id",
-    "accountHolderPhone",
-    "accountHolderName",
-    "kind"
-]
+const momoMpesaRequiredFields = {
+    production: [
+        "user_id",
+        "accountHolderPhone",
+        "accountHolderName",
+        "kind"
+    ],
+    development: [
+        "user_id",
+        "accountNumber",
+        "accountHolderPhone",
+        "accountHolderName",
+        "kind"
+    ]
+}
 const momoMpesaAcceptedFields = {
-    user_id: (value) => isUUID(value),
-    accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
-    accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
-    kind: "string",
+    production: {
+        user_id: (value) => isUUID(value),
+        accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        kind: "string",
+    },
+    development: {
+        user_id: (value) => isUUID(value),
+        accountNumber: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        kind: "string",
+    }
 }
 
 // MOMO_MTN
@@ -37,6 +55,70 @@ const momoMtnAcceptedFields = {
     accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
     accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
     kind: "string",
+}
+
+// MOMO_Airtel
+const momoAirtelRequiredFields = {
+    production: [
+        "user_id",
+        "accountHolderPhone",
+        "accountHolderName",
+        "kind"
+    ],
+    development: [
+        "user_id",
+        "accountNumber",
+        "accountHolderPhone",
+        "accountHolderName",
+        "kind"
+    ]
+}
+const momoAirtelAcceptedFields = {
+    production: {
+        user_id: (value) => isUUID(value),
+        accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        kind: "string",
+    },
+    development: {
+        user_id: (value) => isUUID(value),
+        accountNumber: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        kind: "string",
+    }
+}
+
+// MOMO_TNM
+const momoTnmRequiredFields = {
+    production: [
+        "user_id",
+        "accountHolderPhone",
+        "accountHolderName",
+        "kind"
+    ],
+    development: [
+        "user_id",
+        "accountNumber",
+        "accountHolderPhone",
+        "accountHolderName",
+        "kind"
+    ]
+}
+const momoTnmAcceptedFields = {
+    production: {
+        user_id: (value) => isUUID(value),
+        accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        kind: "string",
+    },
+    development: {
+        user_id: (value) => isUUID(value),
+        accountNumber: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        kind: "string",
+    }
 }
 
 // BANK_ACCESS BANK
@@ -101,92 +183,180 @@ const bankUnitedAcceptedFields = {
     kind: "string",
 }
 
+// YellowCard Common Fields
+const yellowcardCommonRequiredFields = [
+    "user_id",
+    "accountNumber",
+    "accountHolderName",
+    "accountHolderPhone",
+    "kind"
+]
+const yellowcardCommonAcceptedFields = {
+    user_id: (value) => isUUID(value),
+    accountNumber: (value) => { return /^[0-9]{10}$/.test(value) },
+    accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+    accountHolderPhone: (value) => { return /^\+\d{11,15}$/.test(value) },
+    kind: "string",
+}
+
 
 const ycAccountRequiredFieldsMap = {
-    momo_kes: {
-        MOMO_MPESA: momoMpesaRequiredFields
+    production: {
+        momo_kes: {
+            MOMO_MPESA: momoMpesaRequiredFields.production
+        },
+        momo_xof: {
+            MOMO_MTN: momoMtnRequiredFields
+        },
+        momo_rwf: {
+            MOMO_MTN: momoMtnRequiredFields
+        },
+        momo_zmw: {
+            MOMO_MTN: momoMtnRequiredFields
+        },
+        bank_ngn: {
+            "BANK_Access Bank": bankAccessRequiredFields,
+            "BANK_GT Bank": bankGtRequiredFields,
+            "BANK_United Bank for Africa": bankUnitedRequiredFields,
+        },
+        bank_ugx: {
+            "BANK_Manul Entry": bankManulRequiredFields,
+        },
+        bank_tzs: {
+            "BANK_Manul Entry": bankManulRequiredFields,
+        },
+        bank_mwk: {
+            "BANK_Manul Entry": bankManulRequiredFields,
+        },
+        bank_xaf: {
+            "BANK_Manul Entry": bankManulRequiredFields,
+        },
     },
-    momo_xof: {
-        MOMO_MTN: momoMtnRequiredFields
-    },
-    momo_rwf: {
-        MOMO_MTN: momoMtnRequiredFields
-    },
-    momo_zmw: {
-        MOMO_MTN: momoMtnRequiredFields
-    },
-    bank_ngn: {
-        "BANK_Access Bank": bankAccessRequiredFields,
-        "BANK_GT Bank": bankGtRequiredFields,
-        "BANK_United Bank for Africa": bankUnitedRequiredFields,
-    },
-    bank_ugx: {
-        "BANK_Manul Entry": bankManulRequiredFields,
-    },
-    bank_tzs: {
-        "BANK_Manul Entry": bankManulRequiredFields,
-    },
-    bank_mwk: {
-        "BANK_Manul Entry": bankManulRequiredFields,
-    },
-    bank_xaf: {
-        "BANK_Manul Entry": bankManulRequiredFields,
-    },
+    development: {
+        momo_kes: {
+            MOMO_MPESA: momoMpesaRequiredFields.development,
+        },
+        momo_xof: {
+        //     MOMO_MTN: momoMtnRequiredFields
+        },
+        momo_rwf: {
+            // MOMO_MTN: momoMtnRequiredFields
+        },
+        momo_zmw: {
+            // MOMO_MTN: momoMtnRequiredFields
+        },
+        momo_mwk: {
+            MOMO_AIRETEL: momoAirtelRequiredFields.development,
+            MOMO_TNM: momoTnmRequiredFields.development,
+        },
+        bank_ngn: {
+            "BANK_Stanbic Ibtc Bank": yellowcardCommonRequiredFields,
+            "BANK_Zenith Bank": yellowcardCommonRequiredFields,
+            "BANK_Guaranty Trust Bank": yellowcardCommonRequiredFields,
+            "BANK_Heritage Bank": yellowcardCommonRequiredFields,
+            "BANK_Enterprise Bank": yellowcardCommonRequiredFields,
+            "BANK_Sterling Bank": yellowcardCommonRequiredFields,
+            "BANK_Access Bank": yellowcardCommonRequiredFields,
+        },
+        bank_ugx: {
+            "BANK_Manual Input": yellowcardCommonRequiredFields,
+        },
+        bank_tzs: {
+            // "BANK_Manul Entry": bankManulRequiredFields,
+        },
+        bank_mwk: {
+            // "BANK_Manul Entry": bankManulRequiredFields,
+        },
+        bank_xaf: {
+            // "BANK_Manul Entry": bankManulRequiredFields,
+        },
+    }
 }
 
 const ycAccountAcceptedFieldsMap = {
-    momo_kes: {
-        MOMO_MPESA: momoMpesaAcceptedFields,
+    production: {
+        momo_kes: {
+            MOMO_MPESA: momoMpesaAcceptedFields.production
+        },
+        momo_xof: {
+            MOMO_MTN: momoMtnAcceptedFields
+        },
+        momo_rwf: {
+            MOMO_MTN: momoMtnAcceptedFields
+        },
+        momo_zmw: {
+            MOMO_MTN: momoMtnAcceptedFields
+        },
+        bank_ngn: {
+            "BANK_Access Bank": bankAccessAcceptedFields,
+            "BANK_GT Bank": bankGtAcceptedFields,
+            "BANK_United Bank for Africa": bankUnitedAcceptedFields,
+        },
+        bank_ugx: {
+            "BANK_Manul Entry": bankManulAcceptedFields,
+        },
+        bank_tzs: {
+            "BANK_Manul Entry": bankManulAcceptedFields,
+        },
+        bank_mwk: {
+            "BANK_Manul Entry": bankManulAcceptedFields,
+        },
+        bank_xaf: {
+            "BANK_Manul Entry": bankManulAcceptedFields,
+        },
     },
-    momo_xof: {
-        MOMO_MTN: momoMtnAcceptedFields,
-    },
-    momo_rwf: {
-        MOMO_MTN: momoMtnAcceptedFields,
-    },
-    momo_zmw: {
-        MOMO_MTN: momoMtnAcceptedFields,
-    },
-    bank_ngn: {
-        "BANK_Access Bank": bankAccessAcceptedFields,
-        "BANK_GT Bank": bankGtAcceptedFields,
-        "BANK_United Bank for Africa": bankUnitedAcceptedFields,
-    },
-    bank_ugx: {
-        "BANK_Manul Entry": bankManulAcceptedFields,
-    },
-    bank_tzs: {
-        "BANK_Manul Entry": bankManulAcceptedFields,
-    },
-    bank_mwk: {
-        "BANK_Manul Entry": bankManulAcceptedFields,
-    },
-    bank_xaf: {
-        "BANK_Manul Entry": bankManulAcceptedFields,
-    },
-}
-
-const insertYcMomoAccount = async(tableName, fields) => {
-    const { data: momoAccountData, error: momoAccountError } = await supabase.from(tableName).insert({
-        account_number: fields.accountHolderPhone,
-        account_holder_name: fields.accountHolderName,
-        kind: fields.kind,
-        user_id: fields.user_id
-    })
-        .select()
-        .single();
-
-    if (momoAccountError) {
-        throw new YcAccountInfoError(YcAccountInfoErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
+    development: {
+        momo_kes: {
+            MOMO_MPESA: momoMpesaAcceptedFields.development,
+        },
+        momo_xof: {
+            // MOMO_MTN: momoMtnAcceptedFields
+        },
+        momo_rwf: {
+            // MOMO_MTN: momoMtnAcceptedFields
+        },
+        momo_zmw: {
+            // MOMO_MTN: momoMtnAcceptedFields
+        },
+        momo_mwk: {
+            MOMO_AIRETEL: momoAirtelAcceptedFields.development,
+            MOMO_TNM: momoTnmAcceptedFields.development,
+        },
+        bank_ngn: {
+            "BANK_Stanbic Ibtc Bank": yellowcardCommonAcceptedFields,
+            "BANK_Zenith Bank": yellowcardCommonAcceptedFields,
+            "BANK_Guaranty Trust Bank": yellowcardCommonAcceptedFields,
+            "BANK_Heritage Bank": yellowcardCommonAcceptedFields,
+            "BANK_Enterprise Bank": yellowcardCommonAcceptedFields,
+            "BANK_Sterling Bank": yellowcardCommonAcceptedFields,
+            "BANK_Access Bank": yellowcardCommonAcceptedFields,
+        },
+        bank_ugx: {
+            "BANK_Manual Input": yellowcardCommonAcceptedFields,
+        },
+        bank_tzs: {
+            // "BANK_Manul Entry": bankManulAcceptedFields,
+        },
+        bank_mwk: {
+            // "BANK_Manul Entry": bankManulAcceptedFields,
+        },
+        bank_xaf: {
+            // "BANK_Manul Entry": bankManulAcceptedFields,
+        },
     }
-
-    return momoAccountData;
 }
 
-const insertYcBankAccount = async(tableName, fields) => {
-    const { data: bankAccountData, error: bankAccountError } = await supabase.from(tableName).insert({
-        account_number: fields.accountNumber,
-        account_holder_phone: fields.accountHolderPhone,
+const yellowcardPhoneNumberFormatPatterMap = {  
+    kes: /^\+254[0-9]{9}$/,
+    ngn: /^\+234[0-9]{10}$/,
+    ugx: /^\+256[0-9]{9}$/,
+    mwk: /^\+265[0-9]{10}$/,
+};
+
+const insertYellowcardAccount = async(tableName, fields) => {
+    const { data: yellowcardAccountData, error: yellowcardAccountError } = await supabase.from(tableName).insert({
+        account_number: fields.accountNumber || fields.accountHolderPhone,              // it will be filled as phone number if account number is empty
+        account_holder_phone: fields.accountNumber && fields.accountHolderPhone,        // it will be filled as NULL if account number is empty
         account_holder_name: fields.accountHolderName,
         bank_name: fields.bankName,
         kind: fields.kind,
@@ -195,24 +365,11 @@ const insertYcBankAccount = async(tableName, fields) => {
         .select()
         .single();
 
-    if (bankAccountError) {
+    if (yellowcardAccountError) {
         throw new YcAccountInfoError(YcAccountInfoErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
     }
 
-    return bankAccountData;
-}
-
-
-const insertYcAccountFunctionMap = {
-    momo_kes: insertYcMomoAccount,
-    momo_xof: insertYcMomoAccount,
-    momo_rwf: insertYcMomoAccount,
-    momo_zmw: insertYcMomoAccount,
-    bank_ngn: insertYcBankAccount,
-    bank_ugx: insertYcBankAccount,
-    bank_tzs: insertYcBankAccount,
-    bank_mwk: insertYcBankAccount,
-    bank_xaf: insertYcBankAccount,
+    return yellowcardAccountData;
 }
 
 const hifiOfframpTransactionStatusMap = {
@@ -258,8 +415,9 @@ const mapCloseReason = (errorMessage) => {
 module.exports = {
     ycAccountRequiredFieldsMap,
     ycAccountAcceptedFieldsMap,
-    insertYcAccountFunctionMap,
+    insertYellowcardAccount,
     yellowcardNetworkToChain,
+    yellowcardPhoneNumberFormatPatterMap,
     hifiOfframpTransactionStatusMap,
     failedReasonMap,
     mapCloseReason
