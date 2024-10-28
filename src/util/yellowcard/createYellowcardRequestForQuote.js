@@ -9,6 +9,7 @@ const { safeToNumberString } = require('../utils/number');
 const { updateYellowCardTransactionInfo } = require('./transactionInfoService');
 const { yellowcardMethodFieldsMapForDevelopment } = require('./utils/utils');
 
+const env = process.env.NODE_ENV;
 
 async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
 
@@ -40,8 +41,8 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 
 	// convert amount to string with 2 decimal places
 	amount = safeToNumberString(amount, 2);
-    console.log(JSON.stringify(selectedOffering, null, 2))
 
+    let payoutMetadata = env === "production"? { kind: payoutAccountDetails.kind } : yellowcardMethodFieldsMapForDevelopment[payoutAccountDetails.kind];
 	const rfqData = {
 		offeringId: selectedOffering.metadata.id,
 		payin: {
@@ -51,7 +52,7 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 		},
 		payout: {
 			// kind: payoutAccountDetails.kind || payout.methods[0].kind,
-            ...yellowcardMethodFieldsMapForDevelopment[payoutAccountDetails.kind],
+            ...payoutMetadata,
 			paymentDetails: {
 				accountNumber: payoutAccountDetails.account_number,
 				// reason: purposeOfPayment,

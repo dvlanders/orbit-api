@@ -401,6 +401,21 @@ const insertYellowcardAccount = async(tableName, fields) => {
 }
 
 const yellowcardMethodFieldsMapForDevelopment = {
+    MOMO_MPESA: {
+        kind: "MOMO_Mobile Wallet (M-PESA)+7ea6df5c-6bba-46b2-a7e6-f511959e7edb",
+        name: "Mobile Wallet (M-PESA)",
+        group: "MOMO",
+    },
+    MOMO_AIRETEL: {
+        kind: "MOMO_Airtel+3b589b9a-65d4-4246-b33a-f095dfc2977d",
+        name: "Airtel",
+        group: "MOMO",
+    },
+    MOMO_TNM: {
+        kind: "MOMO_TNM+ac522946-3d5d-488e-bf73-583b8d8de908",
+        name: "TNM",
+        group: "MOMO",
+    },
     "BANK_Stanbic Ibtc Bank": {
         kind: "BANK_Stanbic Ibtc Bank+3d4d08c1-4811-4fee-9349-a302328e55c1",
         name: "Stanbic Ibtc Bank",
@@ -434,7 +449,7 @@ const yellowcardMethodFieldsMapForDevelopment = {
     "BANK_Access Bank": {
         kind: "BANK_Access Bank+5f1af11b-305f-4420-8fce-65ed2725a409",
         name: "Access Bank",
-        // group: "BANK",
+        group: "BANK",
     },
     "BANK_Keystone Bank": {
         kind: "BANK_Keystone Bank+125df772-0bd9-4ad2-8b10-ff377f8cfad1",
@@ -471,13 +486,46 @@ const yellowcardMethodFieldsMapForDevelopment = {
         name: "Ecobank Nigeria",
         group: "BANK",
     },
-    "BANK_Unity Bank": yellowcardCommonAcceptedFields,
-    "BANK_Diamond Bank": yellowcardCommonAcceptedFields,
-    "BANK_Citibank Nigeria": yellowcardCommonAcceptedFields,
-    "BANK_Standard Chartered Bank": yellowcardCommonAcceptedFields,
-    "BANK_Fidelity Bank": yellowcardCommonAcceptedFields,
-    "BANK_First Bank of Nigeria": yellowcardCommonAcceptedFields,
-    "BANK_Mainstreet Bank": yellowcardCommonAcceptedFields,
+    "BANK_Unity Bank": {
+        kind: "BANK_Unity Bank+5dcfa62b-5cfa-4e59-aae4-95f7fecdeaa6",
+        name: "Unity Bank",
+        group: "BANK",
+    },
+    "BANK_Diamond Bank": {
+        kind: "BANK_Diamond Bank+b1a1bf8a-15fa-4454-a0fa-38a813a56c5a",
+        name: "Diamond Bank",
+        group: "BANK",
+    },
+    "BANK_Citibank Nigeria": {
+        kind: "BANK_Citibank Nigeria+d5212d1c-e9bb-4db6-8dc0-aefe3a925a65",
+        name: "Citibank Nigeria",
+        group: "BANK",
+    },
+    "BANK_Standard Chartered Bank": {
+        kind: "BANK_Standard Chartered Bank+98b219a0-2f80-4f2a-9d7d-487d348f9ea4",
+        name: "Standard Chartered Bank",
+        group: "BANK",
+    },
+    "BANK_Fidelity Bank": {
+        kind: "BANK_Fidelity Bank+d2bbb2b8-0db8-4b33-bd7e-3fe792839fb7",
+        name: "Fidelity Bank",
+        group: "BANK",
+    },
+    "BANK_First Bank of Nigeria": {
+        kind: "BANK_First Bank of Nigeria+790567b6-da04-5f18-a86a-e5b2dd86bbb5",
+        name: "First Bank of Nigeria",
+        group: "BANK",
+    },
+    "BANK_Mainstreet Bank": {
+        kind: "BANK_Mainstreet Bank+d659aee4-674a-40dc-b5b3-31387d4b5d1c",
+        name: "Mainstreet Bank",
+        group: "BANK",
+    },
+    "BANK_Manual Input": {
+        kind: "BANK_Manual Input+28281f21-4705-431f-a752-9a485628c76a",
+        name: "Manual Input",
+        group: "BANK",
+    }
 }
 
 const hifiOfframpTransactionStatusMap = {
