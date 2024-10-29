@@ -14,6 +14,7 @@ exports.insertApiKeyRecord = async (info, env) => {
 			profile_id: info.profileId,
 			zuplo_api_key_id: info.zuploApiKeyId,
 			zuplo_customer_id: info.zuploCustomerId,
+			is_dashboard_api_key: info.isDashboardKey
 		})
 		.select("*")
 		.single()
