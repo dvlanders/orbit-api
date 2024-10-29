@@ -181,7 +181,7 @@ const transferWithFee = async (offrampTransactionRecord) => {
 
 }
 
-const transferWithoutFee = async (offrampTransactionRecord) => {
+const transferWithoutFee = async (offrampTransactionRecord, profileId) => {
 	const sourceCurrency = offrampTransactionRecord.source_currency
 	const sourceUserId = offrampTransactionRecord.user_id
 	const walletType = offrampTransactionRecord.transfer_from_wallet_type
