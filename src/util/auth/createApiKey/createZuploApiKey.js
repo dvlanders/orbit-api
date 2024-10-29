@@ -9,7 +9,7 @@ const SANDBOX_KEY_BUCKET_NAME = process.env.ZUPLO_SANDBOX_KEY_BUCKET_NAME
 const API_KEY = process.env.ZUPLO_API_KEY
 
 
-exports.createApiKeyFromProvider = async (profileId, apiKeyName, expiredAt, env) => {
+exports.createApiKeyFromProvider = async (profileId, apiKeyName, expiredAt, env, isDashboardKey = false) => {
 
 	const uuid = uuidv4()
 
@@ -18,12 +18,13 @@ exports.createApiKeyFromProvider = async (profileId, apiKeyName, expiredAt, env)
 		description: `api key for ${profileId}`,
 		metadata: {
 			profileId: profileId,
-			apikeyId: uuid
+			apikeyId: uuid,
+			isDashboardKey: isDashboardKey
 		},
 		tags: {
 			profileId: profileId,
 			name: uuid,
-			userCustomName: apiKeyName
+			userCustomName: apiKeyName,
 		}
 	}
 	let url
@@ -54,6 +55,7 @@ exports.createApiKeyFromProvider = async (profileId, apiKeyName, expiredAt, env)
 		profileId,
 		zuploApiKeyId: responseBody.apiKeys[0].id,
 		zuploCustomerId: responseBody.id,
+		isDashboardKey: isDashboardKey
 	}
 
 	const apiKeyRecord = await insertApiKeyRecord(apiKeyInfo, env)
