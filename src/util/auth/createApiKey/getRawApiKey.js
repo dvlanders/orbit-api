@@ -2,6 +2,7 @@ const createLog = require("../../logger/supabaseLogger");
 const supabaseSandbox = require("../../sandboxSupabaseClient");
 const supabase = require("../../supabaseClient");
 const { supabaseCall } = require("../../supabaseWithRetry");
+const { safeParseBody } = require("../../utils/response");
 const ACCOUNT_NAME = process.env.ZUPLO_ACCOUNT_NAME
 const KEY_BUCKET_NAME = process.env.ZUPLO_KEY_BUCKET_NAME
 const SANDBOX_KEY_BUCKET_NAME = process.env.ZUPLO_SANDBOX_KEY_BUCKET_NAME
@@ -47,7 +48,7 @@ const getDashboardApiKeyFromZuplo = async (profileId, env) => {
 	}
 
 	const response = await fetch(url, options)
-    const data = await safeJsonParse(response)
+    const data = await safeParseBody(response)
     if (!response.ok) {
         await createLog("auth/createApiKey/getRawApiKey", null, data.error || data.message, data, profileId)
         throw new Error("Error fetching api key from zuplo");

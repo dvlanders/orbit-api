@@ -113,6 +113,7 @@ exports.getApiKey = async (req, res) => {
 			.from("api_keys")
 			.select()
 			.eq("profile_id", profile.organization_id)
+			.neq("is_dashboard_api_key", true)
 			.is("active", true)
 
 		if (sandboxKeysError) throw sandboxKeysError
@@ -128,6 +129,7 @@ exports.getApiKey = async (req, res) => {
 			.from("api_keys")
 			.select()
 			.eq("profile_id", profile.organization_id)
+			.neq("is_dashboard_api_key", true)
 			.is("active", true)
 
 		if (prodKeysError) throw prodKeysError

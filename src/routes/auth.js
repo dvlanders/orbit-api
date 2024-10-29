@@ -9,6 +9,5 @@ module.exports = (router) => {
 	router.post("/auth/createWebhook", authorizeDashboard, logRequestResponse, auth.createWebhook)
 	router.get("/auth/webhook", logRequestResponse, auth.getWebhook)
 	router.delete("/auth/webhook", authorizeDashboard,logRequestResponse, auth.deleteWebhook)
-	router.get("/auth/dashboard/apiKey", authorizeDashboard,logRequestResponse, auth.retrieveEncryptedApiKey)
 
 }

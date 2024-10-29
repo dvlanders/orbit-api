@@ -1,4 +1,5 @@
 const algorithm = 'aes-256-gcm'; // AES algorithm
+const crypto = require('crypto');
 
 const symmetricEncryption = (key, iv, toEncrypt) => {
     const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -10,6 +11,7 @@ const symmetricEncryption = (key, iv, toEncrypt) => {
         iv: iv.toString('hex'),
         encrypted: encrypted,
         tag: tag.toString('hex'),
+        algorithm: algorithm
     };
 }
 
