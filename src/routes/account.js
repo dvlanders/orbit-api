@@ -19,12 +19,13 @@ module.exports = (router) => {
 	router.get("/account/south-america/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
 	router.put("/account/south-america/receiver", authorize, logRequestResponse, account.updateBlindpayReceiver);
 	router.post("/account/kes/momo/offramp", authorize, logRequestResponse, account.createKesMomoAccount);
+	router.post("/account/mwk/momo/offramp", authorize, logRequestResponse, account.createMwkMomoAccount);
     router.post("/account/xof/momo/offramp", authorize, logRequestResponse, account.createXofMomoAccount);
     router.post("/account/rwf/momo/offramp", authorize, logRequestResponse, account.createRwfMomoAccount);
     router.post("/account/zmw/momo/offramp", authorize, logRequestResponse, account.createZmwMomoAccount);
+    router.post("/account/mwk/momo/offramp", authorize, logRequestResponse, account.createMwkMomoAccount);
+    router.post("/account/tzs/momo/offramp", authorize, logRequestResponse, account.createTzsMomoAccount);
+    router.post("/account/xaf/momo/offramp", authorize, logRequestResponse, account.createXafMomoAccount);
 	router.post("/account/ngn/bank/offramp", authorize, logRequestResponse, account.createNgnBankAccount);
     router.post("/account/ugx/bank/offramp", authorize, logRequestResponse, account.createUgxBankAccount);
-    router.post("/account/tzs/bank/offramp", authorize, logRequestResponse, account.createTzsBankAccount);
-    router.post("/account/mwk/bank/offramp", authorize, logRequestResponse, account.createMwkBankAccount);
-    router.post("/account/xaf/bank/offramp", authorize, logRequestResponse, account.createXafBankAccount);
 };

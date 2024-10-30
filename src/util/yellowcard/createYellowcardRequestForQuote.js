@@ -7,7 +7,9 @@ const { getBearerDid } = require('./utils/getBearerDid');
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 const { safeToNumberString } = require('../utils/number');
 const { updateYellowCardTransactionInfo } = require('./transactionInfoService');
+const { yellowcardMethodFieldsMap } = require('./utils/utils');
 
+const env = process.env.NODE_ENV;
 
 async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, destinationAccountId, amount, destinationCurrency, sourceCurrency, description, purposeOfPayment) {
 
@@ -48,10 +50,10 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 			amount: amount,
 		},
 		payout: {
-			kind: payoutAccountDetails.kind || payout.methods[0].kind,
+            ...yellowcardMethodFieldsMap[env][destinationCurrency][payoutAccountDetails.kind],
 			paymentDetails: {
 				accountNumber: payoutAccountDetails.account_number,
-				reason: purposeOfPayment,
+				// reason: purposeOfPayment,
 				accountHolderName: payoutAccountDetails.account_holder_name,
 			}
 		},
@@ -72,6 +74,7 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 		protocol: '1.0'
 	};
 
+
 	const ycRfq = Rfq.create({
 		metadata: rfqMetadata,
 		data: rfqData,
@@ -88,8 +91,9 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 
 	// create the exchange
 	try {
-		await TbdexHttpClient.createExchange(ycRfq);
+        await TbdexHttpClient.createExchange(ycRfq);
 	} catch (error) {
+        console.log(JSON.stringify(error, null, 2))
 		await createLog("yellowcard/createYellowcardRequestForQuote", null, error.message, error )
 		throw new Error("Failed to create exchange for createYellowcardRequestForQuote")
 	}

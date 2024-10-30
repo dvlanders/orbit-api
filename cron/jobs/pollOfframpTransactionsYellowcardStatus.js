@@ -120,7 +120,7 @@ async function pollOfframpTransactionsYellowcardStatus() {
 		.from('offramp_transactions')
 		.update({ updated_at: new Date().toISOString() })
 		.eq("fiat_provider", "YELLOWCARD")
-		.or("transaction_status.eq.COMPLETED_ONCHAIN, transaction_status.eq.IN_PROGRESS_FIAT")
+		.or("transaction_status.eq.COMPLETED_ONCHAIN, transaction_status.eq.IN_PROGRESS_FIAT, transaction_status.eq.INITIATED_FIAT")
 		.order('updated_at', { ascending: true })
 		.select('*')
 

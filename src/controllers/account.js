@@ -1534,6 +1534,36 @@ exports.createKesMomoAccount = async (req, res) => {
     }
 }
 
+exports.createMwkMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createMwkMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
 exports.createXofMomoAccount = async (req, res) => {
     const { userId, profileId } = req.query;
 	const fields = req.body;
@@ -1684,7 +1714,7 @@ exports.createUgxBankAccount = async (req, res) => {
     }
 }
 
-exports.createTzsBankAccount = async (req, res) => {
+exports.createTzsMomoAccount = async (req, res) => {
     const { userId, profileId } = req.query;
 	const fields = req.body;
 
@@ -1695,7 +1725,7 @@ exports.createTzsBankAccount = async (req, res) => {
     fields.user_id = userId;
 
     try {
-        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_tzs", currency: "tzs" });
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_tzs", currency: "tzs" });
         
         return res.status(200).json({
 			status: "ACTIVE",
@@ -1705,7 +1735,7 @@ exports.createTzsBankAccount = async (req, res) => {
 		});
         
     } catch (error) {
-        await createLog("account/createTzsBankAccount", userId, error.message, error);
+        await createLog("account/createTzsMomoAccount", userId, error.message, error);
         if (error instanceof YcAccountInfoError) {
             if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
             return res.status(error.status).json(error.rawResponse);
@@ -1714,7 +1744,7 @@ exports.createTzsBankAccount = async (req, res) => {
     }
 }
 
-exports.createMwkBankAccount = async (req, res) => {
+exports.createMwkMomoAccount = async (req, res) => {
     const { userId, profileId } = req.query;
 	const fields = req.body;
 
@@ -1725,7 +1755,7 @@ exports.createMwkBankAccount = async (req, res) => {
     fields.user_id = userId;
 
     try {
-        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_mwk", currency: "mwk" });
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
         
         return res.status(200).json({
 			status: "ACTIVE",
@@ -1735,7 +1765,7 @@ exports.createMwkBankAccount = async (req, res) => {
 		});
         
     } catch (error) {
-        await createLog("account/createMwkBankAccount", userId, error.message, error);
+        await createLog("account/createMwkMomoAccount", userId, error.message, error);
         if (error instanceof YcAccountInfoError) {
             if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
             return res.status(error.status).json(error.rawResponse);
@@ -1744,7 +1774,7 @@ exports.createMwkBankAccount = async (req, res) => {
     }
 }
 
-exports.createXafBankAccount = async (req, res) => {
+exports.createXafMomoAccount = async (req, res) => {
     const { userId, profileId } = req.query;
 	const fields = req.body;
 
@@ -1755,7 +1785,7 @@ exports.createXafBankAccount = async (req, res) => {
     fields.user_id = userId;
 
     try {
-        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_xaf", currency: "xaf" });
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_xaf", currency: "xaf" });
 
         return res.status(200).json({
 			status: "ACTIVE",
@@ -1765,7 +1795,7 @@ exports.createXafBankAccount = async (req, res) => {
 		});
 
     } catch (error) {
-        await createLog("account/createXafBankAccount", userId, error.message, error);
+        await createLog("account/createXafMomoAccount", userId, error.message, error);
         if (error instanceof YcAccountInfoError) {
             if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
             return res.status(error.status).json(error.rawResponse);

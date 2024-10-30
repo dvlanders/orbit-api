@@ -1,18 +1,28 @@
 const { insertAccountProviders } = require("../account/accountProviders/accountProvidersService");
-const { fieldsValidation } = require("../common/fieldsValidation");
+const { fieldsValidation, isUUID } = require("../common/fieldsValidation");
+const { inStringEnum } = require("../common/filedValidationCheckFunctions");
 const { YcAccountInfoError, YcAccountInfoErrorType } = require("./utils/errors");
-const { ycAccountRequiredFieldsMap, ycAccountAcceptedFieldsMap, insertYcAccountFunctionMap } = require("./utils/utils");
+const { insertYellowcardAccount, yellowcardPhoneNumberFormatPatternMap, yellowcardAccountNumberFormatPatternMap, yellowcardSupportedKindsMap } = require("./utils/utils");
 
+const env = process.env.NODE_ENV;
 
 const createYellowcardAccount = async(config) => {
     const {fields, currency, paymentRail} = config;
 
-    const requiredFields = ycAccountRequiredFieldsMap[paymentRail][fields.kind];
-    const acceptedFields = ycAccountAcceptedFieldsMap[paymentRail][fields.kind];
-
-    if (!requiredFields || !acceptedFields) {
-        throw new YcAccountInfoError(YcAccountInfoErrorType.INVALID_FIELD, 400, "", { error: "kind is invalid" });
-    }
+    const requiredFields = [
+        "user_id",
+        "accountNumber",
+        "accountHolderName",
+        "accountHolderPhone",
+        "kind"
+    ];
+    const acceptedFields = {
+        user_id: (value) => isUUID(value),
+        accountNumber: (value) => { return yellowcardAccountNumberFormatPatternMap[currency].test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        accountHolderPhone: (value) => { return yellowcardPhoneNumberFormatPatternMap[currency].test(value) },
+        kind: (value) => inStringEnum(value, yellowcardSupportedKindsMap[env][paymentRail]),
+    };
 
     // check if required fields are uploaded and validate field values
     const { missingFields, invalidFields } = fieldsValidation(
@@ -35,7 +45,7 @@ const createYellowcardAccount = async(config) => {
     }
 
     // insert record
-    const ycAccount = await insertYcAccountFunctionMap[paymentRail](`yellowcard_${paymentRail}_accounts`, fields);
+    const ycAccount = await insertYellowcardAccount(`yellowcard_${paymentRail}_accounts`, fields);
 
     if (!ycAccount) {
         throw new YcAccountInfoError(YcAccountInfoErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
