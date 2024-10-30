@@ -5,6 +5,7 @@ const { updateBalanceTopupRecord } = require("../../src/util/billing/balance/bal
 const { BalanceTopupType, BalanceTopupStatus } = require("../../src/util/billing/balance/utils");
 const { releaseAutopayLock } = require("../../src/util/billing/lockService");
 const { enableProdAccess } = require("../../src/util/auth/profileService");
+const { createApiKeyFromProvider } = require("../../src/util/auth/createApiKey/createZuploApiKey");
 
 const processInvoiceEvent = async (event) => {
   try {
@@ -21,6 +22,7 @@ const processInvoiceEvent = async (event) => {
         await topupBalance(profileId, creditToAdd, topupRecordId, event.data?.object?.invoice_pdf);
       }else if(type === BalanceTopupType.ACCOUNT_MINIMUM){
         await enableProdAccess(profileId);
+        await createApiKeyFromProvider(profileId, "dashboardApiKey", new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000), "production", true);
         await topupBalance(profileId, credit, topupRecordId, event.data?.object?.invoice_pdf);
       }
     }else if(event.type === "invoice.void" || event.type === "invoice.uncollectible" || event.type === "invoice.payment_failed"){

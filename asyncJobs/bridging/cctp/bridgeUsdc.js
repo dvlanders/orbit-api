@@ -2,29 +2,12 @@ const supabase = require("../../../src/util/supabaseClient")
 const { updateBridgingTransactionRecord, getBridgingTransactionRecord } = require("../../../src/util/transfer/bridging/bridgingTransactionTableService")
 const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const notifyBridgingUpdate = require("../../../webhooks/bridging/notifyBridgingUpdate")
-const createJob = require("../../createJob")
 const { JobError, JobErrorType } = require("../../error")
+const { getRetryConfig } = require("../../retryJob")
 const areObjectsEqual = require("../../utils/configCompare")
 const { approveUsdc } = require("./approveUsdc")
 const { depositUsdcForBurn } = require("./burnUsdc")
 const { mintUsdc } = require("./mintUsdc")
-
-const bridgingUsdcScheduleCheck = async(job, config, userId, profileId) => {
-
-    const {data, error} = await supabase
-        .from("jobs_queue")
-        .select("*")
-        .eq("job", job)
-        .eq("user_id", userId)
-        .order("created_at", {ascending: false})
-    
-    if (!data || data.length <= 0) return true
-    for (const record of data){
-        if (areObjectsEqual(record.config, config)) return false
-    }
-
-    return true
-}
 
 const checkIsContractActionConfirmedAndUpdateStatus = async(recordId, bridgingRecordId) => {
     const { data, error } = await supabase
@@ -59,17 +42,17 @@ const bridgeUsdc = async (config) => {
             const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.source_user_id, bridgingRecord.source_chain, bridgingRecord.source_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
-                const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.source_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
+                return {
+                    retryDetails: getRetryConfig(true, 30000, "Waiting for gas to be enough")
+                }
             }
 
             const { success, shouldReschedule } = await approveUsdc(bridgingRecord.source_user_id, profileId, bridgingRecord)
             if (!success) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to approve usdc", null, null, shouldReschedule, true)
             // create job to burn usdc
-            const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
-            await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.source_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-            return
+            return {
+                retryDetails: getRetryConfig(true, 30000, "Finish approve usdc, start burn usdc")
+            }
         }
         // check if approve usdc is confirmed, then burn usdc
         else if (bridgingRecord.current_stage === "APPROVE_TO_TOKEN_MESSENGER") {
@@ -79,25 +62,25 @@ const bridgeUsdc = async (config) => {
             if (!contractActionStatus) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to approve usdc, unknown contract action status", null, null, false, true)
             else if (contractActionStatus === "FAILED") throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to approve usdc, contract action failed", null, null, false, true)
             else if (contractActionStatus !== "CONFIRMED") {
-                const nextRetryTime = new Date(new Date().getTime() + 10000).toISOString() // check status after 10 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.source_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
+                return {
+                    retryDetails: getRetryConfig(true, 10000, "Waiting APPROVE_TO_TOKEN_MESSENGER to be confirmed")
+                }
             }
             // check gas
             const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.source_user_id, bridgingRecord.source_chain, bridgingRecord.source_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
-                const nextRetryTime = new Date(new Date().getTime() + 60000).toISOString() // check status after 60 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.source_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
+                return {
+                    retryDetails: getRetryConfig(true, 30000, "Waiting for gas to be enough")
+                }
             }
             // burn usdc
             const { success, shouldReschedule } = await depositUsdcForBurn(bridgingRecord.source_user_id, profileId, bridgingRecord)
             if (!success) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to burn usdc", null, null, shouldReschedule, true)
             // create job to mint usdc
-            const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
-            await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.source_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-            return
+            return {
+                retryDetails: getRetryConfig(true, 30000, "Finish burn usdc, start mint usdc")
+            }
         }
         // check if burn usdc is confirmed, then mint usdc
         else if (bridgingRecord.current_stage === "BURN_USDC_ON_SOURCE_CHAIN") {
@@ -107,26 +90,26 @@ const bridgeUsdc = async (config) => {
             if (!contractActionStatus) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to burn usdc, unknown contract action status", null, null, false, true)
             else if (contractActionStatus === "FAILED") throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to burn usdc, contract action failed", null, null, false, true)
             else if (contractActionStatus !== "CONFIRMED") {
-                const nextRetryTime = new Date(new Date().getTime() + 10000).toISOString() // check status after 10 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
+                return {
+                    retryDetails: getRetryConfig(true, 10000, "Waiting BURN_USDC_ON_SOURCE_CHAIN to be confirmed")
+                }
             }
             // check gas
             const { needFund, fundSubmitted } = await gasCheck(bridgingRecord.destination_user_id, bridgingRecord.destination_chain, bridgingRecord.destination_wallet_type, profileId)
             if (needFund) {
                 // reschedule job, wait for gas to be enough
-                const nextRetryTime = new Date(new Date().getTime() + 30000).toISOString() // check status after 30 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
+                return {
+                    retryDetails: getRetryConfig(true, 30000, "Waiting for gas to be enough")
+                }
             }
             // fetch attestation and mint usdc
             const { success, shouldReschedule, message, isAttestationConfirmed } = await mintUsdc(bridgingRecord.destination_user_id, profileId, bridgingRecord)
             if (!success) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to mint usdc", null, null, shouldReschedule, true)
 
             // create job to either fetch attestation or confirm final status
-            const nextRetryTime = new Date(new Date().getTime() + 10000).toISOString() // check status after 10 seconds
-            await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-            return
+            return {
+                retryDetails: getRetryConfig(true, 10000, "Finish mint usdc, start fetch attestation")
+            }
         }
         // check if attestation is confirmed, then mint usdc
         else if (bridgingRecord.current_stage === "FETCH_ATTESTATION") {
@@ -134,9 +117,9 @@ const bridgeUsdc = async (config) => {
             const { success, shouldReschedule, message, isAttestationConfirmed } = await mintUsdc(bridgingRecord.destination_user_id, profileId, bridgingRecord)
             if (!success) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to mint usdc", null, null, shouldReschedule, true)
             // create job to either fetch attestation or confirm final status
-            const nextRetryTime = new Date(new Date().getTime() + 60000).toISOString() // check status after 60 seconds
-            await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-            return
+            return {
+                retryDetails: getRetryConfig(true, 60000, "Waiting for attestation to be confirmed")
+            }
         }
         // check if mint usdc is confirmed, then update bridging record status to success
         else if (bridgingRecord.current_stage === "RECEIVE_MESSAGE_AND_MINT") {
@@ -145,9 +128,9 @@ const bridgeUsdc = async (config) => {
             if (!contractActionStatus) throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to mint usdc, unknown contract action status", null, null, false, true)
             if (contractActionStatus === "FAILED") throw new JobError(JobErrorType.INTERNAL_ERROR, "Failed to mint usdc, contract action failed", null, null, false, true)
             if (contractActionStatus !== "CONFIRMED") {
-                const nextRetryTime = new Date(new Date().getTime() + 10000).toISOString() // check status after 10 seconds
-                await createJob("bridgeUsdc", { bridgingRecordId }, bridgingRecord.destination_user_id, profileId, new Date().toISOString(), 0, nextRetryTime)
-                return
+                return {
+                    retryDetails: getRetryConfig(true, 10000, "Waiting RECEIVE_MESSAGE_AND_MINT to be confirmed")
+                }
             }
             
             // update bridging record status to success
@@ -171,5 +154,4 @@ const bridgeUsdc = async (config) => {
 
 module.exports = { 
     bridgeUsdc,
-    bridgingUsdcScheduleCheck
  }

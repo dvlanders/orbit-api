@@ -4,4 +4,5 @@ const { authorizeDashboard, logRequestResponse, requiredProdDashboard, requiredA
 
 module.exports = (router) => {
     router.post("/dashboard/auth/onboard", authorizeDashboard, logRequestResponse, dashboardAuth.onboard)
+    router.get("/dashboard/auth/apiKey", authorizeDashboard, logRequestResponse, dashboardAuth.retrieveEncryptedApiKey)
 };

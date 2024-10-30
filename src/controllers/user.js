@@ -10,30 +10,20 @@ const { supabaseCall } = require('../util/supabaseWithRetry');
 const { createCheckbookUser } = require('../util/checkbook/endpoint/createCheckbookUser');
 const { isFieldsForIndividualCustomerValid, isRequiredFieldsForIndividualCustomerProvided, informationUploadForUpdateUser, informationUploadForCreateUser, ipCheck } = require("../util/user/createUser");
 const { InformationUploadError } = require('../util/user/errors');
-const { uploadFileFromUrl, fileUploadErrorType } = require('../util/supabase/fileUpload');
-const getBridgeCustomer = require('../util/bridge/endpoint/getBridgeCustomer');
-const getCheckbookUser = require('../util/checkbook/endpoint/getCheckbookUser');
 const { isUUID, fieldsValidation } = require('../util/common/fieldsValidation');
 const { updateIndividualBridgeCustomer } = require('../util/bridge/endpoint/updateIndividualBridgeCustomer');
 const { updateBusinessBridgeCustomer } = require('../util/bridge/endpoint/updateBusinessBridgeCustomer');
 const { updateCheckbookUser } = require('../util/checkbook/endpoint/updateCheckbookUser');
 const { generateNewSignedAgreementRecord, updateSignedAgreementRecord, checkSignedAgreementId, checkToSTemplate } = require('../util/user/signedAgreement');
-const { v4: uuidv4 } = require("uuid");
 const getAllUsers = require('../util/user/getAllUsers');
 const { CustomerStatus } = require('../util/user/common');
 const createJob = require('../../asyncJobs/createJob');
 const { getRawUserObject } = require('../util/user/getRawUserObject');
-const { jobMapping } = require('../../asyncJobs/jobMapping');
-const { createUserAsyncCheck } = require('../../asyncJobs/user/createUser');
-const { updateUserAsyncCheck } = require('../../asyncJobs/user/updateUser');
-const { createDeveloperUserAsyncCheck } = require('../../asyncJobs/user/createDeveloperUser');
 const { Chain, currencyContractAddress, hifiSupportedChain } = require('../util/common/blockchain');
 const { getBastionWallet } = require('../util/bastion/utils/getBastionWallet');
-const { updateDeveloperUserAsyncCheck } = require('../../asyncJobs/user/updateDeveloperUser');
 const { inStringEnum, isValidUrl, isHIFISupportedChain, isInRange, isValidDate } = require('../util/common/filedValidationCheckFunctions');
 const notifyUserStatusUpdate = require('../../webhooks/user/notifyUserStatusUpdate');
 const { createBastionDeveloperUserWithType } = require('../util/bastion/main/createBastionUserForDeveloperUser');
-const { createCircleWallet } = require('../util/circle/main/createCircleWallet');
 const { updateUserWallet } = require('../util/user/updateUserWallet');
 const { createUserWallet } = require('../util/user/createUserWallet');
 const { getUserWalletBalance, getUserWallet } = require('../util/user/getUserWallet');
@@ -352,11 +342,7 @@ exports.createHifiUserAsync = async (req, res) => {
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
-		const canSchedule = await createUserAsyncCheck("createUser", { userId, userType: fields.userType }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
-
-
 		return res.status(200).json(createHifiUserResponse)
 
 	} catch (error) {
@@ -404,8 +390,6 @@ exports.updateHifiUserAsync = async (req, res) => {
 		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
 
 		// insert async jobs
-		const canSchedule = await updateUserAsyncCheck("updateUser", { userId, userType: user.user_type }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
 		await createJob("updateUser", { userId, userType: user.user_type }, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);
@@ -498,8 +482,6 @@ exports.createDeveloperUser = async (req, res) => {
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
 
 		// insert async jobs
-		const canSchedule = await createDeveloperUserAsyncCheck("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(createHifiUserResponse)
 		await createJob("createDeveloperUser", { userId, userType: fields.userType }, userId, profileId)
 
 		return res.status(200).json(createHifiUserResponse)
@@ -605,8 +587,6 @@ exports.updateDeveloperUser = async (req, res) => {
 		const updateHifiUserResponse = defaultKycInfo(userId, kycLevel);
 
 		// insert async jobs
-		const canSchedule = await updateDeveloperUserAsyncCheck("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
-		if (!canSchedule) return res.status(200).json(updateHifiUserResponse)
 		await createJob("updateDeveloperUser", { userId, userType: user.user_type }, userId, profileId)
 
 		return res.status(200).json(updateHifiUserResponse);

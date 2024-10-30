@@ -10,6 +10,7 @@ const { sendSlackReqResMessage } = require('../util/logger/slackLogger');
 const cloneDeep = require('lodash.clonedeep');
 const createLog = require("./logger/supabaseLogger");
 const { isUserFrozen } = require("./internal/user/checkIsUserFrozen");
+const updateLastUserActivity = require("./user/updateLastUserActivity");
 const { logHifiApi } = require("./grafana/grafanaLogger");
 const SECRET = process.env.ZUPLO_SECRET
 const SUPABASE_WEBHOOK_SECRET = process.env.SUPABASE_WEBHOOK_SECRET
@@ -211,3 +212,19 @@ exports.localAdmin = async (req, res, next) => {
 		return res.status(500).json({ error: "Internal server error" })
 	}
 }
+
+// Middleware to log the response body and status code
+exports.updateLastUserActivity = (req, res, next) => {
+	const originalSend = res.send;
+  
+	// Override the res.send method
+	res.send = async function(body) {
+		// if it's not okay, don't update last user activity
+		if (res.statusCode < 200 || res.statusCode > 300) return originalSend.apply(this, arguments);
+		// update last user activity
+		await updateLastUserActivity(req)
+	  	return originalSend.apply(this, arguments);
+	};
+  
+	next();
+};
