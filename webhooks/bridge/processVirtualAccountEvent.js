@@ -10,7 +10,6 @@ const { updateOnrampTransactionRecord, insertSingleOnrampTransactionRecord, upda
 const { transferType } = require("../../src/util/transfer/utils/transfer");
 const notifyTransaction = require("../../src/util/logger/transactionNotifier");
 const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
-const { chargeFeeOnFundReceivedScheduleCheck } = require("../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck");
 const { isValidBridgeStateTransition } = require("../../src/util/bridge/utils");
 const { isUUID } = require("../../src/util/common/fieldsValidation");
 const createJob = require("../../asyncJobs/createJob");
@@ -216,10 +215,7 @@ const processVirtualAccountEvent = async (event) => {
 
     if (onrampRecord.developer_fee_id) {
       const jobConfig = {recordId: onrampRecord.id}
-      const canSchedule = await chargeFeeOnFundReceivedScheduleCheck("chargeFeeOnFundReceived", jobConfig, onrampRecord.destination_user_id, onrampRecord.destination_user.profile_id)
-      if (canSchedule){
-        await createJob("chargeFeeOnFundReceived", jobConfig, onrampRecord.destination_user_id, onrampRecord.destination_user.profile_id, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
-      }
+      await createJob("chargeFeeOnFundReceived", jobConfig, onrampRecord.destination_user_id, onrampRecord.destination_user.profile_id, new Date().toISOString(), 0, new Date(new Date().getTime() + 60000).toISOString())
     }
 
     if (onrampRecord.status === "REFUNDED") {

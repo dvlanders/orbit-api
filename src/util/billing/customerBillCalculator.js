@@ -2,6 +2,7 @@ const createLog = require("../logger/supabaseLogger")
 const supabase = require("../supabaseClient")
 const { transferType } = require("../transfer/utils/transfer")
 const { getTotalBalanceTopups, getBalance } = require("./balance/balanceService")
+const { getKycKybAmount } = require("./user/getKycKybAmount")
 
 const getTotalCryptoToCryptofee = async(profileId, startDate, endDate, status) => {
     const {data, error} = await supabase
@@ -73,8 +74,22 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             .lt("last_activity_time", endDate)
         if (activeVirtualAccountError) throw activeVirtualAccountError
 
+        // get active user amount
+        const {count: activeUser, error: activeUserError} = await supabase
+            .from("users")
+            .select("*", {count: 'exact', head: true})
+            .eq("profile_id", profileId)
+            .gte("last_activity_time", startDate)
+        if (activeUserError) throw activeUserError
+
         // get total topups
         const totalTopUps = await getTotalBalanceTopups(profileId, startDate, endDate)
+
+        // get kyc kyb amount
+        const [kycAmount, kybAmount] = await Promise.all([
+            getKycKybAmount(profileId, startDate, endDate, "individual"),
+            getKycKybAmount(profileId, startDate, endDate, "business")
+        ])
 
         // get balance left
         const balance = await getBalance(profileId)
@@ -98,6 +113,12 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
             virtualAccount: {
                 value: activeVirtualAccount * billingRate.active_virtual_account_fee || 0
             },
+            activeUser: {
+                value: activeUser * billingRate.active_user_fee || 0
+            },
+            kycKyb: {
+                value: (kycAmount * billingRate.kyc_fee) || 0 + (kybAmount * billingRate.kyb_fee) || 0
+            },
             monthlyMinimum: billingRate.monthly_minimum,
             integrationFee: billingRate.integration_fee,
             platformFee: billingRate.platform_fee,
@@ -112,7 +133,7 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
         }
 
 
-        billingInfo.total = billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value + billingInfo.fiatDeposit.value + billingInfo.virtualAccount.value
+        billingInfo.total = billingInfo.cryptoPayout.value + billingInfo.fiatPayout.value + billingInfo.fiatDeposit.value + billingInfo.virtualAccount.value + billingInfo.kycKyb.value + billingInfo.activeUser.value
         billingInfo.totalTransactionFeeSuccess = billingInfo.cryptoPayout.success + billingInfo.fiatPayout.success + billingInfo.fiatDeposit.success
         billingInfo.totalTransactionFeeFailed = billingInfo.cryptoPayout.failed + billingInfo.fiatPayout.failed + billingInfo.fiatDeposit.failed
         billingInfo.payoutTotal = {
@@ -120,7 +141,6 @@ exports.calculateCustomerMonthlyBill = async(profileId, startDate, endDate) => {
         }
         return billingInfo
     }catch (error){
-        console.error(error)
         await createLog("billing/calculateCustomerMonthlyBill", null, error.message, null, profileId)
         throw new Error("Something went wrong in calculateCustomerMonthlyBill")
     }

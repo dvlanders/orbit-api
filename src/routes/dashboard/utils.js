@@ -1,9 +1,9 @@
 
 const { dashboard } = require("../../controllers");
-const { authorize, authorizeDashboard, requiredProdDashboard, requiredAdmin } = require("../../util/middleware");
+const { authorizeDashboard, requiredProdDashboard, requiredAdmin, updateLastUserActivity } = require("../../util/middleware");
 
 module.exports = (router) => {
-    router.get("/dashboard/utils/getWalletBalance", authorizeDashboard, requiredProdDashboard, dashboard.getWalletBalance)
+    router.get("/dashboard/utils/getWalletBalance", authorizeDashboard, requiredProdDashboard, updateLastUserActivity, dashboard.getWalletBalance)
     router.get("/dashboard/utils/getTotalTransactionVolume", authorizeDashboard, requiredProdDashboard, dashboard.getTotalTransactionVolume)
     router.get("/dashboard/utils/getTotalTransactionVolumeHistory", authorizeDashboard, requiredProdDashboard, dashboard.getTotalTransactionVolumeHistory)
     router.get("/dashboard/utils/getTotalTransactionAmount", authorizeDashboard, requiredProdDashboard,dashboard.getTotalTransactionAmount)

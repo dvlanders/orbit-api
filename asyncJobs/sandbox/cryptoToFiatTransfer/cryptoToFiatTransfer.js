@@ -19,11 +19,10 @@ exports.cryptoToFiatTransferSandboxAsync = async (config) => {
 		await executeSandboxAsyncTransferCryptoToFiat(transferConfig)
 
 	} catch (error) {
-		console.error(error)
 		if (error instanceof JobError) throw error
 		await createLog("job/transfer/cryptoToFiatTransferSandboxAsync", config.userId, error.message, error)
 		// don't reSchedule
-		throw new JobError(JobErrorType.RESCHEDULE, error.message, null, error.message, false)
+		throw new JobError(JobErrorType.INTERNAL_ERROR, error.message, null, error.message, false)
 	}
 
 }

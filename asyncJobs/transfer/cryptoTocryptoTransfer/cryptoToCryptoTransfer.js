@@ -11,6 +11,7 @@ const cryptoToCryptoSupportedFunctions = require("../../../src/util/transfer/cry
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
 const { JobError, JobErrorType } = require("../../error")
+const { getRetryConfig } = require("../../retryJob")
 
 const cryptoToCryptoTransferAsync = async(config) => {
 
@@ -26,7 +27,9 @@ const cryptoToCryptoTransferAsync = async(config) => {
         // gas check
         const { needFund, fundSubmitted } = await gasCheck(record.sender_user_id, record.chain, record.transfer_from_wallet_type, config.profileId)
         if (needFund){
-            throw new JobError(JobErrorType.RESCHEDULE, "wallet gas not enough", null, null, true, false)
+            return {
+                retryDetails: getRetryConfig(true, 60000, "wallet gas not enough")
+            }
         }
 
         // check allowance if not enough perform a token approve job and reschedule transfer
@@ -36,7 +39,9 @@ const cryptoToCryptoTransferAsync = async(config) => {
             const allowance = await getTokenAllowance(record.chain, record.currency, record.sender_address, paymentProcessorContractAddress)
             if (allowance < BigInt(unitsAmount)){
                 await approveMaxTokenToPaymentProcessor(record.sender_user_id, record.chain, record.currency, record.transfer_from_wallet_type)
-                throw new JobError(JobErrorType.RESCHEDULE, "Token approve amount not enough", null, null, true, false)
+                return {
+                    retryDetails: getRetryConfig(true, 60000, "Token approve amount not enough")
+                }
             }
         }
         

@@ -8,9 +8,8 @@ const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits");
 const { transferType } = require("../../utils/transfer");
 const { getFeeConfig } = require("../../fee/utils");
 const { erc20Transfer } = require("../../../bastion/utils/erc20FunctionMap");
-const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../smartContract/approve/approveToken");
+const { paymentProcessorContractMap } = require("../../../smartContract/approve/approveToken");
 const { updateRequestRecord } = require("../utils/updateRequestRecord");
-const { cryptoToFiatTransferScheduleCheck } = require("../../../../../asyncJobs/transfer/cryptoToFiatTransfer/scheduleCheck");
 const createJob = require("../../../../../asyncJobs/createJob");
 const { createNewFeeRecord } = require("../../fee/createNewFeeRecord");
 const { getMappedError } = require("../../../bastion/utils/errorMappings");
@@ -241,7 +240,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
         feeUnitsAmount,
         feeCollectionWalletAddress,
         providerRecordId,
-        paymentProcessType: "EXACT_IN"
+        paymentProcessType: "EXACT_OUT"
     }
 
     const {response, responseBody, mainTableStatus, providerStatus, failedReason, feeRecordStatus} = await transferToWalletWithPP(walletProvider, transferConfig)
@@ -429,9 +428,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
 	const jobConfig = {
 		recordId: initialTransferRecord.id
 	}
-	if (await cryptoToFiatTransferScheduleCheck("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)) {
-		await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
-	}
+	await createJob("cryptoToFiatTransfer", jobConfig, sourceUserId, profileId)
 
 	const result = await fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 	return { isExternalAccountExist: true, transferResult: result }

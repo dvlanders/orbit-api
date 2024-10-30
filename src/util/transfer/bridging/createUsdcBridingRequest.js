@@ -1,4 +1,3 @@
-const { bridgingUsdcScheduleCheck } = require("../../../../asyncJobs/bridging/cctp/bridgeUsdc")
 const createJob = require("../../../../asyncJobs/createJob")
 const { checkBalanceForTransactionAmount } = require("../../bastion/utils/balanceCheck")
 const { getBastionWallet } = require("../../bastion/utils/getBastionWallet")
@@ -48,9 +47,7 @@ const createUsdcBridgingRequest = async (config) => {
         
         // create Job to initiate bridge
         const jobConfig = { bridgingRecordId: record.id }
-        if (await bridgingUsdcScheduleCheck("bridgeUsdc", jobConfig, sourceUserId, profileId)){
-            await createJob("bridgeUsdc", jobConfig, sourceUserId, profileId)
-        }
+        await createJob("bridgeUsdc", jobConfig, sourceUserId, profileId)
 
         const receipt = await fetchBridgingTransactions(record.id, profileId)
         return receipt

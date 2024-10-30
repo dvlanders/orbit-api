@@ -2,16 +2,13 @@ const { v4 } = require("uuid")
 const notifyBaseAssetWithdraw = require("../../../../webhooks/transfer/notifyBaseAssetWithdraw")
 const transferBaseAsset = require("../../bastion/endpoints/transferBaseAsset")
 const { getMappedError } = require("../../bastion/utils/errorMappings")
-const { checkBalanceForTransactionFee } = require("../../billing/fee/transactionFeeBilling")
 const { baseAssetMap } = require("../../common/blockchain")
 const createLog = require("../../logger/supabaseLogger")
 const supabase = require("../../supabaseClient")
 const { supabaseCall } = require("../../supabaseWithRetry")
 const { safeParseBody } = require("../../utils/response")
-const { insertRequestRecord } = require("../cryptoToCrypto/main/insertRequestRecord")
 const fetchBaseAssetTransactionRecord = require("./fetchBaseAssetTransactionRecord")
 const { updateRequestRecord } = require("./updateRequestRecord")
-const { baseAssetWithdrawAsyncScheduleCheck } = require("../../../../asyncJobs/transfer/baseAssetWithdraw/scheduleCheck")
 const createJob = require("../../../../asyncJobs/createJob")
 const { toUnitsString } = require("../cryptoToCrypto/utils/toUnits")
 
@@ -55,10 +52,7 @@ const createBaseAssetTransfer = async(fields) => {
     const jobConfig = {
         recordId: record.id
     }
-    const canSchedule = await baseAssetWithdrawAsyncScheduleCheck("baseAssetWithdraw", jobConfig, senderUserId, profileId)
-    if (canSchedule){
-        await createJob("baseAssetWithdraw", jobConfig, senderUserId, profileId)
-    }
+    await createJob("baseAssetWithdraw", jobConfig, senderUserId, profileId)
 
     return receipt
 
