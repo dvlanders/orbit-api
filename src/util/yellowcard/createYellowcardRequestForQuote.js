@@ -7,7 +7,7 @@ const { getBearerDid } = require('./utils/getBearerDid');
 const fetchYellowcardCryptoToFiatTransferRecord = require("../../util/transfer/cryptoToBankAccount/transfer/fetchYellowcardCryptoToFiatTransferRecord");
 const { safeToNumberString } = require('../utils/number');
 const { updateYellowCardTransactionInfo } = require('./transactionInfoService');
-const { yellowcardMethodFieldsMapForDevelopment } = require('./utils/utils');
+const { yellowcardMethodFieldsMap } = require('./utils/utils');
 
 const env = process.env.NODE_ENV;
 
@@ -42,7 +42,6 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 	// convert amount to string with 2 decimal places
 	amount = safeToNumberString(amount, 2);
 
-    let payoutMetadata = env === "production"? { kind: payoutAccountDetails.kind } : yellowcardMethodFieldsMapForDevelopment[payoutAccountDetails.kind];
 	const rfqData = {
 		offeringId: selectedOffering.metadata.id,
 		payin: {
@@ -51,8 +50,7 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 			amount: amount,
 		},
 		payout: {
-			// kind: payoutAccountDetails.kind || payout.methods[0].kind,
-            ...payoutMetadata,
+            ...yellowcardMethodFieldsMap[env][destinationCurrency][payoutAccountDetails.kind],
 			paymentDetails: {
 				accountNumber: payoutAccountDetails.account_number,
 				// reason: purposeOfPayment,
@@ -76,7 +74,6 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 		protocol: '1.0'
 	};
 
-    console.log(rfqData)
 
 	const ycRfq = Rfq.create({
 		metadata: rfqMetadata,
@@ -94,8 +91,9 @@ async function createYellowcardRequestForQuote(yellowcardTransactionRecordId, de
 
 	// create the exchange
 	try {
-		await TbdexHttpClient.createExchange(ycRfq);
+        await TbdexHttpClient.createExchange(ycRfq);
 	} catch (error) {
+        console.log(JSON.stringify(error, null, 2))
 		await createLog("yellowcard/createYellowcardRequestForQuote", null, error.message, error )
 		throw new Error("Failed to create exchange for createYellowcardRequestForQuote")
 	}

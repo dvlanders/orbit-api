@@ -1,19 +1,28 @@
 const { insertAccountProviders } = require("../account/accountProviders/accountProvidersService");
-const { fieldsValidation } = require("../common/fieldsValidation");
+const { fieldsValidation, isUUID } = require("../common/fieldsValidation");
+const { inStringEnum } = require("../common/filedValidationCheckFunctions");
 const { YcAccountInfoError, YcAccountInfoErrorType } = require("./utils/errors");
-const { ycAccountRequiredFieldsMap, ycAccountAcceptedFieldsMap, insertYellowcardAccount, yellowcardPhoneNumberFormatPatterMap } = require("./utils/utils");
+const { insertYellowcardAccount, yellowcardPhoneNumberFormatPatternMap, yellowcardAccountNumberFormatPatternMap, yellowcardSupportedKindsMap } = require("./utils/utils");
 
 const env = process.env.NODE_ENV;
 
 const createYellowcardAccount = async(config) => {
     const {fields, currency, paymentRail} = config;
 
-    const requiredFields = ycAccountRequiredFieldsMap[env][paymentRail][fields.kind];
-    const acceptedFields = ycAccountAcceptedFieldsMap[env][paymentRail][fields.kind];
-
-    if (!requiredFields || !acceptedFields) {
-        throw new YcAccountInfoError(YcAccountInfoErrorType.INVALID_FIELD, 400, "", { error: "kind is invalid" });
-    }
+    const requiredFields = [
+        "user_id",
+        "accountNumber",
+        "accountHolderName",
+        "accountHolderPhone",
+        "kind"
+    ];
+    const acceptedFields = {
+        user_id: (value) => isUUID(value),
+        accountNumber: (value) => { return yellowcardAccountNumberFormatPatternMap[currency].test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        accountHolderPhone: (value) => { return yellowcardPhoneNumberFormatPatternMap[currency].test(value) },
+        kind: (value) => inStringEnum(value, yellowcardSupportedKindsMap[env][paymentRail]),
+    };
 
     // check if required fields are uploaded and validate field values
     const { missingFields, invalidFields } = fieldsValidation(
@@ -33,13 +42,6 @@ const createYellowcardAccount = async(config) => {
                 invalid_fields: invalidFields,
             }
         );
-    }
-
-    // validate phoneNumber
-    const phoneNumberRequiredPattern = yellowcardPhoneNumberFormatPatterMap[currency];
-    if (phoneNumberRequiredPattern) {
-        if (!phoneNumberRequiredPattern.test(fields.accountHolderPhone))
-            throw new YcAccountInfoError(YcAccountInfoErrorType.INVALID_FIELD, 400, "", { error: `Invalid accountHolderPhone format, please follow the pattern ${phoneNumberRequiredPattern}` });
     }
 
     // insert record
