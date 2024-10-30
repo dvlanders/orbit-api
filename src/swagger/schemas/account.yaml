@@ -364,9 +364,6 @@ EurOfframpSepaAccount:
 KesOfframpMOMOAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [kes]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -378,16 +375,12 @@ KesOfframpMOMOAccount:
       enum: [MOMO_MPESA]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountHolderName
     - kind
 XofOfframpMOMOAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [xof]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -399,16 +392,12 @@ XofOfframpMOMOAccount:
       enum: [MOMO_MTN]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountHolderName
     - kind
 RwfOfframpMOMOAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [rwf]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -420,16 +409,12 @@ RwfOfframpMOMOAccount:
       enum: [MOMO_MTN]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountHolderName
     - kind
 ZmwOfframpMOMOAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [zmw]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -441,16 +426,12 @@ ZmwOfframpMOMOAccount:
       enum: [MOMO_MTN]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountHolderName
     - kind
 NgnOfframpBankAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [ngn]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -465,16 +446,12 @@ NgnOfframpBankAccount:
       enum: ["BANK_Access Bank", "BANK_GT Bank", "BANK_United Bank for Africa"]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountHolderName
     - kind
 UgxOfframpBankAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [ugx]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -492,7 +469,6 @@ UgxOfframpBankAccount:
       enum: ["BANK_Manul Entry"]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountNumber
     - accountHolderName
@@ -501,9 +477,6 @@ UgxOfframpBankAccount:
 TzsOfframpBankAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [tzs]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -521,7 +494,6 @@ TzsOfframpBankAccount:
       enum: ["BANK_Manul Entry"]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountNumber
     - accountHolderName
@@ -530,9 +502,6 @@ TzsOfframpBankAccount:
 MwkOfframpBankAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [mwk]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -550,7 +519,6 @@ MwkOfframpBankAccount:
       enum: ["BANK_Manul Entry"]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountNumber
     - accountHolderName
@@ -559,9 +527,6 @@ MwkOfframpBankAccount:
 XafOfframpBankAccount:
   type: object
   properties:
-    currency:
-      type: string
-      enum: [xaf]
     accountHolderPhone:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
@@ -579,7 +544,6 @@ XafOfframpBankAccount:
       enum: ["BANK_Manul Entry"]
       description: Kind of Mobile Money transfer.
   required:
-    - currency
     - accountHolderPhone
     - accountNumber
     - accountHolderName
@@ -671,7 +635,14 @@ SAReceiverCreateIndividualStandardKYCAccount:
       description: File size should not exceed 3MB
     proof_of_address_doc_type:
       type: string
-      enum: [UTILITY_BILL, BANK_STATEMENT, RENTAL_AGREEMENT, TAX_DOCUMENT, GOVERNMENT_CORRESPONDENCE]
+      enum:
+        [
+          UTILITY_BILL,
+          BANK_STATEMENT,
+          RENTAL_AGREEMENT,
+          TAX_DOCUMENT,
+          GOVERNMENT_CORRESPONDENCE,
+        ]
     proof_of_address_doc_file:
       type: string
       description: File size should not exceed 3MB
@@ -950,7 +921,14 @@ ReceiverBusinessOwner:
       description: File size should not exceed 3MB
     proof_of_address_doc_type:
       type: string
-      enum: [UTILITY_BILL, BANK_STATEMENT, RENTAL_AGREEMENT, TAX_DOCUMENT, GOVERNMENT_CORRESPONDENCE]
+      enum:
+        [
+          UTILITY_BILL,
+          BANK_STATEMENT,
+          RENTAL_AGREEMENT,
+          TAX_DOCUMENT,
+          GOVERNMENT_CORRESPONDENCE,
+        ]
     proof_of_address_doc_file:
       type: string
       description: File size should not exceed 3MB
