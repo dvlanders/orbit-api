@@ -364,9 +364,12 @@ EurOfframpSepaAccount:
 KesOfframpMOMOAccount:
   type: object
   properties:
-    accountHolderPhone:
+    accountNumber:
       type: string
       description: Mobile Money account phone number of the Recipient. e.g. +2547111111
+    accountHolderPhone:
+      type: string
+      description: Contact phone number of the account holder. Typically the same as the accountNumber. e.g. +2547111111
     accountHolderName:
       type: string
       description: Name of the account holder as it appears on the Mobile Money account.
@@ -375,6 +378,7 @@ KesOfframpMOMOAccount:
       enum: [MOMO_MPESA]
       description: Kind of Mobile Money transfer.
   required:
+    - accountNumber
     - accountHolderPhone
     - accountHolderName
     - kind
