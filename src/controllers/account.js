@@ -32,6 +32,8 @@ const { createBankAccount } = require('../util/blindpay/endpoint/createBankAccou
 const { getReceiverInfo } = require('../util/blindpay/getReceiverInfo');
 const { verifyAchAccount } = require('../util/account/verifyAccount/verifyAchAccount');
 const { updateAccountInfoById } = require('../util/blindpay/bankAccountService');
+const { createYellowcardAccount } = require('../util/yellowcard/createYellowcardAccount');
+const { YcAccountInfoError, YcAccountInfoErrorType } = require('../util/yellowcard/utils/errors');
 const { fetchWithLogging } = require('../util/logger/fetchLogger');
 
 const Status = {
@@ -143,9 +145,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		accountNumber: 'string',
 		routingNumber: 'string',
 		accountOwnerType: 'string',
-        firstName: 'string',
-        lastName: 'string',
-        businessName: 'string',
+		firstName: 'string',
+		lastName: 'string',
+		businessName: 'string',
 		streetLine1: 'string',
 		streetLine2: 'string',
 		city: 'string',
@@ -161,15 +163,15 @@ exports.createUsdOfframpDestination = async (req, res) => {
 		return res.status(400).json({ error: 'Missing required fields', missingFields, invalidFields });
 	}
 	try {
-        // Verify ACH
-        if (!isValidRoutingNumber(routingNumber))
-            return res.status(400).json({ error: "Invalid Field, routingNumber must be 9 digits." });
+		// Verify ACH
+		if (!isValidRoutingNumber(routingNumber))
+			return res.status(400).json({ error: "Invalid Field, routingNumber must be 9 digits." });
 
-        const { status: verificationStatus, message: verificationMessage } = await verifyAchAccount(accountNumber, routingNumber);
-        if (verificationStatus === 400)
-            return res.status(400).json({ error: verificationMessage });
-        else if (verificationStatus === 500)
-            return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information." });
+		const { status: verificationStatus, message: verificationMessage } = await verifyAchAccount(accountNumber, routingNumber);
+		if (verificationStatus === 400)
+			return res.status(400).json({ error: verificationMessage });
+		else if (verificationStatus === 500)
+			return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information." });
 
 		let recordId;
 		const { externalAccountExist, liquidationAddressExist, externalAccountRecordId } = await checkUsdOffRampAccount({
@@ -223,9 +225,9 @@ exports.createUsdOfframpDestination = async (req, res) => {
 					beneficiary_country: country,
 					account_number: accountNumber,
 					routing_number: routingNumber,
-                    beneficiary_first_name: firstName,
-                    beneficiary_last_name: lastName,
-                    beneficiary_business_name: businessName,
+					beneficiary_first_name: firstName,
+					beneficiary_last_name: lastName,
+					beneficiary_business_name: businessName,
 					bridge_response: bridgeAccountResult.rawResponse,
 					bridge_external_account_id: bridgeAccountResult.rawResponse.id,
 				})
@@ -332,7 +334,7 @@ exports.createEuroOfframpDestination = async (req, res) => {
 			userId,
 			ibanAccountNumber,
 			businessIdentifierCode,
-            currency: "eur"
+			currency: "eur"
 		}).catch(error => {
 			console.error("Error checking EU off-ramp account", error);
 			throw new Error("Error checking EU off-ramp account: " + error.message);
@@ -484,9 +486,9 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
 	const acceptedFields = {
-		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars"]),
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "mwk", "ngn", "tzs", "ugx", "xaf", "kes", "rwf", "xof", "zmw"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop", "bank_mwk", "bank_ngn", "bank_tzs", "bank_ugx", "bank_xaf", "momo_kes", "momo_rwf", "momo_xof", "momo_zmw"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
@@ -936,7 +938,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayBankAccount", fields.user_id, `Failed to Upload Bank Account Info For user: ${fields.user_id}`, error, profileId, res);
 		if (error instanceof BankAccountInfoUploadError) {
-			if(error.type === BankAccountInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === BankAccountInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -977,7 +979,7 @@ exports.createBlindpayBankAccount = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayBankAccount", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateBankAccountError) {
-			if(error.type === CreateBankAccountErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === CreateBankAccountErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the BR bank account. Please try again later." })
@@ -1003,7 +1005,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.user_id, `Failed to Upload Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
-			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -1039,7 +1041,7 @@ exports.createBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateReceiverError) {
-			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1251,8 +1253,8 @@ exports.createWireUsOfframpDestination = async (req, res) => {
 				.from('account_providers')
 				.select('id')
 				.eq('account_id', externalAccountRecordId)
-                .eq('payment_rail', 'wire')
-                .maybeSingle();
+				.eq('payment_rail', 'wire')
+				.maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
@@ -1328,14 +1330,14 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 
 
 	try {
-        const { externalAccountExist, externalAccountRecordId } = await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode, currency: "usd" });
+		const { externalAccountExist, externalAccountRecordId } = await checkEuOffRampAccount({ userId, ibanAccountNumber, businessIdentifierCode, currency: "usd" });
 		if (!externalAccountExist) {
 			const bridgeAccountResult = await createBridgeExternalAccount(
 				userId, accountType, currency, bankName, accountOwnerName, accountOwnerType,
 				firstName, lastName, businessName,
 				streetLine1, streetLine2, city, state, postalCode, country,
 				ibanAccountNumber, businessIdentifierCode, ibanCountryCode,
-                null, null  // accountNumber and routingNumber not used for IBAN
+				null, null  // accountNumber and routingNumber not used for IBAN
 			);
 
 			if (bridgeAccountResult.status !== 200) {
@@ -1383,8 +1385,8 @@ exports.createSwiftOfframpDestination = async (req, res) => {
 				.from('account_providers')
 				.select('id')
 				.eq('account_id', externalAccountRecordId)
-                .eq('payment_rail', 'swift')
-                .maybeSingle();
+				.eq('payment_rail', 'swift')
+				.maybeSingle();
 
 			if (providerAccountRecordError) {
 				console.log(providerAccountRecordError);
@@ -1439,7 +1441,7 @@ exports.getBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/createBlindpayReceiver", fields.userId, error.message, error, null, res);
 		if (error instanceof ReceiverInfoGetError) {
-			if(error.type === ReceiverInfoGetErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === ReceiverInfoGetErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
@@ -1466,7 +1468,7 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/updateBlindpayReceiver", fields.user_id, `Failed to Update Receiver Info For user: ${fields.user_id}`, error, profileId, res)
 		if (error instanceof ReceiverInfoUploadError) {
-			if(error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === ReceiverInfoUploadErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
@@ -1495,9 +1497,309 @@ exports.updateBlindpayReceiver = async (req, res) => {
 	} catch (error) {
 		await createLog("account/updateBlindpayReceiver", fields.user_id, error.message, error, null, res);
 		if (error instanceof CreateReceiverError) {
-			if(error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+			if (error.type === CreateReceiverErrorType.INTERNAL_ERROR) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
 			return res.status(error.status).json(error.rawResponse)
 		}
 		return res.status(500).json({ error: "An error occurred while creating the receiver. Please try again later." });
 	}
+}
+
+exports.createKesMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_kes", currency: "kes" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createKesMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createMwkMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createMwkMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createXofMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_xof", currency: "xof" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createXofMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createRwfMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_rwf", currency: "rwf" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createRwfMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createZmwMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_zmw", currency: "zmw" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createZmwMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createNgnBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_ngn", currency: "ngn" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createNgnBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createUgxBankAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_ugx", currency: "ugx" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createUgxBankAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createTzsMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_tzs", currency: "tzs" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createTzsMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createMwkMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
+        
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+        
+    } catch (error) {
+        await createLog("account/createMwkMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
+}
+
+exports.createXafMomoAccount = async (req, res) => {
+    const { userId, profileId } = req.query;
+	const fields = req.body;
+
+	if (!(await verifyUser(userId, profileId))) {
+		return res.status(401).json({ error: "userId not found" });
+	}
+
+    fields.user_id = userId;
+
+    try {
+        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_xaf", currency: "xaf" });
+
+        return res.status(200).json({
+			status: "ACTIVE",
+			invalidFields: [],
+			message: "Account created successfully",
+			id: accountProviderRecord.id
+		});
+
+    } catch (error) {
+        await createLog("account/createXafMomoAccount", userId, error.message, error);
+        if (error instanceof YcAccountInfoError) {
+            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+            return res.status(error.status).json(error.rawResponse);
+        }
+        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
+    }
 }

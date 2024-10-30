@@ -119,7 +119,7 @@ const initTransferData = async (config) => {
 		// no paymentProcessorContract available
 		const toUpdate = {
 			transaction_status: "NOT_INITIATED",
-			failed_reason: `Fee feature not available for ${currency} on ${chain}`
+			failed_reason: `Fee feature not available for ${sourceCurrency} on ${chain}`
 		}
 		record = await updateOfframpTransactionRecord(record.id, toUpdate)
 		const result = await fetchBridgeCryptoToFiatTransferRecord(record.id, profileId)
@@ -409,7 +409,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Insufficient balance for transaction fee"
         }
-        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 		return { isExternalAccountExist: true, transferResult: result }
     }
@@ -419,7 +419,7 @@ const createTransferToBridgeLiquidationAddress = async (config) => {
             transaction_status: "NOT_INITIATED",
             failed_reason: "Transfer amount exceeds wallet balance"
         }
-        await updateRequestRecord(initialTransferRecord.id, toUpdate)
+        await updateOfframpTransactionRecord(initialTransferRecord.id, toUpdate)
         const result = fetchBridgeCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 		return { isExternalAccountExist: true, transferResult: result }
     }

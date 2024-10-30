@@ -55,29 +55,29 @@ const createPaymentQuote = async (config) => {
         throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Unexpected error happened")
     }
 
-    return blindpayQuoteResponse;
+	return blindpayQuoteResponse;
 
 }
 
 const acceptPaymentQuote = async (config) => {
     const {recordId, blindpayQuoteContract, bastionRequestId, sourceUserId, senderBastionUserId, senderCircleWalletId, contractAddress, chain, walletProvider, walletTransactionRecordId} = config;
 
-    const abi = blindpayQuoteContract.abi;
-    const approveFunctionAbi = abi.find(func => func.name === 'approve');
-    const inputs = approveFunctionAbi.inputs;
+	const abi = blindpayQuoteContract.abi;
+	const approveFunctionAbi = abi.find(func => func.name === 'approve');
+	const inputs = approveFunctionAbi.inputs;
 
-    const actionParams = inputs.map(input => {
-        const value = input.name.includes('spender')
-          ? blindpayQuoteContract.blindpayContractAddress
-          : input.name.includes('value')
-          ? blindpayQuoteContract.amount
-          : null;
-      
-        return {
-          name: input.name,
-          value: value
-        };
-      });
+	const actionParams = inputs.map(input => {
+		const value = input.name.includes('spender')
+			? blindpayQuoteContract.blindpayContractAddress
+			: input.name.includes('value')
+				? blindpayQuoteContract.amount
+				: null;
+
+		return {
+			name: input.name,
+			value: value
+		};
+	});
 
     const userActionConfig = {
         referenceId: recordId,
@@ -165,9 +165,9 @@ const initTransferData = async (config) => {
 
     record.to_blindpay_account_id = record.blindpay_transaction_info.blindpay_account_id;
 
-    if (!feeType || parseFloat(feeValue) <= 0) return record
+	if (!feeType || parseFloat(feeValue) <= 0) return record
 
-    // insert fee record
+	// insert fee record
 	let { feePercent, feeAmount, clientReceivedAmount } = getFeeConfig(feeType, feeValue, amount)
 	const info = {
 		chargedUserId: sourceUserId,
@@ -219,7 +219,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 
     const blindpayTransactionInfo = initialTransferRecord.blindpay_transaction_info;
 
-    // get fee config
+	// get fee config
 	const { data: feeRecord, error: feeRecordError } = await supabase
 		.from("developer_fees")
 		.select("*")
@@ -227,7 +227,7 @@ const transferWithFee = async (initialTransferRecord, profileId) => {
 		.single()
 
 	if (feeRecordError) throw feeRecordError
-    if(!feeRecord) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Fee record not found")
+	if (!feeRecord) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Fee record not found")
 
     const paymentConfig = {
         recordId, 
@@ -287,39 +287,39 @@ const createTransferToBlindpaySmartContract = async (config) => {
     config.accountId = accountId
     const initialTransferRecord = await initTransferData(config);
 
-    if(!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)){
-        const toUpdate = {
-            transaction_status: "NOT_INITIATED",
-            failed_reason: "Insufficient balance for transaction fee"
-        }
-        await updateRequestRecord(initialTransferRecord.id, toUpdate)
-        const result = fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+	if (!await checkBalanceForTransactionFee(initialTransferRecord.id, transferType.CRYPTO_TO_FIAT)) {
+		const toUpdate = {
+			transaction_status: "NOT_INITIATED",
+			failed_reason: "Insufficient balance for transaction fee"
+		}
+		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+		const result = fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 		return { isExternalAccountExist: true, transferResult: result }
-    }
+	}
 
-    if(!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)){
-        const toUpdate = {
-            transaction_status: "NOT_INITIATED",
-            failed_reason: "Transfer amount exceeds wallet balance"
-        }
-        await updateRequestRecord(initialTransferRecord.id, toUpdate)
-        const result = fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
+	if (!await checkBalanceForTransactionAmount(sourceBastionUserId, amount, chain, sourceCurrency)) {
+		const toUpdate = {
+			transaction_status: "NOT_INITIATED",
+			failed_reason: "Transfer amount exceeds wallet balance"
+		}
+		await updateRequestRecord(initialTransferRecord.id, toUpdate)
+		const result = fetchBlindpayCryptoToFiatTransferRecord(initialTransferRecord.id, profileId)
 		return { isExternalAccountExist: true, transferResult: result }
-    }
+	}
 
-    let quoteAmount = initialTransferRecord.amount;
-    // if there is fee, deduct fee from amount
-    if(initialTransferRecord.developer_fee_id){
-        // get fee config
-        const { data: feeRecord, error: feeRecordError } = await supabase
-            .from("developer_fees")
-            .select("*")
-            .eq("id", initialTransferRecord.developer_fee_id)
-            .single()
-        if (feeRecordError) throw feeRecordError
-        if(!feeRecord) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Fee record not found")
-        quoteAmount = (quoteAmount - feeRecord.fee_amount).toFixed(2)
-    }
+	let quoteAmount = initialTransferRecord.amount;
+	// if there is fee, deduct fee from amount
+	if (initialTransferRecord.developer_fee_id) {
+		// get fee config
+		const { data: feeRecord, error: feeRecordError } = await supabase
+			.from("developer_fees")
+			.select("*")
+			.eq("id", initialTransferRecord.developer_fee_id)
+			.single()
+		if (feeRecordError) throw feeRecordError
+		if (!feeRecord) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.INTERNAL_ERROR, "Fee record not found")
+		quoteAmount = (quoteAmount - feeRecord.fee_amount).toFixed(2)
+	}
 
     const quoteConfig = {
         recordId: initialTransferRecord.id,
@@ -331,8 +331,8 @@ const createTransferToBlindpaySmartContract = async (config) => {
     }
     const blindpayQuoteResponse = await createPaymentQuote(quoteConfig);
 
-    const conversionRate = {...blindpayQuoteResponse};
-    delete conversionRate.contract;
+	const conversionRate = { ...blindpayQuoteResponse };
+	delete conversionRate.contract;
 
     const toUpdate = {
         quote_response: blindpayQuoteResponse,
@@ -369,9 +369,9 @@ const executeAsyncBlindpayTransferCryptoToFiat = async (config) => {
 }
 
 const acceptBlindpayCryptoToFiatTransfer = async (config) => {
-	const {recordId, profileId} = config
-    // accept quote and update record
-	const {data: record, error: recordError} = await supabase
+	const { recordId, profileId } = config
+	// accept quote and update record
+	const { data: record, error: recordError } = await supabase
 		.from("offramp_transactions")
 		.select()
 		.eq("id", recordId)
@@ -380,11 +380,11 @@ const acceptBlindpayCryptoToFiatTransfer = async (config) => {
 	if (recordError) throw recordError
 	if (!record) throw new CreateCryptoToBankTransferError(CreateCryptoToBankTransferErrorType.CLIENT_ERROR, "No transaction for provided record Id")
 
-    const toUpdate = {
-        transaction_status: "CREATED"
-    }
-    await updateRequestRecord(recordId, toUpdate)
-    // create Job
+	const toUpdate = {
+		transaction_status: "CREATED"
+	}
+	await updateRequestRecord(recordId, toUpdate)
+	// create Job
 	const jobConfig = {
 		recordId
 	}
@@ -395,6 +395,6 @@ const acceptBlindpayCryptoToFiatTransfer = async (config) => {
 
 module.exports = {
 	createTransferToBlindpaySmartContract,
-    acceptBlindpayCryptoToFiatTransfer,
+	acceptBlindpayCryptoToFiatTransfer,
 	executeAsyncBlindpayTransferCryptoToFiat
 }

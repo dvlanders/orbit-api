@@ -196,14 +196,14 @@ exports.createIndividualBridgeCustomer = async (userId, bridgeId = undefined, is
 
 		} else if (response.status == 400) {
 			const { error: bridge_customers_error } = await supabase
-			.from('bridge_customers')
-			.update({
-				bridge_response: responseBody,
-				status: "invalid_fields",
-				updated_at: new Date().toISOString()
-			})
-			.eq("user_id", userId)
-			.single()
+				.from('bridge_customers')
+				.update({
+					bridge_response: responseBody,
+					status: "invalid_fields",
+					updated_at: new Date().toISOString()
+				})
+				.eq("user_id", userId)
+				.single()
 
 			if (bridge_customers_error) {
 				throw new createBridgeCustomerError(createBridgeCustomerErrorType.INTERNAL_ERROR, bridge_customers_error.message, bridge_customers_error)

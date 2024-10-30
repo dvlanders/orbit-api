@@ -71,7 +71,7 @@ exports.createHifiUser = async (req, res) => {
 		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
 			createUserWallet(userId, "INDIVIDUAL"),
 			bridgeFunction(userId),
-			createCheckbookUser(userId)
+			createCheckbookUser(userId),
 		]);
 
 		// base response
@@ -624,16 +624,16 @@ exports.getUserWalletBalance = async (req, res) => {
 
 }
 
-exports.createDeveloperUserGasStationWallet = async(req, res) => {
+exports.createDeveloperUserGasStationWallet = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
 	const { userId, profileId } = req.query
 
-	try{
+	try {
 		// check userId 
-		if (!isUUID(userId)) return res.status(400).json({ error: `Invalid userId (not uuid)`});
+		if (!isUUID(userId)) return res.status(400).json({ error: `Invalid userId (not uuid)` });
 		let { data: user, error: userError } = await supabaseCall(() => supabase
 			.from('users')
 			.select('*')
@@ -643,25 +643,25 @@ exports.createDeveloperUserGasStationWallet = async(req, res) => {
 		)
 
 		if (userError) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" })
-		if (!user) return res.status(200).json({ error: `Invalid userId (user not found)`})
+		if (!user) return res.status(200).json({ error: `Invalid userId (user not found)` })
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account" })
 		// check if wallet is already created
 		// assume ETHEREUM_TESTNET will always be created
 		const chain = "ETHEREUM_MAINNET"
-		const {walletAddress: walletAddressCheck} = await getBastionWallet(userId, chain, "GAS_STATION")
-		if (walletAddressCheck) return res.status(400).json({"message": "wallet is already created", userId, type: "GAS_STATION", walletAddress: walletAddressCheck})
+		const { walletAddress: walletAddressCheck } = await getBastionWallet(userId, chain, "GAS_STATION")
+		if (walletAddressCheck) return res.status(400).json({ "message": "wallet is already created", userId, type: "GAS_STATION", walletAddress: walletAddressCheck })
 
 		// create new Bastion User
 		await createBastionDeveloperUserWithType(userId, "GAS_STATION")
 		// return wallet information
-		const {walletAddress} = await getBastionWallet(userId, chain, "GAS_STATION")
+		const { walletAddress } = await getBastionWallet(userId, chain, "GAS_STATION")
 		if (!walletAddress) throw new Error("createBastionDeveloperUserWithType success but can not get wallet information")
-		
-		return res.status(200).json({userId, type: "GAS_STATION", walletAddress})
 
-	}catch (error){
+		return res.status(200).json({ userId, type: "GAS_STATION", walletAddress })
+
+	} catch (error) {
 		await createLog("user/createDeveloperUserGasStationWallet", userId, error.message, error, profileId)
-		return res.status(500).json({error: "Unexpected error happened"})
+		return res.status(500).json({ error: "Unexpected error happened" })
 	}
 }
