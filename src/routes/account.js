@@ -18,4 +18,13 @@ module.exports = (router) => {
 	router.post("/account/apac/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createAPACOfframpDestination);
 	router.get("/account/south-america/receiver", authorize, logRequestResponse, account.getBlindpayReceiver);
 	router.put("/account/south-america/receiver", authorize, logRequestResponse, updateLastUserActivity, account.updateBlindpayReceiver);
+    router.post("/account/kes/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createKesMomoAccount);
+    router.post("/account/xof/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createXofMomoAccount);
+    router.post("/account/rwf/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createRwfMomoAccount);
+    router.post("/account/zmw/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createZmwMomoAccount);
+    router.post("/account/mwk/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createMwkMomoAccount);
+    router.post("/account/tzs/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createTzsMomoAccount);
+    router.post("/account/xaf/momo/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createXafMomoAccount);
+    router.post("/account/ngn/bank/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createNgnBankAccount);
+    router.post("/account/ugx/bank/offramp", authorize, logRequestResponse, updateLastUserActivity, account.createUgxBankAccount);
 };
