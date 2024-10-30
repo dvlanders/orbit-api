@@ -4,9 +4,9 @@ const { fetchWithLogging } = require("../../logger/fetchLogger");
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;
 
-exports.submitUserAction = async(params) => {
+exports.submitUserAction = async (params) => {
 
-    const bodyObject = {
+	const bodyObject = {
 		requestId: params.requestId,
 		userId: params.userId,
 		contractAddress: params.contractAddress,
@@ -15,7 +15,7 @@ exports.submitUserAction = async(params) => {
 		actionParams: params.actionParams
 	};
 
-    const url = `${BASTION_URL}/v1/user-actions`;
+	const url = `${BASTION_URL}/v1/user-actions`;
 	const options = {
 		method: 'POST',
 		headers: {

@@ -4,6 +4,7 @@ const fetchBridgeCryptoToFiatTransferRecord = require("../transfer/fetchBridgeCr
 const fetchDirectBridgeCryptoToFiatTransferRecord = require("../transfer/fetchDirectBridgeCryptoToFiatTransferRecord")
 const fetchReapCryptoToFiatTransferRecord = require("../transfer/fetchReapCryptoToFiatTransferRecord")
 const fetchBlindpayCryptoToFiatTransferRecord = require("../transfer/fetchBlindpayCryptoToFiatTransferRecord")
+const fetchYellowcardCryptoToFiatTransferRecord = require("../transfer/fetchYellowcardCryptoToFiatTransferRecord")
 
 const placeholder = (recordId, profileId) => {
     return {
@@ -52,7 +53,14 @@ const FetchCryptoToBankSupportedPairFunctions = {
    BASTION:{
     BRIDGE: fetchBridgeCryptoToFiatTransferRecord,
     REAP: fetchReapCryptoToFiatTransferRecord,
-    BLINDPAY: fetchBlindpayCryptoToFiatTransferRecord
+    BLINDPAY: fetchBlindpayCryptoToFiatTransferRecord,
+    YELLOWCARD: fetchYellowcardCryptoToFiatTransferRecord,
+   },
+   CIRCLE:{
+    BRIDGE: fetchBridgeCryptoToFiatTransferRecord,
+    REAP: fetchReapCryptoToFiatTransferRecord,
+    BLINDPAY: fetchBlindpayCryptoToFiatTransferRecord,
+    YELLOWCARD: fetchYellowcardCryptoToFiatTransferRecord,
    },
    EXTERNAL:{
     BRIDGE: fetchDirectBridgeCryptoToFiatTransferRecord

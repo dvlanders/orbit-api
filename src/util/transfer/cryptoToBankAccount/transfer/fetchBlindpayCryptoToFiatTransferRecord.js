@@ -6,8 +6,8 @@ const { convertKeysToCamelCase } = require("../../../utils/object")
 const fetchBlindpayCryptoToFiatTransferRecord = async(id, profileId) => {
 
     const record = await fetchCryptoToFiatRequestInfortmaionById(id, profileId, "BLINDPAY", "BASTION");
-    const blindpayTransferInfo = record.blindpay_transfer_info;
     if (!record) return null;
+    const blindpayTransferInfo = record.blindpay_transfer_info;
 
     const bankAccountInfo = await getBankAccountInfo(blindpayTransferInfo.account_id, blindpayTransferInfo.type);
     
