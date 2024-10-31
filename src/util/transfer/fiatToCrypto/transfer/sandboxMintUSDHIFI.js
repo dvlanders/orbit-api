@@ -11,7 +11,7 @@ const { fetchAccountProviders } = require("../../../account/accountProviders/acc
 const { getBillingTagsFromAccount } = require("../../utils/getBillingTags");
 const { insertSingleBridgeTransactionRecord } = require("../../../bridge/bridgeTransactionTableService");
 const { insertCheckbookTransactionRecord, updateCheckbookTransactionRecord } = require("../../../checkbook/checkbookTransactionTableService");
-
+const { v4 } = require("uuid");
 const CHECKBOOK_URL = process.env.CHECKBOOK_URL;
 
 const sandboxMintUSDHIFI = async(config) => {
@@ -85,7 +85,7 @@ const sandboxMintUSDHIFI = async(config) => {
 
     }catch (error){
         if (! (error instanceof CreateFiatToCryptoTransferError)){
-            await createLog("transfer/util/transferFromPlaidToBridge", sourceUserId, error.message, error)
+            await createLog("transfer/util/sandboxMintUSDHIFI", sourceUserId, error.message, error)
         }
         throw error
     }
