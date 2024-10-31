@@ -1736,15 +1736,13 @@
       "KesOfframpMOMOAccount": {
         "type": "object",
         "properties": {
-          "currency": {
+          "accountNumber": {
             "type": "string",
-            "enum": [
-              "kes"
-            ]
+            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
           },
           "accountHolderPhone": {
             "type": "string",
-            "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
+            "description": "Contact phone number of the account holder. Typically the same as the accountNumber. e.g. +2547111111"
           },
           "accountHolderName": {
             "type": "string",
@@ -1759,7 +1757,7 @@
           }
         },
         "required": [
-          "currency",
+          "accountNumber",
           "accountHolderPhone",
           "accountHolderName",
           "kind"
@@ -1768,12 +1766,6 @@
       "XofOfframpMOMOAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "xof"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -1791,7 +1783,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountHolderName",
           "kind"
@@ -1800,12 +1791,6 @@
       "RwfOfframpMOMOAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "rwf"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -1823,7 +1808,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountHolderName",
           "kind"
@@ -1832,12 +1816,6 @@
       "ZmwOfframpMOMOAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "zmw"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -1855,7 +1833,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountHolderName",
           "kind"
@@ -1864,12 +1841,6 @@
       "NgnOfframpBankAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "ngn"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -1893,7 +1864,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountHolderName",
           "kind"
@@ -1902,12 +1872,6 @@
       "UgxOfframpBankAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "ugx"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -1933,7 +1897,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountNumber",
           "accountHolderName",
@@ -1944,12 +1907,6 @@
       "TzsOfframpBankAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "tzs"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -1975,7 +1932,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountNumber",
           "accountHolderName",
@@ -1986,12 +1942,6 @@
       "MwkOfframpBankAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "mwk"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -2017,7 +1967,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountNumber",
           "accountHolderName",
@@ -2028,12 +1977,6 @@
       "XafOfframpBankAccount": {
         "type": "object",
         "properties": {
-          "currency": {
-            "type": "string",
-            "enum": [
-              "xaf"
-            ]
-          },
           "accountHolderPhone": {
             "type": "string",
             "description": "Mobile Money account phone number of the Recipient. e.g. +2547111111"
@@ -2059,7 +2002,6 @@
           }
         },
         "required": [
-          "currency",
           "accountHolderPhone",
           "accountNumber",
           "accountHolderName",
