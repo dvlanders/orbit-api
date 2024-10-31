@@ -340,6 +340,7 @@ exports.createHifiUserAsync = async (req, res) => {
 
 		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
+		createHifiUserResponse.onChain.wallet.status = CustomerStatus.PENDING
 
 		// insert async jobs
 		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
@@ -599,12 +600,13 @@ exports.updateDeveloperUser = async (req, res) => {
 exports.getUserWalletBalance = async (req, res) => {
 	if (req.method !== "GET") return res.status(405).json({ error: 'Method not allowed' });
 
-	const { userId, chain, currency, profileId } = req.query
+	const { userId, chain, currency, profileId, walletType } = req.query
 	const requiredFields = ["userId", "chain", "currency"]
 	const acceptedFields = {
 		userId: "string",
 		chain: (value) => isHIFISupportedChain(value),
-		currency: "string"
+		currency: "string",
+		walletType: (value) => inStringEnum(value, ["FEE_COLLECTION", "PREFUNDED", "GAS_STATION", "INDIVIDUAL"])
 	}
 	try {
 		// fields validation
@@ -613,7 +615,7 @@ exports.getUserWalletBalance = async (req, res) => {
 		// check is supported currency
 		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase();
 		if (!currencyContract && currency !== "gas") return res.status(400).json({ error: `Currency not supported for provided chain`})
-		const walletBalance = await getUserWalletBalance(userId, chain, currency, "INDIVIDUAL")
+		const walletBalance = await getUserWalletBalance(userId, chain, currency, walletType || "INDIVIDUAL")
 		return res.status(200).json(walletBalance)
 
 	} catch (error) {
