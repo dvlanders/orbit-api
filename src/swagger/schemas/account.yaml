@@ -396,6 +396,7 @@ XofOfframpMOMOAccount:
       description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
     kind:
       type: string
+      enum: ["MOMO_WAVE", "MOMO_ORANGE", "MOMO_MTN", "MOMO_VISA", "MOMO_MOOV"]
       description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
   required:
     - accountNumber
@@ -436,6 +437,7 @@ ZmwOfframpMOMOAccount:
       description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
     kind:
       type: string
+      enum: [MOMO_MTN, MOMO_ZAMTEL, MOMO_AIRTEL]
       description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
   required:
     - accountNumber
@@ -477,6 +479,7 @@ TzsOfframpMOMOAccount:
       description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe."
     kind:
       type: string
+      enum: [MOMO_AIRTEL, MOMO_TIGO, MOMO_VODACOM, MOMO_AZAMPESA, MOMO_HALOPESA]
       description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
   required:
     - accountNumber
@@ -497,6 +500,7 @@ XafOfframpMOMOAccount:
       description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe."
     kind:
       type: string
+      enum: [MOMO_WALLET]
       description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
   required:
     - accountNumber
@@ -517,7 +521,7 @@ NgnOfframpBankAccount:
       description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
     kind:
       type: string
-      enum: ["BANK_Stanbic Ibtc Bank", "BANK_Zenith Bank", "BANK_Guaranty Trust Bank", "BANK_Heritage Bank", "BANK_Enterprise Bank", "BANK_Sterling Bank", "BANK_Access Bank", "BANK_Keystone Bank", "BANK_Union Bank of Nigeria", "BANK_Wema Bank", "BANK_First City Monument Bank", "BANK_United Bank for Africa", "BANK_Ecobank Nigeria", "BANK_Unity Bank", "BANK_Citibank Nigeria", "BANK_Standard Chartered Bank", "BANK_Fidelity Bank", "BANK_First Bank of Nigeria", "BANK_Mainstreet Bank"]
+      enum: ["BANK_Standard Chartered Bank", "BANK_Citibank Nigeria", "BANK_Wema Bank", "BANK_Unity Bank", "BANK_United Bank for Africa", "BANK_Access Bank (Diamond)", "BANK_Union Bank of Nigeria", "BANK_Ecobank Nigeria", "BANK_Providus Bank", "BANK_Access Bank", "BANK_Stanbic Ibtc Bank", "BANK_Polaris Bank", "BANK_Keystone Bank", "BANK_Fidelity Bank", "BANK_Zenith Bank", "BANK_Heritage Bank", "BANK_Enterprise Bank", "BANK_Guaranty Trust Bank", "BANK_GT Bank", "BANK_Paga", "BANK_Sterling Bank", "BANK_Mainstreet Bank", "BANK_First City Monument Bank", "BANK_First Bank of Nigeria"]
       description: Kind of Mobile Money transfer.
   required:
     - accountNumber
@@ -538,8 +542,7 @@ UgxOfframpBankAccount:
       description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
     kind:
       type: string
-      enum: ["BANK_Manual Input"]
-      description: Kind of Mobile Money transfer.
+      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
   required:
     - accountNumber
     - accountHolderPhone

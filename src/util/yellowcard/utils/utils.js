@@ -21,7 +21,7 @@ const yellowcardSupportedKindsMap = {
         momo_tzs: [],
         momo_xaf: [],
         bank_ngn: ["BANK_Stanbic Ibtc Bank", "BANK_Zenith Bank", "BANK_Guaranty Trust Bank", "BANK_Heritage Bank", "BANK_Enterprise Bank", "BANK_Sterling Bank", "BANK_Access Bank", "BANK_Keystone Bank", "BANK_Union Bank of Nigeria", "BANK_Wema Bank", "BANK_First City Monument Bank", "BANK_United Bank for Africa", "BANK_Skye Bank", "BANK_Ecobank Nigeria", "BANK_Unity Bank", "BANK_Diamond Bank", "BANK_Citibank Nigeria", "BANK_Standard Chartered Bank", "BANK_Fidelity Bank", "BANK_First Bank of Nigeria", "BANK_Mainstreet Bank"],
-        bank_ugx: ["BANK_Manual Input"],
+        bank_ugx: [],
     },
     production: {
         momo_kes: ["MOMO_MPESA"],
@@ -32,7 +32,7 @@ const yellowcardSupportedKindsMap = {
         momo_tzs: ["MOMO_AIRTEL", "MOMO_TIGO", "MOMO_VODACOM", "MOMO_AZAMPESA", "MOMO_HALOPESA"],
         momo_xaf: ["MOMO_WALLET"],
         bank_ngn: ["BANK_Standard Chartered Bank", "BANK_Citibank Nigeria", "BANK_Wema Bank", "BANK_Unity Bank", "BANK_United Bank for Africa", "BANK_Access Bank (Diamond)", "BANK_Union Bank of Nigeria", "BANK_Ecobank Nigeria", "BANK_Providus Bank", "BANK_Access Bank", "BANK_Stanbic Ibtc Bank", "BANK_Polaris Bank", "BANK_Keystone Bank", "BANK_Fidelity Bank", "BANK_Zenith Bank", "BANK_Heritage Bank", "BANK_Enterprise Bank", "BANK_Guaranty Trust Bank", "BANK_GT Bank", "BANK_Paga", "BANK_Sterling Bank", "BANK_Mainstreet Bank", "BANK_First City Monument Bank", "BANK_First Bank of Nigeria"],
-        bank_ugx: ["BANK_Manual Input"],
+        bank_ugx: [],
     }
 }
 
@@ -194,13 +194,7 @@ const yellowcardMethodFieldsMap = {
                 group: "BANK",
             },
         },
-        ugx: {
-            "BANK_Manual Input": {
-                kind: "BANK_Manual Input+28281f21-4705-431f-a752-9a485628c76a",
-                name: "Manual Input",
-                group: "BANK",
-            }
-        }
+        ugx: {}
     },
     production: {
         kes: {
@@ -422,13 +416,7 @@ const yellowcardMethodFieldsMap = {
                 group: "BANK",
             }
         },
-        ugx: {
-            "BANK_Manual Input": {
-                kind: "BANK_Manual Input+28281f21-4705-431f-a752-9a485628c76a",
-                name: "Manual Input",
-                group: "BANK",
-            }
-        }
+        ugx: {}
     }
 }
 
