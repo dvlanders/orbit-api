@@ -340,6 +340,7 @@ exports.createHifiUserAsync = async (req, res) => {
 
 		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
+		createHifiUserResponse.onChain.wallet.status = CustomerStatus.PENDING
 
 		// insert async jobs
 		await createJob("createUser", { userId, userType: fields.userType }, userId, profileId)
