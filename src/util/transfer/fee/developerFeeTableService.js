@@ -1,5 +1,4 @@
-const supabase = require("../../../supabaseClient")
-
+const supabase = require("../../supabaseClient")
 
 
 const updateDeveloperFeeRecord = async(developerFeeId, toUpdate) => {

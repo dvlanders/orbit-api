@@ -54,11 +54,26 @@ const contractActionStatusMap = {
 	"ACCELERATED": "SUBMITTED"
 }
 
+const bridgeAssetStatusMap = {
+	"NOT_INITIATED": "NOT_INITIATED",
+    "INITIATED": "SUBMITTED",
+    "QUEUED": "PENDING",
+	"PENDING_RISK_SCREENING": "PENDING",
+	"SENT": "PENDING",
+	"CONFIRMED": "PENDING",
+	"COMPLETE": "INITIATE_BRIDGING",
+	"CANCELED": "NOT_INITIATED",
+	"FAILED": "FAILED",
+	"DENIED": "FAILED",
+	"ACCELERATED": "SUBMITTED"
+}
+
 const statusMapCircle = {
     "CRYPTO_TO_CRYPTO": cryptoToCryptoStatusMap,
     "FEE": feeRecordStatusMap,
     "CONTRACT_ACTION": contractActionStatusMap,
-    "CRYPTO_TO_FIAT": cryptoToFiatStatusMap
+    "CRYPTO_TO_FIAT": cryptoToFiatStatusMap,
+	"BRIDGE_ASSET": bridgeAssetStatusMap
 }
 
 module.exports = {

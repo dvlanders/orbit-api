@@ -16,6 +16,7 @@ const { baseAssetWithdrawAsync } = require("./transfer/baseAssetWithdraw/baseAss
 const { bridgeUsdc } = require("./bridging/cctp/bridgeUsdc");
 const { reapApproveFundsAsync } = require("./transfer/cryptoToFiatTransfer/reap/approveFunds");
 const { getQuote } = require("./transfer/quote/getQuote");
+const { bridgeAsset } = require("./bridging/bridge");
 
 
 exports.jobMapping = {
@@ -77,6 +78,9 @@ exports.jobMapping = {
 	},
 	getQuote: {
 		execute: getQuote
+	},
+	bridgeAsset: {
+		execute: bridgeAsset
 	}
 }
 

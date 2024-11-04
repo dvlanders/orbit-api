@@ -17,5 +17,6 @@ module.exports = (router) => {
 	router.post("/transfer/ach/pull", authorize, logRequestResponse, updateLastUserActivity, transfer.createFiatTotFiatTransfer)
 	router.get("/transfer", authorize, logRequestResponse, transfer.getTransfers)
 	router.post("/transfer/bridge-asset", authorize, logRequestResponse, updateLastUserActivity, transfer.createBridgingRequest)
+	router.put("/transfer/bridge-asset", authorize, logRequestResponse, updateLastUserActivity, transfer.actionBridgingRequest)
 	router.get("/transfer/bridge-asset", authorize, logRequestResponse, transfer.getBridgingTransactions)
 };
