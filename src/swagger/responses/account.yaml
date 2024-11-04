@@ -64,24 +64,24 @@ UgxOfframpBankAccountResponse:
     application/json:
       schema:
         $ref: '#/components/schemas/UgxOfframpBankAccountObject'
-TzsOfframpBankAccountResponse:
+TzsOfframpMOMOAccountResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/TzsOfframpBankAccountObject'
-MwkOfframpBankAccountResponse:
+        $ref: '#/components/schemas/TzsOfframpMOMOAccountObject'
+MwkOfframpMOMOAccountResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/MwkOfframpBankAccountObject'
-XafOfframpBankAccountResponse:
+        $ref: '#/components/schemas/MwkOfframpMOMOAccountObject'
+XafOfframpMOMOAccountResponse:
   description: Success
   content:
     application/json:
       schema:
-        $ref: '#/components/schemas/XafOfframpBankAccountObject'
+        $ref: '#/components/schemas/XafOfframpMOMOAccountObject'
 SAOfframpReceiverCreateResponse:
   description: Success
   content:

@@ -172,6 +172,60 @@
         $ref: "#/components/responses/NotFoundResponse"
       "500":
         $ref: "#/components/responses/InternalServerErrorResponse"
+/account/mwk/momo/offramp:
+  post:
+    summary: Add MWK Offramp Bank Account (MOMO MWK)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/MwkOfframpMOMOAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/MwkOfframpMOMOAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/tzs/momo/offramp:
+  post:
+    summary: Add TZS Offramp Bank Account (MOMO TZS)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/TzsOfframpMOMOAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/TzsOfframpMOMOAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+/account/xaf/momo/offramp:
+  post:
+    summary: Add XAF Offramp Bank Account (MOMO XAF)
+    tags:
+      - Account
+    parameters:
+      - $ref: "#/components/parameters/UserIdParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/XafOfframpMOMOAccountBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/XafOfframpMOMOAccountResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
 /account/ngn/bank/offramp:
   post:
     summary: Add NGN Offramp Bank Account (Bank NGN)
@@ -202,60 +256,6 @@
     responses:
       "200":
         $ref: "#/components/responses/UgxOfframpBankAccountResponse"
-      "401":
-        $ref: "#/components/responses/UnauthorizedResponse"
-      "404":
-        $ref: "#/components/responses/NotFoundResponse"
-      "500":
-        $ref: "#/components/responses/InternalServerErrorResponse"
-/account/tzs/bank/offramp:
-  post:
-    summary: Add TZS Offramp Bank Account (Bank TZS)
-    tags:
-      - Account
-    parameters:
-      - $ref: "#/components/parameters/UserIdParameter"
-    requestBody:
-      $ref: "#/components/requestBodies/TzsOfframpBankAccountBody"
-    responses:
-      "200":
-        $ref: "#/components/responses/TzsOfframpBankAccountResponse"
-      "401":
-        $ref: "#/components/responses/UnauthorizedResponse"
-      "404":
-        $ref: "#/components/responses/NotFoundResponse"
-      "500":
-        $ref: "#/components/responses/InternalServerErrorResponse"
-/account/mwk/bank/offramp:
-  post:
-    summary: Add MWK Offramp Bank Account (Bank MWK)
-    tags:
-      - Account
-    parameters:
-      - $ref: "#/components/parameters/UserIdParameter"
-    requestBody:
-      $ref: "#/components/requestBodies/MwkOfframpBankAccountBody"
-    responses:
-      "200":
-        $ref: "#/components/responses/MwkOfframpBankAccountResponse"
-      "401":
-        $ref: "#/components/responses/UnauthorizedResponse"
-      "404":
-        $ref: "#/components/responses/NotFoundResponse"
-      "500":
-        $ref: "#/components/responses/InternalServerErrorResponse"
-/account/xaf/bank/offramp:
-  post:
-    summary: Add XAF Offramp Bank Account (Bank XAF)
-    tags:
-      - Account
-    parameters:
-      - $ref: "#/components/parameters/UserIdParameter"
-    requestBody:
-      $ref: "#/components/requestBodies/XafOfframpBankAccountBody"
-    responses:
-      "200":
-        $ref: "#/components/responses/XafOfframpBankAccountResponse"
       "401":
         $ref: "#/components/responses/UnauthorizedResponse"
       "404":
