@@ -3,7 +3,7 @@ const { createBridgeBridging, acceptBridgeBridging, executeBridgeBridging } = re
 const bridgingSupportedDestinationChain = process.env.NODE_ENV == "development" ? 
 ["POLYGON_AMOY", "ETHEREUM_TESTNET"] 
 : 
-["ETHEREUM_MAINNET", "ARBITRUM_MAINNET", "BASE_MAINNET", "ETHEREUM_MAINNET", "OPTIMISM_MAINNET"]
+["ETHEREUM_MAINNET", "ARBITRUM_MAINNET", "BASE_MAINNET", "ETHEREUM_MAINNET", "OPTIMISM_MAINNET", "POLYGON_MAINNET"]
 
 const bridgeFunctionMap = {
     universal: {

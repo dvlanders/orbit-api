@@ -8,6 +8,8 @@ const notifyTransaction = require("../../../src/util/logger/transactionNotifier"
 const { rampTypes } = require("../../../src/util/transfer/utils/ramptType");
 const notifyCryptoToFiatTransfer = require("../../transfer/notifyCryptoToFiatTransfer");
 const { isValidBridgeStateTransition } = require("../../../src/util/bridge/utils");
+const { updateBridgingTransactionRecord } = require("../../../src/util/transfer/bridging/bridgingTransactionTableService");
+const notifyBridgingUpdate = require("../../bridging/notifyBridgingUpdate");
 
 const processBridgingEvent = async (event) => {
   const {
@@ -29,11 +31,11 @@ const processBridgingEvent = async (event) => {
   try{
 
     if(!client_reference_id) return await createLog("webhook/processBridgingEvent", null, `There is no client_reference_id in the event for event id: ${id}`);
-
+    if (state == "awaiting_funds") return;
     // get the original offramp record
     const {data: bridgingRecord, error: bridgingRecordError} = await supabaseCall(() => supabase
         .from('bridging_transactions')
-        .select('id, status, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)')
+        .select('id, status, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status, id)')
         .eq('id', client_reference_id)
         .maybeSingle());
     
@@ -49,9 +51,9 @@ const processBridgingEvent = async (event) => {
     const currentUpdatedAt = bridgingRecord.updated_at;
 
     const toUpdate = {
-      transaction_status: HifiBridgingTransactionBridgeStatusMap[state] || "UNKNOWN"
+      status: HifiBridgingTransactionBridgeStatusMap[state] || "UNKNOWN"
     }
-    const updatedBridgingRecord = await updateBridgeTransactionRecord(bridgingRecord.id, toUpdate);
+    const updatedBridgingRecord = await updateBridgingTransactionRecord(bridgingRecord.id, toUpdate);
 
     if(!updatedBridgingRecord){
         throw new Error(`Concurrent update detected. Please retry processing bridging transaction record with id ${bridgingRecord.id} for event ${id}`);
@@ -61,7 +63,7 @@ const processBridgingEvent = async (event) => {
       bridge_response: event,
       bridge_status: state
     }
-    const updatedBridgeRecord = await updateBridgeTransactionRecord(updatedOfframpRecord.bridge_transaction_record_id, toUpdateBridge);
+    const updatedBridgeRecord = await updateBridgeTransactionRecord(bridgingRecord.bridge_transaction_info.id, toUpdateBridge);
 
     if (HifiBridgingTransactionFailedStatuses.includes(updatedBridgingRecord.status)) {
       await notifyTransaction(
@@ -79,7 +81,7 @@ const processBridgingEvent = async (event) => {
 
     if (bridgingRecord.status == updatedBridgingRecord.status) return;
 
-    await notifyCryptoToFiatTransfer(updatedBridgingRecord);
+    await notifyBridgingUpdate(updatedBridgingRecord);
 
   }catch(error){
     await createLog(

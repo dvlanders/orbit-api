@@ -29,7 +29,7 @@ const processOfframpTransferEvent = async (event) => {
   try{
 
     if(!client_reference_id) return await createLog("webhook/processOfframpTransferEvent", null, `There is no client_reference_id in the event for event id: ${id}`);
-
+    if (state == "awaiting_funds") return;
     // get the original offramp record
     const {data: offrampRecord, error: offrampRecordError} = await supabaseCall(() => supabase
         .from('offramp_transactions')
