@@ -66,7 +66,9 @@
             "brl",
             "mxn",
             "ars",
-            "cop"
+            "cop",
+            "kes",
+            "ngn"
           ]
         },
         "description": "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail.",
@@ -97,7 +99,9 @@
             "pix",
             "spei",
             "transfers",
-            "ach_cop"
+            "ach_cop",
+            "momo_kes",
+            "bank_ngn"
           ]
         },
         "required": false
@@ -631,28 +635,7 @@
                   "$ref": "#/components/schemas/MOMO_KESCryptoToFiatTransfer"
                 },
                 {
-                  "$ref": "#/components/schemas/MOMO_XOFCryptoToFiatTransfer"
-                },
-                {
-                  "$ref": "#/components/schemas/MOMO_RWFCryptoToFiatTransfer"
-                },
-                {
-                  "$ref": "#/components/schemas/MOMO_ZMWCryptoToFiatTransfer"
-                },
-                {
                   "$ref": "#/components/schemas/BANK_NGNCryptoToFiatTransfer"
-                },
-                {
-                  "$ref": "#/components/schemas/BANK_UGXCryptoToFiatTransfer"
-                },
-                {
-                  "$ref": "#/components/schemas/BANK_TZSCryptoToFiatTransfer"
-                },
-                {
-                  "$ref": "#/components/schemas/BANK_MWKCryptoToFiatTransfer"
-                },
-                {
-                  "$ref": "#/components/schemas/BANK_XAFCryptoToFiatTransfer"
                 }
               ]
             }

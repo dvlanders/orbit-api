@@ -19,14 +19,14 @@ CryptoToFiatTransferBody:
           - $ref: '#/components/schemas/TRANSFERSCryptoToFiatTransfer'
           - $ref: '#/components/schemas/ACH_COPCryptoToFiatTransfer'
           - $ref: '#/components/schemas/MOMO_KESCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/MOMO_XOFCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/MOMO_RWFCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/MOMO_ZMWCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/MOMO_XOFCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/MOMO_RWFCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/MOMO_ZMWCryptoToFiatTransfer'
           - $ref: '#/components/schemas/BANK_NGNCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/BANK_UGXCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/BANK_TZSCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/BANK_MWKCryptoToFiatTransfer'
-          - $ref: '#/components/schemas/BANK_XAFCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/BANK_UGXCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/BANK_TZSCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/BANK_MWKCryptoToFiatTransfer'
+          # - $ref: '#/components/schemas/BANK_XAFCryptoToFiatTransfer'
 FiatToCryptoTransferBody:
   required: true
   content:

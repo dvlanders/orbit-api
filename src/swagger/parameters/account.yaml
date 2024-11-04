@@ -10,7 +10,7 @@ CurrencyParameter:
   in: query
   schema:
     type: string
-    enum: ["usd", "eur", "brl", "mxn", "ars", "cop"]
+    enum: ["usd", "eur", "brl", "mxn", "ars", "cop", "kes", "ngn"]
   description: "Please provide at least one of the following query params: currency, railType. Eg. Setting 'currency' to 'usd' without setting 'railType' and 'paymentRail' will return all usd accounts under any railType or paymentRail."
   required: false
 RailTypeParameter:
@@ -26,7 +26,7 @@ PaymentRailParameter:
   in: query
   schema:
     type: string
-    enum: ["ach", "wire", "sepa", "pix", "spei", "transfers", "ach_cop"]
+    enum: ["ach", "wire", "sepa", "pix", "spei", "transfers", "ach_cop", "momo_kes", "bank_ngn"]
   required: false
 RailParameter:
   name: rail
