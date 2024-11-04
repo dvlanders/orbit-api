@@ -106,12 +106,30 @@
         $ref: "#/components/responses/InternalServerErrorResponse"
 /transfer/bridge-asset:
   post:
-    summary: Bridge Stablecoin
-    description: Bridge stablecoin across chains
+    summary: Create a Bridge Stablecoin Request
+    description: Create a request to bridge stablecoin across chains
     tags:
       - Transfer
     requestBody:
       $ref: "#/components/requestBodies/BridgeAssetTransferBody"
+    responses:
+      "200":
+        $ref: "#/components/responses/BridgeAssetTransferResponse"
+      "401":
+        $ref: "#/components/responses/UnauthorizedResponse"
+      "404":
+        $ref: "#/components/responses/NotFoundResponse"
+      "500":
+        $ref: "#/components/responses/InternalServerErrorResponse"
+  put:
+    summary: Accept Bridge Stablecoin Request
+    description: Accept a bridge stablecoin request
+    tags:
+      - Transfer
+    parameters:
+      - $ref: "#/components/parameters/BridgeAssetRecordIDParameter"
+    requestBody:
+      $ref: "#/components/requestBodies/AcceptBridgeAssetTransferBody"
     responses:
       "200":
         $ref: "#/components/responses/BridgeAssetTransferResponse"
