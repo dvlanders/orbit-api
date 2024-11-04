@@ -13,7 +13,7 @@ const yellowcardNetworkToChain = process.env.NODE_ENV === "development" ? {
 
 const yellowcardSupportedKindsMap = {
     development: {
-        momo_kes: ["MOMO_MPESA"],
+        momo_kes: [],
         momo_xof: [],
         momo_rwf: [],
         momo_zmw: [],
@@ -63,13 +63,7 @@ const yellowcardAccountNumberFormatPatternMap = {
 const yellowcardMethodFieldsMap = {
     // parirs (env, currency, kind)
     development: {
-        kes: {
-            MOMO_MPESA: {
-                kind: "MOMO_Mobile Wallet (M-PESA)+7ea6df5c-6bba-46b2-a7e6-f511959e7edb",
-                name: "Mobile Wallet (M-PESA)",
-                group: "MOMO",
-            },
-        },
+        kes: {},
         xof: {},
         rwf: {},
         zmw: {},
