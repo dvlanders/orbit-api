@@ -44,7 +44,7 @@ const createBridgeTransferRequest = async (config) => {
 }
 
 const initTransferData = async (config) => {
-	const { requestId, amount, sourceUserId, destinationUserId, sourceChain, destinationChain, sourceWalletAddress, destinationWalletAddress, newRecord, feeType, feeValue, sourceWalletType, destinationWalletType, sourceWalletProvider, destinationWalletProvider, sourceCurrency, destinationCurrency, profileId } = config
+	const { requestId, amount, sourceUserId, destinationUserId, sourceChain, destinationChain, sourceWalletAddress, destinationWalletAddress, newRecord, feeType, feeValue, sourceWalletType, destinationWalletType, sourceWalletProvider, destinationWalletProvider, sourceCurrency, destinationCurrency, profileId, feeTransactionId } = config
 	// insert wallet provider record
 	const toInsertProviderRecord = {
 		user_id: sourceUserId,
@@ -65,7 +65,7 @@ const initTransferData = async (config) => {
     const liquidationAddress = responseBody.source_deposit_instructions?.to_address
 	// get billing tags
     const billingTags = destinationUserId ? {
-        success: ["internal"],
+        success: destinationUserId == sourceUserId ? [] : ["internal"],
         failed: [],
     } : {
         success: ["external"],
@@ -94,7 +94,8 @@ const initTransferData = async (config) => {
         billing_tags_failed: billingTags.failed,
         bridge_provider: "BRIDGE",
         status: "OPEN_QUOTE",
-        liquidation_address: liquidationAddress
+        liquidation_address: liquidationAddress,
+        fee_transaction_id: feeTransactionId
 	}
     if (!response.ok) {
         toUpdateBridgingRecord.status = "QUOTE_FAILED"
@@ -271,7 +272,7 @@ const createBridgeBridging = async (config) => {
 	const initialTransferRecord = await initTransferData(config)
 
 	const result = await fetchBridgingTransactions(initialTransferRecord.id, profileId)
-	return { isExternalAccountExist: true, transferResult: result }
+	return result
 }
 
 // this should already contain every information needed for transfer
@@ -314,15 +315,15 @@ const acceptBridgeBridging = async (config) => {
         const sourceUserId = record.source_user_id
 
 		// check if balance is enough for transaction fee
-		// if (!await checkBalanceForTransactionFee(record.id, transferType.CRYPTO_TO_FIAT)) {
-		// 	const toUpdate = {
-		// 		status: "NOT_INITIATED",
-		// 		failed_reason: "Insufficient balance for transaction fee"
-		// 	}
-		// 	await updateBridgingTransactionRecord(recordId, toUpdate);
-		// 	const result = fetchBridgingTransactions(recordId, profileId);
-		// 	return result
-		// }
+		if (!await checkBalanceForTransactionFee(record.id, transferType.BRIDGE_ASSET)) {
+			const toUpdate = {
+				status: "NOT_INITIATED",
+				failed_reason: "Insufficient balance for transaction fee"
+			}
+			await updateBridgingTransactionRecord(recordId, toUpdate);
+			const result = fetchBridgingTransactions(recordId, profileId);
+			return result
+		}
 
 		// check if balance is enough for transaction amount
 		const amountToCheck = Math.max(amount, amountIncludingFee)

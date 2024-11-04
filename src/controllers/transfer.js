@@ -1439,6 +1439,8 @@ exports.createBridgingRequest = async (req, res) => {
 		// check if requestId is already used
 		const { isAlreadyUsed, newRecord } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.BRIDGE_ASSET, status: "CREATED" });
+		fields.feeTransactionId = feeTransaction.id
 
 		// TODO: create function map for different currency
 		const { createBridgingRequest } = bridgeFunctionMap.universal
