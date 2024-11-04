@@ -427,7 +427,7 @@ const insertYellowcardAccount = async(tableName, fields) => {
         account_holder_name: fields.accountHolderName,
         bank_name: fields.bankName,
         kind: fields.kind,
-        user_id: fields.user_id
+        user_id: fields.userId
     })
         .select()
         .single();
