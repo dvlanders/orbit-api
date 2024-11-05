@@ -129,7 +129,7 @@ const transferFromPlaidToBridge = async(configs) => {
             checkbook_status: responseBody.status
         }
 
-        if (process.env.NODE_ENV === "development" && false){
+        if (process.env.NODE_ENV === "development"){
             toUpdateRecord.status = "CONFIRMED"
             toUpdateCheckbook.checkbook_status = "PAID"
         }

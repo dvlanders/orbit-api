@@ -26,6 +26,7 @@ exports.getRawUserObject = async(userId, profileId, isDeveloperUser = false) => 
 		if (!canScheduled) {
 			// pending
 			getHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
+			getHifiUserResponse.onChain.wallet.status = CustomerStatus.PENDING
 			return {status: 200 , getHifiUserResponse}
 		}
         
