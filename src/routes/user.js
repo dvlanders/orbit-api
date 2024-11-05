@@ -13,7 +13,7 @@ module.exports = (router) => {
 
 	router.get("/user/all", authorize, logRequestResponse, user.getAllHifiUser)
 
-	router.get("/user", authorize, logRequestResponse, updateLastUserActivity,user.getHifiUser);
+	router.get("/user", authorize, logRequestResponse, updateLastUserActivity, user.getHifiUser);
 	router.get("/user/kyc/information", authorize, logRequestResponse, updateLastUserActivity, user.getUserKycInformation);
 	router.get("/user/developer", authorize, logRequestResponse, updateLastUserActivity, user.getDeveloperUserStatus);
 
@@ -26,7 +26,7 @@ module.exports = (router) => {
 
 	router.put("/tos-link", logRequestResponse, user.acceptToSLink)
 	router.get("/user/wallet/balance", authorize, logRequestResponse, updateLastUserActivity, user.getUserWalletBalance);
-
+	router.get("/user/blindpay/receiver", authorize, logRequestResponse, user.getLatestBlindpayReceiver);
 };
 
 
