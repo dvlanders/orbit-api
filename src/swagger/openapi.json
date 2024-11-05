@@ -635,6 +635,18 @@
                   "$ref": "#/components/schemas/MOMO_KESCryptoToFiatTransfer"
                 },
                 {
+                  "$ref": "#/components/schemas/MOMO_ZMWCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_TZSCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_MWKCryptoToFiatTransfer"
+                },
+                {
+                  "$ref": "#/components/schemas/MOMO_XAFCryptoToFiatTransfer"
+                },
+                {
                   "$ref": "#/components/schemas/BANK_NGNCryptoToFiatTransfer"
                 }
               ]
@@ -1729,7 +1741,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -1759,7 +1771,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -1793,7 +1805,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -1820,7 +1832,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -1844,15 +1856,15 @@
         "properties": {
           "accountNumber": {
             "type": "string",
-            "description": "Mobile Money account phone number of the Recipient, required pattern: ^\\+265[0-9]{10}$. e.g. +2651234567890"
+            "description": "Mobile Money account phone number of the Recipient, required pattern: ^\\+265[0-9]{9,10}$. e.g. +265123456789"
           },
           "accountHolderPhone": {
             "type": "string",
-            "description": "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+265[0-9]{9}$. e.g. +265123456789"
+            "description": "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+265[0-9]{9,10}$. e.g. +265123456789"
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -1883,7 +1895,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe."
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe."
           },
           "kind": {
             "type": "string",
@@ -1917,7 +1929,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe."
+            "description": "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe."
           },
           "kind": {
             "type": "string",
@@ -1947,7 +1959,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -2000,7 +2012,7 @@
           },
           "accountHolderName": {
             "type": "string",
-            "description": "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+            "description": "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
           },
           "kind": {
             "type": "string",
@@ -4695,9 +4707,9 @@
           "purposeOfPayment"
         ]
       },
-      "BANK_TZSCryptoToFiatTransfer": {
+      "MOMO_TZSCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to TZS (BANK TZS)",
+        "title": "Crypto to TZS (MOMO TZS)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -4758,9 +4770,9 @@
           "purposeOfPayment"
         ]
       },
-      "BANK_MWKCryptoToFiatTransfer": {
+      "MOMO_MWKCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to MWK (BANK MWK)",
+        "title": "Crypto to MWK (MOMO MWK)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -4821,9 +4833,9 @@
           "purposeOfPayment"
         ]
       },
-      "BANK_XAFCryptoToFiatTransfer": {
+      "MOMO_XAFCryptoToFiatTransfer": {
         "type": "object",
-        "title": "Crypto to XAF (BANK XAF)",
+        "title": "Crypto to XAF (MOMO XAF)",
         "properties": {
           "requestId": {
             "type": "string",
@@ -9504,6 +9516,126 @@
         "responses": {
           "200": {
             "$ref": "#/components/responses/KesOfframpMomoAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/zmw/momo/offramp": {
+      "post": {
+        "summary": "Add ZMW Offramp Bank Account (MOMO ZMW)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ZmwOfframpMomoAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ZmwOfframpMomoAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/mwk/momo/offramp": {
+      "post": {
+        "summary": "Add MWK Offramp Bank Account (MOMO MWK)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MwkOfframpMOMOAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MwkOfframpMOMOAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/tzs/momo/offramp": {
+      "post": {
+        "summary": "Add TZS Offramp Bank Account (MOMO TZS)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/TzsOfframpMOMOAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/TzsOfframpMOMOAccountResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      }
+    },
+    "/account/xaf/momo/offramp": {
+      "post": {
+        "summary": "Add XAF Offramp Bank Account (MOMO XAF)",
+        "tags": [
+          "Account"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/XafOfframpMOMOAccountBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/XafOfframpMOMOAccountResponse"
           },
           "401": {
             "$ref": "#/components/responses/UnauthorizedResponse"

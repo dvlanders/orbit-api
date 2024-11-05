@@ -372,7 +372,7 @@ KesOfframpMOMOAccount:
       description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+254[0-9]{9}$. e.g. +254123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       enum: [MOMO_MPESA]
@@ -393,7 +393,7 @@ XofOfframpMOMOAccount:
       description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+221[0-9]{9}$. e.g. +221123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       enum: ["MOMO_WAVE", "MOMO_ORANGE", "MOMO_MTN", "MOMO_VISA", "MOMO_MOOV"]
@@ -414,7 +414,7 @@ RwfOfframpMOMOAccount:
       description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+250[0-9]{9}$. e.g. +250123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
@@ -434,7 +434,7 @@ ZmwOfframpMOMOAccount:
       description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+260[0-9]{9}$. e.g. +260123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       enum: [MOMO_MTN, MOMO_ZAMTEL, MOMO_AIRTEL]
@@ -449,13 +449,13 @@ MwkOfframpMOMOAccount:
   properties:
     accountNumber:
       type: string
-      description: "Mobile Money account phone number of the Recipient, required pattern: ^\\+265[0-9]{10}$. e.g. +2651234567890"
+      description: "Mobile Money account phone number of the Recipient, required pattern: ^\\+265[0-9]{9,10}$. e.g. +265123456789"
     accountHolderPhone:
       type: string
-      description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+265[0-9]{9}$. e.g. +265123456789"
+      description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+265[0-9]{9,10}$. e.g. +265123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       enum: [MOMO_AIRTEL, MOMO_TNM]
@@ -476,7 +476,7 @@ TzsOfframpMOMOAccount:
       description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+255\\d{8,9}$. e.g. +25512345678"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe."
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe."
     kind:
       type: string
       enum: [MOMO_AIRTEL, MOMO_TIGO, MOMO_VODACOM, MOMO_AZAMPESA, MOMO_HALOPESA]
@@ -497,7 +497,7 @@ XafOfframpMOMOAccount:
       description: "Contact phone number of the account holder. Typically the same as the accountNumber, required pattern: ^\\+237[0-9]{9}$. e.g. +237123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe."
+      description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe."
     kind:
       type: string
       enum: [MOMO_WALLET]
@@ -518,7 +518,7 @@ NgnOfframpBankAccount:
       description: "Contact phone number of the account holder, required pattern: ^\\+234[0-9]{10}$. e.g. +2341234567890"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       enum: ["BANK_Standard Chartered Bank", "BANK_Citibank Nigeria", "BANK_Wema Bank", "BANK_Unity Bank", "BANK_United Bank for Africa", "BANK_Access Bank (Diamond)", "BANK_Union Bank of Nigeria", "BANK_Ecobank Nigeria", "BANK_Providus Bank", "BANK_Access Bank", "BANK_Stanbic Ibtc Bank", "BANK_Polaris Bank", "BANK_Keystone Bank", "BANK_Fidelity Bank", "BANK_Zenith Bank", "BANK_Heritage Bank", "BANK_Enterprise Bank", "BANK_Guaranty Trust Bank", "BANK_GT Bank", "BANK_Paga", "BANK_Sterling Bank", "BANK_Mainstreet Bank", "BANK_First City Monument Bank", "BANK_First Bank of Nigeria"]
@@ -539,7 +539,7 @@ UgxOfframpBankAccount:
       description: "Contact phone number of the account holder, required pattern: ^\\+256[0-9]{9}$. e.g. +256123456789"
     accountHolderName:
       type: string
-      description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+$. e.g. John Doe"
+      description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
       description: Kind of Mobile Money transfer. Not currently supported, but coming soon.

@@ -689,9 +689,9 @@ BANK_UGXCryptoToFiatTransfer:
     - sourceCurrency
     - destinationCurrency
     - purposeOfPayment
-BANK_TZSCryptoToFiatTransfer:
+MOMO_TZSCryptoToFiatTransfer:
   type: object
-  title: "Crypto to TZS (BANK TZS)"
+  title: "Crypto to TZS (MOMO TZS)"
   properties:
     requestId:
       type: string
@@ -732,9 +732,9 @@ BANK_TZSCryptoToFiatTransfer:
     - sourceCurrency
     - destinationCurrency
     - purposeOfPayment
-BANK_MWKCryptoToFiatTransfer:
+MOMO_MWKCryptoToFiatTransfer:
   type: object
-  title: "Crypto to MWK (BANK MWK)"
+  title: "Crypto to MWK (MOMO MWK)"
   properties:
     requestId:
       type: string
@@ -775,9 +775,9 @@ BANK_MWKCryptoToFiatTransfer:
     - sourceCurrency
     - destinationCurrency
     - purposeOfPayment
-BANK_XAFCryptoToFiatTransfer:
+MOMO_XAFCryptoToFiatTransfer:
   type: object
-  title: "Crypto to XAF (BANK XAF)"
+  title: "Crypto to XAF (MOMO XAF)"
   properties:
     requestId:
       type: string
