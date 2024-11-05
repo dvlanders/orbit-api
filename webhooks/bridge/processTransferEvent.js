@@ -1,96 +1,34 @@
 const supabase = require("../../src/util/supabaseClient");
 const { supabaseCall } = require("../../src/util/supabaseWithRetry");
 const createLog = require("../../src/util/logger/supabaseLogger");
-const { HifiOfframpTransactionBridgeStatusMap, HifiOfframpTransactionFailedStatuses } = require("../../src/util/bridge/utils");
-const { updateBridgeTransactionRecord } = require("../../src/util/bridge/bridgeTransactionTableService");
-const { updateOfframpTransactionRecordAtomic } = require("../../src/util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService");
-const notifyTransaction = require("../../src/util/logger/transactionNotifier");
-const { rampTypes } = require("../../src/util/transfer/utils/ramptType");
-const notifyCryptoToFiatTransfer = require("../transfer/notifyCryptoToFiatTransfer");
-const { isValidBridgeStateTransition } = require("../../src/util/bridge/utils");
+const { processOfframpTransferEvent } = require("./transferEvent/processOfframpTransferEvent");
+const { processBridgingEvent } = require("./transferEvent/processBridgingEvent");
+
+
 
 const processTransferEvent = async (event) => {
-  const {
-    id,
-    state,
-    amount,
-    source,
-    receipt,
-    currency,
-    created_at,
-    updated_at,
-    destination,
-    on_behalf_of,
-    developer_fee,
-    client_reference_id,
-    source_deposit_instructions,
-  } = event;
+  // get the event type from bridge_transaction table
+  const {data: bridgeTransaction, error: bridgeTransactionError} = await supabaseCall(() => supabase
+    .from('bridge_transactions')
+    .select('transfer_type')
+    .eq('bridge_transfer_id', event.id)
+    .maybeSingle());
+  
+  if(bridgeTransactionError) throw bridgeTransactionError;
+  if(!bridgeTransaction) return await createLog("webhook/processTransferEvent", null, `Bridge transaction not found for bridge transfer id: ${event.id}, the event is most likely in dev_production database`);
 
-  try{
+  const transferType = bridgeTransaction.transfer_type;
 
-    if(!client_reference_id) return await createLog("webhook/processTransferEvent", null, `There is no client_reference_id in the event for event id: ${id}`);
-
-    // get the original offramp record
-    const {data: offrampRecord, error: offrampRecordError} = await supabaseCall(() => supabase
-        .from('offramp_transactions')
-        .select('id, transaction_status, updated_at, bridge_transaction_info:bridge_transaction_record_id(bridge_status)')
-        .eq('id', client_reference_id)
-        .maybeSingle());
-    
-    if(offrampRecordError) throw offrampRecordError;
-
-    if (!offrampRecord) return await createLog("webhook/processTransferEvent", null, `Offramp record not found for client_reference_id ${client_reference_id}. The record is most likely in dev_production database.`);
-
-    // check whether the state transition is valid since we can process webhook events out of order
-    if(!isValidBridgeStateTransition(offrampRecord.bridge_transaction_info?.bridge_status, state)){
-      return;
-    }
-
-    const currentUpdatedAt = offrampRecord.updated_at;
-
-    const toUpdate = {
-      transaction_status: HifiOfframpTransactionBridgeStatusMap[state] || "UNKNOWN"
-    }
-    const updatedOfframpRecord = await updateOfframpTransactionRecordAtomic(offrampRecord.id, toUpdate, currentUpdatedAt);
-
-    if(!updatedOfframpRecord){
-        throw new Error(`Concurrent update detected. Please retry processing offramp transaction record with id ${offrampRecord.id} for event ${id}`);
-    }
-
-    const toUpdateBridge = {
-      bridge_response: event,
-      bridge_status: state
-    }
-    const updatedBridgeRecord = await updateBridgeTransactionRecord(updatedOfframpRecord.bridge_transaction_record_id, toUpdateBridge);
-
-    if (HifiOfframpTransactionFailedStatuses.includes(updatedOfframpRecord.transaction_status)) {
-      await notifyTransaction(
-              updatedOfframpRecord.user_id,
-              rampTypes.OFFRAMP,
-              updatedOfframpRecord.id,
-                {
-                  prevTransactionStatus: offrampRecord.transaction_status,
-                  updatedTransactionStatus: updatedOfframpRecord.transaction_status,
-                  bridgeTransactionStatus: updatedBridgeRecord.bridge_status,
-                  failedReason: updatedOfframpRecord.failed_reason,
-                }
-            );
-    }
-
-    if (offrampRecord.transaction_status == updatedOfframpRecord.transaction_status) return;
-
-    await notifyCryptoToFiatTransfer(updatedOfframpRecord);
-
-  }catch(error){
-    await createLog(
-      "webhooks/bridge/processTransferEvent",
-      null,
-      `Failed to process event with id ${id} with client_reference_id: ${client_reference_id}`,
-      error
-    );
-    throw error;
+  if (transferType == "BRIDGE_ASSET"){
+    await processBridgingEvent(event);
+  }else{
+    // default to offramp
+    await processOfframpTransferEvent(event);
   }
-};
+
+
+}
+
 
 module.exports = {
   processTransferEvent,

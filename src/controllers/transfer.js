@@ -50,6 +50,8 @@ const { checkIsBridgingRequestIdAlreadyUsed } = require("../util/transfer/bridgi
 const fetchBridgingTransactions = require("../util/transfer/bridging/fetchBridgingTransactions");
 const { getUserWallet } = require("../util/user/getUserWallet");
 const createJob = require("../../asyncJobs/createJob");
+const { bridgingSupportedDestinationChain, bridgeFunctionMap } = require("../util/transfer/bridging/bridgeFunctions");
+const { getBridgingTransactionRecord } = require("../util/transfer/bridging/bridgingTransactionTableService");
 
 
 exports.createCryptoToCryptoTransfer = async (req, res) => {
@@ -1386,6 +1388,8 @@ exports.getTransfers = async (req, res) => {
 // 		closeMessage: orderClose
 // 	});
 // }
+
+
 exports.createBridgingRequest = async (req, res) => {
 	if (req.method !== 'POST') {
 		return res.status(405).json({ error: 'Method not allowed' });
@@ -1394,18 +1398,19 @@ exports.createBridgingRequest = async (req, res) => {
 	const { profileId } = req.query
 	const fields = req.body
 	fields.profileId = profileId
-	const { sourceUserId, destinationUserId, requestId, sourceWalletType, destinationWalletType, sourceChain, destinationChain } = fields
+	const { sourceUserId, destinationUserId, requestId, sourceWalletType, destinationWalletType, sourceChain, destinationChain, sourceCurrency, destinationCurrency } = fields
 
 	try {
-		const requiredFields = ["sourceUserId", "destinationUserId", "amount", "sourceChain", "destinationChain", "requestId", "currency"]
+		const requiredFields = ["sourceUserId", "destinationUserId", "amount", "sourceChain", "destinationChain", "requestId", "sourceCurrency", "destinationCurrency"]
 		const acceptedFields = {
 			"sourceUserId": (value) => isUUID(value),
 			"destinationUserId": (value) => isUUID(value),
 			"amount": (value) => isValidAmount(value),
 			"sourceChain": (value) => isHIFISupportedChain(value),
-			"destinationChain": (value) => isHIFISupportedChain(value),
+			"destinationChain": (value) => inStringEnum(value, bridgingSupportedDestinationChain),
 			"requestId": (value) => isUUID(value),
-			"currency": (value) => inStringEnum(value, ["usdc"]),
+			"sourceCurrency": (value) => inStringEnum(value, ["usdc"]),
+			"destinationCurrency": (value) => inStringEnum(value, ["usdc", "usdt"]),
 			"sourceWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
 			"destinationWalletType": (value) => inStringEnum(value, ["INDIVIDUAL", "FEE_COLLECTION", "PREFUNDED"]),
 		}
@@ -1420,24 +1425,60 @@ exports.createBridgingRequest = async (req, res) => {
 		if (!destinationWalletType) fields.destinationWalletType = "INDIVIDUAL"
 
 		// check if source wallet is kyc passed
-		const {bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId } = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
+		const {bastionUserId: sourceBastionUserId, walletProvider: sourceWalletProvider, circleWalletId: sourceCircleWalletId, address: sourceWalletAddress } = await getUserWallet(sourceUserId, sourceChain, fields.sourceWalletType)
 		if (sourceBastionUserId && !(await isBastionKycPassed(sourceBastionUserId))) return res.status(400).json({ error: `Source user is not allowed to transfer crypto (user status invalid)` })
+		fields.sourceWalletAddress = sourceWalletAddress
+		fields.sourceWalletProvider = sourceWalletProvider
 
 		// check if destination wallet is kyc passed
-		const {bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider, circleWalletId: destinationCircleWalletId } = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
+		const {bastionUserId: destinationBastionUserId, walletProvider: destinationWalletProvider, circleWalletId: destinationCircleWalletId, address: destinationWalletAddress } = await getUserWallet(destinationUserId, destinationChain, fields.destinationWalletType)
 		if (destinationBastionUserId && !(await isBastionKycPassed(destinationBastionUserId))) return res.status(400).json({ error: `Destination user is not allowed to receive crypto (user status invalid)` })
+		fields.destinationWalletProvider = destinationWalletProvider
+		fields.destinationWalletAddress = destinationWalletAddress
 
 		// check if requestId is already used
 		const { isAlreadyUsed, newRecord } = await checkIsBridgingRequestIdAlreadyUsed(requestId, profileId);
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+		const feeTransaction = await insertTransactionFeeRecord({ transaction_id: newRecord.id, transaction_type: transferType.BRIDGE_ASSET, status: "CREATED" });
+		fields.feeTransactionId = feeTransaction.id
 
 		// TODO: create function map for different currency
+		const { createBridgingRequest } = bridgeFunctionMap.universal
 		// right now only usdc bridging is supported
-		const result = await createUsdcBridgingRequest({...fields, newRecord});
+		const result = await createBridgingRequest({...fields, newRecord});
 		return res.status(200).json(result);
 	} catch (error) {
 		await createLog("transfer/createBridgingRequest", sourceUserId, error.message, error, profileId, res)
 		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
+
+exports.actionBridgingRequest = async (req, res) => {
+	if (req.method !== 'PUT') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { action } = req.body;
+	const { profileId, id } = req.query
+	try {
+		// get transaction id
+		const record = await getBridgingTransactionRecord(id)
+		if (!record) return res.status(400).json({ error: `No quote found for id: ${id}` })
+		// check if transaction is OPEN_QUOTE
+		if (record.status == "AWAITING_QUOTE") return res.status(400).json({ error: `Quote is not yet available` })
+		if (record.status != "OPEN_QUOTE") return res.status(400).json({ error: `Expired or invalid quote` })
+
+		const funcs = bridgeFunctionMap.universal
+		if (action == "ACCEPT_QUOTE"){
+			const { acceptBridgingRequest } = funcs
+			const result = await acceptBridgingRequest({ recordId: id, profileId })
+			return res.status(200).json(result)
+		}else {
+			return res.status(400).json({ error: `Invalid action` })
+		}
+	} catch (error) {
+		await createLog("transfer/acceptQuoteTypeCryptoToFiatTransfer", null, error.message, error, profileId, res)
+		return res.status(500).json({ error: 'An unexpected error occurred' });
 	}
 }
 

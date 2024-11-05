@@ -23,7 +23,7 @@ const ChainId = {
 	BASE_MAINNET: 8453
 }
 const hifiSupportedChain = NODE_ENV == "development" ?
-	[Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET] // FIXME: remove Chain.POLYGON_MAINNET from development
+	[Chain.ETHEREUM_TESTNET, Chain.POLYGON_AMOY] : [Chain.POLYGON_MAINNET, Chain.ETHEREUM_MAINNET, Chain.BASE_MAINNET] // FIXME: remove Chain.POLYGON_MAINNET from development
 
 const currencyDecimal = {
 	"usdc": 6,

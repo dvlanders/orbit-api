@@ -116,7 +116,21 @@ const HifiOfframpTransactionBridgeStatusMap = {
 	[BridgeTransactionStatus.canceled]: "CANCELLED"
 }
 
+const HifiBridgingTransactionBridgeStatusMap = {
+	[BridgeTransactionStatus.awaiting_funds]: "INITIATE_BRIDGING",
+	[BridgeTransactionStatus.in_review]: "IN_PROGRESS_BRIDGING",
+	[BridgeTransactionStatus.funds_received]: "IN_PROGRESS_BRIDGING",
+	[BridgeTransactionStatus.payment_submitted]: 'INITIATED_BRIDGING',
+	[BridgeTransactionStatus.payment_processed]: 'COMPLETED',
+	[BridgeTransactionStatus.returned]: 'FAILED_BRIDGING_RETURNED',
+	[BridgeTransactionStatus.refunded]: 'FAILED_BRIDGING_REFUNDED',
+	[BridgeTransactionStatus.error]: 'FAILED_UNKNOWN',
+	[BridgeTransactionStatus.canceled]: "CANCELLED"
+}
+
 const HifiOfframpTransactionFailedStatuses = ["FAILED_FIAT_RETURNED", "FAILED_FIAT_REFUNDED", "FAILED_UNKNOWN", "UNKNOWN"]
+const HifiBridgingTransactionFailedStatuses = ["FAILED_BRIDGING_RETURNED", "FAILED_BRIDGING_REFUNDED", "FAILED_UNKNOWN", "UNKNOWN"]
+
 
 const virtualAccountPaymentRailToChain = NODE_ENV == "development" ?
 	{
@@ -142,6 +156,22 @@ const chainToVirtualAccountPaymentRail = NODE_ENV == "development" ?
 	"ETHEREUM_MAINNET": "ethereum",
 	"OPTIMISM_MAINNET": "optimism",
 	"POLYGON_MAINNET": "polygon"
+}
+
+
+const chainToBridgeChain = NODE_ENV == "development" ?
+{
+	"ETHEREUM_TESTNET": "ethereum",
+	"OPTIMISM_TESTNET": "optimism",
+	"POLYGON_AMOY": "polygon"
+}
+: 
+{
+	"ETHEREUM_MAINNET": "ethereum",
+	"OPTIMISM_MAINNET": "optimism",
+	"POLYGON_MAINNET": "polygon",
+	"BASE_MAINNET": "base",
+	"ARBITRUM_MAINNET": "arbitrum",
 }
 
 const AccountActions = {
@@ -323,5 +353,8 @@ module.exports = {
 	isValidBridgeStateTransition,
 	HifiOnrampTransactionBridgeStatusMap,
 	HifiOfframpTransactionBridgeStatusMap,
-	HifiOfframpTransactionFailedStatuses
+	HifiOfframpTransactionFailedStatuses,
+	chainToBridgeChain,
+	HifiBridgingTransactionBridgeStatusMap,
+	HifiBridgingTransactionFailedStatuses
 }
