@@ -673,11 +673,15 @@ exports.getLatestBlindpayReceiver = async (req, res) => {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	const { userId } = req.query
+
 	try {
+		if (!userId) return res.status(400).json({ error: 'userId is required' })
 		const { data: receiver, error } = await supabase
 			.from('blindpay_receivers_kyc')
 			.select('*')
 			.order('created_at', { ascending: false })
+			.eq('user_id', userId)
 			.limit(1)
 			.maybeSingle();
 
