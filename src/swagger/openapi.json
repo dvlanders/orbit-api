@@ -1782,7 +1782,7 @@
               "MOMO_VISA",
               "MOMO_MOOV"
             ],
-            "description": "Kind of Mobile Money transfer. Not currently supported, but coming soon."
+            "description": "Kind of Mobile Money transfer."
           }
         },
         "required": [
@@ -1809,7 +1809,7 @@
           },
           "kind": {
             "type": "string",
-            "description": "Kind of Mobile Money transfer. Not currently supported, but coming soon."
+            "description": "Kind of Mobile Money transfer."
           }
         },
         "required": [
@@ -1841,7 +1841,7 @@
               "MOMO_ZAMTEL",
               "MOMO_AIRTEL"
             ],
-            "description": "Kind of Mobile Money transfer. Not currently supported, but coming soon."
+            "description": "Kind of Mobile Money transfer."
           }
         },
         "required": [
@@ -1906,7 +1906,7 @@
               "MOMO_AZAMPESA",
               "MOMO_HALOPESA"
             ],
-            "description": "Kind of Mobile Money transfer. Not currently supported, but coming soon."
+            "description": "Kind of Mobile Money transfer."
           }
         },
         "required": [
@@ -1936,7 +1936,7 @@
             "enum": [
               "MOMO_WALLET"
             ],
-            "description": "Kind of Mobile Money transfer. Not currently supported, but coming soon."
+            "description": "Kind of Mobile Money transfer."
           }
         },
         "required": [
@@ -2016,7 +2016,7 @@
           },
           "kind": {
             "type": "string",
-            "description": "Kind of Mobile Money transfer. Not currently supported, but coming soon."
+            "description": "Kind of Mobile Money transfer."
           }
         },
         "required": [

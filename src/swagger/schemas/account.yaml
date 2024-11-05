@@ -397,7 +397,7 @@ XofOfframpMOMOAccount:
     kind:
       type: string
       enum: ["MOMO_WAVE", "MOMO_ORANGE", "MOMO_MTN", "MOMO_VISA", "MOMO_MOOV"]
-      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
+      description: Kind of Mobile Money transfer.
   required:
     - accountNumber
     - accountHolderPhone
@@ -417,7 +417,7 @@ RwfOfframpMOMOAccount:
       description: "Name of the account holder as it appears on the Mobile Money account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
-      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
+      description: Kind of Mobile Money transfer.
   required:
     - accountNumber
     - accountHolderPhone
@@ -438,7 +438,7 @@ ZmwOfframpMOMOAccount:
     kind:
       type: string
       enum: [MOMO_MTN, MOMO_ZAMTEL, MOMO_AIRTEL]
-      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
+      description: Kind of Mobile Money transfer.
   required:
     - accountNumber
     - accountHolderPhone
@@ -480,7 +480,7 @@ TzsOfframpMOMOAccount:
     kind:
       type: string
       enum: [MOMO_AIRTEL, MOMO_TIGO, MOMO_VODACOM, MOMO_AZAMPESA, MOMO_HALOPESA]
-      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
+      description: Kind of Mobile Money transfer.
   required:
     - accountNumber
     - accountHolderPhone
@@ -501,7 +501,7 @@ XafOfframpMOMOAccount:
     kind:
       type: string
       enum: [MOMO_WALLET]
-      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
+      description: Kind of Mobile Money transfer.
   required:
     - accountNumber
     - accountHolderPhone
@@ -542,7 +542,7 @@ UgxOfframpBankAccount:
       description: "Name of the account holder as it appears on the Bank Account, required pattern: ^[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$. e.g. John Doe"
     kind:
       type: string
-      description: Kind of Mobile Money transfer. Not currently supported, but coming soon.
+      description: Kind of Mobile Money transfer.
   required:
     - accountNumber
     - accountHolderPhone
