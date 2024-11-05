@@ -2,11 +2,11 @@ const createLog = require("../../../logger/supabaseLogger");
 const supabase = require("../../../supabaseClient");
 
 const currencyTableMap = {
-    mwk: "yellowcard_bank_mwk_accounts",
+    mwk: "yellowcard_momo_mwk_accounts",
     ngn: "yellowcard_bank_ngn_accounts",
-    tzs: "yellowcard_bank_tzs_accounts",
+    tzs: "yellowcard_momo_tzs_accounts",
     ugx: "yellowcard_bank_ugx_accounts",
-    xaf: "yellowcard_bank_ngn_accounts",
+    xaf: "yellowcard_momo_xaf_accounts",
     kes: "yellowcard_momo_kes_accounts",
     rwf: "yellowcard_momo_rwf_accounts",
     xof: "yellowcard_momo_xof_accounts",

@@ -207,7 +207,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
         }
     },
-    bank_tzs: {
+    momo_tzs: {
         usdc: {
             tzs: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
@@ -217,7 +217,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
         }
     },
-    bank_mwk: {
+    momo_mwk: {
         usdc: {
             mwk: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,
@@ -227,7 +227,7 @@ const CryptoToBankSupportedPairFunctions = {
 			},
         }
     },
-    bank_xaf: {
+    momo_xaf: {
         usdc: {
             xaf: {
 				transferFunc: createYellowcardCryptoToFiatTransfer,

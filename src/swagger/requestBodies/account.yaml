@@ -54,6 +54,24 @@ ZmwOfframpMomoAccountBody:
     application/json:
       schema:
         $ref: '#/components/schemas/ZmwOfframpMOMOAccount'
+MwkOfframpMOMOAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/MwkOfframpMOMOAccount'
+TzsOfframpMOMOAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/TzsOfframpMOMOAccount'
+XafOfframpMOMOAccountBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/XafOfframpMOMOAccount'
 NgnOfframpBankAccountBody:
   required: true
   content:
@@ -66,24 +84,6 @@ UgxOfframpBankAccountBody:
     application/json:
       schema:
         $ref: '#/components/schemas/UgxOfframpBankAccount'
-TzsOfframpBankAccountBody:
-  required: true
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/TzsOfframpBankAccount'
-MwkOfframpBankAccountBody:
-  required: true
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/MwkOfframpBankAccount'
-XafOfframpBankAccountBody:
-  required: true
-  content:
-    application/json:
-      schema:
-        $ref: '#/components/schemas/XafOfframpBankAccount'
 SAOfframpReceiverCreateBody:
   required: true
   content:

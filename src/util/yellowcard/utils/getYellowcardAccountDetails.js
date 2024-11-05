@@ -9,9 +9,9 @@ const paymentRailTableMap = {
   momo_zmw: 'yellowcard_momo_zmw_accounts',
   bank_ngn: 'yellowcard_bank_ngn_accounts',
   bank_ugx: 'yellowcard_bank_ugx_accounts',
-  bank_tzs: 'yellowcard_bank_tzs_accounts',
-  bank_mwk: 'yellowcard_bank_mwk_accounts',
-  bank_xaf: 'yellowcard_bank_xaf_accounts',
+  momo_tzs: 'yellowcard_momo_tzs_accounts',
+  momo_mwk: 'yellowcard_momo_mwk_accounts',
+  momo_xaf: 'yellowcard_momo_xaf_accounts',
 }
 
 const getYellowcardAccountDetails = async (destinationAccountId) => {

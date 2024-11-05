@@ -486,9 +486,9 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
 	const acceptedFields = {
-		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "mwk", "ngn", "tzs", "ugx", "xaf", "kes", "rwf", "xof", "zmw"]),
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "ngn", "kes", "zmw", "mwk", "tzs", "xaf"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop", "bank_mwk", "bank_ngn", "bank_tzs", "bank_ugx", "bank_xaf", "momo_kes", "momo_rwf", "momo_xof", "momo_zmw"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop", "bank_ngn", "momo_kes", "momo_zmw", "momo_mwk", "momo_tzs", "momo_xaf"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
@@ -1512,7 +1512,7 @@ exports.createKesMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_kes", currency: "kes" });
@@ -1534,36 +1534,6 @@ exports.createKesMomoAccount = async (req, res) => {
     }
 }
 
-exports.createMwkMomoAccount = async (req, res) => {
-    const { userId, profileId } = req.query;
-	const fields = req.body;
-
-	if (!(await verifyUser(userId, profileId))) {
-		return res.status(401).json({ error: "userId not found" });
-	}
-
-    fields.user_id = userId;
-
-    try {
-        const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
-        
-        return res.status(200).json({
-			status: "ACTIVE",
-			invalidFields: [],
-			message: "Account created successfully",
-			id: accountProviderRecord.id
-		});
-        
-    } catch (error) {
-        await createLog("account/createMwkMomoAccount", userId, error.message, error);
-        if (error instanceof YcAccountInfoError) {
-            if (error.type === YcAccountInfoErrorType.INTERNAL_ERROR ) return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
-            return res.status(error.status).json(error.rawResponse);
-        }
-        return res.status(500).json({ error: "Unexpected error happened, please contact HIFI for more information" });
-    }
-}
-
 exports.createXofMomoAccount = async (req, res) => {
     const { userId, profileId } = req.query;
 	const fields = req.body;
@@ -1572,7 +1542,7 @@ exports.createXofMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_xof", currency: "xof" });
@@ -1602,7 +1572,7 @@ exports.createRwfMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_rwf", currency: "rwf" });
@@ -1632,7 +1602,7 @@ exports.createZmwMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_zmw", currency: "zmw" });
@@ -1662,7 +1632,7 @@ exports.createNgnBankAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_ngn", currency: "ngn" });
@@ -1692,7 +1662,7 @@ exports.createUgxBankAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "bank_ugx", currency: "ugx" });
@@ -1722,7 +1692,7 @@ exports.createTzsMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_tzs", currency: "tzs" });
@@ -1752,7 +1722,7 @@ exports.createMwkMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_mwk", currency: "mwk" });
@@ -1782,7 +1752,7 @@ exports.createXafMomoAccount = async (req, res) => {
 		return res.status(401).json({ error: "userId not found" });
 	}
 
-    fields.user_id = userId;
+    fields.userId = userId;
 
     try {
         const accountProviderRecord = await createYellowcardAccount({ fields, paymentRail: "momo_xaf", currency: "xaf" });

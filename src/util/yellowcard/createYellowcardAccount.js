@@ -10,16 +10,16 @@ const createYellowcardAccount = async(config) => {
     const {fields, currency, paymentRail} = config;
 
     const requiredFields = [
-        "user_id",
+        "userId",
         "accountNumber",
         "accountHolderName",
         "accountHolderPhone",
         "kind"
     ];
     const acceptedFields = {
-        user_id: (value) => isUUID(value),
+        userId: (value) => isUUID(value),
         accountNumber: (value) => { return yellowcardAccountNumberFormatPatternMap[currency].test(value) },
-        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$/.test(value) },
         accountHolderPhone: (value) => { return yellowcardPhoneNumberFormatPatternMap[currency].test(value) },
         kind: (value) => inStringEnum(value, yellowcardSupportedKindsMap[env][paymentRail]),
     };
@@ -51,7 +51,7 @@ const createYellowcardAccount = async(config) => {
         throw new YcAccountInfoError(YcAccountInfoErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
     }
 
-    const accountProviderRecord = await insertAccountProviders(ycAccount.id, currency, "offramp", paymentRail, "YELLOWCARD", fields.user_id)
+    const accountProviderRecord = await insertAccountProviders(ycAccount.id, currency, "offramp", paymentRail, "YELLOWCARD", fields.userId)
     if (!accountProviderRecord) {
         throw new YcAccountInfoError(YcAccountInfoErrorType.INTERNAL_ERROR, 500, "", { error: "Unexpected error happened, please contact HIFI for more information" });
     }

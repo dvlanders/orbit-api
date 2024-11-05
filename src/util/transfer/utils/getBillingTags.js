@@ -80,20 +80,20 @@ const BillingTagsForOfframp = {
                 failed: [],
             }
         },
-        bank_tzs: {
-            TZS:{
+        momo_tzs: {
+            tzs:{
                 success: ["base"],  
                 failed: [],
             }
         },
-        bank_mwk: {
-            MWK:{
+        momo_mwk: {
+            mwk:{
                 success: ["base"],  
                 failed: [],
             }
         },
-        bank_xaf: {
-            XAF:{
+        momo_xaf: {
+            xaf:{
                 success: ["base"],  
                 failed: [],
             }
@@ -117,6 +117,7 @@ const BillingTagsForOnramp = {
 
 
 const getBillingTagsFromAccount = async(requestId, transactionType, userId, accountInfo) => {
+    console.log(requestId, transactionType, userId, accountInfo)
     try{
         if (transactionType === transferType.CRYPTO_TO_FIAT){
             return BillingTagsForOfframp[accountInfo.payment_rail][accountInfo.currency]
