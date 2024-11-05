@@ -486,9 +486,9 @@ exports.getAllAccounts = async (req, res) => {
 		return res.status(400).json({ error: 'Please provide at least one of the following: currency, railType.' });
 	}
 	const acceptedFields = {
-		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "ngn", "kes"]),
+		currency: (value) => inStringEnum(value, ["usd", "eur", "brl", "hkd", "mxn", "cop", "ars", "ngn", "kes", "zmw", "mwk", "tzs", "xaf"]),
 		railType: (value) => inStringEnum(value, ["onramp", "offramp"]),
-		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop", "bank_ngn", "momo_kes"]),
+		paymentRail: (value) => inStringEnum(value, ["ach", "sepa", "wire", "pix", "chats", "fps", "spei", "transfers", "ach_cop", "bank_ngn", "momo_kes", "momo_zmw", "momo_mwk", "momo_tzs", "momo_xaf"]),
 		limit: (value) => isInRange(value, 1, 100),
 		createdAfter: (value) => isValidDate(value, "ISO"),
 		createdBefore: (value) => isValidDate(value, "ISO"),
