@@ -46,7 +46,7 @@ const transferUSDHIFI = async (config) => {
     }else{
         toUpdate.bastion_status = "NOT_INITIATED"
         const {message, type} = getMappedError(responseBody.message)
-        failedReason = message
+        failedReason = "Transfer amount exceeds balance."
     }
 
     await updateBastionTransactionRecord(providerRecord.id, toUpdate)

@@ -33,14 +33,24 @@ const getTransactionRecord = async (transactionId, transactionType) => {
     }else if(transactionType === transferType.CRYPTO_TO_CRYPTO){
         const {data: cryptoToCrypto, error: cryptoToCryptoError} = await supabaseCall(() => supabase
             .from("crypto_to_crypto")
-            .select("amount, user_id: sender_user_id, profile: sender_user_id(profile_id), status, fee_currency:currency, billing_tags_success, billing_tags_failed, recipient_user_id, chain")
+            .select("amount, user_id: sender_user_id, profile: sender_user_id(profile_id), status, fee_currency:currency, billing_tags_success, billing_tags_failed, recipient_user_id, chain, provider")
             .eq("id", transactionId)
             .single());
 
         if(cryptoToCryptoError) throw cryptoToCryptoError;
         return cryptoToCrypto;
 
-    }else{
+    }else if(transactionType === transferType.BRIDGE_ASSET){
+        const {data: bridging, error: bridgingError} = await supabaseCall(() => supabase
+            .from("bridging_transactions")
+            .select("amount, user_id: source_user_id, profile: source_user_id(profile_id), status, currency:source_currency, fee_currency:source_currency, billing_tags_success, billing_tags_failed, chain: source_chain, provider:source_wallet_provider")
+            .eq("id", transactionId)
+            .single());
+
+        if(bridgingError) throw bridgingError;
+        return bridging;
+    }
+    else{
         throw new Error("Invalid transaction id or transaction type");
     }
 
@@ -49,7 +59,7 @@ const getTransactionRecord = async (transactionId, transactionType) => {
 const getTransactionFee = async (transactionRecord, transactionType, billingInfo) => {
 
     let totalFee = 0;
-    if(transactionType === transferType.CRYPTO_TO_CRYPTO){
+    if(transactionType === transferType.CRYPTO_TO_CRYPTO || transactionType === transferType.BRIDGE_ASSET){
         totalFee = getFeeCrypto(transactionRecord, billingInfo.crypto_transfer_config);
     }else if(transactionType === transferType.FIAT_TO_CRYPTO){
         totalFee = getFee(transactionRecord, billingInfo.fiat_deposit_config);
@@ -156,7 +166,7 @@ const syncTransactionFeeRecordStatus = async (transactionId, transactionType) =>
     try{
         const transactionRecord = await getTransactionRecord(transactionId, transactionType);
 
-        const voidStatuses = ["REFUNDED", "FAILED", "CANCELLED", "NOT_INITIATED"];
+        const voidStatuses = ["REFUNDED", "FAILED", "CANCELLED", "NOT_INITIATED", "QUOTE_FAILED"];
         const statusContainsVoidStatus = (status) => {
             return voidStatuses.some(voidStatus => status.includes(voidStatus));
         };

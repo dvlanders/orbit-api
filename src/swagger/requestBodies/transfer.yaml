@@ -45,3 +45,9 @@ BridgeAssetTransferBody:
     application/json:
       schema:
         $ref: '#/components/schemas/BridgeAssetTransfer'
+AcceptBridgeAssetTransferBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        $ref: '#/components/schemas/AcceptBridgeAssetTransfer'

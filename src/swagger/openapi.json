@@ -684,6 +684,16 @@
           }
         }
       },
+      "AcceptBridgeAssetTransferBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AcceptBridgeAssetTransfer"
+            }
+          }
+        }
+      },
       "UserCreateBody": {
         "required": true,
         "content": {
@@ -6755,10 +6765,19 @@
             "description": "Chain where the asset will be bridged to",
             "enum": [
               "POLYGON_MAINNET",
-              "ETHEREUM_MAINNET"
+              "ETHEREUM_MAINNET",
+              "BASE_MAINNET",
+              "OPTIMISM_MAINNET",
+              "ARBITRUM_MAINNET"
             ]
           },
-          "currency": {
+          "sourceCurrency": {
+            "type": "string",
+            "enum": [
+              "usdc"
+            ]
+          },
+          "destinationCurrency": {
             "type": "string",
             "enum": [
               "usdc"
@@ -6771,7 +6790,8 @@
           "amount",
           "requestId",
           "sourceChain",
-          "currency",
+          "sourceCurrency",
+          "destinationCurrency",
           "destinationChain"
         ]
       },
@@ -6785,16 +6805,20 @@
             "type": "object",
             "properties": {
               "id": {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               "requestId": {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               "sourceUserId": {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               "destinationUserId": {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               "sourceChain": {
                 "type": "string"
@@ -6809,14 +6833,14 @@
                 "type": "string"
               },
               "amount": {
-                "type": "number"
+                "type": "integer"
               },
               "currency": {
-                "type": "string"
+                "type": "string",
+                "nullable": true
               },
               "status": {
-                "type": "string",
-                "description": "Status of the transfer. Possible values:\n\n`CREATED`, `PROCESSING`, `COMPLETED`, `FAILED`\n"
+                "type": "string"
               },
               "createdAt": {
                 "type": "string",
@@ -6826,26 +6850,44 @@
                 "type": "string",
                 "format": "date-time"
               },
-              "transactionHash": {
-                "type": "object",
-                "properties": {
-                  "APPROVE_TO_TOKEN_MESSENGER": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "BURN_USDC_ON_SOURCE_CHAIN": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "RECEIVE_MESSAGE_AND_MINT": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                }
-              },
               "failedReason": {
                 "type": "string",
                 "nullable": true
+              },
+              "fee": {
+                "type": "number",
+                "nullable": true
+              },
+              "quoteInformation": {
+                "type": "object",
+                "properties": {
+                  "validFrom": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "validUntil": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "sendingCurrency": {
+                    "type": "string"
+                  },
+                  "sendingAmount": {
+                    "type": "string"
+                  },
+                  "receivingCurrency": {
+                    "type": "string"
+                  },
+                  "receivingAmount": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "exchangeFee": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -6853,27 +6895,47 @@
         "example": {
           "transferType": "BRIDGE_ASSET",
           "transferDetails": {
-            "id": "5e87372e-b5dc-4735-9bc3-b4fde3a0a398",
-            "requestId": "3da09d1a-13f2-40a0-9cb3-2628da485g93",
-            "sourceUserId": "8f766843-5a41-4799-8c20-29906a212f66",
-            "destinationUserId": "b7f624a9-b960-421f-a64f-d253a5210ae5",
-            "sourceChain": "ETHEREUM_MAINNET",
-            "destinationChain": "POLYGON_MAINNET",
-            "sourceWalletAddress": "0xb1ec8f89efd7363a1b939bfe545d2fca01bb7381",
-            "destinationWalletAddress": "0x0865F3F871FbB227D52abEFdBEa9Af549Def664d",
-            "amount": 10,
-            "currency": "usdc",
-            "status": "COMPLETED",
-            "createdAt": "2024-10-15T19:51:11.295724+00:00",
-            "updatedAt": "2024-10-15T19:55:32.448+00:00",
-            "transactionHash": {
-              "APPROVE_TO_TOKEN_MESSENGER": "0xd0741af0d7d9b9356b74a32f78d9f43472cfafbf08850c4bf6b4398a031ec9d6",
-              "BURN_USDC_ON_SOURCE_CHAIN": "0x077e54e32f5e4bf295614749a12bd13e21f34f07a646377db7bcbdfb3f9c4c48",
-              "RECEIVE_MESSAGE_AND_MINT": "0x077e54e32f5e4bf295614749a12bd13e21f34f07a646377db7bcbdfb3f9c4c48"
-            },
-            "failedReason": null
+            "id": "8fe8dd9c-651c-47d4-aaf3-fc0d384e2032",
+            "requestId": "869574ce-58d8-448c-9b72-c61ab6f75fbc",
+            "sourceUserId": "f7cd8980-87a6-4636-8176-5f6c2be64ec0",
+            "destinationUserId": "f7cd8980-87a6-4636-8176-5f6c2be64ec0",
+            "sourceChain": "POLYGON_AMOY",
+            "destinationChain": "ETHEREUM_TESTNET",
+            "sourceWalletAddress": "0xA6b7BA4FB4e0750b68DAB9e761AcB2a2e9b2F937",
+            "destinationWalletAddress": "0xA6b7BA4FB4e0750b68DAB9e761AcB2a2e9b2F937",
+            "amount": 1000000,
+            "currency": null,
+            "status": "OPEN_QUOTE",
+            "createdAt": "2024-11-04T17:55:21.684075+00:00",
+            "updatedAt": "2024-11-04T17:55:21.684075+00:00",
+            "failedReason": null,
+            "fee": null,
+            "quoteInformation": {
+              "validFrom": null,
+              "validUntil": null,
+              "sendingCurrency": "usdc",
+              "sendingAmount": "1000000.0",
+              "receivingCurrency": "usdt",
+              "receivingAmount": null,
+              "exchangeFee": "1000.0"
+            }
           }
         }
+      },
+      "AcceptBridgeAssetTransfer": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "ACCEPT_QUOTE"
+            ],
+            "description": "Action to take on the transfer request"
+          }
+        },
+        "required": [
+          "action"
+        ]
       },
       "IndividualUserKycOneCreate": {
         "type": "object",
@@ -10102,13 +10164,42 @@
     },
     "/transfer/bridge-asset": {
       "post": {
-        "summary": "Bridge Stablecoin",
-        "description": "Bridge stablecoin across chains",
+        "summary": "Create a Bridge Stablecoin Request",
+        "description": "Create a request to bridge stablecoin across chains",
         "tags": [
           "Transfer"
         ],
         "requestBody": {
           "$ref": "#/components/requestBodies/BridgeAssetTransferBody"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BridgeAssetTransferResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundResponse"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Accept Bridge Stablecoin Request",
+        "description": "Accept a bridge stablecoin request",
+        "tags": [
+          "Transfer"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BridgeAssetRecordIDParameter"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AcceptBridgeAssetTransferBody"
         },
         "responses": {
           "200": {

@@ -1,3 +1,5 @@
+const hash = require('object-hash');
+
 function snakeToCamel(snakeCaseStr) {
     return snakeCaseStr.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
   }
@@ -21,6 +23,16 @@ function convertKeysToCamelCase(obj) {
     return obj;
 }
 
+/**
+ * This function hashes an object by concatenating the keys and values, separated by "|SEP|", and then hashing the resulting string.
+ * @param {*} obj 
+ * @returns 
+ */
+function hashObject(obj){
+    return hash(obj)
+}
+
 module.exports = {
-    convertKeysToCamelCase
+    convertKeysToCamelCase,
+    hashObject
 }

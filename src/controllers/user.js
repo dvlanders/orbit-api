@@ -161,7 +161,7 @@ exports.updateHifiUser = async (req, res) => {
 		// NOTE: in the future we may want to determine which 3rd party calls to make based on the fields that were updated, but lets save that for later
 		// update customer object for providers
 		const [walletResult, bridgeResult, checkbookResult] = await Promise.all([
-			updateUserWallet(userId), 
+			updateUserWallet(userId),
 			bridgeFunction(userId),
 			updateCheckbookUser(userId)
 		])
@@ -466,18 +466,18 @@ exports.createDeveloperUser = async (req, res) => {
 
 		// update developer user id into profile
 		const { data, error } = await supabaseCall(() => supabase
-		.from("profiles")
-		.update({
-			developer_user_id: userId,
-			fee_collection_enabled: true
-		})
-		.eq("id", profileId)
+			.from("profiles")
+			.update({
+				developer_user_id: userId,
+				fee_collection_enabled: true
+			})
+			.eq("id", profileId)
 		)
-		
+
 		if (error) throw error
-		
-		await updateUserRecord(userId, { is_developer: true});
-		
+
+		await updateUserRecord(userId, { is_developer: true });
+
 		// userObject
 		const createHifiUserResponse = defaultKycInfo(userId, fields.kycLevel);
 		createHifiUserResponse.user.kyc.status = CustomerStatus.PENDING
@@ -515,7 +515,7 @@ exports.getDeveloperUserStatus = async (req, res) => {
 		// check is developer user
 		if (!user.is_developer) return res.status(400).json({ error: "This is not a developer user account, please use GET user" })
 		// check if the developeruserCreation is in the job queue, if yes return pending response
-		const {status: userStatus, getHifiUserResponse} = await getRawUserObject(userId, profileId, true)
+		const { status: userStatus, getHifiUserResponse } = await getRawUserObject(userId, profileId, true)
 
 		// get user kyc_information
 		const { data: kycInformation, error: kycInformationError } = await supabase
@@ -614,7 +614,7 @@ exports.getUserWalletBalance = async (req, res) => {
 		if (missingFields.length > 0 || invalidFields.length > 0) return res.status(400).json({ error: `fields provided are either missing or invalid`, missingFields: missingFields, invalidFields: invalidFields })
 		// check is supported currency
 		const currencyContract = currencyContractAddress[chain][currency]?.toLowerCase();
-		if (!currencyContract && currency !== "gas") return res.status(400).json({ error: `Currency not supported for provided chain`})
+		if (!currencyContract && currency !== "gas") return res.status(400).json({ error: `Currency not supported for provided chain` })
 		const walletBalance = await getUserWalletBalance(userId, chain, currency, walletType || "INDIVIDUAL")
 		return res.status(200).json(walletBalance)
 
@@ -665,5 +665,35 @@ exports.createDeveloperUserGasStationWallet = async (req, res) => {
 	} catch (error) {
 		await createLog("user/createDeveloperUserGasStationWallet", userId, error.message, error, profileId)
 		return res.status(500).json({ error: "Unexpected error happened" })
+	}
+}
+
+exports.getLatestBlindpayReceiver = async (req, res) => {
+	if (req.method !== 'GET') {
+		return res.status(405).json({ error: 'Method not allowed' });
+	}
+
+	const { userId } = req.query
+
+	try {
+		if (!userId) return res.status(400).json({ error: 'userId is required' })
+		const { data: receiver, error } = await supabase
+			.from('blindpay_receivers_kyc')
+			.select('*')
+			.order('created_at', { ascending: false })
+			.eq('user_id', userId)
+			.limit(1)
+			.maybeSingle();
+
+		if (error) throw error;
+
+		if (!receiver) {
+			return res.status(404).json({ error: 'No blindpay receivers found' });
+		}
+
+		return res.status(200).json(receiver);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ error: 'Internal server error' });
 	}
 }

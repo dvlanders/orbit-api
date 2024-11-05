@@ -20,7 +20,6 @@ const createBridgeTransfer = async (clientReferenceId, amount, onBehalfOfBridgeU
 		destination
 	}
 
-
 	const url = `${BRIDGE_URL}/v0/transfers`
 	const options = {
 		method: 'POST',
@@ -44,7 +43,9 @@ const createBridgeTransfer = async (clientReferenceId, amount, onBehalfOfBridgeU
 
 	await updateBridgeTransactionRecord(bridgeTransactionRecordId, toUpdate)
 	let failedReason
-	if (!response.ok){
+	if (!onBehalfOfBridgeUserId){
+		failedReason = "User is not allowed to bridge asset"
+	}else if (!response.ok){
 		failedReason = "Please contact HIFI for more information"
 	}
 
