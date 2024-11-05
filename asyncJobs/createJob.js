@@ -1,6 +1,10 @@
 const createLog = require("../src/util/logger/supabaseLogger");
 const supabase = require("../src/util/supabaseClient");
+const { hashObject } = require("../src/util/utils/object");
 const areObjectsEqual = require("./utils/configCompare");
+const {
+    createHash,
+  } = require('node:crypto');
 
 
 const JOB_ENV = process.env.JOB_ENV || "PRODUCTION"
@@ -16,22 +20,6 @@ const defaultAsyncJobSettings = {
     additionalChecks: []
 }
 
-const basicJobCheck = async(job, config, userId) => {
-
-    const {data, error} = await supabase
-        .from("jobs_queue")
-        .select("*")
-        .eq("job", job)
-        .eq("user_id", userId)
-        .order("created_at", {ascending: false})
-    
-    if (!data || data.length <= 0) return true
-    for (const record of data){
-        if (areObjectsEqual(record.config, config)) return false
-    }
-
-    return true
-}
 /**
  * 
  * @param {*} job 
@@ -57,10 +45,12 @@ const createJob = async(job, config, userId, profileId, _asyncJobSettings) => {
     const { createdAt, numberOfRetries, nextRetry, retryDeadline, retryInterval, allowDuplicate, additionalChecks } = asyncJobSettings
 
     try{
-        // check if job already exists if not allowDuplicate
-        if (!allowDuplicate) {
-            if (!(await basicJobCheck(job, config, userId))) return {duplicate: true}
-        }
+
+        // create unique identifier for job
+        const toHash = {...config, job}
+        if (allowDuplicate) toHash.nonce = v4()
+        const jobUniqueIdentifier = hashObject(toHash)
+
         // additional checks
         for (const check of additionalChecks){
             if (!(await check(job, config, userId))) return {duplicate: false, passCheck: false}
@@ -68,7 +58,7 @@ const createJob = async(job, config, userId, profileId, _asyncJobSettings) => {
         // insert job
         const { data, error } = await supabase
             .from("jobs_queue")
-            .insert({
+            .upsert({
                 job,
                 config,
                 user_id: userId,
@@ -78,15 +68,21 @@ const createJob = async(job, config, userId, profileId, _asyncJobSettings) => {
                 number_of_retries: numberOfRetries + 1,
                 retry_deadline: retryDeadline,
                 retry_interval: retryInterval,
-                env: JOB_ENV
+                env: JOB_ENV,
+                job_unique_identifier: jobUniqueIdentifier
+            }, {
+                onConflict: "job_unique_identifier",
+                ignoreDuplicates: true
             })
             .select()
-            .single()
+            .maybeSingle()
         
         if (error) throw error
+        if (!data) return {duplicate: true, passCheck: true}
         return {duplicate: false, passCheck: true, record: data}
 
     }catch (error){
+        console.error(error)
         await createLog("asyncJob/createJob", userId, error.message, error)
         throw error
     }
