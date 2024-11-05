@@ -19,7 +19,7 @@ const createYellowcardAccount = async(config) => {
     const acceptedFields = {
         userId: (value) => isUUID(value),
         accountNumber: (value) => { return yellowcardAccountNumberFormatPatternMap[currency].test(value) },
-        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+$/.test(value) },
+        accountHolderName: (value) => { return /^(?=.{1,32}$)[A-Za-z'-]+ [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}$/.test(value) },
         accountHolderPhone: (value) => { return yellowcardPhoneNumberFormatPatternMap[currency].test(value) },
         kind: (value) => inStringEnum(value, yellowcardSupportedKindsMap[env][paymentRail]),
     };

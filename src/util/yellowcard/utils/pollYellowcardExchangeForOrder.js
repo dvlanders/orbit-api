@@ -31,6 +31,7 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 
 			// if order instructions found
 			if (orderInstructions) {
+                // console.log("============orderInstructions", orderInstructions)
 				const payinLink = orderInstructions.data.payin.link;
 				const urlParams = new URLSearchParams(new URL(payinLink).search);
 				const network = urlParams.get('network');
@@ -73,6 +74,7 @@ async function getYellowCardDepositInstruction(order, offrampTransactionRecord, 
 
 			// if order is closed
 			if (close) {
+                // console.log("============close", close)
 				const { error, failedReason } = mapCloseReason(close.data.reason)
 				toUpdateOfframpTransactionRecordWhenFailed = {
 					transaction_status: "NOT_INITIATED",

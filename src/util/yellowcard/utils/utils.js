@@ -13,13 +13,13 @@ const yellowcardNetworkToChain = process.env.NODE_ENV === "development" ? {
 
 const yellowcardSupportedKindsMap = {
     development: {
-        momo_kes: [],
-        momo_xof: [],
+        momo_kes: ["MOMO_MPESA"],
+        momo_xof: ["MOMO_WAVE"],
         momo_rwf: [],
-        momo_zmw: [],
-        momo_mwk: ["MOMO_AIRTEL", "MOMO_TNM"],
-        momo_tzs: [],
-        momo_xaf: [],
+        momo_zmw: ["MOMO_MTN"],
+        momo_mwk: ["MOMO_AIRTEL"],
+        momo_tzs: ["MOMO_AIRTEL"],
+        momo_xaf: ["MOMO_WALLET"],
         bank_ngn: ["BANK_Stanbic Ibtc Bank", "BANK_Zenith Bank", "BANK_Guaranty Trust Bank", "BANK_Heritage Bank", "BANK_Enterprise Bank", "BANK_Sterling Bank", "BANK_Access Bank", "BANK_Keystone Bank", "BANK_Union Bank of Nigeria", "BANK_Wema Bank", "BANK_First City Monument Bank", "BANK_United Bank for Africa", "BANK_Skye Bank", "BANK_Ecobank Nigeria", "BANK_Unity Bank", "BANK_Diamond Bank", "BANK_Citibank Nigeria", "BANK_Standard Chartered Bank", "BANK_Fidelity Bank", "BANK_First Bank of Nigeria", "BANK_Mainstreet Bank"],
         bank_ugx: [],
     },
@@ -41,7 +41,7 @@ const yellowcardPhoneNumberFormatPatternMap = {
     xof: /^\+221[0-9]{9}$/,
     rwf: /^\+250[0-9]{9}$/,
     zmw: /^\+260[0-9]{9}$/,
-    mwk: /^\+265[0-9]{10}$/,
+    mwk: /^\+265[0-9]{9,10}$/,
     tzs: /^\+255\d{8,9}$/,
     xaf: /^\+237[0-9]{9}$/,
     ngn: /^\+234[0-9]{10}$/,
@@ -53,7 +53,7 @@ const yellowcardAccountNumberFormatPatternMap = {
     xof: /^\+221[0-9]{9}$/,
     rwf: /^\+250[0-9]{9}$/,
     zmw: /^\+260[0-9]{9}$/,
-    mwk: /^\+265[0-9]{10}$/,
+    mwk: /^\+265[0-9]{9,10}$/,
     tzs: /^\+255\d{8,9}$/,
     xaf: /^\+237[0-9]{9}$/,
     ngn: /^[0-9]{10}$/,
@@ -63,24 +63,49 @@ const yellowcardAccountNumberFormatPatternMap = {
 const yellowcardMethodFieldsMap = {
     // parirs (env, currency, kind)
     development: {
-        kes: {},
-        xof: {},
+        kes: {
+            MOMO_MPESA: {
+                kind: "MOMO_Mobile Wallet (M-PESA)+7ea6df5c-6bba-46b2-a7e6-f511959e7edb",
+                name: "Mobile Wallet (M-PESA)",
+                group: "MOMO",
+            }
+        },
+        xof: {
+            MOMO_WAVE: {
+                kind: "MOMO_Wave+8d18204e-b51f-4554-815d-71586d0dac13",
+                name: "Wave",
+                group: "MOMO",
+            }
+        },
         rwf: {},
-        zmw: {},
+        zmw: {
+            MOMO_MTN: {
+                kind: "MOMO_MTN+69affaa2-fbec-4e28-abd0-7444232721be",
+                name: "MTN",
+                group: "MOMO",
+            }
+        },
         mwk: {
-            MOMO_AIRETEL: {
-                kind: "MOMO_Airtel+3b589b9a-65d4-4246-b33a-f095dfc2977d",
+            MOMO_AIRTEL: {
+                kind: "MOMO_Airtel+3a03d846-8918-4964-b09e-fc3169e77504",
                 name: "Airtel",
                 group: "MOMO",
             },
-            MOMO_TNM: {
-                kind: "MOMO_TNM+ac522946-3d5d-488e-bf73-583b8d8de908",
-                name: "TNM",
-                group: "MOMO",
-            },
         },
-        tzs: {},
-        xaf: {},
+        tzs: {
+            MOMO_AIRTEL: {
+                kind: "MOMO_AIRTELMONEYTZ+0dae3b0d-4074-406b-aede-790c0be061cc",
+                name: "AIRTELMONEYTZ",
+                group: "MOMO",
+            }
+        },
+        xaf: {
+            MOMO_WALLET: {
+                kind: "MOMO_Mobile Wallet+cc2883ed-e431-444d-9264-8b7c1684b998",
+                name: "Mobile Wallet",
+                group: "MOMO",
+            }
+        },
         ngn: {
             "BANK_Stanbic Ibtc Bank": {
                 kind: "BANK_Stanbic Ibtc Bank+3d4d08c1-4811-4fee-9349-a302328e55c1",

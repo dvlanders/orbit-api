@@ -65,26 +65,26 @@ const railFunctionsMap = {
                 YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("ngn", null, accountId)
             }
         },
-        // MWK: {
-        //     BANK_MWK: {
-        //         YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("mwk", null, accountId)
-        //     }
-        // },
-        // TZS: {
-        //     BANK_TZS: {
-        //         YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("tzs", null, accountId)
-        //     }
-        // },
+        MWK: {
+            MOMO_MWK: {
+                YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("mwk", null, accountId)
+            }
+        },
+        TZS: {
+            MOMO_TZS: {
+                YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("tzs", null, accountId)
+            }
+        },
         // UGX: {
         //     BANK_UGX: {
         //         YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("ugx", null, accountId)
         //     }
         // },
-        // XAF: {
-        //     BANK_XAF: {
-        //         YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("xaf", null, accountId)
-        //     }
-        // },
+        XAF: {
+            MOMO_XAF: {
+                YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("xaf", null, accountId)
+            }
+        },
         KES: {
             MOMO_KES: {
                 YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("kes", null, accountId)
@@ -100,11 +100,11 @@ const railFunctionsMap = {
         //         YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("xof", null, accountId)
         //     }
         // },
-        // ZMW: {
-        //     MOMO_ZMW: {
-        //         YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("zmw", null, accountId)
-        //     }
-        // }
+        ZMW: {
+            MOMO_ZMW: {
+                YELLOWCARD: async (accountId) => await fetchYellowcardAccountInformation("zmw", null, accountId)
+            }
+        }
 	},
 }
 
