@@ -38,5 +38,4 @@ module.exports = (router) => {
 	router.post("/dev/migrateOnrampProviders", dev.migrateOnrampProviders)
 	router.post("/dev/migrateOfframpProviders", dev.migrateOfframpBridgeProviders)
 	router.post("/dev/testFundGasFee", dev.testFundGasFee)
-	router.post("/dev/withdraw-gas", authorize, developerDashboard.withdrawFromGasWallet);
 };
