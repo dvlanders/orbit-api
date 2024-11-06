@@ -11,40 +11,38 @@ const fetchBaseAssetTransactionRecord = require("./fetchBaseAssetTransactionReco
 const { updateRequestRecord } = require("./updateRequestRecord")
 const createJob = require("../../../../asyncJobs/createJob")
 const { toUnitsString } = require("../cryptoToCrypto/utils/toUnits")
+const { insertWalletTransactionRecord, getWalletColumnNameFromProvider, transferBaseAssetToWallet } = require("../walletOperations/utils")
+const { updateBaseAssetTransactionRecord } = require("./utils/baseAssetTransactionTableService")
+const { getUserWallet } = require("../../user/getUserWallet")
+const { transferType } = require("../utils/transfer")
 
 const insertRecord = async(fields) => {
-    const { senderUserId, amount, requestId, recipientAddress, chain, currency, senderAddress, senderBastionUserId } = fields
-    // insert record
-    const { data, error } = await supabaseCall(() => supabase
-    .from('base_asset_transactions')
-    .update(
-        { 
-            sender_user_id: senderUserId,
-            amount_in_wei: toUnitsString(amount, 18),
-            amount: amount,
-            recipient_wallet_address: recipientAddress,
-            sender_wallet_address: senderAddress,
-            chain: chain,
-            currency: currency,
-            crypto_provider: "BASTION",
-            transfer_from_wallet_type: "GAS_STATION",
-            status: "CREATED",
-            sender_bastion_user_id: senderBastionUserId,
-            bastion_request_id: v4()
-        },
-    )
-    .eq('request_id', requestId)
-    .select("*")
-    .single())
+    const { senderUserId, amount, requestId, recipientAddress, chain, currency, senderWalletAddress, walletProvider, newRecord } = fields
+    // insert record in provider table
+    const toInsert = {user_id: senderUserId, request_id: v4()};
+    const walletTxRecord = await insertWalletTransactionRecord(walletProvider, toInsert);
+    const walletColName = getWalletColumnNameFromProvider(walletProvider);
 
-    if (error) throw error
-    return data
+    // insert record to base_asset_transactions
+    const toUpdateBaseAssetTransaction = {
+        sender_user_id: senderUserId,
+        amount_in_wei: toUnitsString(amount, 18),
+        amount: amount,
+        recipient_wallet_address: recipientAddress,
+        sender_wallet_address: senderWalletAddress,
+        chain: chain,
+        wallet_provider: walletProvider,
+        transfer_from_wallet_type: "GAS_STATION",
+        status: "CREATED",
+        [walletColName]: walletTxRecord.id,
+    }
+
+    const record = await updateBaseAssetTransactionRecord(newRecord.id, toUpdateBaseAssetTransaction)
+    return record
 }
 
 const createBaseAssetTransfer = async(fields) => {
-    const { senderUserId, amount, requestId, recipientAddress, chain, senderAddress, senderBastionUserId, profileId } = fields
-    // get currency symbol for chain
-    fields.currency = baseAssetMap[chain]
+    const { senderUserId, chain, profileId } = fields
     // insert record
     const record = await insertRecord(fields)
     const receipt = await fetchBaseAssetTransactionRecord(record.id, profileId)
@@ -60,38 +58,35 @@ const createBaseAssetTransfer = async(fields) => {
 
 const transfer = async(record, profileId) => {
     const amount = record.amount
-    const requestId = record.bastion_request_id
-    const bastionUserId = record.sender_bastion_user_id
     const chain = record.chain
     const recipientAddress = record.recipient_wallet_address
-    const currency = record.currency
+    const senderUserId = record.sender_user_id
+    const walletType = record.transfer_from_wallet_type
+    const {bastionUserId, circleWalletId, walletProvider} = await getUserWallet(senderUserId, chain, walletType)
+    const walletColName = getWalletColumnNameFromProvider(walletProvider)
 
-    const response = await transferBaseAsset(requestId, bastionUserId, chain, currency, amount, recipientAddress)
-    const responseBody = await safeParseBody(response)
+    const transferConfig = {
+        referenceId: record.id, 
+        senderCircleWalletId: circleWalletId, 
+        senderBastionUserId: bastionUserId,
+        amountInEther: amount, 
+        chain, 
+        destinationAddress: recipientAddress, 
+        transferType: transferType.BASE_ASSET, 
+        providerRecordId: record[walletColName]
+    }
+
+    const {response, responseBody, mainTableStatus, failedReason} = await transferBaseAssetToWallet(walletProvider, transferConfig)
+    const toUpdate = {
+        status: mainTableStatus,
+        updated_at: new Date().toISOString()
+    }
 
     if (!response.ok) {
-        await createLog("transfer/WithdrawGasToWallet/transfer", record.sender_user_id, responseBody.message, responseBody)
-        const {message, type} = getMappedError(responseBody.message)
-
-         // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: "NOT_INITIATED",
-            failed_reason: message
-        }
-        await updateRequestRecord(record.id, toUpdate)
-    }else{
-        // update to database
-        const toUpdate = {
-            bastion_response: responseBody,
-            status: responseBody.status,
-            bastion_status: responseBody.status,
-            transaction_hash: responseBody.transactionHash,
-            failed_reason: responseBody.failureDetails,
-        }
-        
-        await updateRequestRecord(record.id, toUpdate)
+        toUpdate.failed_reason = failedReason
     }
+
+    await updateBaseAssetTransactionRecord(record.id, toUpdate)
 
     // send notification
     await notifyBaseAssetWithdraw(record)
@@ -100,17 +95,17 @@ const transfer = async(record, profileId) => {
     return await fetchBaseAssetTransactionRecord(record.id, profileId)
 }
 
-const executeAsyncBastionBaseAssetTransfer = async(config) => {
+const executeAsyncBaseAssetTransfer = async(config) => {
     // fetch from created record
 	const {data, error} = await supabase
         .from('base_asset_transactions')
-        .select("*")
+        .select("*, bastionTransaction:bastion_transaction_record_id(*), circleTransaction:circle_transaction_record_id(*)")
         .eq("id", config.recordId)
         .single()
 
     if (error) {
-        await createLog("transfer/WithdrawGasToWallet/executeAsyncBastionBaseAssetTransfer", config.userId, error.message)
-        throw new Error("Error happened in executeAsyncBastionBaseAssetTransfer")
+        await createLog("transfer/WithdrawGasToWallet/executeAsyncBaseAssetTransfer", config.userId, error.message)
+        throw new Error("Error happened in executeAsyncBaseAssetTransfer")
     }
 
     // transfer
@@ -119,5 +114,5 @@ const executeAsyncBastionBaseAssetTransfer = async(config) => {
 
 module.exports = {
     createBaseAssetTransfer,
-    executeAsyncBastionBaseAssetTransfer
+    executeAsyncBaseAssetTransfer
 }

@@ -7,7 +7,7 @@ const { receiveMessageAndMint } = require("../../../src/util/smartContract/cctp/
 const supabase = require("../../../src/util/supabaseClient")
 const { updateBridgingTransactionRecord } = require("../../../src/util/transfer/bridging/bridgingTransactionTableService")
 const { getContractActionRecord } = require("../../../src/util/transfer/contractAction/contractActionTableService")
-const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
+const { gasCheck } = require("../../../src/util/transfer/gas/main/gasCheck")
 
 const mintUsdc = async (userId, profileId, bridgingRecord) => {
 

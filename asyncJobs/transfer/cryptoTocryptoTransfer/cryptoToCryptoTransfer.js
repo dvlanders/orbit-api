@@ -1,5 +1,3 @@
-const bastionGasCheck = require("../../../src/util/bastion/utils/gasCheck")
-const { getBastionWallet } = require("../../../src/util/bastion/utils/getBastionWallet")
 const { currencyDecimal } = require("../../../src/util/common/blockchain")
 const createLog = require("../../../src/util/logger/supabaseLogger")
 const { paymentProcessorContractMap, approveMaxTokenToPaymentProcessor } = require("../../../src/util/smartContract/approve/approveToken")
@@ -9,7 +7,7 @@ const { executeAsyncBastionCryptoTransfer } = require("../../../src/util/transfe
 const { executeAsyncCircleCryptoTransfer } = require("../../../src/util/transfer/cryptoToCrypto/main/circleTransfer")
 const cryptoToCryptoSupportedFunctions = require("../../../src/util/transfer/cryptoToCrypto/utils/cryptoToCryptoSupportedFunctions")
 const { toUnitsString } = require("../../../src/util/transfer/cryptoToCrypto/utils/toUnits")
-const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
+const { gasCheck } = require("../../../src/util/transfer/gas/main/gasCheck")
 const { JobError, JobErrorType } = require("../../error")
 const { getRetryConfig } = require("../../retryJob")
 

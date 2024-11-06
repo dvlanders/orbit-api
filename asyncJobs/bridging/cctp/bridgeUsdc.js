@@ -1,6 +1,6 @@
 const supabase = require("../../../src/util/supabaseClient")
 const { updateBridgingTransactionRecord, getBridgingTransactionRecord } = require("../../../src/util/transfer/bridging/bridgingTransactionTableService")
-const { gasCheck } = require("../../../src/util/transfer/walletOperations/gas/gasCheck")
+const { gasCheck } = require("../../../src/util/transfer/gas/main/gasCheck")
 const notifyBridgingUpdate = require("../../../webhooks/bridging/notifyBridgingUpdate")
 const { JobError, JobErrorType } = require("../../error")
 const { getRetryConfig } = require("../../retryJob")

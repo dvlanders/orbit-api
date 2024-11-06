@@ -1,4 +1,4 @@
-const { dev } = require("../controllers");
+const { dev, developerDashboard } = require("../controllers");
 const multer = require('multer');
 const { authorize } = require("../util/middleware");
 const storage = multer.memoryStorage();
@@ -37,4 +37,5 @@ module.exports = (router) => {
 	router.post("/dev/testSubmitTransactionCircle", dev.testSubmitTransactionCircle)
 	router.post("/dev/migrateOnrampProviders", dev.migrateOnrampProviders)
 	router.post("/dev/migrateOfframpProviders", dev.migrateOfframpBridgeProviders)
+	router.post("/dev/testFundGasFee", dev.testFundGasFee)
 };

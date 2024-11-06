@@ -5,6 +5,7 @@ const { isValidAmount, inStringEnum } = require("../../util/common/filedValidati
 const createLog = require("../../util/logger/supabaseLogger")
 const { checkIsBaseAssetTransactionRequestIdAlreadyUsed } = require("../../util/transfer/baseAsset/fetchRequestInformation")
 const { createBaseAssetTransfer } = require("../../util/transfer/baseAsset/withdrawGasToWallet")
+const { getUserWallet } = require("../../util/user/getUserWallet")
 
 exports.withdrawFromGasWallet = async(req, res) => {
     const {profileId} = req.query
@@ -18,7 +19,7 @@ exports.withdrawFromGasWallet = async(req, res) => {
         const acceptedFields = {
             amount: "string",
             recipientAddress: "string",
-            chain: (value) => inStringEnum(value, [Chain.ETHEREUM_MAINNET, Chain.ETHEREUM_TESTNET]),
+            chain: (value) => inStringEnum(value, [Chain.ETHEREUM_MAINNET, Chain.ETHEREUM_TESTNET, Chain.POLYGON_MAINNET]),
             senderUserId: (value) => isUUID(value),
             requestId: (value) => isUUID(value),
         }
@@ -29,12 +30,13 @@ exports.withdrawFromGasWallet = async(req, res) => {
         // check request id
         const { isAlreadyUsed, newRecord } = await checkIsBaseAssetTransactionRequestIdAlreadyUsed(requestId, profileId)
 		if (isAlreadyUsed) return res.status(400).json({ error: `Invalid requestId, resource already used` })
+        fields.newRecord = newRecord
 
         // get sender bastion user info
-        const {walletAddress, bastionUserId} = await getBastionWallet(senderUserId, chain, "GAS_STATION")
-        if (!walletAddress || !bastionUserId) return res.status(400).json({error: `Gas station wallet is not created yet`})
-        fields.senderBastionUserId = bastionUserId
-        fields.senderAddress = walletAddress
+        const {address, walletProvider} = await getUserWallet(senderUserId, chain, "GAS_STATION")
+        if (!address) return res.status(400).json({error: `Gas station wallet is not created yet`})
+        fields.senderWalletAddress = address
+        fields.walletProvider = walletProvider
         
         // transfer
         const result = await createBaseAssetTransfer(fields)

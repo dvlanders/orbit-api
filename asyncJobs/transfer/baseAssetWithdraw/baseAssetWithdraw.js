@@ -1,11 +1,11 @@
 const createLog = require("../../../src/util/logger/supabaseLogger")
-const { executeAsyncBastionBaseAssetTransfer } = require("../../../src/util/transfer/baseAsset/withdrawGasToWallet")
+const { executeAsyncBaseAssetTransfer } = require("../../../src/util/transfer/baseAsset/withdrawGasToWallet")
 const { JobError, JobErrorType } = require("../../error")
 
 const baseAssetWithdrawAsync = async(config) => {
 
     try{
-        await executeAsyncBastionBaseAssetTransfer(config)
+        await executeAsyncBaseAssetTransfer(config)
 
     }catch (error){
         if (error instanceof JobError) throw error
