@@ -105,6 +105,10 @@
             "transfers",
             "ach_cop",
             "momo_kes",
+            "momo_zmw",
+            "momo_mwk",
+            "momo_tzs",
+            "momo_xaf",
             "bank_ngn"
           ]
         },
