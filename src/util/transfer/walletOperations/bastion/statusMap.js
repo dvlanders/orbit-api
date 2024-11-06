@@ -52,13 +52,23 @@ const gasSponsorshipStatusMap = {
 	"ACCEPTED": "SUBMITTED"
 }
 
+const baseAssetStatusMap = {
+    "SUBMITTED": "SUBMITTED",
+    "PENDING": "PENDING",
+	"FAILED": "FAILED",
+	"NOT_INITIATED": "NOT_INITIATED",
+	"CONFIRMED": "CONFIRMED",
+	"ACCEPTED": "SUBMITTED"
+}
+
 const statusMapBastion = {
     "CRYPTO_TO_CRYPTO": cryptoToCryptoStatusMap,
     "FEE": feeRecordStatusMap,
     "CONTRACT_ACTION": contractActionStatusMap,
     "CRYPTO_TO_FIAT": cryptoToFiatStatusMap,
 	"BRIDGE_ASSET": bridgeAssetStatusMap,
-	"GAS_SPONSORSHIP": gasSponsorshipStatusMap
+	"GAS_SPONSORSHIP": gasSponsorshipStatusMap,
+	"BASE_ASSET": baseAssetStatusMap
 }
 
 module.exports = {

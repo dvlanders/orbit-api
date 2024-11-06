@@ -13,13 +13,12 @@ const fetchBaseAssetTransactionRecord = async(recordId, profileId) => {
             id: record.id,
             amount: {
                 wei: record.amount_in_wei,
-                eth: formatEther(record.amount_in_wei)
+                eth: record.amount
             },
             requestId: record.request_id,
             senderUserId: record.sender_user_id,
             recipientAddress: record.recipient_wallet_address,
             chain: record.chain,
-            currency: record.currency,
             transactionHash: record.transaction_hash,
             createdAt: record.created_at,
             updatedAt: record.updated_at,

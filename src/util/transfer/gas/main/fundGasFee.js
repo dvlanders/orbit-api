@@ -73,10 +73,10 @@ async function fundUserGasFee(userId, amount, chain, type = "INDIVIDUAL", profil
 			// get developer userId
 			const developerUserId = await getDeveloperUserId(profileId)
 			if (!developerUserId) throw new Error(`No developer user found for profile ${profileId}`)
-			const {bastionUserId, walletId, address, walletProvider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
+			const {bastionUserId, circleWalletId, address, walletProvider} = await getUserWallet(developerUserId, chain, "GAS_STATION")
 			if (!address) throw new Error(`Gas station wallet not created for profile ${profileId}`) 
 			sponsorshipConfig.sponsorBastionUserId = bastionUserId
-			sponsorshipConfig.sponsorCircleWalletId = walletId
+			sponsorshipConfig.sponsorCircleWalletId = circleWalletId
 			sponsorshipConfig.sponsorWalletAddress = address
 			sponsorshipConfig.sponsorWalletProvider = walletProvider
 			sponsorshipConfig.sponsorUserId = developerUserId
