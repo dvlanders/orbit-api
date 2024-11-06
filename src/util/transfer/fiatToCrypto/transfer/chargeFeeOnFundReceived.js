@@ -1,6 +1,5 @@
 const createJob = require("../../../../../asyncJobs/createJob")
 const { chargeFeeOnFundReceivedScheduleCheck } = require("../../../../../asyncJobs/transfer/chargeFeeOnFundReceivedBastion/scheduleCheck")
-const bastionGasCheck = require("../../../bastion/utils/gasCheck")
 const { virtualAccountPaymentRailToChain } = require("../../../bridge/utils")
 const { currencyDecimal } = require("../../../common/blockchain")
 const createLog = require("../../../logger/supabaseLogger")
@@ -9,6 +8,7 @@ const { getTokenAllowance } = require("../../../smartContract/approve/getApprove
 const supabase = require("../../../supabaseClient")
 const { getUserProfileId } = require("../../../user/getUser")
 const { toUnitsString } = require("../../cryptoToCrypto/utils/toUnits")
+const { gasCheck } = require("../../gas/main/gasCheck")
 const { chargeFeeBastion } = require("./chargeFeeBastion")
 
 
@@ -60,7 +60,7 @@ exports.chargeFeeOnFundReceivedBastion = async(transferRecordId) => {
         }
         // FIXME consider other wallet types
         const userProfileId = await getUserProfileId(onrampRecord.destination_user_id)
-        await bastionGasCheck(onrampRecord.destination_user_id, chain, "INDIVIDUAL", userProfileId)
+        await gasCheck(onrampRecord.destination_user_id, chain, "INDIVIDUAL", userProfileId)
 
     }catch(error){
         console.error(error)

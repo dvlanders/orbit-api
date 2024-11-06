@@ -10,7 +10,8 @@ const { getUserAction: getBastionUserAction } = require("./bastion/getUserAction
 const { getTransaction } = require("./circle/getTransaction")
 const { approveActionBastion } = require("./bastion/approveAction")
 const { approveActionCircle } = require("./circle/approveAction")
-
+const { transferToAddressBastionBaseAsset } = require("./bastion/transferToAddressBaseAsset")
+const { transferToAddressCircleBaseAsset } = require("./circle/transferToAddressBaseAsset")
 const walletTransferFunctionMap = {
     BASTION: {
         transfer: transferToAddressBastion,
@@ -18,6 +19,7 @@ const walletTransferFunctionMap = {
         approve: approveActionBastion,
         action: submitBastionUserAction,
         getAction: getBastionUserAction,
+        transferBaseAsset: transferToAddressBastionBaseAsset
     },
     CIRCLE: {
         transfer: transferToAddressCircle,
@@ -25,6 +27,7 @@ const walletTransferFunctionMap = {
         approve: approveActionCircle,
         action: submitCircleUserAction,
         getAction: getTransaction,
+        transferBaseAsset: transferToAddressCircleBaseAsset
     }
 }
 
@@ -57,6 +60,11 @@ const getWalletColumnNameFromProvider = (provider) => {
 const transferToWallet = async (provider, transferInfo) => {
     const { transfer } = walletTransferFunctionMap[provider];
     return await transfer(transferInfo);
+}
+
+const transferBaseAssetToWallet = async (provider, transferInfo) => {
+    const { transferBaseAsset } = walletTransferFunctionMap[provider];
+    return await transferBaseAsset(transferInfo);
 }
 
 const transferToWalletWithPP = async (provider, transferInfo) => {
@@ -109,5 +117,6 @@ module.exports = {
     insertWalletTransactionRecord,
     approveAction,
     updateWalletTransactionRecord,
-    getWalletTransactionRecord
+    getWalletTransactionRecord,
+    transferBaseAssetToWallet
 }

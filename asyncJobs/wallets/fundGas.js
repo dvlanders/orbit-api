@@ -1,7 +1,7 @@
-const fundUserGasFee = require("../../src/util/bastion/fundGasFee")
 const { Chain } = require("../../src/util/common/blockchain")
 const createLog = require("../../src/util/logger/supabaseLogger")
 const supabase = require("../../src/util/supabaseClient")
+const fundUserGasFee = require("../../src/util/transfer/gas/main/fundGasFee")
 const { JobError, JobErrorType } = require("../error")
 const areObjectsEqual = require("../utils/configCompare")
 

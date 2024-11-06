@@ -38,6 +38,7 @@ const { insertSingleBridgeTransactionRecord } = require("../util/bridge/bridgeTr
 const { insertCheckbookTransactionRecord } = require("../util/checkbook/checkbookTransactionTableService");
 const { updateOnrampTransactionRecord } = require("../util/transfer/fiatToCrypto/utils/onrampTransactionTableService");
 const { updateOfframpTransactionRecord } = require("../util/transfer/cryptoToBankAccount/utils/offrampTransactionsTableService");
+const fundUserGasFee = require("../util/transfer/gas/main/fundGasFee");
 
 const uploadFile = async (file, path) => {
     
@@ -823,6 +824,16 @@ exports.migrateOnrampProviders = async(req, res) => {
         }))
 
         return res.status(200).json({message: "success"})
+    }catch (error){
+        console.error(error)
+        return res.status(500).json({error: "Internal server error"})
+    }
+}
+
+exports.testFundGasFee = async(req, res) => {
+    try{
+        const {success} = await fundUserGasFee("75d7c01f-5f93-4490-8b93-a62fd8020358", "0.001", Chain.ETHEREUM_MAINNET, "INDIVIDUAL", "6d5fca1f-f933-4ef9-96a1-fe983ff6a6f9")
+        return res.status(200).json({success})
     }catch (error){
         console.error(error)
         return res.status(500).json({error: "Internal server error"})

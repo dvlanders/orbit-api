@@ -6,7 +6,8 @@ const { bridgeFunctionMap } = require("../../src/util/transfer/bridging/bridgeFu
 const { getBridgingTransactionRecord } = require("../../src/util/transfer/bridging/bridgingTransactionTableService")
 const { toUnitsString } = require("../../src/util/transfer/cryptoToCrypto/utils/toUnits")
 const { getDeveloperFeeRecord } = require("../../src/util/transfer/fee/developerFeeTableService")
-const { gasCheck } = require("../../src/util/transfer/walletOperations/gas/gasCheck")
+const { gasCheck } = require("../../src/util/transfer/gas/main/gasCheck")
+
 const { getRetryConfig } = require("../retryJob")
 
 const bridgeAsset = async (jobConfig) => {

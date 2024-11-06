@@ -6,7 +6,7 @@ const { getAllUserWallets } = require("../utils/getAllUserWallets");
 const { CustomerStatus } = require("../../user/common");
 const { Chain } = require("../../common/blockchain");
 const { getAddress, isAddress } = require("ethers");
-const fundUserGasFee = require("../fundGasFee");
+const fundUserGasFee = require("../../transfer/gas/main/fundGasFee");
 
 const BASTION_URL = process.env.BASTION_URL;
 const BASTION_API_KEY = process.env.BASTION_API_KEY;

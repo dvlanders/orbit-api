@@ -5,7 +5,7 @@ const { Chain } = require("../../common/blockchain");
 const { getAddress, isAddress } = require("ethers")
 const { BastionSupportedEVMChainSandbox, BastionSupportedEVMChainProd } = require("../utils/utils");
 const submitBastionKycForDeveloper = require("./submitBastionKycForDeveloperUser");
-const fundUserGasFee = require("../fundGasFee");
+const fundUserGasFee = require("../../transfer/gas/main/fundGasFee");
 const chains = process.env.NODE_ENV == "development" ? BastionSupportedEVMChainSandbox : BastionSupportedEVMChainProd
 
 const preFundAmount = '0.1'
